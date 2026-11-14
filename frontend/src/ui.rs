@@ -694,6 +694,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
             .child(if narrow { action.w_full() } else { action }),
     );
     if s.loading {
+        view = view.child(paragraph("Consultando o clima e calculando os caminhos. A primeira consulta ao POWER pode levar alguns minutos; o limite de espera é de 6 minutos. Você pode cancelar e continuar editando."));
         view = view.child(button(k, "cancel", "Cancelar análise", false, |_| {
             host(json!({"type":"cancel"}))
         }));
@@ -937,7 +938,7 @@ fn recommendation_card(rec: &Recommendation, i: usize, k: &Kit, narrow: bool, de
     )
 }
 fn analysis_banner(analysis: &Analysis) -> El {
-    col()
+    let mut banner = col()
         .gap(7.0)
         .padding(16.0)
         .radius(10.0)
@@ -956,7 +957,27 @@ fn analysis_banner(analysis: &Analysis) -> El {
             .wrap()
             .w_full(),
         )
-        .child(label(&analysis.summary, 12.0, 400.0, MUTED).wrap().w_full())
+        .child(label(&analysis.summary, 12.0, 400.0, MUTED).wrap().w_full());
+    if !analysis.source_warning.is_empty() {
+        banner = banner.child(
+            col()
+                .gap(5.0)
+                .padding(12.0)
+                .radius(8.0)
+                .fill(color("#fff3d7"))
+                .child(
+                    label("ORIGEM E LIMITES DO CLIMA", 10.0, 600.0, "#72531c")
+                        .wrap()
+                        .w_full(),
+                )
+                .child(
+                    label(&analysis.source_warning, 12.0, 500.0, "#72531c")
+                        .wrap()
+                        .w_full(),
+                ),
+        );
+    }
+    banner
 }
 fn farm_summary(s: &State) -> El {
     let Some(farm) = &s.farm else {

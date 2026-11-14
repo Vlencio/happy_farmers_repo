@@ -1,20 +1,21 @@
 # Integração Rune ↔ FastAPI ↔ motor
 
 O contrato vigente é [docs/contrato_motor.md](../../docs/contrato_motor.md), de
-14/11/2026, com a regra de calor presente na Main em `c54fe17`. Ele substitui a proposta anterior deste
+14/11/2026, incluindo P1 de `motor-dev2` (`82cabe8`) e D1 de `dados-calor` (`87cd7ec`). Ele substitui a proposta anterior deste
 arquivo (`schema_version`, `farm`, `recommendations`, `horizon_months`).
 
-`backend/app.py` somente valida a entrada HTTP, carrega as tabelas existentes e
-chama `motor.recomendar`. Sua resposta é o dicionário do motor, sem reordenar,
-recalcular ou alterar os resultados. As tabelas são lidas no início do processo;
-reinicie a API depois de atualizá-las. Nenhum script de coleta é executado.
+`backend/app.py` valida a entrada HTTP, seleciona as tabelas do ponto e chama
+`motor.recomendar`, sem recalcular scores ou calendários. Com longitude, acrescenta
+`origem` ao dicionário do motor. As tabelas locais e a grade são lidas no início do
+processo; reinicie a API depois de atualizá-las. Somente o POWER do ponto pode ser
+consultado ao vivo; os scripts de download regional não são executados pela API.
 
 ## Transporte
 
 - `GET /health`: disponibilidade do serviço.
 - `GET /metadata`: catálogo, origem e períodos climáticos; `demo_field`, `model_spread`
-  e disponibilidade de clima por ponto (`point_climate_available`, hoje `false`).
-- `POST /analyze`: entrada do motor mais `lon` opcional no transporte; retorna a saída completa do motor.
+  e disponibilidade de clima por ponto (`point_climate_available: true`).
+- `POST /analyze`: entrada do motor mais `lon` opcional; retorna a saída completa e a origem do clima.
 - `GET /docs`: documentação OpenAPI gerada pelo FastAPI.
 - Entradas inválidas: HTTP 422 com `detail` (texto ou lista de erros do FastAPI).
 
@@ -53,8 +54,9 @@ antigos são preservados: cultura não suportada bloqueia a análise com mensage
 sem apagar nem ignorar o registro. Setas permitem corrigir a ordem de plantio.
 
 `lon` aceita −180 a 180, com validação de finitude; é opcional para preservar clientes
-anteriores. Ainda não vai para `motor.recomendar`: a função de clima por ponto (D1)
-não foi entregue. Enviar coordenadas não muda as tabelas climáticas por enquanto.
+anteriores. Não vai para `motor.recomendar`: a API usa latitude e longitude para
+chamar a função entregue em `scripts/clima_ponto.py`. Sem longitude, mantém as
+tabelas de demonstração, incluindo o ano seco opcional, sem consulta externa.
 
 ## Saída e três objetivos
 
@@ -114,9 +116,9 @@ Os arquivos necessários entram na imagem Docker; dados brutos continuam excluí
 Sem esses arquivos opcionais, `demo_field` é `null`; arquivo presente e inválido
 interrompe a carga, sem inventar valores.
 
-## Extensões preparadas (G4/G5)
+## Ano seco e faixa dos modelos (G4)
 
-O cenário seco depende da entrega P1 do motor. A interface já aceita **opcionalmente**
+O cenário seco da entrega P1 está ligado para a demonstração. A interface aceita **opcionalmente**
 `clima.seco` com 12 meses e, em cada sequência viável, `rank_seco` e `seco` com a mesma
 estrutura e faixas de `hoje`. O cenário precisa estar completo; calendários e dias
 devem coincidir entre cenários e `renda` deve continuar em 0–1. Respostas parciais são
@@ -127,8 +129,11 @@ terceiro valor na tabela mensal e nos detalhes. Legenda explícita: **hoje / fut
 ano seco**. O ano observado é 2020/21, conforme `docs/plano_gap.md`; não é média nem
 previsão. Os vencedores dos três objetivos continuam calculados em hoje/futuro.
 O front não executa uma segunda análise com a tabela seca no lugar do futuro.
-O backend já repassa `*app.state.tables`; P1 deve manter a ordem dos retornos de
-`carregar_dados` compatível com `recomendar`. `clima_seco.csv` entra no Docker.
+`carregar_dados()` continua retornando três tabelas. A API carrega o ano seco por
+`carregar_clima_seco()` e passa como quinto argumento a `recomendar` apenas no fluxo
+sem longitude ou quando `origem.hoje == "tabela_demo"`. Para outros pontos e para o
+fallback do POWER, passa `None`: não associa o ano seco de demonstração a outra
+fazenda. `clima_seco.csv` entra no Docker. Há fixture e teste com a saída real de P1.
 
 D2 ainda deve fornecer `data/clima_modelos.csv` com `modelo,mes,delta_chuva_mm,
 delta_tmin_c,delta_tmax_c`. O leitor opcional exige 12 meses únicos e valores finitos
@@ -139,20 +144,49 @@ entre modelos e avisa quando a chuva cruza zero. Sem o arquivo, informa que a fa
 ainda não está disponível. Não apresenta os números sugeridos no plano como dados
 calculados pela aplicação. A faixa só é exibida para o contorno de demonstração.
 
-G5 fica preparado pelo envio/validação de `lon`. A seleção de tabelas por ponto
-continua pendente de D1 e de sua assinatura/proveniência; não há provedor fictício.
+## Clima por ponto (G5)
+
+`backend/point_climate.py` faz a ligação com a entrega de dados:
+
+- Seleciona a célula de 0,25° que contém o ponto em
+  `data/nexgddp/regiao_mg/delta_mensal.csv`; nunca extrapola para uma célula distante.
+- Até 25 km da demonstração, preserva o comportamento de D1: tabelas prontas,
+  correção A520 e nenhuma consulta ao POWER. O aviso explica esse raio.
+- Nos demais pontos, chama `clima_por_ponto` com os 12 deltas mensais da célula e
+  `origem_delta="nex_regional"`. As duas tabelas devolvidas vão diretamente ao motor.
+- Retorna `origem` com a proveniência de D1 e acrescenta `dentro_mg` e, quando o
+  delta regional foi efetivamente usado, `celula_nex` (lat/lon/resolução).
+- Preserva o aviso do provedor e acrescenta as limitações aplicáveis. A tela mostra
+  `origem.aviso` em destaque nos resultados e na timeline, inclusive quando não há
+  sequência viável.
+- Fora de Minas, mas dentro da grade, continua com aviso de análise exploratória.
+  Fora da cobertura ou em célula sem dados, responde 422 antes de chamar POWER.
+  O aviso estadual usa o ponto enviado e a malha simplificada do IBGE versionada
+  em `backend/geo/`; não verifica o polígono inteiro nem divisas cadastrais.
+- A ressalva do Pedro sobre extremos de chuva no norte da grade aparece quando
+  latitude > −17,1 e o delta regional foi usado. Nenhum dado científico foi corrigido.
 
 ## Dados e falhas
 
-O motor atual usa os CSVs climáticos do talhão de demonstração (-20.032, -48.526),
-mesmo ao desenhar outra fazenda. Latitude só intervém se faltar ET0 na tabela;
-as tabelas atuais já têm ET0. A interface informa essa limitação antes e depois da
-análise. Não há consulta geográfica automática a NASA, estação ou solo.
+Se o POWER falhar ou entregar uma série insuficiente, D1 devolve as tabelas de
+demonstração com `origem.hoje="fallback_tabela_demo"` e aviso explícito. A interface
+não apresenta esse resultado como clima local. Falha de leitura dos arquivos vira
+503 com mensagem; erro de entrada/cobertura vira 422. Os avisos são texto, sem HTML.
+
+O cache diário já fornecido por D1 fica em `data/power/`, por ponto arredondado a
+três casas decimais. Não há cache do ranking: trocar histórico ou opções recalcula
+o motor. O Docker cria essa pasta; a escrita é opcional em ambientes somente de
+leitura, conforme o provedor. Arquivos gerados ficam fora do Git e da imagem. Não
+há coleta nova de NDVI, relevo ou estação para outras áreas.
 
 A conexão inicial consulta o catálogo; se falhar, a análise fica indisponível até
-reconectar. POST tem timeout de 45 segundos e cancelamento. Mudar área, histórico
+reconectar. POST tem timeout de 6 minutos (POWER usa 300 s) e cancelamento. Mudar área, histórico
 ou opções invalida a análise e aborta a chamada pendente; respostas antigas não
-substituem o planejamento atual. Não há fallback silencioso para fixture.
+substituem o planejamento atual. Cancelar encerra a espera na tela; uma consulta
+já iniciada no servidor pode terminar e preencher o cache. Não há fallback para fixture.
+
+O pacote inclui `scripts/`, o delta regional, as tabelas de clima, a malha de Minas
+e `requests` nas dependências. Os NetCDF brutos continuam fora do contexto Docker.
 
 Fixtures em `tests/fixtures/` foram exportadas do motor e servem apenas aos testes.
 `npm run test:integration`, com os serviços ativos, verifica as 24 combinações de

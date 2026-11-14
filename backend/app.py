@@ -7,8 +7,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
-from motor import carregar_dados, recomendar
+from motor import carregar_clima_seco, carregar_dados, recomendar
 from backend.field_context import load_demo_field, load_model_spread
+from backend.point_climate import PointClimate
 
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
@@ -33,8 +34,10 @@ class EntradaMotor(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Read the existing tables once; no data collection or modifications.
+    # Load delivered tables once. POWER is requested only when analyzing another point.
     app.state.tables = carregar_dados()
+    app.state.dry_climate = carregar_clima_seco()
+    app.state.point_climate = PointClimate()
     app.state.demo_field = load_demo_field()
     app.state.model_spread = load_model_spread()
     yield
@@ -50,8 +53,9 @@ app.add_middleware(
 
 LABELS = {"feijao": "Feijão", "algodao": "Algodão", "braquiaria": "Braquiária", "crotalaria": "Crotalária"}
 DATA_NOTICE = (
-    "Clima de hoje: 2005–2024; futuro: 2041–2060. As tabelas são do talhão de demonstração, perto de -20.032, -48.526. "
-    "Desenhar outra área ainda não carrega o clima daquele local. A área multiplica a receita por hectare."
+    "Clima de hoje: POWER 2005–2024; futuro: 2041–2060, com deltas regionais. "
+    "Perto do talhão de demonstração usamos tabelas prontas. Confira os avisos de origem no resultado. "
+    "O calendário de plantio é do Triângulo Mineiro; valide a adequação local."
 )
 
 
@@ -70,16 +74,32 @@ def metadata():
         "climate_periods": {"hoje": "2005–2024", "futuro": "2041–2060"},
         "demo_field": app.state.demo_field,
         "model_spread": app.state.model_spread,
-        "point_climate_available": False,
+        "point_climate_available": True,
     }
 
 
 @app.post("/analyze")
 def analyze(entrada: EntradaMotor):
     try:
-        # Return the engine's documented dict unchanged, including discarded sequences.
-        # lon is accepted by the transport for D1, but fixed tables are still used.
-        # Do not invent a point-climate provider or send extra fields to the engine.
-        return recomendar(entrada.model_dump(exclude={"lon"}), *app.state.tables)
+        request = entrada.model_dump(exclude={"lon"})
+        cultures, today, future = app.state.tables
+        # Reject invalid catalog IDs before making a potentially slow network request.
+        unknown = sorted((set(entrada.rotacao_atual) | set(entrada.precos)) - set(cultures["cultura"]))
+        if unknown:
+            raise ValueError(f"Culturas fora da tabela: {unknown}.")
+        dry = app.state.dry_climate
+        origin = None
+        if entrada.lon is not None:
+            climate = app.state.point_climate.get(entrada.lat, entrada.lon)
+            today, future, origin = climate["clima_hoje"], climate["clima_futuro"], climate["origem"]
+            # P1's delivered dry year is local to the demo, not a dry year for other farms.
+            if origin["hoje"] != "tabela_demo":
+                dry = None
+        result = recomendar(request, cultures, today, future, dry)
+        if origin is not None:
+            result["origem"] = origin
+        return result
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except OSError as error:
+        raise HTTPException(status_code=503, detail="Não foi possível ler os dados climáticos. Tente novamente.") from error

@@ -1,7 +1,7 @@
 import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
-import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, validateSettings } from './api.mjs';
+import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings } from './api.mjs';
 import { buildFieldContext } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 
@@ -84,14 +84,14 @@ async function dispatch(action) {
       if (!farm) throw new Error('Defina o limite da fazenda antes de analisar.');
       if (!metadata) throw new Error('Conecte ao motor antes de analisar.');
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
-      const timer = setTimeout(() => pending.abort(), 45000);
+      const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
       try {
         const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, settings, metadata.cultures), { signal: pending.signal });
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         if (id === requestId) send({ type: 'analysis', analysis: result });
       } catch (error) {
         if (id === requestId) send({ type: 'error', message: error.name === 'AbortError'
-          ? 'A análise demorou mais que o esperado. Tente novamente.'
+          ? 'A consulta ao clima excedeu 6 minutos. Tente novamente; o POWER pode estar lento ou indisponível.'
           : `Falha ao consultar o motor. ${error.message}` });
       } finally { clearTimeout(timer); }
       break;

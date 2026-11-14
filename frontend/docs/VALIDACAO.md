@@ -1,5 +1,55 @@
 # Verificação da integração · 14/11/2026
 
+## Atualização — clima por ponto, origem e ano seco
+
+Entregas integradas: `motor-dev2` em `82cabe8` (P1/P3) e `dados-calor` em
+`87cd7ec` (D1). Os registros abaixo desta seção são históricos.
+
+- Backend: **20 testes passaram**. Cobrem repasse das tabelas do ponto, origem e
+  aviso, falha simulada do POWER, invalidação antes de acessar a rede, seleção de
+  células sem extrapolação, máscara de Minas (incluindo pontos de SP/GO/DF dentro
+  da grade), demonstração sem rede e ano seco restrito à demonstração.
+- Motor/dados: **43 passaram e 4 foram pulados** (testes de montagem NetCDF sem
+  `xarray/netCDF4` instalados). Os testes de D1 e do cenário seco real passaram.
+- Front: **31 testes JS e 1 Rust passaram**; inclui aviso de origem, fixture real
+  do ano seco, contrato de dois cenários e preservação dos três objetivos.
+- Build release Rune/WASM + Vite concluído. Revisão e patches do Rune preservados.
+- Matriz HTTP pelo proxy Vite: **24 combinações** de mês/horizonte; 7 respostas
+  vazias válidas e 5 timelines maiores que 12 meses. Agora confere origem de
+  demonstração e os três cenários em cada resposta.
+- POWER real via `/analyze`, sem executar scripts de download em lote:
+
+| Ponto (lat, lon) | Primeira resposta | Fonte | Delta |
+|---|---:|---|---|
+| −18,9; −48,2 (Triângulo) | 2,04 s | POWER API | Regional |
+| −16,7; −43,9 (norte) | 2,39 s | POWER API | Regional |
+| −21,5; −45,4 (sul) | 2,55 s | POWER API | Regional |
+| −18,9; −48,2, repetido | 0,08 s | Cache diário | Regional |
+
+As três respostas reais foram validadas pelo adaptador JS e produziram três cards.
+Tempos são observações locais, não garantia de resposta do serviço externo.
+
+- Navegador: ano seco 2020/21 na timeline da demonstração, origem regional no
+  resultado do norte, ressalva de chuva extrema, ponto de SP com aviso fora de
+  Minas e erro de cobertura fora da grade. Avisos conferidos em **1280 × 720** e
+  **390 × 844**, sem corte de texto. Estado de espera com seis minutos observado.
+  Talhão original restaurado após os testes. Capturas locais, fora do Git:
+  `test-results/climate-regional.jpg` e `climate-outside-mobile.jpg`.
+- POWER indisponível foi exercitado por simulação no teste de integração da API;
+  o serviço real respondeu nos pontos consultados. Não foi provocada uma espera
+  real de seis minutos. Cancelamento e descarte de respostas antigas preservados.
+- Docker ainda não executável neste computador: o pipe do daemon Linux não está
+  disponível; a tentativa anterior registrou falha de virtualização WSL2. O build
+  completo da imagem permanece para um ambiente com Docker funcional.
+- Pacote de execução conferido separadamente: cópia isolada dos arquivos previstos
+  no Dockerfile, sem dados brutos nem cache POWER prévio, front compilado com
+  `VITE_API_BASE_URL=/` e `deploy.serve:app` em loopback. HTML, CSS, JS e WASM
+  responderam; as 24 combinações HTTP passaram novamente. Um ponto regional
+  retornou `power_api` e, na repetição, `power_arquivo`, comprovando a ligação
+  e escrita/leitura do cache nesse pacote. Isso não substitui o build da imagem Linux.
+- D2 (faixa por modelo), leitor de tela e celular físico continuam pendentes.
+  O ano seco regional não foi fornecido e não é inventado pela API.
+
 ## Atualização — satélite no resumo do talhão
 
 - Cartão “A sua fazenda” mostra Esri World Imagery e o contorno confirmado,

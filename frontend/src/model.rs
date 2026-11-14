@@ -43,6 +43,7 @@ pub enum Page {
 pub struct Analysis {
     pub demo: bool,
     pub summary: String,
+    pub source_warning: String,
     pub scenario_note: String,
     pub recommendations: Vec<Recommendation>,
     pub discarded: Vec<String>,

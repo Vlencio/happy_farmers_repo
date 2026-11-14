@@ -6,6 +6,7 @@ import { normalizeFarm } from '../web/geometry.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/motor.json', import.meta.url)));
 const february = JSON.parse(readFileSync(new URL('./fixtures/motor-fevereiro.json', import.meta.url)));
+const dryYear = JSON.parse(readFileSync(new URL('./fixtures/motor-seco.json', import.meta.url)));
 const metadata = JSON.parse(readFileSync(new URL('./fixtures/metadata.json', import.meta.url)));
 const farm = normalizeFarm({ type: 'Polygon', coordinates: [[[-49,-21],[-48,-21],[-48,-20],[-49,-20],[-49,-21]]] });
 const copy = () => structuredClone(fixture);
@@ -139,6 +140,21 @@ test('rejects partial, invalid and calendar-misaligned dry scenarios', () => {
     (v) => v.sequencias[0].seco.culturas[0].meses[0].dias = 1,
     (v) => v.clima.seco[1].mes = v.clima.seco[0].mes,
   ]) { const data = withDryScenario(); change(data); assert.throws(() => validateMotorOutput(data), /contrato/); }
+});
+test('actual P1 dry-year output is shown without changing the three winners', () => {
+  const view = mapMotorAnalysis(dryYear, farm);
+  assert.deepEqual(view.recommendations.map((r) => r.sequence_id), mapMotorAnalysis(fixture, farm).recommendations.map((r) => r.sequence_id));
+  assert.match(view.scenario_note, /2020\/21/);
+  assert.equal(view.recommendations[0].facts.length, 9);
+  assert.equal(view.recommendations[0].timeline[0].monthly[0].rain.split(' / ').length, 3);
+});
+test('point provenance warning reaches Rune unchanged, including fallback and outside Minas', () => {
+  const raw = copy();
+  raw.origem = { hoje: 'fallback_tabela_demo', aviso: 'POWER fora do ar. O ponto do talhão está fora de Minas Gerais.' };
+  assert.equal(mapMotorAnalysis(raw, farm).source_warning, raw.origem.aviso);
+  assert.equal(mapMotorAnalysis(fixture, farm).source_warning, '');
+  raw.origem.aviso = { unexpected: true };
+  assert.throws(() => validateMotorOutput(raw), /origem.aviso/);
 });
 test('metadata loads the engine catalog with friendly accents', async () => {
   const result = await requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => metadata }) });

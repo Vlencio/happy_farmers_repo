@@ -37,7 +37,7 @@
       "label": "Algodão"
     }
   ],
-  "data_notice": "Clima de hoje: 2005–2024; futuro: 2041–2060. As tabelas são do talhão de demonstração, perto de -20.032, -48.526. Desenhar outra área ainda não carrega o clima daquele local. A área multiplica a receita por hectare.",
+  "data_notice": "Clima de hoje: POWER 2005–2024; futuro: 2041–2060, com deltas regionais. Perto do talhão de demonstração usamos tabelas prontas. Confira os avisos de origem no resultado. O calendário de plantio é do Triângulo Mineiro; valide a adequação local.",
   "demo_field": {
     "id": "talhao_demo_2",
     "name": "Talhão de demonstração",
@@ -284,5 +284,5 @@
     "sources": "NDVI: MOD13Q1, 250 m, série 2014–2024; relevo: SRTM, 30 m; clima: POWER e correção local da INMET A520. Escopo: um talhão. As resoluções são diferentes."
   },
   "model_spread": null,
-  "point_climate_available": false
+  "point_climate_available": true
 }

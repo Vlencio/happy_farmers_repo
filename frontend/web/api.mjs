@@ -3,6 +3,8 @@ import { bbox } from '@turf/turf';
 export const CATEGORIES = ['income', 'soil', 'climate'];
 export const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2 };
+// POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
+export const ANALYSIS_TIMEOUT_MS = 360_000;
 const accents = { feijao: 'Feijão', algodao: 'Algodão', braquiaria: 'Braquiária', crotalaria: 'Crotalária' };
 export const cropLabel = (id) => accents[id] || id.charAt(0).toUpperCase() + id.slice(1);
 const number = (value, digits = 1) => value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
@@ -46,6 +48,11 @@ export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, culture
 }
 
 export function validateMotorOutput(value) {
+  if (value?.origem != null) {
+    if (typeof value.origem !== 'object' || Array.isArray(value.origem)) invalid('origem');
+    const warning = value.origem.aviso;
+    if (warning != null && (typeof warning !== 'string' || warning.length > 4000)) invalid('origem.aviso');
+  }
   integer(value?.entrada?.mes_plantio, 'entrada.mes_plantio', 1, 12);
   integer(value?.entrada?.horizonte, 'entrada.horizonte', 1, 2);
   list(value.slots, 'slots', value.entrada.horizonte, value.entrada.horizonte);
@@ -176,6 +183,7 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
     ], ...timeline(seq, value.entrada.mes_plantio),
   })) : [];
   return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
+    source_warning: value.origem?.aviso || '',
     scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os três cards mantêm seus critérios de hoje e futuro.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
     recommendations, discarded: value.descartadas.map((seq) => {
       const r = seq.motivo;

@@ -6,6 +6,13 @@ Este plano parte da análise de lacunas, conferida contra o código em `c54fe17`
 
 Quem cuida de quê não muda: Dev 1 — dados (`data/`, `scripts/`); Pedro — motor (`motor/`); Gabriel — tela e API (`frontend/`, `backend/`). Mudança na área de outro passa pelo dono.
 
+> Atualização da entrega de Gabriel em `front-dev3`, 14/11: G1–G3 implementados;
+> P1 e P3 (`motor-dev2`, `82cabe8`) e D1 (`dados-calor`, `87cd7ec`) integrados.
+> G4 mostra o ano seco real da demonstração; a faixa segue aguardando D2. G5 usa
+> POWER por ponto e delta regional, com origem/avisos, cache e espera de 6 minutos.
+> G6 mantém a validação por teclado/árvore, pendente de leitor de tela. Detalhes e
+> limites em `frontend/docs/PLANO_GAP.md` e `frontend/docs/VALIDACAO.md`.
+
 ## O que a conferência mostrou
 
 | Afirmação da análise | Resultado |

@@ -1,16 +1,17 @@
 # Entrega de Gabriel — plano de lacunas
 
-Implementação de 14/11/2026, baseada na Main remota `c54fe17`, para entrega na
-branch `front-dev3`. Referência: [plano do time](../../docs/plano_gap.md).
-Sem mudanças em `motor/`, `data/`, scripts de coleta ou testes originais do motor.
+Implementação de 14/11/2026 na branch `front-dev3`, com as entregas de Pedro em
+`motor-dev2` (`82cabe8`) e de dados em `dados-calor` (`87cd7ec`) integradas por merge.
+Referência: [plano do time](../../docs/plano_gap.md). As fórmulas e os dados dos
+responsáveis foram preservados; Gabriel implementou o transporte e a apresentação.
 
 | Item | Entrega | Estado |
 |---|---|---|
 | G1 | Card climático filtra sequências com receita positiva em cada cultura futura; fallback e desempate documentados e testados | Concluído |
 | G2 | Painel “Seu talhão”, NDVI mensal, cobertura/palhada, declividade, A520; metadados e arquivos no pacote Docker | Concluído |
 | G3 | Glossário, resolução das fontes e avisos sobre preços, calor e constantes provisórias | Concluído |
-| G4 | Validação e apresentação opcional do cenário seco; leitor e faixa dos modelos; CSVs incluídos no pacote | Consumidor pronto; aguarda P1 e D2 |
-| G5 | Longitude enviada pelo front e validada na API | Clima por ponto aguarda função de D1 |
+| G4 | Ano seco real da demonstração ligado à API e à tela; leitor da faixa dos modelos preparado | Ano seco concluído; faixa aguarda D2 |
+| G5 | POWER por ponto + delta regional; origem, avisos e cache; deploy e espera ampliada | Concluído e testado em três pontos de Minas |
 | G6 | Teste do botão por teclado e árvore de acessibilidade; Enter no foco Rune corrigido | Fluxo verificado; leitura com NVDA/Narrador ainda não auditada |
 
 ## O que foi corrigido e conferido
@@ -32,23 +33,32 @@ Sem mudanças em `motor/`, `data/`, scripts de coleta ou testes originais do mot
 
 ## O que falta chegar dos responsáveis
 
-**P1 — Pedro:** `carregar_dados` precisa incluir a tabela seca na ordem esperada
-por `recomendar`; a resposta precisa trazer `clima.seco`, `rank_seco` e `seco` em
-todas as sequências viáveis. O front já valida os campos e mostra os valores na
-ordem hoje / futuro / ano seco, sem mudar os três critérios de seleção. A API
-continua repassando as tabelas e a saída diretamente. Os testes do terceiro cenário
-usam dados sintéticos de contrato, não uma análise real de 2020/21.
+**P1 e P3 — Pedro: recebidos.** A API liga `carregar_clima_seco()` como quinto
+argumento de `recomendar` para a demonstração; outros pontos não recebem essa
+série local. A grade regional entregue é selecionada pela API e usada por D1.
 
 **D2 — Dev 1:** fornecer `data/clima_modelos.csv` com os deltas mensais por modelo.
 O leitor já calcula chuva anual e média dos 12 deltas de máxima, e a interface
 deriva os extremos e a discordância do sinal da chuva. Não foram gerados dados
 nem fixadas na tela as faixas citadas no plano. Reiniciar a API após a entrega.
 
-**D1 — Dev 1:** fornecer a função de clima por latitude/longitude e a proveniência
-dos dados (incluindo o eventual plano B). Ainda não há essa função nem
-`docs/plano_outros_locais.md` na base consultada. A API aceita `lon`, mas continua
-usando as tabelas fixas e informa `point_climate_available: false`. G5 não deve ser
-apresentado como concluído para outras fazendas.
+**D1 — recebido e integrado.** A função de `dados-calor` aceita deltas por parâmetro.
+A API seleciona a célula regional, envia as tabelas ao motor e retorna `origem`;
+`point_climate_available: true`. A tela mostra os avisos de POWER indisponível,
+tabelas de demonstração e ponto fora de Minas. Fora da grade, informa falta de
+cobertura. A identificação de Minas usa a malha simplificada do IBGE e apenas o
+ponto do talhão; não é validação cadastral do contorno.
+
+**Limites dos dados:** calendário ainda do Triângulo Mineiro; ano seco, NDVI e
+relevo ainda da demonstração. D2 (faixa dos modelos), D3 (geada) e a revisão de
+preços/limiares continuam com seus responsáveis. O aviso sobre a chuva extrema
+no norte da grade está na tela; os valores fornecidos não foram alterados.
+
+**Pedido de integração do Pedro:** Docker copia scripts e delta regional; o
+`.dockerignore` libera apenas esse CSV dentro da grade; `requests` foi incluído.
+Espera ampliada de 45 s para 6 min, com cancelamento. O cache diário de D1 é usado;
+a pasta é criada na imagem. Consultas reais: 2,04–2,55 s; repetição via cache: 0,08 s.
+Esses tempos são uma medição local, não uma garantia de disponibilidade do POWER.
 
 Detalhes técnicos em [API.md](API.md). Evidências e limites dos testes em
 [VALIDACAO.md](VALIDACAO.md).

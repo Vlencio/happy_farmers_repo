@@ -5,6 +5,8 @@ __pycache__/
 .env
 recordings/
 data/nexgddp/regiao_*/bruto/
+# Runtime point cache; the already tracked demonstration series stays versioned.
+data/power/power_diario_*.csv
 node_modules/
 target/
 dist/

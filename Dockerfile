@@ -30,8 +30,11 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY motor/ motor/
 COPY backend/ backend/
 COPY deploy/ deploy/
+COPY scripts/ scripts/
 COPY data/culturas.csv data/clima_*.csv data/talhao_demo_2.geojson data/
+COPY data/nexgddp/regiao_mg/delta_mensal.csv data/nexgddp/regiao_mg/
 COPY data/talhao/ndvi_climatologia.csv data/talhao/declividade.csv data/talhao/
+RUN mkdir -p data/power
 COPY --from=front /app/frontend/dist frontend/dist
 
 ENV PORT=8000

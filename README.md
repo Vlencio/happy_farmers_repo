@@ -32,8 +32,10 @@ npm run dev
 Open [Happy Farmers locally](http://127.0.0.1:4173/). For a fresh clone, follow
 [frontend setup and architecture](frontend/README.md). The command starts both Vite and the local API;
 Ctrl+C stops both. See [integration mapping](frontend/docs/API.md) and the authoritative
-[engine contract](docs/contrato_motor.md). Engine rules and data tables are unchanged.
-Climate inputs are still fixed to the demo field; drawing another polygon does not fetch its climate.
+[engine contract](docs/contrato_motor.md). The API integrates the delivered point-climate
+provider and regional NEX-GDDP deltas, preserving the engine's calculations. Within
+25 km of the demo, it uses ready-made tables (including the optional dry year).
+Other covered points use NASA POWER with explicit source, scope and fallback notices.
 
 ## Layout
 
@@ -72,7 +74,9 @@ Run the engine demo with `python -m motor` and the tests with
 ## Data
 
 Demo field: lat -20.032, lon -48.526 (Brazil, about 125 km south of
-Uberlândia). Every source was pulled for this point or for the field polygon.
+Uberlândia). The original sources below refer to this point or its polygon.
+The API also uses the delivered regional NEX-GDDP delta grid and fetches POWER
+for other covered points; NDVI, terrain and dry-year data remain demo-specific.
 
 | Source | What | Period | How it was obtained |
 |---|---|---|---|
@@ -98,8 +102,9 @@ venv\Scripts\activate        # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-The data is already in the repository, so the scripts only need to be run to
-change the location or the period:
+The preprocessed demo tables and regional delta grid are already in the repository.
+The API obtains and caches POWER for a new point automatically. The scripts below
+are manual collection tools for data maintenance, not required to analyze a field:
 
 ```
 python scripts/puxar_power.py [lat] [lon] [start_year] [end_year]

@@ -72,12 +72,13 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
 - Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
 - Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
-- Consumo opcional de ano seco e faixa entre modelos preparado; depende de P1/D2, conforme [estado do plano](docs/PLANO_GAP.md).
+- Ano seco real (2020/21) ligado para a demonstração; faixa entre modelos ainda aguarda D2.
+- POWER por ponto com delta regional de Minas, cache diário e avisos de origem/fallback/cobertura; veja o [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API
 
 O app chama `/api/analyze`, por proxy para a API local. A resposta é a saída do motor
-sem modificações; a interface seleciona os vencedores por objetivo e formata os números.
+sem recalcular os números, acrescida de `origem` quando há longitude; a interface seleciona os vencedores por objetivo.
 Não há demonstração fictícia automática. As fixtures do motor são usadas só nos testes.
 
 Para usar outro serviço compatível, copie `.env.example` para `.env` e configure:
@@ -88,10 +89,12 @@ VITE_API_BASE_URL=http://127.0.0.1:8000
 
 Use `npm run dev:web` com a API externa. Reinicie Vite; para distribuição, gere o build novamente.
 A interface valida o contrato descrito em [docs/API.md](docs/API.md). Há mensagens de erro,
-timeout de 45 segundos e cancelamento. Mudanças de contorno, histórico ou opções invalidam a análise anterior.
+timeout de 6 minutos e cancelamento. Mudanças de contorno, histórico ou opções invalidam a análise anterior.
 
-O clima ainda vem das **tabelas fixas do talhão de demonstração**: desenhar outro lugar
-não busca seus dados climáticos. O contorno fornece latitude e longitude aproximadas; a área
+O contorno fornece latitude e longitude aproximadas. Fora do raio de 25 km da
+demonstração, a API consulta o POWER desse ponto e usa o delta regional do NEX-GDDP.
+Falha do POWER usa as tabelas de demonstração com aviso explícito. Fora de Minas,
+dentro da grade, há aviso de análise exploratória; fora da grade, há erro de cobertura. A área
 multiplica a receita por hectare. Safra/ano e observações ficam salvos localmente,
 pois o contrato recebe somente a ordem das culturas. Receita não desconta custos e
 os índices não são probabilidades nem medições de solo.
@@ -134,6 +137,7 @@ Principais arquivos:
 | `web/field.mjs` | Correspondência do contorno e apresentação dos dados do talhão |
 | `../backend/app.py` | Transporte HTTP para o motor, catálogo e validação de entrada |
 | `../backend/field_context.py` | Leitura dos CSVs de contexto e deltas opcionais por modelo |
+| `../backend/point_climate.py` | Seleção da célula regional, ligação com D1 e avisos de origem/cobertura |
 | `tests/fixtures/` | Saída real exportada do motor para testes |
 
 Testes Python, da raiz:

@@ -172,7 +172,10 @@ in `tests/dados/`.
   The UI defaults to `/api`,
   proxied to FastAPI at port 8000. `npm run dev` starts both services. An explicit
   `VITE_API_BASE_URL` can target another compatible service; no silent demo fallback.
-  The climate tables still belong to the demo field for any drawn polygon.
+  The API now calls the delivered D1 point provider with regional NEX-GDDP deltas.
+  Within 25 km of the demo it preserves fixed tables; other points use POWER
+  (daily disk cache). Source/fallback/outside-Minas notices are visible. The client
+  waits up to six minutes and supports cancellation. Details: frontend/docs/API.md.
 
 ## Next steps
 
@@ -189,8 +192,10 @@ integrated with the 14 Nov engine contract.
    and climate (future fit among sequences where every future crop has positive
    revenue; fallback to all sequences only if none qualify, future water as tiebreaker).
    It includes demo-boundary-only NDVI/slope/station context and a glossary.
-   The optional dry-year output and per-model CSV have presentation/validation support,
-   awaiting P1/D2. Longitude is sent and validated; point-specific climate still awaits D1.
+   P1's dry year is enabled for demo climate, not reused for other points. The
+   per-model CSV still awaits D2. D1 and Pedro's regional delta are integrated;
+   metadata reports point_climate_available: true. The IBGE simplified state mask
+   is bundled in backend/geo for scope notices, not cadastral boundary validation.
    See `frontend/docs/API.md` and `frontend/docs/PLANO_GAP.md` for integration status.
 
 ## Submission

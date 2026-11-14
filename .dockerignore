@@ -6,7 +6,10 @@ recordings
 data/appeears
 data/ecocrop
 data/inmet
-data/nexgddp
+data/nexgddp/*
+!data/nexgddp/regiao_mg
+data/nexgddp/regiao_mg/*
+!data/nexgddp/regiao_mg/delta_mensal.csv
 data/power
 data/talhao/*
 !data/talhao/ndvi_climatologia.csv

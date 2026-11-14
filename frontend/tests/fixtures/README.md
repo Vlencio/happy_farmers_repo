@@ -11,3 +11,10 @@ Para regenerar, da raiz, após atualizar o motor ou os dados:
 ```
 
 O comando não baixa nem modifica tabelas.
+
+## Atualização P1 / clima por ponto
+
+`motor-seco.json` é uma saída real de `recomendar` com `carregar_clima_seco()` da
+entrega P1 de Pedro. `motor.json` e `motor-fevereiro.json` mantêm o contrato de dois
+cenários para testar compatibilidade. Nenhuma fixture é usada pela interface em
+execução. Atualização: `python -m backend.export_fixture`, sem consultar a rede.

@@ -2,6 +2,12 @@
 
 > Proposta de 14/11/2026, escrita pelo Pedro. Ainda não foi combinada entre os três. Leiam a parte de vocês e digam se cabe no tempo que resta.
 
+> Estado posterior na `front-dev3`, 14/11: P3 e D1 recebidos e integrados à API.
+> Consultas reais em três pontos passaram; origem e avisos aparecem na tela.
+> Fora de Minas, dentro da grade, a análise continua com aviso; fora da grade,
+> retorna erro de cobertura. O registro da implementação está em
+> `frontend/docs/API.md` e `frontend/docs/VALIDACAO.md`. A proposta abaixo é histórica.
+
 ## O que queremos
 
 O usuário desenha um talhão em qualquer lugar de Minas Gerais e recebe a análise com o clima daquele ponto, sem esperar minutos.

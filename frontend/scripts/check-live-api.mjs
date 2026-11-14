@@ -7,6 +7,7 @@ import { readFileSync } from 'node:fs';
 
 const baseUrl = process.env.HAPPY_FARMERS_TEST_API || 'http://127.0.0.1:4173/api';
 const metadata = await requestMetadata(baseUrl);
+assert.equal(metadata.point_climate_available, true);
 const farm = normalizeFarm(JSON.parse(readFileSync(new URL('../public/demo-farm.geojson', import.meta.url))));
 assert.ok(buildFieldContext(farm, metadata));
 let calls = 0, empty = 0, extended = 0;
@@ -15,11 +16,14 @@ for (const horizonte of [1, 2]) {
     const history = [{ crop: 'Crotalária', season: '2025', notes: 'Somente local' }];
     const request = buildRequest(farm, history, { horizonte, mes_plantio }, metadata.cultures);
     const raw = await requestAnalysis(baseUrl, request);
+    assert.equal(raw.origem.hoje, 'tabela_demo');
+    assert.equal(raw.clima.seco.length, 12);
     assert.deepEqual(raw.entrada.rotacao_atual, ['crotalaria']);
     assert.equal(raw.entrada.horizonte, horizonte);
     assert.equal(raw.entrada.mes_plantio, mes_plantio);
     assert.equal(raw.sequencias.length + raw.descartadas.length, metadata.cultures.length ** horizonte);
     const view = mapMotorAnalysis(raw, farm);
+    assert.match(view.source_warning, /talhão de demonstração/);
     if (horizonte === 2 && [2, 10].includes(mes_plantio)) {
       assert.equal(view.recommendations[2].sequence_id, mes_plantio === 10 ? 'soja>sorgo' : 'sorgo>soja');
     }
