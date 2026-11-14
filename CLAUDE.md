@@ -65,7 +65,9 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | NEX-GDDP-CMIP6 | Projected monthly climate | `scripts/puxar_nexgddp.py` | `data/nexgddp/` | Downloaded |
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
-| Crop table | Crop requirements, Kc, price, yield | Built by hand | `data/culturas.csv` | **To do** |
+| Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
+| Climate tables | Today / future, 12 months each, with ET0 | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv` | Done |
+| NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 
 Column reference: `docs/colunas_dados.md`.
 
@@ -93,9 +95,7 @@ Notes per source:
   milho, sorgo, milheto, braquiária, crotalária, feijão, girassol, algodão.
   Columns: `cultura, ciclo_dias, temp_min, temp_max, temp_otima_min,
   temp_otima_max, chuva_min, chuva_max, kc_ini, kc_med, kc_fim, fixa_n,
-  cobre_solo, preco, produtividade, plantio_ini, plantio_fim`. The planting
-  window (months, may wrap the year) is not in ECOCROP; it comes from the
-  Conab planting calendar or ZARC.
+  cobre_solo, preco, produtividade`.
 
 ## Engine (rules, no ML)
 
@@ -136,8 +136,8 @@ crops, placeholder prices and Kc) until the final tables arrive in `data/`.
 
 ## Next steps
 
-1. Build `culturas.csv`.
-2. Script for the two climate tables.
+1. ~~Build `culturas.csv`.~~ Done; check the "memória" values.
+2. ~~Script for the two climate tables.~~ Done.
 3. Engine (ET0, water balance, fit, sequence rules, score, ranking).
 4. Front end, on fake data until the engine returns real numbers.
 
