@@ -69,7 +69,8 @@ Para cada cultura, as faixas do ECOCROP são comparadas com `clima_hoje.csv`
 2041–2060), com as mesmas funções do motor (`encaixe_temperatura`,
 `encaixe_chuva`).
 
-- **Anuais e cobertura:** janela de `ciclo_dias / 30` meses. Temperatura =
+- **Anuais e cobertura:** janela de `ciclo_dias / 30` meses, arredondado para
+  cima (o milho, de 135 dias, usa 5 meses). Temperatura =
   média do encaixe da temperatura média de cada mês; chuva = soma da janela
   contra `chuva_min`/`chuva_max`. `melhor_mes_plantio` é o mês de início com o
   maior encaixe hoje; o futuro é calculado no mesmo mês.
@@ -88,7 +89,7 @@ Culturas em que o encaixe fica abaixo de 1 (as outras ficam em 1,00 nos dois cli
 | trigo | mar | 0,79 | 0,60 | temperatura (máxima do ECOCROP: 27 °C) |
 | aveia | mar | 0,71 | 0,56 | temperatura |
 | feijão | fev | 0,95 | 0,78 | temperatura |
-| batata | mar | 0,98 | 0,88 | temperatura |
+| batata | mar | 0,99 | 0,90 | temperatura |
 | arroz | dez | 0,79 | 0,80 | chuva: o ECOCROP pede 1.000 mm no ciclo (arroz irrigado) |
 | café | ano | 1,00 | 0,99 | temperatura |
 | cana | ano | 0,90 | 0,95 | melhora: os meses frios ficam mais perto do ótimo (24 °C) |
@@ -103,10 +104,10 @@ do arábica é o calor na florada, que esta conta não vê.
 
 ## Trigo no motor e candidatas à rotação
 
-O trigo está em `data/culturas.csv` (dicionário `MANUAL` de
-`scripts/montar_culturas.py`). `data/culturas_candidatas.csv` tem arroz,
-amendoim e aveia, nas mesmas colunas. **O motor não lê este arquivo.**
-Os valores do trigo estão na tabela abaixo, com as candidatas.
+Todas ficam no `MANUAL` de `scripts/montar_culturas.py`. As que estão no
+conjunto `CANDIDATAS` (arroz, amendoim, aveia) vão para
+`data/culturas_candidatas.csv`, nas mesmas colunas; as outras, como o trigo,
+vão para `data/culturas.csv`. **O motor não lê o arquivo das candidatas.**
 
 | cultura | ciclo | safra | safrinha | kc_ini / med / fim | fixa_n | cobre_solo | calor (°C) |
 |---|---|---|---|---|---|---|---|
@@ -166,8 +167,8 @@ comparar, não valem para o motor atual.
 - A `renda` é dividida pela maior receita do ranking. Com o amendoim o teto
   sobe e os scores de todas as sequências mudam.
 
-Para ligar outra candidata, faça como o trigo: copie a linha para `ESPECIE` e
-`MANUAL` em `scripts/montar_culturas.py`, rode o script e depois
+Para ligar outra candidata, tire o nome dela de `CANDIDATAS` em
+`scripts/montar_culturas.py`, rode o script e depois `montar_culturas_mg.py` e
 `python -m backend.export_fixture` para atualizar as fixtures do front (só no
 `front-dev3`, onde o backend existe).
 

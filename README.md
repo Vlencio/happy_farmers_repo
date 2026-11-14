@@ -35,7 +35,9 @@ motor/                    scoring engine (rules and arithmetic, no ML)
 scripts/
   puxar_power.py          downloads NASA POWER
   puxar_nexgddp.py        downloads NEX-GDDP-CMIP6
-  montar_culturas.py      builds culturas.csv (ECOCROP + hand-filled values)
+  montar_culturas.py      builds culturas.csv and culturas_candidatas.csv (ECOCROP + hand-filled values)
+  puxar_pam.py            downloads IBGE PAM for Minas Gerais (SIDRA)
+  montar_culturas_mg.py   crosses MG crops with ECOCROP and the climate tables
   montar_clima.py         builds the two climate tables
   processar_appeears.py   NDVI and slope from the AppEEARS files
 tests/                    engine tests, with fixed test tables in tests/dados/
