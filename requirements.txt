@@ -1,2 +1,6 @@
 pandas
 requests
+numpy
+xarray
+netCDF4
+matplotlib

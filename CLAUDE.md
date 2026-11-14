@@ -42,7 +42,7 @@ a small browser bridge. Fixed demo responses are explicitly labeled and do
 not use, replace or approximate the agronomic engine. Do not add weights,
 ranking tables, editable prices or further screens without a new requirement.
 
-The future engine's climate comparison remains a separate workstream. Coordinate
+Engine development remains a separate workstream. Coordinate
 the response shape with its owner using `frontend/docs/API.md`.
 
 ## Out of scope
@@ -68,7 +68,9 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | NEX-GDDP-CMIP6 | Projected monthly climate | `scripts/puxar_nexgddp.py` | `data/nexgddp/` | Downloaded |
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
-| Crop table | Crop requirements, Kc, price, yield | Built by hand | `data/culturas.csv` | **To do** |
+| Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
+| Climate tables | Today / future, 12 months each, with ET0 | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv` | Done |
+| NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 
 Column reference: `docs/colunas_dados.md`.
 
@@ -94,27 +96,43 @@ Notes per source:
   github.com/OpenCLIM/ecocrop; cite as "FAO ECOCROP via
   GAEZ"), Kc from FAO-56, price and yield from CEPEA/Conab. Crops: soja,
   milho, sorgo, milheto, braquiária, crotalária, feijão, girassol, algodão.
-  Columns: `cultura, ciclo_dias, temp_min, temp_max, temp_otima_min,
-  temp_otima_max, chuva_min, chuva_max, kc_ini, kc_med, kc_fim, fixa_n,
-  cobre_solo, preco, produtividade`.
+  Crop names in the table have no accents (`feijao`, `crotalaria`). Columns:
+  `docs/colunas_dados.md` section 5; source and status of each value:
+  `docs/culturas_fontes.md`. Planting months and second-season yield are per
+  slot: `mes_plantio_safra`, `mes_plantio_safrinha`, `produtividade_safrinha`.
 
 ## Engine (rules, no ML)
 
 The score comes from rules and arithmetic. **The LLM only explains the
 numbers; it never produces them.**
 
+Code: `motor/` (`recomendar`). Inputs, output JSON, rules and open questions:
+`docs/contrato_motor.md`. Demo: `python -m motor`. Tests:
+`python -m unittest discover tests`. It reads `data/culturas.csv`,
+`data/clima_hoje.csv` and `data/clima_futuro.csv`; the tests use fixed tables
+in `tests/dados/`.
+
 1. **Two climate tables**, 12 rows each (one per month):
    - Today: POWER averaged by month.
    - Future: today + (NEX-GDDP `ssp245` − `historical`), difference averaged
      across the three models. Never compare NEX-GDDP future directly to POWER.
 2. **ET0** per month by Hargreaves (Tmin, Tmax, latitude), so today and future
-   use the same method.
+   use the same method. It is computed in `scripts/montar_clima.py` and
+   delivered as `et0_mm`; the engine uses that column and only computes
+   Hargreaves itself if the column is missing.
 3. **Water balance** per crop: rain − Kc × ET0.
 4. **Climate fit** per crop against its temperature and rain ranges.
 5. **Revenue** per hectare: price × yield × fit factor.
 6. **Sequence rules**, so that order and history matter: penalty for repeating
    a crop, bonus for the crop that follows a nitrogen fixer (`fixa_n`). The
-   last crop of the current rotation counts as the previous crop.
+   last crop of the current rotation counts as the previous crop. Each
+   position in a sequence is a slot (safra, then safrinha, or the reverse if
+   the field is free from January to June). A crop is planted in its
+   planting month for that slot (`mes_plantio_safra`, `mes_plantio_safrinha`),
+   and the field is free 10 days after a crop's cycle ends (harvest time). A
+   sequence with a crop that has no month in its slot, or whose month has
+   passed when the field becomes free, is dropped from the ranking and listed
+   as discarded.
 7. **Score** per rotation, weighted by the user's priorities, for every
    sequence in the horizon. Run on both climate tables and rank each. Rank
    rotations, not single crops in isolation.
@@ -149,10 +167,13 @@ The list below is the team-wide backlog. Gabriel's first front-end prototype
 is implemented; next steps are feedback on the flow and agreement with the
 backend owner on the API contract. Do not implement items 1–3 in this chat.
 
-1. Build `culturas.csv`.
-2. Script for the two climate tables.
-3. Engine (ET0, water balance, fit, sequence rules, score, ranking).
-4. Iterate on the Rune front end and connect the real engine when available.
+1. ~~Build `culturas.csv`.~~ Done; check the "memória" values.
+2. ~~Script for the two climate tables.~~ Done.
+3. Engine (ET0, water balance, fit, sequence rules, score, ranking). First
+   version done and running on the real tables; open questions are at the end
+   of `docs/contrato_motor.md`.
+4. Iterate on the Rune front-end prototype and connect the real engine after
+   agreeing on the API contract. The interface currently uses demonstration data.
 
 ## Submission
 

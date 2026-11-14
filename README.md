@@ -6,15 +6,17 @@ NASA Data"**.
 A decision-support tool for crop rotation. The farmer draws a boundary on a
 satellite map or imports GeoJSON, optionally supplies planting history, and
 compares three paths: income, soil health and climate resilience. Each path
-opens its own timeline. The planned engine will use observed and projected
+opens its own timeline. The engine uses observed and projected
 climate; the current interface uses explicitly labeled demonstration results.
 
-**Status:** the first local front-end prototype is functional. The data below
-is collected; the Python/FastAPI scoring engine is a separate team workstream.
+**Status:** the first local front-end prototype is functional, the crop and
+climate tables are built, and a first version of the Python scoring engine
+exists. Integration through FastAPI is still pending; engine development
+remains a separate team workstream.
 
 The chosen front end is [Rune](https://github.com/anomalyco/rune) (Rust), using
-`rune-kit` components and consuming the Python/FastAPI backend. This replaces
-the earlier Streamlit/React proposal. Rune has now been compiled to WebAssembly
+`rune-kit` components and an API adapter for the planned Python/FastAPI
+backend. This replaces the earlier Streamlit/React proposal. Rune has now been compiled to WebAssembly
 and tested locally in the browser. Its exact revision, four required dependency
 patches and a small additional WASM compatibility patch are pinned in `frontend/`.
 
@@ -40,13 +42,28 @@ data/
   nexgddp/                projected climate, monthly (+ cache/ with the daily series)
   appeears/               NDVI (MOD13Q1) and elevation (SRTM) for the field
   ecocrop/                FAO ECOCROP crop requirements
+  inmet/                  INMET A520 station vs POWER, monthly (used to correct Tmin/Tmax)
+  talhao/                 monthly NDVI, bare-soil months and slope of the field
+  culturas.csv            crop table used by the engine
+  clima_hoje.csv          today's climate, 12 months
+  clima_futuro.csv        2041-2060 climate, 12 months
 docs/
   colunas_dados.md        column reference for every source
+  culturas_fontes.md      source and status of every value in culturas.csv
+  contrato_motor.md       engine inputs, output JSON and rules
 frontend/                Rune + rune-kit web app, map bridge and API adapter
+motor/                    scoring engine (rules and arithmetic, no ML)
 scripts/
   puxar_power.py          downloads NASA POWER
   puxar_nexgddp.py        downloads NEX-GDDP-CMIP6
+  montar_culturas.py      builds culturas.csv (ECOCROP + hand-filled values)
+  montar_clima.py         builds the two climate tables
+  processar_appeears.py   NDVI and slope from the AppEEARS files
+tests/                    engine tests, with fixed test tables in tests/dados/
 ```
+
+Run the engine demo with `python -m motor` and the tests with
+`python -m unittest discover tests`, both from the repository root.
 
 ## Data
 
