@@ -75,10 +75,12 @@ Column reference: `docs/colunas_dados.md`.
 Notes per source:
 
 - **POWER:** parameters `PRECTOTCORR, T2M, T2M_MAX, T2M_MIN, ALLSKY_SFC_SW_DWN,
-  RH2M, WS2M`, community `AG`, **daily** endpoint averaged by month. Do not
+  RH2M, WS2M, GWETTOP, GWETROOT, GWETPROF`, community `AG`, **daily** endpoint averaged by month. Do not
   use the monthly endpoint: its `T2M_MAX` / `T2M_MIN` are the month's
   extremes, not averages of daily values. `PRECTOTCORR` is mm/day (confirmed
-  in the JSON header); `chuva_mm` is the month total. `-999` means no data.
+  in the JSON header); `chuva_mm` is the month total. `-999` means no data. The three `GWET*` soil-wetness
+  parameters (0 = dry, 1 = saturated) were added on 14 Nov and are in the
+  monthly file only (not the daily one); nothing reads them yet.
 - **NEX-GDDP:** models MIROC6, ACCESS-CM2, MRI-ESM2-0; `historical` 1995–2014
   and `ssp245` 2041–2060; columns `chuva_mm`, `tmin_c`, `tmax_c`. No humidity
   or wind pulled. NEX-GDDP is not on the challenge's official resource list;
