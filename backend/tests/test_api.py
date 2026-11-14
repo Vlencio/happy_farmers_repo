@@ -19,7 +19,7 @@ class TestApi(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         expected = recomendar(request, *app.state.tables, app.state.dry_climate)
         self.assertEqual(response.json(), expected)
-        self.assertEqual(len(expected["sequencias"]) + len(expected["descartadas"]), 81)
+        self.assertEqual(len(expected["sequencias"]) + len(expected["descartadas"]), 100)
 
     def test_catalog_comes_from_current_table(self):
         metadata = self.client.get("/metadata").json()
@@ -43,7 +43,7 @@ class TestApi(unittest.TestCase):
         result = self.client.post("/analyze", json={"lat": -20, "mes_plantio": 2, "horizonte": 1}).json()
         self.assertEqual(result["slots"], ["safrinha"])
         self.assertEqual(result["entrada"]["rotacao_atual"], [])
-        self.assertEqual(len(result["sequencias"]) + len(result["descartadas"]), 9)
+        self.assertEqual(len(result["sequencias"]) + len(result["descartadas"]), 10)
 
     def test_cors_for_local_frontend(self):
         response = self.client.options("/analyze", headers={"Origin": "http://127.0.0.1:4173", "Access-Control-Request-Method": "POST"})
