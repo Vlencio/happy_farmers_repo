@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .env
 recordings/
+data/nexgddp/regiao_*/bruto/
 node_modules/
 target/
 dist/
