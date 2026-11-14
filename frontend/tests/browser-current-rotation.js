@@ -8,6 +8,7 @@ async (originalPage) => {
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
   async function reveal(locator) {
     for (let i = 0; i < 22; i++) {
@@ -28,7 +29,7 @@ async (originalPage) => {
   }
   async function analyze(crops, month = 10, horizon = 2) {
     await page.goto(originalPage.url());
-    await waitText('Motor conectado');
+    await waitConnected();
     // Seed only the setup state; submission and all navigation use visible controls.
     await page.evaluate(async ({ crops, month, horizon }) => {
       const { normalizeFarm } = await import('/web/geometry.mjs');
@@ -39,7 +40,7 @@ async (originalPage) => {
         settings: { mes_plantio: month, horizonte: horizon } }));
     }, { crops, month, horizon });
     await page.reload();
-    await waitText('Motor conectado');
+    await waitConnected();
     await click('Analisar fazenda →');
     await waitText('ANÁLISE DO MOTOR');
   }
@@ -85,7 +86,15 @@ async (originalPage) => {
     await analyze([]);
     check(await cards().count() === 3 && (await text()).includes('HISTÓRICO NÃO INFORMADO'), 'Optional empty history preserves three objectives');
     await analyze(['algodao', 'soja', 'milho']);
-    check(await cards().count() === 3 && (await text()).includes('Há mais safras no histórico'), 'Long history never presents oldest crops as current');
+    check(await cards().count() === 4 && (await cards().first().textContent()).startsWith('ROTAÇÃO ATUAL: Soja → Milho'), 'Long history displays the corrected current rotation');
+    check(!(await text()).includes('Há mais safras no histórico'), 'Obsolete history-length warning is removed');
+    await click(await cards().first().textContent());
+    await waitText('Seu ciclo, etapa por etapa');
+    check(await page.getByRole('button', { name: 'Etapa 1: Soja · safra', exact: true }).count() === 1, 'Long-history current rotation opens the correct first crop');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await analyze(['algodao', 'soja', 'milho'], 10, 1);
+    check(await cards().count() === 4 && (await cards().first().textContent()).startsWith('ROTAÇÃO ATUAL: Soja.'), 'One-crop horizon follows the engine equivalent slot on mobile');
+    await page.setViewportSize({ width: 1440, height: 1100 });
     await analyze(['soja', 'milho'], 4, 1);
     check(await cards().count() === 0 && (await text()).includes('Nenhuma sequência viável'), 'Empty result still explains missing reference');
     check(errors.length === 0, 'No uncaught JavaScript errors');

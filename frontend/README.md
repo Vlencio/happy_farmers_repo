@@ -66,7 +66,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
 - Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
-- Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Sem histórico, referência fora do calendário ou identificação ambígua recebem explicações próprias; a identificação definitiva para históricos longos ainda depende do motor (Parte 1 em `docs/API.md`).
+- Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
 - Linha do tempo com as culturas, espera, plantio/colheita e tabela mensal de água, comparando hoje/futuro.
 - Calendários que atravessam dezembro e podem exceder 12 meses; tratamento de resultado vazio e motivos de descarte.
 - Rascunho local, recuperação ao recarregar, estados de erro e cancelamento de chamadas ao motor.

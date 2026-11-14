@@ -24,6 +24,13 @@ function string(value, path) {
 function list(value, path, min = 0, max = 2000) {
   if (!Array.isArray(value) || value.length < min || value.length > max) invalid(path);
 }
+function validateDiscardReason(reason, horizon) {
+  string(reason?.cultura, 'motivo.cultura');
+  integer(reason.posicao, 'motivo.posicao', 1, horizon);
+  if (!['safra', 'safrinha'].includes(reason.slot)) invalid('motivo.slot');
+  integer(reason.mes_livre, 'motivo.mes_livre', 1, 12);
+  if (reason.mes_plantio !== null) integer(reason.mes_plantio, 'motivo.mes_plantio', 1, 12);
+}
 export function validateSettings(value) {
   if (!Number.isInteger(value?.mes_plantio) || value.mes_plantio < 1 || value.mes_plantio > 12 || ![1, 2].includes(value.horizonte)) {
     throw new Error('Escolha o mês em que o talhão fica livre e uma ou duas culturas.');
@@ -118,12 +125,27 @@ export function validateMotorOutput(value) {
     }
   }
   for (const seq of value.descartadas) {
-    const reason = seq.motivo;
-    string(reason?.cultura, 'motivo.cultura');
-    integer(reason.posicao, 'motivo.posicao', 1, value.entrada.horizonte);
-    if (!['safra', 'safrinha'].includes(reason.slot)) invalid('motivo.slot');
-    integer(reason.mes_livre, 'motivo.mes_livre', 1, 12);
-    if (reason.mes_plantio !== null) integer(reason.mes_plantio, 'motivo.mes_plantio', 1, 12);
+    validateDiscardReason(seq.motivo, value.entrada.horizonte);
+  }
+  // The dedicated reference owns identity and availability; metrics stay in sequencias.
+  // Older responses can still use only the per-sequence markers.
+  if (Object.hasOwn(value, 'atual')) {
+    const current = value.atual;
+    if (current === null) {
+      if (value.entrada.rotacao_atual.length) invalid('atual: referência ausente para o histórico');
+    } else {
+      if (!current || typeof current !== 'object' || Array.isArray(current)) invalid('atual');
+      if (!value.entrada.rotacao_atual.length) invalid('atual: referência sem histórico');
+      string(current.id, 'atual.id');
+      list(current.culturas, 'atual.culturas', value.entrada.horizonte, value.entrada.horizonte);
+      current.culturas.forEach((crop) => string(crop, 'atual.culturas'));
+      if (current.id !== current.culturas.join('>') || typeof current.viavel !== 'boolean') invalid('atual');
+      if (current.viavel) {
+        if (current.motivo !== null || !value.sequencias.some((seq) => seq.id === current.id)) invalid('atual: sequência viável');
+      } else {
+        validateDiscardReason(current.motivo, value.entrada.horizonte);
+      }
+    }
   }
   return value;
 }
@@ -194,19 +216,23 @@ function currentRotation(value, farm) {
   const state = (status, description, strategy = null) => ({ status, title: 'Rotação atual', description, strategy });
   const history = value.entrada.rotacao_atual;
   if (!history.length) return state('no_history', 'Adicione seu histórico de plantio para comparar a rotação atual com as alternativas.');
-  // The current engine marks the oldest crops when history exceeds the horizon.
-  // Do not reinterpret that marker as the latest rotation or calculate a substitute.
-  if (history.length > value.entrada.horizonte) return state('ambiguous', 'Há mais safras no histórico do que culturas neste planejamento. Ainda não foi possível identificar a rotação atual para esta comparação.');
+  const hasReference = Object.hasOwn(value, 'atual');
+  // Only legacy responses lack the dedicated reference and can mark the oldest crops.
+  if (!hasReference && history.length > value.entrada.horizonte) return state('unavailable', 'Não foi possível identificar com segurança a rotação atual neste resultado. As alternativas continuam disponíveis.');
   const repetition = history.length < value.entrada.horizonte
     ? ' Como o histórico tem uma única cultura, a referência repete essa cultura nas duas posições do planejamento.' : '';
-  const seq = value.sequencias.find((item) => item.atual);
+  const seq = hasReference
+    ? value.atual?.viavel && value.sequencias.find((item) => item.id === value.atual.id)
+    : value.sequencias.find((item) => item.atual);
   if (seq) {
     const description = `Referência identificada a partir do histórico informado, com os mesmos indicadores das alternativas.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
       category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'receita bruta / ha · clima de hoje', reason: description,
     }, true));
   }
-  const discarded = value.descartadas.find((item) => item.atual);
+  const discarded = hasReference
+    ? value.atual?.viavel === false && value.atual
+    : value.descartadas.find((item) => item.atual);
   if (discarded) return state('discarded', `A rotação de referência não cabe no calendário escolhido. ${discardedReason(discarded)}${repetition}`);
   return state('unavailable', 'Não foi possível identificar a rotação atual neste resultado. As alternativas disponíveis continuam abaixo.');
 }
@@ -225,7 +251,7 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
   const recommendations = value.sequencias.length ? winners.map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
     category: CATEGORIES[i], metric: i === 0 ? money(seq.hoje.receita_ha) : index(i === 1 ? seq.hoje.solo : seq.futuro.encaixe),
     metric_label: criteria[i][0], reason: criteria[i][1],
-  }, current_rotation.status === 'ready' && seq.atual)) : [];
+  }, current_rotation.strategy?.sequence_id === seq.id)) : [];
   return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
     source_warning: value.origem?.aviso || '',
     scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os três cards mantêm seus critérios de hoje e futuro.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',

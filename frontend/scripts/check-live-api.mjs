@@ -42,3 +42,32 @@ for (const horizonte of [1, 2]) {
   }
 }
 console.log(`${calls} combinações de mês/horizonte passaram na API real; ${empty} sem sequência viável, ${extended} timelines acima de 12 meses.`);
+
+// These expectations exercise the engine's slot rule, not a front-end reconstruction.
+const currentCases = [
+  { crops: ['algodao', 'soja', 'milho'], month: 10, horizon: 2, id: 'soja>milho', status: 'ready' },
+  { crops: ['algodao', 'soja', 'milho'], month: 10, horizon: 1, id: 'soja', status: 'ready' },
+  { crops: ['algodao', 'soja', 'milho'], month: 2, horizon: 2, id: 'soja>milho', status: 'discarded' },
+  { crops: ['soja', 'milho', 'soja'], month: 2, horizon: 2, id: 'milho>soja', status: 'ready' },
+  { crops: ['milho'], month: 10, horizon: 2, id: 'milho>milho', status: 'ready' },
+  { crops: [], month: 10, horizon: 2, id: null, status: 'no_history' },
+];
+for (const { crops, month, horizon, id, status } of currentCases) {
+  const history = crops.map((crop, i) => ({ crop, season: String(2020 + i), notes: '' }));
+  const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, { mes_plantio: month, horizonte: horizon }, metadata.cultures));
+  assert.ok(Object.hasOwn(raw, 'atual'), 'Reinicie a API local para carregar o motor atualizado.');
+  assert.equal(raw.atual?.id ?? null, id);
+  const view = mapMotorAnalysis(raw, farm);
+  assert.equal(view.current_rotation.status, status);
+  assert.equal(view.recommendations.length, 3);
+  if (status === 'ready') {
+    const source = raw.sequencias.find(seq => seq.id === id);
+    assert.equal(view.current_rotation.strategy.sequence_id, id);
+    assert.equal(view.current_rotation.strategy.timeline.length, horizon);
+    assert.equal(view.current_rotation.strategy.comparison_facts[0].value, source.hoje.receita_ha.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }));
+  } else {
+    assert.equal(view.current_rotation.strategy, null);
+    if (status === 'discarded') assert.match(view.current_rotation.description, /não tem plantio previsto na safrinha/);
+  }
+}
+console.log(`${currentCases.length} casos de rotação atual passaram na API real, incluindo histórico longo, slot equivalente, descarte e ausência de histórico.`);

@@ -87,40 +87,36 @@ mesmo quando a mesma sequência vence um objetivo.
 
 O adaptador produz `current_rotation: {status, title, description, strategy}` e
 `comparison_facts` em cada estratégia. Esses são modelos locais de apresentação,
-não novos campos exigidos da API. A referência usa o marcador `atual` existente:
+não novos campos exigidos da API. Após integrar a Main `ff2e22c`, a referência
+consome o campo `atual` do topo da resposta do motor:
 
-- `ready`: um único marcador em `sequencias`; usa os números recebidos.
-- `discarded`: marcador em `descartadas`; mostra o motivo, sem números ou timeline.
-- `no_history`: histórico vazio; oferece acesso à edição do histórico.
-- `ambiguous`: histórico maior que o horizonte; não apresenta o marcador antigo
-  como se identificasse as culturas mais recentes.
-- `unavailable`: histórico informado sem marcador; informa a indisponibilidade.
+- `ready`: `atual.viavel: true`; busca os números em `sequencias` pelo `atual.id`.
+- `discarded`: `atual.viavel: false`; mostra `atual.motivo`, sem números ou timeline.
+- `no_history`: histórico vazio e `atual: null`; oferece acesso ao histórico.
+- `unavailable`: resposta legada sem referência identificável com segurança.
 
 O histórico de uma cultura pode ser repetido pelo motor em um horizonte de duas;
-a tela explica essa repetição. O front não escolhe outras culturas, alinha slots
-nem calcula uma referência substituta. A identificação definitiva ainda depende
-das duas primeiras pendências da Parte 1. As fixtures reais atuais já cobrem
-referência viável em outubro e descartada em fevereiro e foram preservadas.
+a tela explica essa repetição. Históricos maiores que o horizonte são aceitos:
+`algodao, soja, milho` produz a referência `soja>milho`; com horizonte 1, o motor
+devolve `soja`, por ser a cultura do slot equivalente. O front não refaz essa
+escolha, alinha slots nem calcula uma referência substituta. O motor ainda supõe
+uma cultura por slot, sem pousio ou safras puladas; safra/ano permanece local.
 
-**Mensagem para o responsável pelo motor/API:**
+Respostas antigas sem o campo do topo continuam usando os marcadores das listas.
+Somente nesse formato legado, um histórico maior que o horizonte permanece
+indisponível, pois o motor antigo marcava as culturas mais antigas. Uma resposta
+nova inconsistente (por exemplo, referência viável sem a sequência correspondente)
+é rejeitada em vez de exibir números de outra estratégia.
 
-> Pedro, o front já mostra a referência da rotação atual junto dos três objetivos,
-> usando `atual: true` em `sequencias` ou o motivo em `descartadas`. Para fechar a
-> Parte 1, falta identificar a rotação pelas culturas mais recentes respeitando
-> safra/safrinha e devolvê-la em campo próprio, com os mesmos indicadores das
-> estratégias viáveis ou o motivo quando não couber no calendário. Hoje o marcador
-> pega o começo do histórico; por isso o front informa comparação indisponível
-> quando o histórico é maior que o horizonte. Quando definir o formato, atualize
-> `docs/contrato_motor.md` e encaminhe uma resposta de exemplo para eu adaptar o
-> consumo e as fixtures do front.
-
-Verificação em 14/11/2026: `npm test` (45 testes), `npm run test:rust` (1 teste),
-build WASM e build web aprovados. `tests/browser-current-rotation.js` passou 23
-verificações contra a API local com o contorno de demonstração: quatro detalhes,
-grade em 1440/1024/390 px, ausência de histórico, descarte, histórico longo e
-resultado vazio. Capturas em `../output/playwright/current-rotation-*.png`
-(a partir da raiz `frontend/`). A largura móvel foi simulada no navegador;
-não houve teste em celular físico ou leitor de tela.
+Verificação após a integração em 14/11/2026: 73 testes do conjunto Python raiz,
+20 do backend, 47 do front e 1 Rust aprovados, além do build WASM/web. As fixtures
+regeneradas coincidem com as entregues na Main. A integração HTTP confere as 24
+combinações de mês/horizonte e 6 casos de referência, incluindo histórico longo,
+slot equivalente, descarte e ausência de histórico. As 26 verificações de navegador
+em `tests/browser-current-rotation.js` passaram, com capturas em
+`../output/playwright/current-rotation-*.png` (a partir da raiz `frontend/`).
+A largura móvel é simulada; celular físico, leitor de tela e deploy do Railway
+não foram verificados nesta rodada.
 
 ### Calendário e detalhes
 
