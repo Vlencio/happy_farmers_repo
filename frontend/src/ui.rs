@@ -1,6 +1,6 @@
 use crate::{
     State, host,
-    model::{Analysis, Farm, Page, Recommendation},
+    model::{Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy},
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
 use rune_kit::{
@@ -146,6 +146,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
             ))
             .role("button")
             .label(title)
+            .disabled(!enabled)
             .focusable(enabled)
             .on_press(move |s: &mut State| {
                 if enabled {
@@ -270,6 +271,8 @@ fn heading(title: &str, subtitle: &str, narrow: bool) -> El {
         .child(eyebrow("PLANEJAMENTO AGRÍCOLA"))
         .child(
             label(title, if narrow { 30.0 } else { 39.0 }, 600.0, INK)
+                .role("heading")
+                .level(1)
                 .wrap()
                 .w_full(),
         )
@@ -387,7 +390,8 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         row()
             .center_y()
             .justify_between()
-            .child(label("01  A sua fazenda", 19.0, 600.0, INK))
+            .gap(8.0)
+            .child(label("01  A sua fazenda", 19.0, 600.0, INK).wrap().shrink())
             .child(pill(
                 if s.farm.is_some() {
                     "Área definida"
@@ -434,9 +438,10 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         content = content.child(field_art(None));
     }
     if let Some(farm) = &s.farm {
-        content = content.child(row().gap(14.0).center_y().justify_between()
-            .child(col().gap(5.0).shrink().child(label(&farm.name, 19.0, 600.0, INK).wrap())
-                .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED)))
+        let stacked = narrow || farm.name.chars().count() > 36;
+        content = content.child(responsive_row(stacked).gap(14.0).center_y().justify_between()
+            .child(column_width(col().gap(5.0).child(label(&farm.name, 19.0, 600.0, INK).wrap().w_full())
+                .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
             .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).replace('.', ","), 26.0, 500.0, INK)).child(label("área aproximada", 10.0, 400.0, MUTED))))
             .child(paragraph("O centro do contorno fornece latitude e longitude da análise. A área converte a receita por hectare em receita total."))
             .child(responsive_row(narrow)
@@ -475,18 +480,6 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
                             .variant(ButtonVariant::Ghost)
                             .on_press(|_: &mut State| host(json!({"type":"sample"})))
                             .build(k)
-                            // This Rune revision reserves Enter for the window's default
-                            // button. The web example action also accepts focused Enter.
-                            .on_key(|_: &mut State, ev, tx| {
-                                if ev.key == rune::Key::Enter && ev.mods == rune::Mods::default() {
-                                    if !tx.key_repeat() {
-                                        host(json!({"type":"sample"}));
-                                    }
-                                    true
-                                } else {
-                                    false
-                                }
-                            })
                             .key("sample")
                             .h(40.0),
                     ),
@@ -869,6 +862,12 @@ fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> E
 }
 fn category(category: &str) -> (&'static str, &'static str, &'static str, &'static str) {
     match category {
+        "current" => (
+            "ROTAÇÃO ATUAL",
+            "Sua referência de comparação",
+            "#71624a",
+            "#f0ebe2",
+        ),
         "income" => ("MAIOR RENDA", "Produzir com retorno", "#a47930", "#f3ebd7"),
         "soil" => ("SAÚDE DO SOLO", "Cuidar da base", "#5d7d38", "#e9efd9"),
         _ => (
@@ -879,8 +878,48 @@ fn category(category: &str) -> (&'static str, &'static str, &'static str, &'stat
         ),
     }
 }
-fn recommendation_card(rec: &Recommendation, i: usize, k: &Kit, narrow: bool, demo: bool) -> El {
+fn recommendation_card(
+    rec: &Recommendation,
+    selection: SelectedStrategy,
+    k: &Kit,
+    narrow: bool,
+    demo: bool,
+) -> El {
     let (name, tagline, accent, tint) = category(&rec.category);
+    let comparison_label = rec
+        .comparison_facts
+        .iter()
+        .map(|fact| format!("{}: {}", fact.label, fact.value))
+        .collect::<Vec<_>>()
+        .join("; ");
+    let marker = match selection {
+        SelectedStrategy::Current => "REF.".to_owned(),
+        SelectedStrategy::Objective(i) => format!("0{}", i + 1),
+    };
+    let mut metrics = col().gap(13.0).w_full().py(10.0);
+    for (i, fact) in rec.comparison_facts.iter().enumerate() {
+        let highlighted = rec.category == "current"
+            || matches!(
+                (rec.category.as_str(), i),
+                ("income", 0) | ("soil", 1) | ("climate", 2)
+            );
+        metrics = metrics.child(
+            col()
+                .gap(4.0)
+                .w_full()
+                .child(label(&fact.label, 11.0, 400.0, MUTED).wrap().w_full())
+                .child(
+                    label(
+                        &fact.value,
+                        22.0,
+                        600.0,
+                        if highlighted { accent } else { INK },
+                    )
+                    .wrap()
+                    .w_full(),
+                ),
+        );
+    }
     let body = col()
         .gap(18.0)
         .child(
@@ -888,17 +927,11 @@ fn recommendation_card(rec: &Recommendation, i: usize, k: &Kit, narrow: bool, de
                 .center_y()
                 .justify_between()
                 .child(pill(name, tint, accent))
-                .child(label(format!("0{}", i + 1), 15.0, 400.0, accent)),
+                .child(label(marker, 12.0, 400.0, accent)),
         )
         .child(label(tagline, 12.0, 400.0, MUTED))
         .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full())
-        .child(
-            col()
-                .gap(5.0)
-                .py(16.0)
-                .child(label(&rec.metric, 25.0, 500.0, accent).wrap().w_full())
-                .child(label(&rec.metric_label, 10.0, 400.0, MUTED).wrap().w_full()),
-        )
+        .child(metrics)
         .child(rule())
         .child(paragraph(&rec.reason))
         .child(label(
@@ -930,9 +963,43 @@ fn recommendation_card(rec: &Recommendation, i: usize, k: &Kit, narrow: bool, de
             .radius(14.0)
             .border(1.0, color(LINE))
             .role("button")
-            .label(format!("{}: {}. Abrir linha do tempo", name, rec.crop))
+            .label(format!(
+                "{}: {}. {}. Abrir linha do tempo",
+                name, rec.crop, comparison_label
+            ))
             .focusable(true)
-            .on_press(move |s: &mut State| s.select(i)),
+            .on_press(move |s: &mut State| s.select(selection)),
+        narrow,
+        1.0,
+    )
+}
+fn current_rotation_card(current: &CurrentRotation, k: &Kit, narrow: bool, demo: bool) -> El {
+    if let Some(rec) = &current.strategy {
+        return recommendation_card(rec, SelectedStrategy::Current, k, narrow, demo);
+    }
+    let status = match current.status.as_str() {
+        "no_history" => "HISTÓRICO NÃO INFORMADO",
+        "discarded" => "FORA DO CALENDÁRIO",
+        _ => "COMPARAÇÃO INDISPONÍVEL",
+    };
+    column_width(
+        panel()
+            .padding(18.0)
+            .gap(18.0)
+            .key("card-current")
+            .child(pill("ROTAÇÃO ATUAL", "#f0ebe2", "#71624a"))
+            .child(label("Sua referência de comparação", 12.0, 400.0, MUTED))
+            .child(label(&current.title, 25.0, 600.0, INK).wrap().w_full())
+            .child(label(status, 10.0, 600.0, "#71624a").wrap().w_full())
+            .child(rule())
+            .child(paragraph(&current.description))
+            .child(button(
+                k,
+                "current-edit-history",
+                "Revisar histórico e opções",
+                false,
+                |s| s.page = Page::Setup,
+            )),
         narrow,
         1.0,
     )
@@ -985,9 +1052,9 @@ fn farm_summary(s: &State) -> El {
     };
     label(
         format!(
-            "{}  /  {:.2} ha  /  {}",
+            "{}  /  {} ha  /  {}",
             farm.name,
-            farm.area_ha,
+            format!("{:.2}", farm.area_ha).replace('.', ","),
             if s.history.is_empty() {
                 "sem histórico".into()
             } else {
@@ -1001,24 +1068,53 @@ fn farm_summary(s: &State) -> El {
     .wrap()
     .w_full()
 }
-fn results_view(s: &State, k: &Kit, narrow: bool) -> El {
+fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     let Some(analysis) = &s.analysis else {
         return el();
     };
-    let mut cards = responsive_row(narrow);
+    let mut card_items = vec![current_rotation_card(
+        &analysis.current_rotation,
+        k,
+        narrow,
+        analysis.demo,
+    )];
     for (i, rec) in analysis.recommendations.iter().enumerate() {
-        cards = cards.child(recommendation_card(rec, i, k, narrow, analysis.demo));
+        card_items.push(recommendation_card(
+            rec,
+            SelectedStrategy::Objective(i),
+            k,
+            narrow,
+            analysis.demo,
+        ));
+    }
+    let columns = if narrow {
+        1
+    } else if wide {
+        4
+    } else {
+        2
+    };
+    let mut cards = col().gap(20.0).w_full();
+    let mut line = responsive_row(narrow);
+    let count = card_items.len();
+    for (i, card) in card_items.into_iter().enumerate() {
+        line = line.child(card);
+        if (i + 1) % columns == 0 || i + 1 == count {
+            cards = cards.child(line);
+            line = responsive_row(narrow);
+        }
     }
     let mut view = col().gap(24.0).w_full()
         .child(button(k, "back-setup", "← Editar fazenda e histórico", false, |s| s.page = Page::Setup))
-        .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "Três caminhos. A sua escolha." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Compare o que cada alternativa prioriza. Abra um caminho para entender sua sequência, os cuidados e os pontos de atenção." }, narrow))
+        .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "Três caminhos. A sua escolha." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Compare sua rotação atual com três caminhos. Os mesmos indicadores em cada card ajudam a entender o que muda. Abra uma estratégia para explorar o calendário." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
-        .child(paragraph(&analysis.scenario_note));
+        .child(paragraph(&analysis.scenario_note))
+        .child(cards);
     if analysis.recommendations.is_empty() {
         view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
             .child(paragraph("As épocas de plantio não couberam nas opções informadas. Revise o mês em que o talhão fica livre e a quantidade de culturas no planejamento.")));
     } else {
-        view = view.child(cards).child(label("Uma mesma sequência pode vencer mais de um objetivo. Os índices de solo e clima vão de 0 a 100; não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Uma mesma sequência pode vencer mais de um objetivo. Receita é bruta, sem custos. Os índices de solo e clima vão de 0 a 100; não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
     }
     if !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(
@@ -1048,7 +1144,11 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     let Some(analysis) = &s.analysis else {
         return el();
     };
-    let Some(rec) = analysis.recommendations.get(s.selected) else {
+    let selected = match s.selected {
+        SelectedStrategy::Objective(i) => analysis.recommendations.get(i),
+        SelectedStrategy::Current => analysis.current_rotation.strategy.as_ref(),
+    };
+    let Some(rec) = selected else {
         return el();
     };
     let (name, tagline, accent, tint) = category(&rec.category);
@@ -1127,7 +1227,12 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
                 .child(paragraph(&stage.risk)),
         );
     let mut facts = col().gap(12.0).w_full();
-    for chunk in rec.facts.chunks(3) {
+    let all_facts: Vec<_> = rec
+        .facts
+        .iter()
+        .chain(rec.comparison_facts.iter().skip(1))
+        .collect();
+    for chunk in all_facts.chunks(3) {
         let mut line = responsive_row(narrow);
         for fact in chunk {
             line = line.child(column_width(
@@ -1191,8 +1296,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
             false,
         ));
     }
-    col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar os três caminhos", false, |s| s.page = Page::Results))
-        .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).wrap().w_full())
+    col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar estratégias", false, |s| s.page = Page::Results))
+        .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
@@ -1205,8 +1310,13 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(panel().gap(8.0).child(eyebrow("O QUE CONSIDERAR NESTA ESCOLHA")).child(paragraph(&rec.tradeoff)))
 }
 pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
+    // Use browser conventions for every control: Tab, Enter and Space.
+    cx.web_focus();
     let narrow = cx
         .layout_with("page-root", |rect| rect[2] < 900.0)
+        .unwrap_or(false);
+    let wide = cx
+        .layout_with("page-root", |rect| rect[2] >= 1380.0)
         .unwrap_or(false);
     let kit = Kit::from_palette(PaletteSeed {
         bg: color("#ffffff"),
@@ -1216,7 +1326,7 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
     let mut overlays = vec![];
     let page = match s.page {
         Page::Setup => setup_view(s, &kit, &mut overlays, narrow),
-        Page::Results => results_view(s, &kit, narrow),
+        Page::Results => results_view(s, &kit, narrow, wide),
         Page::Timeline => timeline_view(s, &kit, narrow),
     };
     let mut content = col()
@@ -1241,6 +1351,7 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
         );
     }
     let mut main = col()
+        .role("main")
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)

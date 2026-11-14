@@ -31,7 +31,7 @@ python -m venv .venv
 cd frontend
 npm ci
 cargo install wasm-bindgen-cli --version 0.2.129 --locked
-npm run build -- --release
+npm run build:release
 npm run preview
 ```
 
@@ -66,6 +66,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
 - Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
+- Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Sem histórico, referência fora do calendário ou identificação ambígua recebem explicações próprias; a identificação definitiva para históricos longos ainda depende do motor (Parte 1 em `docs/API.md`).
 - Linha do tempo com as culturas, espera, plantio/colheita e tabela mensal de água, comparando hoje/futuro.
 - Calendários que atravessam dezembro e podem exceder 12 meses; tratamento de resultado vazio e motivos de descarte.
 - Rascunho local, recuperação ao recarregar, estados de erro e cancelamento de chamadas ao motor.
@@ -119,7 +120,7 @@ npm run dev                    # mudanças em JS/CSS recarregam pelo Vite
 npm test                       # geometria, contrato, erros e cancelamento
 npm run test:rust              # validação de safras, sem compilar um app nativo
 npm run test:integration       # 24 combinações contra os serviços já ativos
-npm run build -- --release     # WASM otimizado + arquivos estáticos em dist/
+npm run build:release          # WASM otimizado + arquivos estáticos em dist/
 npm run preview                # conferir a distribuição
 ```
 
@@ -149,6 +150,11 @@ Testes Python, da raiz:
 
 Verificação registrada em [docs/VALIDACAO.md](docs/VALIDACAO.md). Celular físico e
 leitores de tela ainda precisam de validação própria.
+
+A rodada de [QA de 14/11/2026](docs/QA_2026-11-14.md) registra correções de teclado,
+acessibilidade, rascunhos e mapa, além de três cenários reproduzíveis de navegador.
+O patch `patches/rune-web-accessibility.patch` acompanha a revisão fixada de Rune
+e é aplicado pelo mesmo setup dos demais patches.
 
 Testes e build/execução da imagem Docker são automatizados no GitHub Actions para
 `main` e `front-dev3`; configuração, escopo e comandos em [docs/CI.md](../docs/CI.md).

@@ -8,6 +8,7 @@
     "dev": "node scripts/dev.mjs",
     "dev:web": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "build": "node scripts/build.mjs",
+    "build:release": "node scripts/build.mjs --release",
     "build:wasm": "node scripts/build.mjs --wasm-only",
     "build:web": "vite build",
     "preview": "node scripts/dev.mjs --preview",

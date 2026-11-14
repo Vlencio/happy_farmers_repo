@@ -55,6 +55,8 @@ export function validateMotorOutput(value) {
   }
   integer(value?.entrada?.mes_plantio, 'entrada.mes_plantio', 1, 12);
   integer(value?.entrada?.horizonte, 'entrada.horizonte', 1, 2);
+  list(value.entrada.rotacao_atual, 'entrada.rotacao_atual', 0, 12);
+  value.entrada.rotacao_atual.forEach((crop) => string(crop, 'entrada.rotacao_atual.cultura'));
   list(value.slots, 'slots', value.entrada.horizonte, value.entrada.horizonte);
   value.slots.forEach((slot) => { if (!['safra', 'safrinha'].includes(slot)) invalid('slots'); });
   const hasDry = Object.hasOwn(value.clima ?? {}, 'seco');
@@ -78,6 +80,7 @@ export function validateMotorOutput(value) {
     if (ids.has(seq.id) || seq.id !== seq.culturas.join('>') || typeof seq.atual !== 'boolean') invalid('sequência');
     ids.add(seq.id);
   }
+  if ([...value.sequencias, ...value.descartadas].filter((seq) => seq.atual).length > 1) invalid('mais de uma rotação atual');
   for (const seq of value.sequencias) {
     if (!hasDry && (Object.hasOwn(seq, 'seco') || Object.hasOwn(seq, 'rank_seco'))) invalid('cenário seco sem clima.seco');
     for (const scenario of scenarios) {
@@ -153,21 +156,24 @@ function timeline(seq, firstMonth) {
   return { timeline: stages, water_caption: `Chuva, demanda e déficit: ${order}, em milímetros. Dias e Kc correspondem ao período da cultura dentro de cada mês. Deslize a tabela para ver todas as colunas.`, month_labels: Array.from({ length: Math.max(12, last - firstMonth + 2) }, (_, i) => monthLabel(firstMonth - 1 + i)) };
 }
 
-export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
-  const value = validateMotorOutput(raw);
-  const choose = (score, tie = (seq) => -seq.rank_hoje, pool = value.sequencias) => [...pool].sort((a, b) => score(b) - score(a) || tie(b) - tie(a) || a.id.localeCompare(b.id))[0];
-  const commercial = value.sequencias.filter((seq) => seq.futuro.culturas.every((crop) => crop.receita_ha > 0));
-  const winners = [choose((s) => s.hoje.receita_ha), choose((s) => s.hoje.solo), choose((s) => s.futuro.encaixe, (s) => s.futuro.agua, commercial.length ? commercial : value.sequencias)];
-  const criteria = [
-    ['receita bruta / ha · clima de hoje', 'Maior receita bruta por hectare entre as sequências viáveis no clima de hoje. Custos de produção não entram neste valor.'],
-    ['índice de solo · clima de hoje', 'Maior índice de solo entre as sequências viáveis no clima de hoje, conforme os fatores de cobertura, fixação de nitrogênio e diversidade do motor.'],
-    ['encaixe climático · cenário futuro', `Maior encaixe climático futuro ${commercial.length ? 'entre sequências em que todas as culturas geram receita no futuro' : 'entre todas as sequências, pois nenhuma tem receita positiva em todas as culturas no futuro'}. Considera temperatura, chuva e penalização de calor. Empate: maior atendimento hídrico futuro. Não é probabilidade de resistir a eventos extremos.`],
+function comparisonFacts(seq) {
+  return [
+    { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
+    { label: 'Solo · hoje', value: index(seq.hoje.solo) },
+    { label: 'Encaixe · futuro', value: index(seq.futuro.encaixe) },
   ];
-  const recommendations = value.sequencias.length ? winners.map((seq, i) => ({
-    category: CATEGORIES[i], sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
-    metric: i === 0 ? money(seq.hoje.receita_ha) : index(i === 1 ? seq.hoje.solo : seq.futuro.encaixe),
-    metric_label: criteria[i][0], reason: criteria[i][1],
-    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. O ranking combina água, solo e renda com pesos iguais; cada card usa seu próprio objetivo. ${seq.atual ? 'Esta sequência repete o histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
+}
+
+function discardedReason(seq) {
+  const r = seq.motivo;
+  return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
+}
+
+function strategy(seq, farm, firstMonth, presentation, isCurrent = false) {
+  return {
+    ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
+    comparison_facts: comparisonFacts(seq),
+    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. O ranking combina água, solo e renda com pesos iguais; cada card usa seu próprio objetivo. ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
     facts: [
       { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
       { label: 'Receita / ha · futuro', value: money(seq.futuro.receita_ha) },
@@ -180,15 +186,50 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
         { label: 'Receita da área · ano seco', value: money(seq.seco.receita_ha * farm.area_ha) },
         { label: 'Ranking / score · ano seco', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
       ] : []),
-    ], ...timeline(seq, value.entrada.mes_plantio),
-  })) : [];
+    ], ...timeline(seq, firstMonth),
+  };
+}
+
+function currentRotation(value, farm) {
+  const state = (status, description, strategy = null) => ({ status, title: 'Rotação atual', description, strategy });
+  const history = value.entrada.rotacao_atual;
+  if (!history.length) return state('no_history', 'Adicione seu histórico de plantio para comparar a rotação atual com as alternativas.');
+  // The current engine marks the oldest crops when history exceeds the horizon.
+  // Do not reinterpret that marker as the latest rotation or calculate a substitute.
+  if (history.length > value.entrada.horizonte) return state('ambiguous', 'Há mais safras no histórico do que culturas neste planejamento. Ainda não foi possível identificar a rotação atual para esta comparação.');
+  const repetition = history.length < value.entrada.horizonte
+    ? ' Como o histórico tem uma única cultura, a referência repete essa cultura nas duas posições do planejamento.' : '';
+  const seq = value.sequencias.find((item) => item.atual);
+  if (seq) {
+    const description = `Referência identificada a partir do histórico informado, com os mesmos indicadores das alternativas.${repetition}`;
+    return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
+      category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'receita bruta / ha · clima de hoje', reason: description,
+    }, true));
+  }
+  const discarded = value.descartadas.find((item) => item.atual);
+  if (discarded) return state('discarded', `A rotação de referência não cabe no calendário escolhido. ${discardedReason(discarded)}${repetition}`);
+  return state('unavailable', 'Não foi possível identificar a rotação atual neste resultado. As alternativas disponíveis continuam abaixo.');
+}
+
+export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
+  const value = validateMotorOutput(raw);
+  const current_rotation = currentRotation(value, farm);
+  const choose = (score, tie = (seq) => -seq.rank_hoje, pool = value.sequencias) => [...pool].sort((a, b) => score(b) - score(a) || tie(b) - tie(a) || a.id.localeCompare(b.id))[0];
+  const commercial = value.sequencias.filter((seq) => seq.futuro.culturas.every((crop) => crop.receita_ha > 0));
+  const winners = [choose((s) => s.hoje.receita_ha), choose((s) => s.hoje.solo), choose((s) => s.futuro.encaixe, (s) => s.futuro.agua, commercial.length ? commercial : value.sequencias)];
+  const criteria = [
+    ['receita bruta / ha · clima de hoje', 'Maior receita bruta por hectare entre as sequências viáveis no clima de hoje. Custos de produção não entram neste valor.'],
+    ['índice de solo · clima de hoje', 'Maior índice de solo entre as sequências viáveis no clima de hoje, conforme os fatores de cobertura, fixação de nitrogênio e diversidade do motor.'],
+    ['encaixe climático · cenário futuro', `Maior encaixe climático futuro ${commercial.length ? 'entre sequências em que todas as culturas geram receita no futuro' : 'entre todas as sequências, pois nenhuma tem receita positiva em todas as culturas no futuro'}. Considera temperatura, chuva e penalização de calor. Empate: maior atendimento hídrico futuro. Não é probabilidade de resistir a eventos extremos.`],
+  ];
+  const recommendations = value.sequencias.length ? winners.map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
+    category: CATEGORIES[i], metric: i === 0 ? money(seq.hoje.receita_ha) : index(i === 1 ? seq.hoje.solo : seq.futuro.encaixe),
+    metric_label: criteria[i][0], reason: criteria[i][1],
+  }, current_rotation.status === 'ready' && seq.atual)) : [];
   return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
     source_warning: value.origem?.aviso || '',
     scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os três cards mantêm seus critérios de hoje e futuro.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
-    recommendations, discarded: value.descartadas.map((seq) => {
-      const r = seq.motivo;
-      return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
-    }) };
+    current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
 }
 
 async function readResponse(response) {
@@ -197,8 +238,8 @@ async function readResponse(response) {
     throw new Error(response.ok ? 'A API retornou uma resposta que não é JSON.' : `Motor indisponível (HTTP ${response.status}).`);
   }
   if (!response.ok) {
-    const detail = typeof value.detail === 'string' ? value.detail : Array.isArray(value.detail)
-      ? value.detail.map((d) => `${d.loc?.slice(1).join('.') || 'entrada'}: ${d.msg}`).join('; ') : '';
+    const detail = typeof value?.detail === 'string' ? value.detail : Array.isArray(value?.detail)
+      ? value.detail.filter(d => d && typeof d.msg === 'string').map((d) => `${Array.isArray(d.loc) ? d.loc.slice(1).join('.') || 'entrada' : 'entrada'}: ${d.msg}`).join('; ') : '';
     throw new Error(`Motor retornou HTTP ${response.status}. ${detail}`.trim());
   }
   return value;
@@ -211,8 +252,8 @@ export async function requestAnalysis(baseUrl, request, { signal, fetcher = fetc
 }
 export async function requestMetadata(baseUrl, { signal, fetcher = fetch } = {}) {
   const value = await readResponse(await fetcher(`${baseUrl.replace(/\/+$/, '')}/metadata`, { signal }));
-  list(value.cultures, 'metadata.cultures', 1, 100);
-  value.cultures.forEach((crop) => { string(crop.id, 'culture.id'); string(crop.label, 'culture.label'); });
+  list(value?.cultures, 'metadata.cultures', 1, 100);
+  value.cultures.forEach((crop) => { string(crop?.id, 'culture.id'); string(crop?.label, 'culture.label'); });
   string(value.data_notice, 'data_notice');
   return value;
 }

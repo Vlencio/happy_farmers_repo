@@ -4,10 +4,12 @@ import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings } from './api.mjs';
 import { buildFieldContext } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
+import { restoreDraft } from './draft.mjs';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
 let wasm, farm = null, history = [], settings = { ...DEFAULT_SETTINGS }, metadata = null, controller, requestId = 0;
+let connectionId = 0, connectionController;
 const send = (command) => wasm?.receive_command(JSON.stringify(command));
 const farmPreview = createFarmPreview((frame) => {
   if (frame.rgba) wasm?.receive_farm_preview(frame.rgba, frame.width, frame.height, frame.note);
@@ -25,11 +27,17 @@ function updateFieldContext() {
   send({ type: 'field_context', context: buildFieldContext(farm, metadata) });
 }
 async function connect() {
+  const id = ++connectionId;
+  connectionController?.abort();
+  connectionController = new AbortController();
   try {
-    metadata = await requestMetadata(baseUrl, { signal: AbortSignal.timeout(10000) });
+    const result = await requestMetadata(baseUrl, { signal: AbortSignal.any([connectionController.signal, AbortSignal.timeout(10000)]) });
+    if (id !== connectionId) return;
+    metadata = result;
     send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice });
     updateFieldContext();
   } catch (error) {
+    if (id !== connectionId) return;
     metadata = null;
     send({ type: 'field_context', context: null });
     send({ type: 'config', ready: false, cultures: [], data_notice: '' });
@@ -87,8 +95,9 @@ async function dispatch(action) {
       const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
       try {
         const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, settings, metadata.cultures), { signal: pending.signal });
+        if (id !== requestId) return;
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
-        if (id === requestId) send({ type: 'analysis', analysis: result });
+        send({ type: 'analysis', analysis: result });
       } catch (error) {
         if (id === requestId) send({ type: 'error', message: error.name === 'AbortError'
           ? 'A consulta ao clima excedeu 6 minutos. Tente novamente; o POWER pode estar lento ou indisponível.'
@@ -105,23 +114,21 @@ async function boot() {
     wasm = await import(/* @vite-ignore */ wasmUrl);
     await wasm.default();
     try {
-      const draft = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if ([1, 2].includes(draft?.version)) {
-        if (draft.farm) farm = normalizeFarm(draft.farm.geojson, { name: draft.farm.name, source: draft.farm.source });
-        history = Array.isArray(draft.history) ? draft.history.filter((item) =>
-          typeof item.crop === 'string' && item.crop.length <= 80 &&
-          typeof item.season === 'string' && /^\d{4}(\/\d{2,4})?$/.test(item.season) &&
-          typeof item.notes === 'string' && item.notes.length <= 500).slice(0, 12) : [];
-        try { settings = validateSettings(draft.settings); } catch { settings = { ...DEFAULT_SETTINGS }; }
+      const draft = restoreDraft(localStorage.getItem(storageKey));
+      if (draft) {
+        ({ farm, history, settings } = draft);
         send({ type: 'restore', farm, history, settings });
         farmPreview.setFarm(farm);
+        if (draft.repaired) send({ type: 'notice', message: 'Recuperamos as partes válidas do seu rascunho. Confira a área, o histórico e as opções antes de analisar.' });
       }
     } catch { send({ type: 'notice', message: 'O rascunho anterior não pôde ser restaurado. Você pode iniciar uma nova área.' }); }
     document.getElementById('boot').hidden = true;
     await connect();
   } catch (error) {
     console.error(error);
-    document.getElementById('boot-error').textContent = 'A interface não carregou. Execute npm run build:wasm e recarregue a página. ' + error.message;
+    document.getElementById('boot-error').textContent = 'Não foi possível abrir o planejamento. Confira sua conexão e tente recarregar a página.';
+    document.getElementById('boot-retry').hidden = false;
   }
 }
+document.getElementById('boot-retry').onclick = () => window.location.reload();
 boot();

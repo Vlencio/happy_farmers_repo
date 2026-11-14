@@ -2,6 +2,7 @@ import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { normalizeFarm } from './geometry.mjs';
 import { BOUNDARY_STYLE, SATELLITE_CREDIT, SATELLITE_TILES } from './imagery.mjs';
+import { parseCoordinates } from './coordinates.mjs';
 
 export function downloadGeoJSON(farm) {
   const data = structuredClone(farm.geojson);
@@ -30,7 +31,11 @@ export function createFarmMap(onConfirm) {
         $('map-area').textContent = `${candidate.area_ha.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ha`;
         $('geojson-preview').textContent = JSON.stringify(candidate.geojson, null, 2);
         status(tileWarning ? 'Não foi possível carregar parte da imagem satélite. O contorno continua disponível.' : `${candidate.point_count} vértices · WGS84 · Confira os limites antes de confirmar.`, tileWarning);
-      } catch (error) { status(error.message, true); }
+      } catch (error) {
+        $('map-area').textContent = 'Contorno inválido';
+        $('geojson-preview').textContent = 'Corrija o contorno para visualizar o GeoJSON.';
+        status(error.message, true);
+      }
     } else {
       $('map-area').textContent = 'Nenhum contorno';
       $('geojson-preview').textContent = 'Desenhe ou importe um contorno.';
@@ -39,6 +44,9 @@ export function createFarmMap(onConfirm) {
     $('confirm-boundary').disabled = !candidate || drawing;
     $('download-map').disabled = !candidate || drawing;
     $('edit-boundary').disabled = !boundary;
+    $('finish-draw').disabled = !drawing;
+    $('draw-boundary').setAttribute('aria-pressed', String(Boolean(drawing)));
+    $('edit-boundary').setAttribute('aria-pressed', String(Boolean(map?.pm.globalEditModeEnabled())));
   }
   function mount(geojson) {
     if (boundary) boundary.remove();
@@ -52,8 +60,9 @@ export function createFarmMap(onConfirm) {
       maxZoom: 19, attribution: `Tiles &copy; ${SATELLITE_CREDIT}`,
     }).on('tileerror', () => { tileWarning = true; status('Imagem satélite indisponível ou incompleta. Verifique sua conexão; é possível importar e revisar o contorno.', true); }).addTo(map);
     map.pm.setLang('pt_br');
-    map.on('pm:drawstart', () => { $('confirm-boundary').disabled = true; $('download-map').disabled = true; });
+    map.on('pm:drawstart', refresh);
     map.on('pm:drawend', refresh);
+    map.on('pm:globaleditmodetoggled', refresh);
     map.on('pm:create', (event) => {
       source = 'draw'; mount(event.layer.toGeoJSON(false)); event.layer.remove();
       $('map-help').textContent = 'Contorno concluído. Edite os pontos se necessário e escolha Usar esta área.';
@@ -73,10 +82,10 @@ export function createFarmMap(onConfirm) {
     };
     $('coordinate-search').onsubmit = (event) => {
       event.preventDefault();
-      const parts = $('coordinates').value.trim().split(/[,;\s]+/).filter(Boolean).map(Number);
-      if (parts.length !== 2 || !parts.every(Number.isFinite) || Math.abs(parts[0]) > 85 || Math.abs(parts[1]) > 180) {
-        status('Informe latitude, longitude em graus decimais. Exemplo: -20.032, -48.526', true); return;
-      }
+      let parts;
+      try { parts = parseCoordinates($('coordinates').value); }
+      catch (error) { status(error.message, true); $('coordinates').setAttribute('aria-invalid', 'true'); return; }
+      $('coordinates').removeAttribute('aria-invalid');
       map.setView(parts, 15); status('Localização encontrada pelas coordenadas.');
     };
     $('locate').onclick = () => {
@@ -100,6 +109,7 @@ export function createFarmMap(onConfirm) {
     open(farm) {
       dialog.showModal();
       if (!map) init();
+      map.pm.disableDraw(); map.pm.disableGlobalEditMode();
       source = farm?.source || 'draw';
       $('farm-name').value = farm?.name || 'Minha fazenda';
       $('map-help').textContent = farm
