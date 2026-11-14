@@ -26,6 +26,7 @@ data/
   culturas.csv            crop table used by the engine
   clima_hoje.csv          today's climate, 12 months
   clima_futuro.csv        2041-2060 climate, 12 months
+  clima_seco.csv          driest crop year in POWER (2020/21), 12 months
 docs/
   colunas_dados.md        column reference for every source
   culturas_fontes.md      source and status of every value in culturas.csv

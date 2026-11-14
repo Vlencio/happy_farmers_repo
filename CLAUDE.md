@@ -66,7 +66,7 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
 | Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
-| Climate tables | Today / future, 12 months each, with ET0 | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv` | Done |
+| Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine does not read `dias_quentes` or the dry year yet |
 | NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 
 Column reference: `docs/colunas_dados.md`.

@@ -6,6 +6,8 @@
 
 Script: `scripts/puxar_power.py` · arquivo em `data/power/` · uma linha por mês (média dos valores diários)
 
+Também há `power_diario_-20.032_-48.526_2005_2024.csv`: uma linha por dia, com `data, PRECTOTCORR, T2M, T2M_MAX, T2M_MIN`. Ele é usado para contar dias quentes. O arquivo atual veio do download da pasta de exploração (mesma célula do POWER: as médias mensais batem com o arquivo mensal, diferença máxima de 0,005 °C). O `puxar_power.py` passou a salvar esse arquivo também, mas ainda não foi rodado de novo.
+
 | Coluna | Significado |
 |---|---|
 | `ano`, `mes` | Ano e mês |
@@ -75,6 +77,7 @@ Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha
 | `mes_plantio_safra`, `mes_plantio_safrinha` | Mês típico de plantio em cada slot; vazio = não entra naquele slot |
 | `preco` | R$/t (0 = cobertura) |
 | `produtividade`, `produtividade_safrinha` | t/ha, Conab 2024/25 (média Brasil) |
+| `temp_calor_c` | Máxima diária (°C) que prejudica o florescimento (Luo 2011). Vazio = cobertura, regra de calor não se aplica |
 
 ## 6. Tabelas de clima do motor
 
@@ -84,9 +87,30 @@ Script: `scripts/montar_clima.py` · 12 linhas cada, uma por mês
 |---|---|
 | `data/clima_hoje.csv` | POWER 2005–2024 em média por mês; `tmin_c` e `tmax_c` corrigidos pela estação INMET A520 |
 | `data/clima_futuro.csv` | hoje + (NEX `ssp245` − `historical`), média dos 3 modelos |
+| `data/clima_seco.csv` | o ano agrícola (jul–jun) com menos chuva no POWER 2005–2024: a safra **2020/21** |
 | `data/clima_correcoes.csv` | offsets da A520 e deltas do NEX por mês, para conferência |
 
-Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês).
+**Ano seco.** É um ano real, não uma média, no mesmo formato das outras tabelas, então o motor roda nele sem mudança. O script escolhe sozinho o ano agrícola completo com menos chuva.
+
+- Safra 2020/21: 813 mm de chuva, contra 1.236 mm na média das 19 safras. ET0 de 1.796 mm e 84 dias acima de 35 °C.
+- Temperaturas com a correção da A520; ET0 por Hargreaves com as temperaturas do POWER sem correção, como em `clima_hoje.csv`.
+- Para que serve: com o clima médio, a nota de água do motor fica entre 0,88 e 1,00 em todas as sequências e quase não pesa. No ano seco ela cai para 0,57–0,80, a receita de `soja>milho` cai de R$ 14,3 mil para R$ 10,3 mil por hectare e `soja>feijao` passa à frente.
+- É um cenário, não uma probabilidade: não diz com que frequência um ano assim acontece.
+- O motor ainda não lê esta tabela por conta própria. Ela pode ser passada no lugar de `clima_hoje` ou `clima_futuro`.
+
+Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês), `dias_quentes`.
+
+- `dias_quentes`: média de dias do mês com máxima acima de 35 °C.
+  - Hoje: POWER diário 2005–2024, com a correção da A520 no Tmax.
+  - Futuro: hoje + (dias no `ssp245` − dias no `historical`) do NEX diário, por modelo e mês, média dos 3 modelos. Limitado entre 0 e os dias do mês.
+  - Total: **34 dias por ano hoje e 84 no futuro**. Setembro: 10,5 → 18,9. Outubro: 10,1 → 16,5.
+  - O POWER hoje (34) e o NEX histórico (33) quase coincidem, o que valida usar a diferença.
+  - O limiar de 35 °C é uma convenção comum para estresse de calor em grãos (**memória**, sem fonte aberta). Está na constante `LIMIAR_CALOR_C` do script.
+  - O motor ainda não lê esta coluna.
+- `dias_acima_32`, `dias_acima_35`, `dias_acima_36`, `dias_acima_38`: a mesma contagem, uma coluna para cada limiar de calor de `temp_calor_c` em `culturas.csv`. O script lê os limiares da tabela de culturas, então rode `montar_culturas.py` antes.
+  - Para uma cultura, usar a coluna do limiar dela: `dias_acima_<temp_calor_c>`.
+  - Dias por ano, POWER hoje / NEX histórico / futuro: 32 °C: 111 / 134 / 208; 35 °C: 34 / 33 / 84; 36 °C: 21 / 21 / 54; 38 °C: 7 / 7 / 23.
+  - A 32 °C o POWER e o NEX histórico diferem em 20%, então o número futuro desse limiar (feijão e algodão) é menos confiável que os outros.
 
 - O `et0_mm` usa as temperaturas do POWER **sem** a correção da A520. Assim, o Hargreaves bate com o Penman-Monteith do POWER (1.635 contra 1.640 mm/ano); com a correção, subiria para 1.778 mm.
 - A chuva não é corrigida: o viés do POWER contra a A520 é de cerca de −5%.

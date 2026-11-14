@@ -22,10 +22,18 @@ Espécie escolhida quando há mais de uma entrada:
 | braquiária | *Brachiaria brizantha* | a *B. decumbens* tem TMIN 19 °C e falharia em junho–julho no talhão |
 | crotalária | *Crotalaria juncea* | a mais usada como cobertura no Cerrado |
 
-Atenção: no ECOCROP, `RMIN`/`RMAX` são de chuva **anual**, não do ciclo
-(**memória**, conferir na documentação da FAO). Se for anual, comparar com o
-talhão inteiro (1.242 mm/ano), não com a chuva do ciclo. Exemplo: o sorgo tem
-`chuva_max` = 700 mm e seria penalizado na safra.
+**Chuva: comparar com a chuva do ciclo, não com a anual.** As duas leituras existem:
+- a FAO descreve `RMIN`/`RMAX` como chuva anual;
+- o modelo EcoCrop do pacote `dismo` (Hijmans), que é a implementação de
+  referência, compara com a chuva acumulada no ciclo. A duração usada é
+  (GMIN + GMAX) / 2, em meses, mais o mês anterior ao plantio.
+
+A leitura do ciclo bate com o ZARC da soja em MG (Portaria SPA/MAPA nº 370/2025),
+que pede de 450 a 800 mm por ciclo; o `RMIN` da soja é 450. Recomendação para o
+motor: somar a chuva dos meses do ciclo (`ciclo_dias`) e comparar com `chuva_*`.
+Consequência: o sorgo (`chuva_max` = 700 mm) fica fora na safra (nov–fev, cerca
+de 790 mm) e cabe na safrinha (fev–mai, cerca de 440 mm). É coerente com a
+prática no Cerrado.
 
 ## Ciclo e janela de plantio — sistemas do Cerrado
 
@@ -41,26 +49,35 @@ talhão inteiro (1.242 mm/ano), não com a chuva do ciclo. Exemplo: o sorgo tem
 | girassol | 110 | — | fev | |
 | algodão | 170 | dez | — | ciclo longo: não sobra safrinha depois dele |
 
-Status: **memória** (práticas típicas Embrapa/ZARC para o Triângulo Mineiro).
-O certo é conferir no ZARC do município. O ECOCROP (`ciclo_ecocrop_*`) dá faixas
-largas demais para servir de ciclo.
+Status:
+- Ciclo da soja: **conferido**. O ZARC da soja em MG 2025/26 simula cultivares de 100, 115 e 130 dias.
+- Meses de plantio e demais ciclos: **memória** (práticas típicas no Triângulo Mineiro).
+
+A portaria do ZARC traz só as regras gerais. Os decêndios de cada município
+ficam no Painel de Indicação de Riscos do MAPA, consultado à mão. O ECOCROP
+(`ciclo_ecocrop_*`) dá faixas largas demais para servir de ciclo.
 
 Regra para o motor: só combinar uma cultura em um slot se ela tiver mês de
 plantio naquele slot e se a cultura da safra terminar antes do plantio da safrinha.
 
 ## Kc — FAO-56, tabela 12
 
-| cultura | kc_ini | kc_med | kc_fim | status |
+`kc_med` e `kc_fim` foram conferidos na tabela 12 (fao.org/4/x0490e/x0490e0b.htm).
+Os `kc_ini` aparecem como imagem na página e não foram lidos: são os valores
+típicos por grupo (cereais 0,30; leguminosas 0,40; fibras e oleaginosas 0,35),
+de **memória**.
+
+| cultura | kc_ini | kc_med | kc_fim | tabela 12 |
 |---|---|---|---|---|
-| soja | 0,40 | 1,15 | 0,50 | memória (FAO-56) |
-| milho grão | 0,30 | 1,20 | 0,35 | memória (FAO-56; 0,35 = colheita com grão seco) |
-| sorgo grão | 0,30 | 1,05 | 0,55 | memória (FAO-56) |
-| milheto | 0,30 | 1,00 | 0,30 | memória (FAO-56) |
-| feijão seco | 0,40 | 1,15 | 0,35 | memória (FAO-56) |
-| girassol | 0,35 | 1,05 | 0,35 | memória (FAO-56) |
-| algodão | 0,35 | 1,18 | 0,60 | memória (FAO-56) |
-| braquiária | 0,40 | 0,95 | 0,85 | aproximação: pastagem em pastejo rotacionado |
-| crotalária | 0,40 | 1,05 | 0,90 | aproximação: leguminosa cortada na floração |
+| soja | 0,40 | 1,15 | 0,50 | 1,15 / 0,50 |
+| milho grão | 0,30 | 1,20 | 0,35 | 1,20 / 0,60–0,35; 0,35 = grão seco no campo |
+| sorgo grão | 0,30 | 1,05 | 0,55 | 1,00–1,10 / 0,55 |
+| milheto | 0,30 | 1,00 | 0,30 | 1,00 / 0,30 |
+| feijão seco | 0,40 | 1,15 | 0,35 | 1,15 / 0,35 |
+| girassol | 0,35 | 1,00 | 0,35 | 1,0–1,15 / 0,35; o menor valor vale para sequeiro |
+| algodão | 0,35 | 1,18 | 0,60 | 1,15–1,20 / 0,70–0,50 |
+| braquiária | 0,40 | 0,95 | 0,85 | aproximação: "Grazing Pasture, Rotated" 0,40 / 0,85–1,05 / 0,85 |
+| crotalária | 0,40 | 0,90 | 0,85 | aproximação: "Clover hay, averaged cutting" 0,40 / 0,90 / 0,85 |
 
 ## fixa_n e cobre_solo
 
@@ -68,6 +85,27 @@ plantio naquele slot e se a cultura da safra terminar antes do plantio da safrin
 - `cobre_solo` = 1: milho, sorgo, milheto, braquiária, crotalária (deixam palhada).
 
 Preenchido à mão.
+
+## Limiar de calor (`temp_calor_c`)
+
+Máxima diária, em °C, a partir da qual o florescimento ou a formação de grãos é
+prejudicada. Fonte: Luo (2011), "Temperature thresholds and crop production: a
+review", Climatic Change 109:583–598, lido no PDF.
+
+| cultura | temp_calor_c | o que a revisão diz | status |
+|---|---|---|---|
+| milho | 35 | acima de 35 °C o pólen perde a viabilidade | conferido |
+| feijão | 32 | produção falha a 32 °C; 32/27 °C (dia/noite) reduz muito a formação de vagens | conferido |
+| algodão | 32 | acima de 32 °C o pólen perde viabilidade; 40/32 °C zera a produção | conferido |
+| sorgo | 36 | acima de 36/26 °C a emissão da panícula atrasa; a 44/34 °C não forma panícula | conferido |
+| soja | 38 | o regime 38/30 °C reduz a produção de pólen em 34%; média de 39 °C é letal | conferido; é a cultura com o limiar menos direto |
+| girassol | 35 | não aparece na revisão | **sem fonte**: usa o limiar geral |
+| milheto, braquiária, crotalária | vazio | culturas de cobertura, sem grãos | a regra de calor não se aplica |
+
+Cuidados:
+- Os valores vêm de experimentos em câmara, com temperatura do ar no dossel. A Tmax de reanálise corrigida é uma aproximação.
+- O dano acontece no florescimento, não no ciclo todo. As tabelas de clima contam dias por mês; o motor decide em que parte do ciclo aplicar.
+- Dias acima do limiar dentro do ciclo, hoje → 2041–2060: milho safra 18 → 35; milho safrinha 4 → 20; soja 4 → 12; sorgo safrinha 2 → 8; feijão safra 33 → 61; algodão 45 → 99.
 
 ## Produtividade — Conab, 10º levantamento da safra 2024/25 (jul/2025), média Brasil
 
@@ -82,7 +120,7 @@ traz a tabela de Minas Gerais, então os valores são **médias do Brasil**.
 | sorgo | 3,53 | 3,53 | conferido |
 | feijão | 1,17 (1ª safra) | 0,98 (2ª safra) | conferido |
 | girassol | 1,57 | 1,57 | conferido |
-| algodão | 1,90 (pluma) | — | **memória**: a Conab traz caroço (2,66 t/ha); a receita vem da pluma |
+| algodão | 1,89 (pluma) | — | conferido por conta: 3,94 Mt de pluma (Conab 2024/25, via Agrolink) ÷ 2,08 Mha (área da tabela Conab). A tabela traz caroço (2,66 t/ha), mas a receita vem da pluma |
 | milheto, braquiária, crotalária | 0 | 0 | cobertura, sem venda no MVP |
 
 ## Preço — R$/t
@@ -91,10 +129,10 @@ traz a tabela de Minas Gerais, então os valores são **médias do Brasil**.
 |---|---|---|---|
 | soja | 2.340 | R$ 140,50/sc 60 kg, média CEPEA/Esalq de ago/2025 (relatório Agro em Dados, gov. de Goiás) | conferido, mas é preço de referência portuário |
 | milho | 1.083 | R$ 65/sc, Indicador ESALQ/BM&FBovespa em out/2025 | conferido |
-| sorgo | 870 | ~80% do milho | memória |
-| feijão | 3.500 | ~R$ 210/sc de feijão carioca | memória, preço muito volátil |
-| girassol | 2.000 | | memória |
-| algodão | 9.000 | ~R$ 135/@ de pluma | memória |
+| sorgo | 870 | R$ 52/sc (CEEMA/Unijuí, RS, ago/2025). Em Goiás o sorgo esteve perto do preço do milho | referência de outra região |
+| feijão | 3.500 | ~R$ 210/sc de feijão carioca | memória, preço muito volátil. O CEPEA diz que o carioca "se sustentou" em 2025 |
+| girassol | 2.000 | | memória, não achei cotação |
+| algodão | 9.000 | ~R$ 135/@ de pluma | memória. O CEPEA registrou em out/2025 o menor indicador em 16 anos, então este valor pode estar alto |
 
 O preço é editável na tela. Para o pitch, troque os valores de **memória** por
 médias anuais do CEPEA (cepea.esalq.usp.br).

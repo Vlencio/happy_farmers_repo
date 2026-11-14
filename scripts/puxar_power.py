@@ -3,7 +3,8 @@
 Uso: python scripts/puxar_power.py [lat] [lon] [ano_inicio] [ano_fim]
 Requer: pip install requests pandas
 
-Usa o endpoint diario e tira a media por mes. No endpoint mensal, T2M_MAX e
+Salva dois arquivos: o mensal e o diario (chuva e temperaturas), usado para
+contar dias quentes. Usa o endpoint diario e tira a media por mes. No endpoint mensal, T2M_MAX e
 T2M_MIN sao os extremos do mes, nao a media das maximas e minimas diarias,
 e isso infla o ET0 por Hargreaves.
 """
@@ -40,12 +41,13 @@ def puxar(lat, lon, inicio, fim):
     df = pd.DataFrame(resposta["properties"]["parameter"])  # indice = "AAAAMMDD", colunas = parametros
     df = df.replace(-999, float("nan"))  # -999 = sem dado
     datas = pd.to_datetime(df.index, format="%Y%m%d")
+    diario = df[["PRECTOTCORR", "T2M", "T2M_MAX", "T2M_MIN"]].set_axis(datas).rename_axis("data")
     mensal = df.groupby([datas.year, datas.month]).mean()  # media dos dias do mes
     mensal.index.names = ["ano", "mes"]
     mensal = mensal.reset_index()
     dias = pd.to_datetime({"year": mensal["ano"], "month": mensal["mes"], "day": 1}).dt.days_in_month
     mensal["chuva_mm"] = mensal["PRECTOTCORR"] * dias  # mm/dia -> mm no mes
-    return mensal.round(2)
+    return mensal.round(2), diario.round(2)
 
 
 if __name__ == "__main__":
@@ -55,9 +57,10 @@ if __name__ == "__main__":
     inicio = int(a[2]) if len(a) > 2 else 2005
     fim = int(a[3]) if len(a) > 3 else 2024
 
-    df = puxar(lat, lon, inicio, fim)
+    df, diario = puxar(lat, lon, inicio, fim)
     SAIDA.mkdir(parents=True, exist_ok=True)
     arquivo = SAIDA / f"power_{lat}_{lon}_{inicio}_{fim}.csv"
     df.to_csv(arquivo, index=False)
+    diario.to_csv(SAIDA / f"power_diario_{lat}_{lon}_{inicio}_{fim}.csv")  # dias quentes em montar_clima.py
     print(df.head(12))
     print(f"\n{len(df)} meses salvos em {arquivo}")

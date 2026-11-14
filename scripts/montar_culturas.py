@@ -29,24 +29,26 @@ ESPECIE = {
 
 # Preenchido a mao. Ver docs/culturas_fontes.md.
 # ciclo: dias do plantio a colheita/dessecacao (sistemas do Cerrado)
-# kc: FAO-56 tabela 12 (crotalaria e braquiaria sao aproximacoes)
+# kc: FAO-56 tabela 12 (crotalaria = "clover hay", braquiaria = "grazing pasture")
 # mes_plantio_*: mes tipico de plantio no slot; vazio = cultura nao usada naquele slot
 # preco R$/t (0 = cobertura, sem venda); produtividade t/ha (Conab, media Brasil 2024/25)
+# calor: maxima diaria (graus C) a partir da qual o florescimento e prejudicado (Luo 2011);
+#        None = cultura de cobertura, sem graos: a regra de calor nao se aplica
 MANUAL = {
-    #             ciclo  kc_ini kc_med kc_fim fixa_n cobre safra safrinha preco  prod  prod_safrinha
-    "soja":       (115,  0.40,  1.15,  0.50,  1,     0,    10,   None,    2340,  3.56, None),
-    "milho":      (135,  0.30,  1.20,  0.35,  0,     1,    10,   2,       1083,  6.61, 6.10),
-    "sorgo":      (110,  0.30,  1.05,  0.55,  0,     1,    11,   2,       870,   3.53, 3.53),
-    "milheto":    (90,   0.30,  1.00,  0.30,  0,     1,    None, 2,       0,     0,    0),
-    "braquiaria": (120,  0.40,  0.95,  0.85,  0,     1,    None, 2,       0,     0,    0),
-    "crotalaria": (100,  0.40,  1.05,  0.90,  1,     1,    None, 3,       0,     0,    0),
-    "feijao":     (90,   0.40,  1.15,  0.35,  1,     0,    11,   2,       3500,  1.17, 0.98),
-    "girassol":   (110,  0.35,  1.05,  0.35,  0,     0,    None, 2,       2000,  1.57, 1.57),
-    "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.90, None),
+    #             ciclo  kc_ini kc_med kc_fim fixa_n cobre safra safrinha preco  prod  prod_safrinha calor
+    "soja":       (115,  0.40,  1.15,  0.50,  1,     0,    10,   None,    2340,  3.56, None, 38),
+    "milho":      (135,  0.30,  1.20,  0.35,  0,     1,    10,   2,       1083,  6.61, 6.10, 35),
+    "sorgo":      (110,  0.30,  1.05,  0.55,  0,     1,    11,   2,       870,   3.53, 3.53, 36),
+    "milheto":    (90,   0.30,  1.00,  0.30,  0,     1,    None, 2,       0,     0,    0, None),
+    "braquiaria": (120,  0.40,  0.95,  0.85,  0,     1,    None, 2,       0,     0,    0, None),
+    "crotalaria": (100,  0.40,  0.90,  0.85,  1,     1,    None, 3,       0,     0,    0, None),
+    "feijao":     (90,   0.40,  1.15,  0.35,  1,     0,    11,   2,       3500,  1.17, 0.98, 32),
+    "girassol":   (110,  0.35,  1.00,  0.35,  0,     0,    None, 2,       2000,  1.57, 1.57, 35),
+    "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.89, None, 32),
 }
 COLS_MANUAL = ["ciclo_dias", "kc_ini", "kc_med", "kc_fim", "fixa_n", "cobre_solo",
                "mes_plantio_safra", "mes_plantio_safrinha", "preco", "produtividade",
-               "produtividade_safrinha"]
+               "produtividade_safrinha", "temp_calor_c"]
 
 
 def main():
@@ -70,7 +72,7 @@ def main():
         linhas.append(linha)
 
     df = pd.DataFrame(linhas)
-    for c in ["mes_plantio_safra", "mes_plantio_safrinha"]:
+    for c in ["mes_plantio_safra", "mes_plantio_safrinha", "temp_calor_c"]:
         df[c] = df[c].astype("Int64")
     df.to_csv(SAIDA, index=False)
     print(df.to_string(index=False))
