@@ -1,0 +1,105 @@
+name: Testes e Docker
+
+on:
+  push:
+    branches: [main, front-dev3]
+  pull_request:
+    branches: [main, front-dev3]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Testes Python, JS e Rust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: '1'
+      HAPPY_FARMERS_TEST_API: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependências de teste
+        run: |
+          python -m pip install -r backend/requirements-ci.txt
+          python -m pip check
+          npm ci --prefix frontend
+      - name: Testar motor e montagem de dados sem download
+        run: python -m unittest discover -s tests -v
+      - name: Testar API e integração regional
+        run: python -m unittest discover -s backend/tests -v
+      - name: Conferir fixtures contra o motor e as tabelas atuais
+        run: |
+          python -m backend.export_fixture
+          git diff --exit-code -- frontend/tests/fixtures
+      - name: Testar JavaScript
+        run: npm test --prefix frontend
+      - name: Preparar o Rust fixado no projeto
+        working-directory: frontend
+        run: rustup show active-toolchain
+      - name: Testar Rust
+        run: npm run test:rust --prefix frontend
+      - name: Conferir formatação Rust
+        working-directory: frontend
+        run: cargo fmt --check
+      - name: Testar as 24 combinações pela API HTTP
+        shell: bash
+        run: |
+          python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000 > "$RUNNER_TEMP/happy-farmers-api.log" 2>&1 &
+          api_pid=$!
+          trap 'kill "$api_pid" 2>/dev/null || true; wait "$api_pid" 2>/dev/null || true' EXIT
+          python -m deploy.check_runtime --api-only
+          npm run test:integration --prefix frontend
+      - name: Mostrar log da API em caso de falha
+        if: failure()
+        run: cat "$RUNNER_TEMP/happy-farmers-api.log" 2>/dev/null || true
+
+  docker:
+    name: Build e execução Docker Linux
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Compilar Rune/WASM e montar a imagem de produção
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: happy-farmers:ci
+          cache-from: type=gha,scope=happy-farmers
+          cache-to: type=gha,scope=happy-farmers,mode=max,ignore-error=true
+      - name: Iniciar a imagem sem acesso à rede externa
+        run: docker run --detach --name happy-farmers-ci --network none --env PORT=8765 happy-farmers:ci
+      - name: Verificar API, site, WASM e dados empacotados
+        run: |
+          docker exec happy-farmers-ci python -m deploy.check_runtime --url http://127.0.0.1:8765
+          docker exec happy-farmers-ci python -c "import requests; from scripts import puxar_power; from backend.point_climate import PointClimate; cell, rows = PointClimate().select_cell(-18.9, -48.2); assert len(rows) == 12; print('Provedor POWER e delta regional disponíveis:', cell)"
+      - name: Mostrar logs e encerrar o contêiner de teste
+        if: always()
+        run: |
+          docker logs happy-farmers-ci 2>&1 || true
+          docker rm --force happy-farmers-ci || true

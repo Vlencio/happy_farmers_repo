@@ -18,7 +18,7 @@ test('consumes the actual engine contract and keeps three objective winners', ()
   assert.deepEqual(result.recommendations.map((r) => r.category), ['income', 'soil', 'climate']);
   assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>crotalaria', 'soja>sorgo']);
   assert.equal(mapMotorAnalysis(february, farm).recommendations[2].sequence_id, 'sorgo>soja');
-  assert.equal(result.discarded.length, 59);
+  assert.equal(result.discarded.length, 74);
 });
 test('sends latitude/longitude, canonical crop IDs in order and cycle settings; keeps notes local', async () => {
   const history = [{ crop: 'Feijão', season: '2024', notes: 'Observação local' }, { crop: 'soja', season: '2025', notes: '' }];
@@ -88,7 +88,7 @@ test('empty viable sequences remain empty, with reasons from the engine', () => 
   const data = copy(); data.sequencias = [];
   const result = mapMotorAnalysis(data, farm);
   assert.deepEqual(result.recommendations, []);
-  assert.equal(result.discarded.length, 59);
+  assert.equal(result.discarded.length, 74);
   assert.ok(result.discarded.some((reason) => reason.includes('não tem plantio')));
   assert.ok(result.discarded.some((reason) => reason.includes('só fica livre')));
 });

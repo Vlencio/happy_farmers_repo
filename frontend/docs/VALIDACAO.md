@@ -1,5 +1,22 @@
 # Verificação da integração · 14/11/2026
 
+## Atualização — automação e Main com trigo
+
+- `front-dev3` atualizada por fast-forward para a Main `f0c81b2`, com a entrega
+  IBGE/PAM e trigo como décima cultura. Fixtures regeneradas pelo motor real;
+  outubro/duas culturas passou a ter 26 opções viáveis e 74 descartadas.
+- Validação local: **47 testes de motor/dados, 20 de backend, 31 JS e 1 Rust
+  passaram**. Os quatro testes NetCDF que antes eram pulados agora executaram,
+  com `backend/requirements-ci.txt`. Nenhum script de coleta foi executado.
+- As **24 combinações HTTP** passaram na base atual. O novo smoke test conferiu
+  API, três cenários, cobertura, HTML, CSS, JS e WASM no serviço local.
+- Workflow validado com `actionlint` 1.7.12; formatação Rust e `git diff --check`
+  passaram. A automação confere também a atualização das fixtures em cada execução.
+- O build completo Linux e a execução do contêiner são etapas do GitHub Actions,
+  independentes do Docker local. Resultado de cada commit em
+  [Testes e Docker](https://github.com/Vlencio/happy_farmers_repo/actions/workflows/ci.yml).
+  Escopo, cache e reprodução em [docs/CI.md](../../docs/CI.md).
+
 ## Atualização — clima por ponto, origem e ano seco
 
 Entregas integradas: `motor-dev2` em `82cabe8` (P1/P3) e `dados-calor` em

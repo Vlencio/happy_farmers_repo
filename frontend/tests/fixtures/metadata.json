@@ -35,6 +35,10 @@
     {
       "id": "algodao",
       "label": "Algodão"
+    },
+    {
+      "id": "trigo",
+      "label": "Trigo"
     }
   ],
   "data_notice": "Clima de hoje: POWER 2005–2024; futuro: 2041–2060, com deltas regionais. Perto do talhão de demonstração usamos tabelas prontas. Confira os avisos de origem no resultado. O calendário de plantio é do Triângulo Mineiro; valide a adequação local.",

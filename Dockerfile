@@ -10,7 +10,7 @@ WORKDIR /app/frontend
 
 # Toolchain e wasm-bindgen primeiro: sao lentos e mudam pouco, entao ficam em cache.
 COPY frontend/rust-toolchain.toml ./
-RUN rustup toolchain install || cargo --version
+RUN rustup show active-toolchain
 RUN cargo install wasm-bindgen-cli --version 0.2.129 --locked
 
 COPY frontend/package.json frontend/package-lock.json ./

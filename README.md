@@ -71,6 +71,10 @@ tests/                    engine tests, with fixed test tables in tests/dados/
 Run the engine demo with `python -m motor` and the tests with
 `python -m unittest discover tests`, both from the repository root.
 
+Pushes and pull requests to `main`/`front-dev3` run the automated Python, JS and
+Rust tests, check the engine fixtures, then build and smoke-test the Linux Docker
+image. See [CI and local reproduction](docs/CI.md). This workflow does not deploy.
+
 ## Data
 
 Demo field: lat -20.032, lon -48.526 (Brazil, about 125 km south of

@@ -71,10 +71,10 @@ ou `npm run dev` durante o desenvolvimento. Ambos iniciam a API e a interface em
 
 ## Limites da validação local
 
-- **Docker:** o Docker Desktop foi iniciado, mas o WSL2 falhou com
-  `HCS_E_HYPERV_NOT_INSTALLED`. A imagem ainda precisa de build e execução em um
-  ambiente com virtualização disponível; os arquivos de contexto já estão no
-  Dockerfile. Não foram alterados recursos do Windows nem a BIOS.
+- **Docker local:** o WSL2 falhou com `HCS_E_HYPERV_NOT_INSTALLED`. O build e a
+  execução Linux foram automatizados no GitHub Actions, após os testes de
+  Python/JS/Rust e HTTP; o resultado de cada execução fica ligado ao commit.
+  Veja [CI](../../docs/CI.md). Não foram alterados recursos do Windows nem a BIOS.
 - **Leitor de tela:** NVDA 2026.3.1 portátil foi preparado a partir da distribuição
   oficial, com assinatura válida. O controle do navegador foi encerrado pela
   ferramenta por não conseguir confirmar a URL da janela. A leitura e a ativação

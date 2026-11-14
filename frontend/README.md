@@ -149,3 +149,6 @@ Testes Python, da raiz:
 
 Verificação registrada em [docs/VALIDACAO.md](docs/VALIDACAO.md). Celular físico e
 leitores de tela ainda precisam de validação própria.
+
+Testes e build/execução da imagem Docker são automatizados no GitHub Actions para
+`main` e `front-dev3`; configuração, escopo e comandos em [docs/CI.md](../docs/CI.md).

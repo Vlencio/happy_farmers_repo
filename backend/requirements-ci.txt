@@ -1,0 +1,4 @@
+# Includes NetCDF tests that are optional in the local API environment.
+-r requirements-dev.txt
+xarray==2026.9.0
+netCDF4==1.7.5.1.post1

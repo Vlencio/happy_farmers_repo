@@ -18,3 +18,8 @@ O comando não baixa nem modifica tabelas.
 entrega P1 de Pedro. `motor.json` e `motor-fevereiro.json` mantêm o contrato de dois
 cenários para testar compatibilidade. Nenhuma fixture é usada pela interface em
 execução. Atualização: `python -m backend.export_fixture`, sem consultar a rede.
+
+As fixtures foram regeneradas após a integração da Main `f0c81b2`, que inclui trigo
+como décima cultura. Outubro/duas culturas tem 26 sequências viáveis e 74 descartadas;
+fevereiro/duas tem 36 viáveis e 64 descartadas. O CI exige que a regeneração não
+produza diferenças, para que os testes acompanhem as tabelas realmente entregues.
