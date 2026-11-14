@@ -10,6 +10,7 @@ Requer: pip install pandas numpy
 - clima_seco.csv:   o ano agricola (jul-jun) com menos chuva no POWER 2005-2024.
                     Ano real, mesmo formato das outras; mostra o que a media esconde.
 - clima_correcoes.csv: os offsets da A520 e os deltas do NEX, para conferencia.
+                    scripts/clima_ponto.py le os deltas daqui para outros pontos.
 
 ET0 por Hargreaves (FAO-56 eq. 52), igual nos dois lados, calculado com as
 temperaturas do POWER SEM a correcao da A520 (+ deltas do NEX no futuro). Motivo:
@@ -61,10 +62,10 @@ def ra_mm_dia(lat_graus):
     return 0.408 * ra  # MJ/m2/dia -> mm/dia
 
 
-def et0_hargreaves(tmin, tmax):
+def et0_hargreaves(tmin, tmax, lat=LAT):
     """ET0 mensal (mm) por Hargreaves; tmin/tmax indexados por mes 1..12."""
     tmed = (tmin + tmax) / 2
-    diario = 0.0023 * ra_mm_dia(LAT) * (tmed + 17.8) * np.sqrt((tmax - tmin).clip(lower=0))
+    diario = 0.0023 * ra_mm_dia(lat) * (tmed + 17.8) * np.sqrt((tmax - tmin).clip(lower=0))
     return diario * DIAS
 
 
@@ -98,8 +99,12 @@ def limiares_de_calor():
 
 def dias_quentes_power(off_tmax, limiares):
     """Media de dias por mes com Tmax (corrigida pela A520) acima de cada limiar."""
-    d = pd.read_csv(POWER_DIARIO, parse_dates=["data"])
-    tmax = d["T2M_MAX"] + d["data"].dt.month.map(off_tmax)
+    return contar_dias_quentes(pd.read_csv(POWER_DIARIO, parse_dates=["data"]), off_tmax, limiares)
+
+
+def contar_dias_quentes(d, off_tmax, limiares):
+    """O mesmo, para qualquer serie diaria do POWER. off_tmax=None: sem correcao."""
+    tmax = d["T2M_MAX"] if off_tmax is None else d["T2M_MAX"] + d["data"].dt.month.map(off_tmax)
     chaves = [d["data"].dt.year, d["data"].dt.month]
     return pd.DataFrame({
         lim: (tmax > lim).groupby(chaves).sum().groupby(level=1).mean() for lim in limiares
@@ -188,6 +193,8 @@ def main():
     hoje = hoje.join(colunas_de_calor(cont_hoje))
     fut = fut.join(colunas_de_calor(cont_fut))
     dl["delta_dias_quentes"] = delta_calor[int(LIMIAR_CALOR_C)]
+    for lim in limiares:  # um delta por limiar: scripts/clima_ponto.py aplica em outros pontos
+        dl[f"delta_dias_acima_{lim}"] = delta_calor[lim]
 
     corr = pd.concat([off, n, dl], axis=1)
     corr["et0_se_corrigisse"] = et0_hargreaves(hoje["tmin_c"], hoje["tmax_c"])
