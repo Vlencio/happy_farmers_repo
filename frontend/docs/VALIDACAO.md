@@ -1,57 +1,63 @@
-# Verificação local · 14/11/2026
+# Verificação da integração · 14/11/2026
 
-## Ambiente e builds
+## Ambiente e contrato
 
-- Windows, Node 22.12.0, npm 10.9.1, Rust 1.99.1/MSVC.
-- Rune/rune-kit `56f01cb88e629db2c8b8877631cde00de7f37bd5`.
-- Quatro patches de dependência do Rune e o patch local do cache WASM aplicados.
-- Build WASM de desenvolvimento e `npm run build -- --release` concluídos.
-- Distribuição Vite servida localmente; HTML respondeu 200 e WASM com `application/wasm`.
-- `cargo fmt --check` e `git diff --check` sem problemas.
+- Windows, Python 3.13, Node 22.12.0, npm 10.9.1, Rust 1.99.1/MSVC.
+- Rune/rune-kit continuam em `56f01cb88e629db2c8b8877631cde00de7f37bd5`, com os quatro
+  patches de dependência e o patch local do cache WASM.
+- Contrato e motor da Main em `f75c784`; integração criada sobre `front-dev3`, que
+  já continha a interface Rune e essa versão da Main.
+- Build otimizado WASM + Vite concluído; `cargo fmt --check` e `git diff --check` passaram.
+- Launcher testado: inicia FastAPI e Vite preview, responde HTML/health e encerra os
+  dois serviços com Ctrl+C. Reinício na mesma porta confirmado.
+- Nenhuma alteração em `motor/`, `data/`, scripts de coleta ou testes originais do motor.
+  O motor foi executado para analisar os dados existentes; nenhum download de dados foi feito.
 
 ## Testes automatizados
 
-- `npm test`: **11 testes passaram**.
-  - GeoJSON do projeto, área, furos e MultiPolygon.
-  - JSON inválido, coordenadas projetadas/não finitas, anéis abertos, cruzamentos, áreas nulas e múltiplas fazendas.
-  - Limites de tamanho/vértices, furos fora do contorno e áreas excluídas sobrepostas.
-  - Três objetivos distintos, rejeição de respostas incompletas, montagem do POST, HTTP/JSON inválidos e propagação de cancelamento.
-- `npm run test:rust`: **1 teste passou**, cobrindo formatos válidos/inválidos de safra, inclusive virada de século.
+- `npm test`: **18 testes passaram**. Inclui os seis testes GeoJSON existentes,
+  contrato real exportado do motor, catálogo e acentos, ordem do histórico,
+  culturas não suportadas, seleção por objetivo, receita × área, passagem por
+  dezembro, balanço mensal, resposta vazia/inválida, erros HTTP/JSON e cancelamento.
+- `npm run test:rust`: **1 teste passou**, formatos de safra/ano.
+- `python -m unittest discover -s backend/tests -v`: **6 testes passaram**.
+  Igualdade entre HTTP e chamada direta ao motor, catálogo da tabela, validação,
+  uma cultura, prioridades parciais e CORS.
+- `python -m unittest discover tests -v`: **25 testes existentes do motor passaram**.
+- `npm run test:integration`: **24 combinações de mês/horizonte passaram**, usando
+  HTTP via proxy Vite e o motor real. Sete respostas não tinham sequência viável;
+  seis timelines selecionadas excediam 12 meses. Contagens, histórico enviado,
+  quantidade de etapas e posição dos meses foram conferidos.
 
-Os testes de API usam transporte controlado, sem executar um backend ou motor agronômico real.
+## Verificação no navegador
 
-## Uso no navegador
+Interação e revisão visual com a distribuição compilada, em 1440 × 900 e 390 × 844:
 
-Revisão visual e interação real no navegador integrado, com viewport de desktop (1440 × 900)
-e tela pequena (390 × 844):
+- Rascunho da versão anterior restaurado com GeoJSON de aproximadamente 219,16 ha.
+- Catálogo real, seleção de Crotalária, inclusão de histórico e análise com/sem contexto.
+- Dois registros reordenados por setas; a nova ordem permaneceu ao recarregar.
+- Opções de fevereiro/uma cultura e outubro/duas culturas alteraram os resultados.
+- Outubro/duas, sem histórico: cards Soja → Milho, Soja → Crotalária e Soja → Girassol.
+- Abertura dos três caminhos; troca para a segunda cultura atualizou calendário e números.
+- Balanço de água mensal com hoje/futuro, incluindo rolagem horizontal em tela pequena.
+- Abril/uma cultura: nenhum card inventado, aviso de ausência de sequência viável e
+  nove motivos de descarte expansíveis.
+- Períodos 2005–2024 / 2041–2060 e limitação geográfica visíveis na versão final.
+- Registros criados para o teste removidos; contorno preservado, opções retornadas a outubro/duas.
 
-- Abertura da interface Rune, formulários e navegação.
-- Carregamento de imagem satélite, desenho de quatro vértices e conclusão do polígono.
-- Importação do GeoJSON do projeto: aproximadamente **219,16 ha**, 15 vértices.
-- Edição de vértice: a área mudou na prévia; fechar sem confirmar preservou a área anterior.
-- Download: geometria exportada comparada ao arquivo original, com **coordenadas idênticas** após a importação.
-- Rejeição de um GeoJSON do tipo Point, com erro visível e recuperação por nova importação.
-- Inclusão de soja/2025–26 com observação, recuperação após recarregar e remoção do registro.
-- Continuação com e sem histórico.
-- Três cards e abertura das três timelines; troca de etapa atualiza período, descrição, água, solo e risco.
-- Layouts empilhados, rolagem dos formulários, mapa e detalhes em viewport pequeno.
-- Confirmação de recomeço visível mesmo no final da página em tela pequena; cancelar mantém o rascunho.
+Capturas locais, ignoradas pelo Git: `test-results/motor-cards.jpg`, `motor-water.jpg`,
+`motor-empty.jpg` e `motor-mobile.jpg`. A captura dos cards foi atualizada após o build final.
 
-Capturas locais da versão final: `test-results/desktop-cards.jpg` e `test-results/mobile.jpg`
-(artefatos de verificação, ignorados pelo Git).
+Desenho, edição/importação e download com coordenadas preservadas já tinham sido
+verificados na primeira versão. Esses módulos não foram modificados nesta integração;
+os testes automatizados de geometria foram executados novamente.
 
-## Limites desta verificação
+## Limites
 
-- Nenhuma recomendação real foi calculada: todos os resultados vêm da fixture marcada como demonstração.
-- O contrato precisa ser acordado com o responsável pelo FastAPI e testado contra o serviço real.
-- Viewport pequeno não substitui teste em celular físico, gestos reais de toque ou Safari/iOS.
-- Os caminhos de fallback gráfico do Rune não foram todos exercitados separadamente.
-- Acessibilidade completa ainda não foi auditada: o runtime web expõe a navegação principal,
-  mas campos de texto e o menu do Select precisam de revisão com leitores de tela.
-- O Rune gera avisos de código não utilizado no build web. O Geoman também emitiu avisos de listener
-  durante algumas operações; os fluxos de desenho/edição foram verificados funcionalmente.
-- Mapas dependem do serviço externo de imagens. Não há cache offline ou consulta a um motor nesta entrega.
-
-Os problemas encontrados na primeira passagem (importação do WASM pelo Vite e chamada de conclusão
-do desenho) foram corrigidos e os respectivos fluxos foram repetidos com sucesso.
-Os scripts de coleta de dados e o motor não foram alterados ou executados.
+- Verificação de integração e apresentação, não validação científica das regras do motor.
+- As tabelas continuam fixas ao talhão de demonstração; não há coleta climática por GeoJSON.
+- Não houve teste em celular físico, Safari/iOS ou auditoria completa de acessibilidade.
+  O Select e os campos de texto do runtime Rune ainda precisam de revisão com leitores de tela.
+- Não foram exercitados separadamente todos os fallbacks gráficos do Rune.
+- O build mantém avisos do Rune sobre código não utilizado no alvo web. O TestClient
+  emite aviso de depreciação de httpx; os testes e a API concluíram normalmente.

@@ -5,7 +5,7 @@ use std::cell::RefCell;
 mod model;
 mod season;
 mod ui;
-use model::{Analysis, Farm, HistoryItem, Page};
+use model::{Analysis, Culture, Farm, HistoryItem, Page, Settings};
 
 struct State {
     farm: Option<Farm>,
@@ -16,13 +16,18 @@ struct State {
     stage: usize,
     crop: Option<String>,
     crop_open: bool,
-    custom_crop: TextEdit,
+    cultures: Vec<Culture>,
+    settings: Settings,
+    month_open: bool,
+    horizon_open: bool,
+    discarded_open: bool,
+    data_notice: String,
     season: TextEdit,
     notes: TextEdit,
     error: String,
     notice: String,
     loading: bool,
-    api: bool,
+    ready: bool,
     clear_confirm: bool,
 }
 impl Default for State {
@@ -36,13 +41,18 @@ impl Default for State {
             stage: 0,
             crop: None,
             crop_open: false,
-            custom_crop: TextEdit::new(""),
+            cultures: vec![],
+            settings: Settings::default(),
+            month_open: false,
+            horizon_open: false,
+            discarded_open: false,
+            data_notice: String::new(),
             season: TextEdit::new(""),
             notes: TextEdit::new(""),
             error: String::new(),
             notice: String::new(),
             loading: false,
-            api: false,
+            ready: false,
             clear_confirm: false,
         }
     }
@@ -54,6 +64,7 @@ impl State {
         self.selected = 0;
         self.stage = 0;
         self.loading = false;
+        self.discarded_open = false;
         self.error.clear();
     }
     fn save_history(&mut self) {
@@ -61,11 +72,12 @@ impl State {
         host(json!({"type": "history", "history": self.history}));
     }
     fn add_history(&mut self) {
-        let crop = if self.crop.as_deref() == Some("Outra cultura") {
-            self.custom_crop.text.trim().to_owned()
-        } else {
-            self.crop.clone().unwrap_or_default()
-        };
+        let crop = self
+            .cultures
+            .iter()
+            .find(|c| Some(c.label.as_str()) == self.crop.as_deref())
+            .map(|c| c.id.clone())
+            .unwrap_or_default();
         let season = self.season.text.trim().to_owned();
         if crop.is_empty() || crop.chars().count() > 80 {
             self.error = "Escolha a cultura para adicionar ao histórico.".into();
@@ -101,10 +113,12 @@ impl State {
         self.save_history();
     }
     fn analyze(&mut self) {
-        if self.farm.is_none() || self.loading {
+        if self.farm.is_none() || self.loading || !self.ready {
             return;
         }
         self.crop_open = false;
+        self.month_open = false;
+        self.horizon_open = false;
         self.error.clear();
         self.loading = true;
         host(json!({"type":"analyze"}));
@@ -114,13 +128,28 @@ impl State {
         self.stage = 0;
         self.page = Page::Timeline;
     }
+    fn save_settings(&mut self) {
+        self.invalidate();
+        self.month_open = false;
+        self.horizon_open = false;
+        host(json!({"type":"settings", "settings":self.settings}));
+    }
+    fn crop_label(&self, id: &str) -> String {
+        self.cultures
+            .iter()
+            .find(|c| c.id == id)
+            .map(|c| c.label.clone())
+            .unwrap_or_else(|| id.into())
+    }
 }
 
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum Command {
     Config {
-        api: bool,
+        ready: bool,
+        cultures: Vec<Culture>,
+        data_notice: String,
     },
     Farm {
         farm: Farm,
@@ -128,6 +157,7 @@ enum Command {
     Restore {
         farm: Option<Farm>,
         history: Vec<HistoryItem>,
+        settings: Settings,
     },
     Analysis {
         analysis: Analysis,
@@ -143,14 +173,30 @@ enum Command {
 }
 fn apply_command(s: &mut State, command: Command) {
     match command {
-        Command::Config { api } => s.api = api,
+        Command::Config {
+            ready,
+            cultures,
+            data_notice,
+        } => {
+            s.ready = ready;
+            s.cultures = cultures;
+            s.data_notice = data_notice;
+            if ready {
+                s.error.clear();
+            }
+        }
         Command::Farm { farm } => {
             s.invalidate();
             s.farm = Some(farm);
         }
-        Command::Restore { farm, history } => {
+        Command::Restore {
+            farm,
+            history,
+            settings,
+        } => {
             s.farm = farm;
             s.history = history;
+            s.settings = settings;
             s.notice = "Seu rascunho foi restaurado neste navegador.".into();
         }
         Command::Analysis { mut analysis } => {
@@ -176,9 +222,13 @@ fn apply_command(s: &mut State, command: Command) {
             s.notice = "Análise cancelada.".into();
         }
         Command::Cleared => {
-            let api = s.api;
+            let ready = s.ready;
+            let cultures = s.cultures.clone();
+            let data_notice = s.data_notice.clone();
             *s = State::default();
-            s.api = api;
+            s.ready = ready;
+            s.cultures = cultures;
+            s.data_notice = data_notice;
         }
     }
 }

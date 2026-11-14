@@ -15,6 +15,24 @@ pub struct HistoryItem {
     pub season: String,
     pub notes: String,
 }
+#[derive(Clone, Debug, Deserialize)]
+pub struct Culture {
+    pub id: String,
+    pub label: String,
+}
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct Settings {
+    pub mes_plantio: u8,
+    pub horizonte: u8,
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            mes_plantio: 10,
+            horizonte: 2,
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Page {
     Setup,
@@ -26,6 +44,7 @@ pub struct Analysis {
     pub demo: bool,
     pub summary: String,
     pub recommendations: Vec<Recommendation>,
+    pub discarded: Vec<String>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Recommendation {
@@ -37,6 +56,7 @@ pub struct Recommendation {
     pub tradeoff: String,
     pub facts: Vec<Fact>,
     pub timeline: Vec<Stage>,
+    pub month_labels: Vec<String>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Fact {
@@ -53,4 +73,14 @@ pub struct Stage {
     pub water: String,
     pub soil: String,
     pub risk: String,
+    pub monthly: Vec<Month>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct Month {
+    pub month: String,
+    pub days: String,
+    pub kc: String,
+    pub rain: String,
+    pub demand: String,
+    pub deficit: String,
 }

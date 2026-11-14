@@ -33,17 +33,21 @@ Current front-end requirements (supersede the previous one-screen/top-three-scor
 2. Optionally add previous crops/seasons and observations as context for the engine.
 3. Show exactly three objective cards: highest income, best soil health and
    greatest climate resilience. These are objectives, not the top three overall ranks.
-4. Each card opens a detailed relative 12-month timeline with selectable stages.
+4. Each card opens the engine's calendar with selectable crops and monthly water balance,
+   comparing today's and future climate. Calendars can extend beyond 12 months.
 
 The first implementation lives in `frontend/`. It also shows approximate area,
 validates the boundary and saves a local browser draft. Main UI, forms, cards
 and timeline are Rune/rune-kit; the satellite dialog uses Leaflet/Geoman through
-a small browser bridge. Fixed demo responses are explicitly labeled and do
-not use, replace or approximate the agronomic engine. Do not add weights,
+a small browser bridge. The UI uses the actual engine through `backend/app.py`.
+Users select the field's available month and one or two crops, matching the contract.
+History is ordered oldest to newest; years and notes are retained locally because
+the engine accepts only crop IDs. Do not add weights,
 ranking tables, editable prices or further screens without a new requirement.
 
 Engine development remains a separate workstream. Coordinate
-the response shape with its owner using `frontend/docs/API.md`.
+changes with its owner using `docs/contrato_motor.md`; `frontend/docs/API.md`
+documents the HTTP transport and mappings. Do not change engine rules here.
 
 ## Out of scope
 
@@ -158,22 +162,25 @@ in `tests/dados/`.
   wgpu instance cache thread-local, fixing this revision's WASM compile error
   without enabling fragile Send/Sync. Do not edit the generated cache.
 - Agronomic data is pre-downloaded and cached for the demo area. Satellite
-  imagery is fetched from Esri when the map is opened. Demo analysis is local;
-  only an explicit `VITE_API_BASE_URL` enables POST requests to the backend.
+  imagery is fetched from Esri when the map is opened. The UI defaults to `/api`,
+  proxied to FastAPI at port 8000. `npm run dev` starts both services. An explicit
+  `VITE_API_BASE_URL` can target another compatible service; no silent demo fallback.
+  The climate tables still belong to the demo field for any drawn polygon.
 
 ## Next steps
 
 The list below is the team-wide backlog. Gabriel's first front-end prototype
-is implemented; next steps are feedback on the flow and agreement with the
-backend owner on the API contract. Do not implement items 1–3 in this chat.
+is integrated with the 14 Nov engine contract; next steps are feedback on the flow
+and coordination with the engine owner on future changes. Do not implement items 1–3 in this chat.
 
 1. ~~Build `culturas.csv`.~~ Done; check the "memória" values.
 2. ~~Script for the two climate tables.~~ Done.
 3. Engine (ET0, water balance, fit, sequence rules, score, ranking). First
    version done and running on the real tables; open questions are at the end
    of `docs/contrato_motor.md`.
-4. Iterate on the Rune front-end prototype and connect the real engine after
-   agreeing on the API contract. The interface currently uses demonstration data.
+4. Iterate on the integrated Rune front end. It now consumes the real engine;
+   objective cards select income (today's gross revenue), soil (today's soil index),
+   and climate (future fit, with future water as tiebreaker), rather than top-three overall rank.
 
 ## Submission
 

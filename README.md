@@ -7,15 +7,15 @@ A decision-support tool for crop rotation. The farmer draws a boundary on a
 satellite map or imports GeoJSON, optionally supplies planting history, and
 compares three paths: income, soil health and climate resilience. Each path
 opens its own timeline. The engine uses observed and projected
-climate; the current interface uses explicitly labeled demonstration results.
+climate through the existing Python engine and a thin FastAPI adapter.
 
 **Status:** the first local front-end prototype is functional, the crop and
 climate tables are built, and a first version of the Python scoring engine
-exists. Integration through FastAPI is still pending; engine development
+exists. The Rune interface now consumes its real input/output contract through FastAPI; engine development
 remains a separate team workstream.
 
 The chosen front end is [Rune](https://github.com/anomalyco/rune) (Rust), using
-`rune-kit` components and an API adapter for the planned Python/FastAPI
+`rune-kit` components and an API adapter for the Python/FastAPI
 backend. This replaces the earlier Streamlit/React proposal. Rune has now been compiled to WebAssembly
 and tested locally in the browser. Its exact revision, four required dependency
 patches and a small additional WASM compatibility patch are pinned in `frontend/`.
@@ -30,8 +30,10 @@ npm run dev
 ```
 
 Open [Happy Farmers locally](http://127.0.0.1:4173/). For a fresh clone, follow
-[frontend setup and architecture](frontend/README.md). The [proposed API contract](frontend/docs/API.md)
-is ready for the backend teammate; no scoring logic or Python backend is implemented by this front end.
+[frontend setup and architecture](frontend/README.md). The command starts both Vite and the local API;
+Ctrl+C stops both. See [integration mapping](frontend/docs/API.md) and the authoritative
+[engine contract](docs/contrato_motor.md). Engine rules and data tables are unchanged.
+Climate inputs are still fixed to the demo field; drawing another polygon does not fetch its climate.
 
 ## Layout
 
@@ -52,6 +54,7 @@ docs/
   culturas_fontes.md      source and status of every value in culturas.csv
   contrato_motor.md       engine inputs, output JSON and rules
 frontend/                Rune + rune-kit web app, map bridge and API adapter
+backend/                 thin FastAPI transport for the existing engine
 motor/                    scoring engine (rules and arithmetic, no ML)
 scripts/
   puxar_power.py          downloads NASA POWER

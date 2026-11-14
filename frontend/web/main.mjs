@@ -1,20 +1,29 @@
 import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
-import { buildRequest, requestAnalysis, validateAnalysis } from './api.mjs';
-import { demoAnalysis } from './demo.mjs';
+import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, validateSettings } from './api.mjs';
 
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
-let wasm, farm = null, history = [], controller, requestId = 0;
+let wasm, farm = null, history = [], settings = { ...DEFAULT_SETTINGS }, metadata = null, controller, requestId = 0;
 const send = (command) => wasm?.receive_command(JSON.stringify(command));
 function saveDraft() {
   try {
-    localStorage.setItem(storageKey, JSON.stringify({ version: 1, farm, history }));
+    localStorage.setItem(storageKey, JSON.stringify({ version: 2, farm, history, settings }));
     send({ type: 'notice', message: 'Rascunho salvo neste navegador.' });
   } catch { send({ type: 'notice', message: 'Não foi possível salvar neste navegador. Baixe seu GeoJSON para guardar o contorno.' }); }
 }
 function invalidate() { requestId++; controller?.abort(); }
+async function connect() {
+  try {
+    metadata = await requestMetadata(baseUrl, { signal: AbortSignal.timeout(10000) });
+    send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice });
+  } catch (error) {
+    metadata = null;
+    send({ type: 'config', ready: false, cultures: [], data_notice: '' });
+    send({ type: 'error', message: `Não foi possível conectar ao motor. Inicie a API e clique em Reconectar. ${error.message}` });
+  }
+}
 const farmMap = createFarmMap((value) => {
   invalidate(); farm = value; send({ type: 'farm', farm }); saveDraft();
 });
@@ -46,8 +55,10 @@ async function dispatch(action) {
     }
     case 'download': if (farm) downloadGeoJSON(farm); break;
     case 'history': invalidate(); history = action.history; saveDraft(); break;
+    case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
+    case 'connect': await connect(); break;
     case 'clear': {
-      invalidate(); farm = null; history = [];
+      invalidate(); farm = null; history = []; settings = { ...DEFAULT_SETTINGS };
       let stored = true;
       try { localStorage.removeItem(storageKey); } catch { stored = false; }
       send({ type: 'cleared' });
@@ -57,12 +68,12 @@ async function dispatch(action) {
     case 'cancel': invalidate(); send({ type: 'cancelled' }); break;
     case 'analyze': {
       if (!farm) throw new Error('Defina o limite da fazenda antes de analisar.');
+      if (!metadata) throw new Error('Conecte ao motor antes de analisar.');
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
       const timer = setTimeout(() => pending.abort(), 45000);
       try {
-        const result = baseUrl
-          ? await requestAnalysis(baseUrl, buildRequest(farm, history), { signal: pending.signal })
-          : validateAnalysis(demoAnalysis());
+        const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, settings, metadata.cultures), { signal: pending.signal });
+        const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         if (id === requestId) send({ type: 'analysis', analysis: result });
       } catch (error) {
         if (id === requestId) send({ type: 'error', message: error.name === 'AbortError'
@@ -79,19 +90,20 @@ async function boot() {
     const wasmUrl = new URL('/pkg/app.js', window.location.href).href;
     wasm = await import(/* @vite-ignore */ wasmUrl);
     await wasm.default();
-    send({ type: 'config', api: Boolean(baseUrl) });
     try {
       const draft = JSON.parse(localStorage.getItem(storageKey) || 'null');
-      if (draft?.version === 1) {
+      if ([1, 2].includes(draft?.version)) {
         if (draft.farm) farm = normalizeFarm(draft.farm.geojson, { name: draft.farm.name, source: draft.farm.source });
         history = Array.isArray(draft.history) ? draft.history.filter((item) =>
           typeof item.crop === 'string' && item.crop.length <= 80 &&
           typeof item.season === 'string' && /^\d{4}(\/\d{2,4})?$/.test(item.season) &&
           typeof item.notes === 'string' && item.notes.length <= 500).slice(0, 12) : [];
-        send({ type: 'restore', farm, history });
+        try { settings = validateSettings(draft.settings); } catch { settings = { ...DEFAULT_SETTINGS }; }
+        send({ type: 'restore', farm, history, settings });
       }
     } catch { send({ type: 'notice', message: 'O rascunho anterior não pôde ser restaurado. Você pode iniciar uma nova área.' }); }
     document.getElementById('boot').hidden = true;
+    await connect();
   } catch (error) {
     console.error(error);
     document.getElementById('boot-error').textContent = 'A interface não carregou. Execute npm run build:wasm e recarregue a página. ' + error.message;
