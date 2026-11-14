@@ -23,7 +23,6 @@ data/
   ecocrop/                FAO ECOCROP crop requirements
   inmet/                  INMET A520 station vs POWER, monthly (used to correct Tmin/Tmax)
   talhao/                 monthly NDVI, bare-soil months and slope of the field
-  provisorio/             placeholder crop and climate tables for testing the engine
   culturas.csv            crop table used by the engine
   clima_hoje.csv          today's climate, 12 months
   clima_futuro.csv        2041-2060 climate, 12 months
@@ -38,7 +37,7 @@ scripts/
   montar_culturas.py      builds culturas.csv (ECOCROP + hand-filled values)
   montar_clima.py         builds the two climate tables
   processar_appeears.py   NDVI and slope from the AppEEARS files
-tests/                    engine tests
+tests/                    engine tests, with fixed test tables in tests/dados/
 ```
 
 Run the engine demo with `python -m motor` and the tests with

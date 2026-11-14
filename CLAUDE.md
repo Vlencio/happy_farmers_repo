@@ -93,9 +93,10 @@ Notes per source:
   github.com/OpenCLIM/ecocrop; cite as "FAO ECOCROP via
   GAEZ"), Kc from FAO-56, price and yield from CEPEA/Conab. Crops: soja,
   milho, sorgo, milheto, braquiária, crotalária, feijão, girassol, algodão.
-  Columns: `cultura, ciclo_dias, temp_min, temp_max, temp_otima_min,
-  temp_otima_max, chuva_min, chuva_max, kc_ini, kc_med, kc_fim, fixa_n,
-  cobre_solo, preco, produtividade`.
+  Crop names in the table have no accents (`feijao`, `crotalaria`). Columns:
+  `docs/colunas_dados.md` section 5; source and status of each value:
+  `docs/culturas_fontes.md`. Planting months and second-season yield are per
+  slot: `mes_plantio_safra`, `mes_plantio_safrinha`, `produtividade_safrinha`.
 
 ## Engine (rules, no ML)
 
@@ -104,24 +105,31 @@ numbers; it never produces them.**
 
 Code: `motor/` (`recomendar`). Inputs, output JSON, rules and open questions:
 `docs/contrato_motor.md`. Demo: `python -m motor`. Tests:
-`python -m unittest discover tests`. It reads `data/provisorio/` (three
-crops, placeholder prices and Kc) until the final tables arrive in `data/`.
+`python -m unittest discover tests`. It reads `data/culturas.csv`,
+`data/clima_hoje.csv` and `data/clima_futuro.csv`; the tests use fixed tables
+in `tests/dados/`.
 
 1. **Two climate tables**, 12 rows each (one per month):
    - Today: POWER averaged by month.
    - Future: today + (NEX-GDDP `ssp245` − `historical`), difference averaged
      across the three models. Never compare NEX-GDDP future directly to POWER.
 2. **ET0** per month by Hargreaves (Tmin, Tmax, latitude), so today and future
-   use the same method.
+   use the same method. It is computed in `scripts/montar_clima.py` and
+   delivered as `et0_mm`; the engine uses that column and only computes
+   Hargreaves itself if the column is missing.
 3. **Water balance** per crop: rain − Kc × ET0.
 4. **Climate fit** per crop against its temperature and rain ranges.
 5. **Revenue** per hectare: price × yield × fit factor.
 6. **Sequence rules**, so that order and history matter: penalty for repeating
    a crop, bonus for the crop that follows a nitrogen fixer (`fixa_n`). The
-   last crop of the current rotation counts as the previous crop. The field
-   is free 10 days after a crop's cycle ends (harvest time). A sequence
-   that plants a crop outside its planting window (after waiting up to 30
-   days) is dropped from the ranking and listed as discarded.
+   last crop of the current rotation counts as the previous crop. Each
+   position in a sequence is a slot (safra, then safrinha, or the reverse if
+   the field is free from January to June). A crop is planted in its
+   planting month for that slot (`mes_plantio_safra`, `mes_plantio_safrinha`),
+   and the field is free 10 days after a crop's cycle ends (harvest time). A
+   sequence with a crop that has no month in its slot, or whose month has
+   passed when the field becomes free, is dropped from the ranking and listed
+   as discarded.
 7. **Score** per rotation, weighted by the user's priorities, for every
    sequence in the horizon. Run on both climate tables and rank each. Rank
    rotations, not single crops in isolation.
@@ -138,7 +146,9 @@ crops, placeholder prices and Kc) until the final tables arrive in `data/`.
 
 1. ~~Build `culturas.csv`.~~ Done; check the "memória" values.
 2. ~~Script for the two climate tables.~~ Done.
-3. Engine (ET0, water balance, fit, sequence rules, score, ranking).
+3. Engine (ET0, water balance, fit, sequence rules, score, ranking). First
+   version done and running on the real tables; open questions are at the end
+   of `docs/contrato_motor.md`.
 4. Front end, on fake data until the engine returns real numbers.
 
 ## Submission

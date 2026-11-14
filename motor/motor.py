@@ -14,10 +14,11 @@ from pathlib import Path
 import pandas as pd
 
 RAIZ = Path(__file__).resolve().parent.parent
-PROVISORIO = RAIZ / "data" / "provisorio"  # trocar por RAIZ / "data" quando as tabelas finais chegarem
+DADOS = RAIZ / "data"
 
 DIAS_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 MES_DO_DIA = [m + 1 for m, d in enumerate(DIAS_MES) for _ in range(d)]  # dia do ano (0-364) -> mes
+SLOTS = ("safra", "safrinha")
 
 # Valores provisorios, sem fonte: ajustar com um agronomo.
 CAD_MM = 100  # agua que o solo guarda de um dia para o outro (mm)
@@ -25,18 +26,21 @@ PENALIDADE_REPETICAO = 0.85  # fator na produtividade ao repetir a cultura anter
 BONUS_APOS_FIXADORA = 1.10  # fator na produtividade de uma nao fixadora apos uma fixadora de N
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
-ESPERA_MAX_DIAS = 30  # quanto o talhao espera, sem cultura, a janela de plantio abrir
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
+ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
 
-COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]
+COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e opcional
+COLUNAS_NUMERICAS = [
+    "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
+    "chuva_min", "chuva_max", "kc_ini", "kc_med", "kc_fim", "preco", "produtividade",
+]  # fmt: skip
 COLUNAS_CULTURA = [
-    "cultura", "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
-    "chuva_min", "chuva_max", "kc_ini", "kc_med", "kc_fim", "fixa_n", "cobre_solo",
-    "preco", "produtividade", "plantio_ini", "plantio_fim",
+    "cultura", *COLUNAS_NUMERICAS, "fixa_n", "cobre_solo",
+    "mes_plantio_safra", "mes_plantio_safrinha", "produtividade_safrinha",
 ]  # fmt: skip
 
 
-def carregar_dados(pasta=PROVISORIO):
+def carregar_dados(pasta=DADOS):
     """Le culturas.csv, clima_hoje.csv e clima_futuro.csv de uma pasta."""
     pasta = Path(pasta)
     return (
@@ -65,6 +69,17 @@ def et0_hargreaves(clima, lat):
         tmed = (m["tmin_c"] + m["tmax_c"]) / 2
         et0.append(0.0023 * (tmed + 17.8) * max(m["tmax_c"] - m["tmin_c"], 0) ** 0.5 * ra)
     return et0
+
+
+def et0_do_clima(clima, lat):
+    """ET0 em mm/dia por mes: a coluna et0_mm da tabela, se vier; senao Hargreaves com tmin_c e tmax_c.
+
+    As tabelas de scripts/montar_clima.py trazem et0_mm calculado com as temperaturas
+    do POWER sem a correcao da estacao, entao o motor nao recalcula.
+    """
+    if all("et0_mm" in m for m in clima):
+        return [m["et0_mm"] / DIAS_MES[i] for i, m in enumerate(clima)]
+    return et0_hargreaves(clima, lat)
 
 
 def kc_do_dia(c, fracao):
@@ -99,18 +114,25 @@ def encaixe_chuva(chuva, c):
     return 1.0
 
 
-def na_janela(mes, c):
-    """True se a cultura pode ser plantada no mes. A janela pode virar o ano (ex.: 9 a 3)."""
-    ini, fim = c["plantio_ini"], c["plantio_fim"]
-    return ini <= mes <= fim if ini <= fim else (mes >= ini or mes <= fim)
+def ordem_dos_slots(mes_plantio, horizonte):
+    """Talhao livre de julho a dezembro: a proxima epoca e a safra; de janeiro a junho, a safrinha."""
+    slots = ["safra", "safrinha"] if mes_plantio >= 7 else ["safrinha", "safra"]
+    return slots[:horizonte]
 
 
-def dia_de_plantio(c, dia_livre):
-    """Primeiro dia, a partir de dia_livre, dentro da janela. None se a espera passar de ESPERA_MAX_DIAS."""
-    for espera in range(ESPERA_MAX_DIAS + 1):
-        if na_janela(MES_DO_DIA[(dia_livre + espera) % 365], c):
-            return dia_livre + espera
-    return None
+def dia_de_plantio(mes, dia_livre):
+    """Dia em que a cultura entra, dado o mes tipico de plantio dela no slot.
+
+    E o proprio dia livre, se cair dentro do mes, ou o dia 1 da proxima vez que o mes chegar.
+    None se a cultura nao tem mes naquele slot ou se a espera passa de ESPERA_MAX_DIAS.
+    """
+    if mes is None:
+        return None
+    inicio = sum(DIAS_MES[: mes - 1])
+    while inicio + DIAS_MES[mes - 1] - 1 < dia_livre:  # esse mes ja acabou: so no ano seguinte
+        inicio += 365
+    plantio = max(inicio, dia_livre)
+    return plantio if plantio - dia_livre <= ESPERA_MAX_DIAS else None
 
 
 def simular_cultura(c, dia_inicio, clima, et0, agua):
@@ -159,32 +181,34 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
     return resultado, agua
 
 
-def avaliar_sequencia(nomes, anterior, culturas, clima, et0, mes_plantio, precos):
-    """Simula as culturas em fila, com o talhao livre no dia 1 de mes_plantio, e aplica as regras de sequencia.
+def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos):
+    """Simula as culturas em fila, uma por slot, com o talhao livre no dia 1 de mes_plantio.
 
-    Se uma cultura cai fora da janela de plantio, devolve so {"fora_da_janela": motivo}.
+    Se uma cultura nao pode ser plantada no slot dela, devolve so {"fora_de_epoca": motivo}.
     """
     dia = sum(DIAS_MES[: mes_plantio - 1])  # dia em que o talhao fica livre
     sem_cultura = dia  # desde quando o solo esta sem cultura
     agua = 0.0  # o solo comeca vazio
     resultados = []
-    for nome in nomes:
+    for nome, slot in zip(nomes, slots):
         c = culturas[nome]
-        plantio = dia_de_plantio(c, dia)
+        mes = c[f"mes_plantio_{slot}"]
+        plantio = dia_de_plantio(mes, dia)
         if plantio is None:
             return {
-                "fora_da_janela": {
+                "fora_de_epoca": {
                     "cultura": nome,
                     "posicao": len(resultados) + 1,
+                    "slot": slot,
                     "mes_livre": MES_DO_DIA[dia % 365],
-                    "plantio_ini": c["plantio_ini"],
-                    "plantio_fim": c["plantio_fim"],
+                    "mes_plantio": mes,
                 }
             }
-        for d in range(sem_cultura, plantio):  # colheita e espera da janela: solo sem cultura so acumula chuva
-            mes = MES_DO_DIA[d % 365]
-            agua = min(CAD_MM, agua + clima[mes - 1]["chuva_mm"] / DIAS_MES[mes - 1])
+        for d in range(sem_cultura, plantio):  # colheita e espera: solo sem cultura so acumula chuva
+            m = MES_DO_DIA[d % 365]
+            agua = min(CAD_MM, agua + clima[m - 1]["chuva_mm"] / DIAS_MES[m - 1])
         r, agua = simular_cultura(c, plantio, clima, et0, agua)
+        r["slot"] = slot
         r["espera_dias"] = plantio - dia
         sem_cultura = plantio + c["ciclo_dias"]
         dia = sem_cultura + DIAS_COLHEITA  # o talhao so fica livre depois da colheita
@@ -196,9 +220,10 @@ def avaliar_sequencia(nomes, anterior, culturas, clima, et0, mes_plantio, precos
         else:
             fator_sequencia = 1.0
         cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["atendimento_hidrico"])  # fator mais limitante
+        produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
         r["fator_sequencia"] = fator_sequencia
         r["fator"] = cresce * fator_sequencia
-        r["receita_ha"] = precos.get(nome, c["preco"]) * c["produtividade"] * r["fator"]
+        r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
         r["solo"] = cresce * (
             PESO_SOLO["fixa_n"] * c["fixa_n"]
             + PESO_SOLO["cobre_solo"] * c["cobre_solo"]
@@ -220,7 +245,8 @@ def avaliar_sequencia(nomes, anterior, culturas, clima, et0, mes_plantio, precos
 def recomendar(entrada, culturas, clima_hoje, clima_futuro):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
-    Sequencia com plantio fora da janela de alguma cultura nao entra no ranking: vai para "descartadas".
+    Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
+    fora da epoca de plantio do slot nao entra no ranking: vai para "descartadas".
 
     entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos.
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
@@ -243,19 +269,20 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
         raise ValueError(f"culturas fora da tabela: {desconhecidas}. Validas: {sorted(tabela)}")
     pesos = _normalizar_pesos(entrada.get("prioridades") or {})
 
+    slots = ordem_dos_slots(mes_plantio, horizonte)
     anterior = historico[-1] if historico else None
     # "atual" = repetir a rotacao atual nas proximas safras
     atual = tuple(historico[i % len(historico)] for i in range(horizonte)) if historico else None
 
     todas = list(itertools.product(tabela, repeat=horizonte))
-    et0 = {cen: et0_hargreaves(clima, lat) for cen, clima in climas.items()}
+    et0 = {cen: et0_do_clima(clima, lat) for cen, clima in climas.items()}
     aval = {
-        cen: {s: avaliar_sequencia(s, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
+        cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
         for cen, clima in climas.items()
     }
-    # a janela de plantio nao depende do clima: as descartadas sao as mesmas nos dois
-    descartadas = [s for s in todas if "fora_da_janela" in aval["hoje"][s]]
-    sequencias = [s for s in todas if "fora_da_janela" not in aval["hoje"][s]]
+    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas nos dois
+    descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
+    sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
     # renda de 0 a 1: a maior receita entre as sequencias viaveis e os dois climas vale 1
     teto = max((aval[cen][s]["receita_ha"] for cen in aval for s in sequencias), default=0.0) or 1.0
@@ -278,6 +305,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
             "mes_plantio": mes_plantio,
             "precos": precos,
         },
+        "slots": slots,
         "clima": {
             cen: [{**m, "et0_mm": et0[cen][i] * DIAS_MES[i]} for i, m in enumerate(clima)]
             for cen, clima in climas.items()
@@ -295,7 +323,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],
         "descartadas": [
-            {"id": ">".join(s), "culturas": list(s), "atual": s == atual, "motivo": aval["hoje"][s]["fora_da_janela"]}
+            {"id": ">".join(s), "culturas": list(s), "atual": s == atual, "motivo": aval["hoje"][s]["fora_de_epoca"]}
             for s in descartadas
         ],
     }
@@ -309,7 +337,8 @@ def _tabela_clima(df):
     linhas = df.sort_values("mes").to_dict("records")
     if [int(m["mes"]) for m in linhas] != list(range(1, 13)):
         raise ValueError("tabela de clima precisa de 12 linhas, uma por mes (1 a 12)")
-    return [{"mes": int(m["mes"]), **{k: float(m[k]) for k in COLUNAS_CLIMA[1:]}} for m in linhas]
+    colunas = COLUNAS_CLIMA[1:] + (["et0_mm"] if "et0_mm" in df.columns else [])
+    return [{"mes": int(m["mes"]), **{k: float(m[k]) for k in colunas}} for m in linhas]
 
 
 def _tabela_culturas(df):
@@ -318,17 +347,25 @@ def _tabela_culturas(df):
         raise ValueError(f"culturas.csv sem as colunas: {faltam}")
     tabela = {}
     for linha in df.to_dict("records"):
-        c = {k: float(linha[k]) for k in COLUNAS_CULTURA if k not in ("cultura", "fixa_n", "cobre_solo")}
-        c["cultura"] = str(linha["cultura"]).strip()
-        for k in ("ciclo_dias", "plantio_ini", "plantio_fim"):
-            c[k] = int(c[k])
+        nome = str(linha["cultura"]).strip()
+        c = {k: float(linha[k]) for k in COLUNAS_NUMERICAS}
+        vazias = [k for k, v in c.items() if math.isnan(v)]
+        if vazias:
+            raise ValueError(f"{nome}: colunas vazias: {vazias}")
+        c["cultura"] = nome
+        c["ciclo_dias"] = int(c["ciclo_dias"])
         c["fixa_n"] = _sim(linha["fixa_n"])
         c["cobre_solo"] = _sim(linha["cobre_solo"])
         if not 1 <= c["ciclo_dias"] <= 365:
-            raise ValueError(f"{c['cultura']}: ciclo_dias deve estar entre 1 e 365")
-        if not (1 <= c["plantio_ini"] <= 12 and 1 <= c["plantio_fim"] <= 12):
-            raise ValueError(f"{c['cultura']}: plantio_ini e plantio_fim devem ser meses de 1 a 12")
-        tabela[c["cultura"]] = c
+            raise ValueError(f"{nome}: ciclo_dias deve estar entre 1 e 365")
+        for slot in SLOTS:  # mes vazio = a cultura nao e plantada naquele slot
+            mes = linha[f"mes_plantio_{slot}"]
+            c[f"mes_plantio_{slot}"] = None if pd.isna(mes) else int(mes)
+            if c[f"mes_plantio_{slot}"] is not None and not 1 <= c[f"mes_plantio_{slot}"] <= 12:
+                raise ValueError(f"{nome}: mes_plantio_{slot} deve ser um mes de 1 a 12 ou vazio")
+        safrinha = linha["produtividade_safrinha"]
+        c["produtividade_safrinha"] = c["produtividade"] if pd.isna(safrinha) else float(safrinha)
+        tabela[nome] = c
     if not tabela:
         raise ValueError("culturas.csv esta vazio")
     return tabela
