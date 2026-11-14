@@ -56,6 +56,7 @@ Uberlândia). Every source was pulled for this point or for the field polygon.
 | MODIS MOD13Q1 v061 | NDVI and EVI every 16 days, with pixel reliability | Dec 2014–Dec 2024 | AppEEARS area request |
 | SRTMGL1 v003 | Elevation | 2000 | Same AppEEARS request |
 | FAO ECOCROP | Temperature, rain and cycle ranges per crop | — | `EcoCrop_DB.csv` from github.com/OpenCLIM/ecocrop |
+| IBGE PAM (not NASA) | Area, yield and farm-gate price per crop in Minas Gerais; used to pick and check the crops | 2025 | SIDRA API, tables 5457, 839 and 1002 (`scripts/puxar_pam.py`); see `docs/ibge_pam.md` |
 
 The AppEEARS request is named "Uberlandia", but it uses the demo field polygon.
 Product citations are in `data/appeears/README.md`. ECOCROP is cited as "FAO

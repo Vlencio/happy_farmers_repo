@@ -11,7 +11,7 @@ culturas, clima_hoje, clima_futuro = carregar_dados()   # lê os três CSVs de d
 saida = recomendar(entrada, culturas, clima_hoje, clima_futuro)   # dict pronto para json.dumps
 ```
 
-- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, ~85 KB com as 9 culturas).
+- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, ~85 KB medido com as 9 culturas, antes do trigo).
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
 - Rodar sempre da raiz do repo.
 
@@ -139,7 +139,7 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
 }
 ```
 
-`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam 9 com horizonte 1 e 81 com horizonte 2. Com a tabela atual e talhão livre em outubro, são 22 viáveis e 59 descartadas. `sequencias` pode vir vazia.
+`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam N com horizonte 1 e N² com horizonte 2, sendo N o número de culturas da tabela. Com a tabela atual (10 culturas, com o trigo) e talhão livre em outubro, são 26 viáveis e 74 descartadas. `sequencias` pode vir vazia.
 
 | Campo | Significado |
 |---|---|

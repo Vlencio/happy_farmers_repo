@@ -25,6 +25,7 @@ ESPECIE = {
     "feijao": "Phaseolus vulgaris",
     "girassol": "Helianthus annuus",
     "algodao": "Gossypium hirsutum",
+    "trigo": "Triticum aestivum",  # trigo tropical de sequeiro do Cerrado; ver docs/ibge_pam.md
 }
 
 # Preenchido a mao. Ver docs/culturas_fontes.md.
@@ -45,6 +46,7 @@ MANUAL = {
     "feijao":     (90,   0.40,  1.15,  0.35,  1,     0,    11,   2,       3500,  1.17, 0.98, 32),
     "girassol":   (110,  0.35,  1.00,  0.35,  0,     0,    None, 2,       2000,  1.57, 1.57, 35),
     "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.89, None, 32),
+    "trigo":      (120,  0.30,  1.15,  0.30,  0,     1,    None, 3,       1353,  3.34, 3.34, 32),  # preco e prod: PAM MG 2025
 }
 COLS_MANUAL = ["ciclo_dias", "kc_ini", "kc_med", "kc_fim", "fixa_n", "cobre_solo",
                "mes_plantio_safra", "mes_plantio_safrinha", "preco", "produtividade",
