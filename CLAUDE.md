@@ -71,10 +71,10 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | NEX-GDDP-CMIP6 | Projected monthly climate | `scripts/puxar_nexgddp.py` | `data/nexgddp/` | Downloaded |
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
-| Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
+| Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv`, `data/culturas_candidatas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
 | Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine reads the per-threshold `dias_acima_NN` columns for the heat rule. The dry year is an optional third scenario in the engine (`carregar_clima_seco`, fifth argument of `recomendar`); the API and the screen do not use it yet |
 | NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
-| IBGE PAM (SIDRA) | Area, yield and farm-gate price per crop in Minas Gerais, 2025 | `scripts/puxar_pam.py`, `scripts/montar_culturas_mg.py` | `data/ibge/`, `data/culturas_mg.csv`, `data/culturas_candidatas.csv` | Done; the engine does not read these files (trigo was copied into `culturas.csv`) |
+| IBGE PAM (SIDRA) | Area, yield and farm-gate price per crop in Minas Gerais, 2025 | `scripts/puxar_pam.py`, `scripts/montar_culturas_mg.py` | `data/ibge/`, `data/culturas_mg.csv` | Done; the engine does not read these files |
 
 Column reference: `docs/colunas_dados.md`.
 
@@ -98,14 +98,16 @@ Notes per source:
 - **IBGE PAM:** the beta targets Minas Gerais. `culturas_mg.csv` crosses the
   engine crops plus every PAM product with 10,000 ha or more in MG against
   ECOCROP and the two climate tables. Trigo is in the engine (price and yield
-  from PAM MG). `culturas_candidatas.csv` holds arroz, amendoim and aveia in
-  the `culturas.csv` columns; they are **not** in the engine (amendoim would take the top of the ranking without production
-  cost). Cana, café and other perennials do not fit safra + safrinha. Method,
+  from PAM MG). Arroz, amendoim and aveia are in the `CANDIDATAS`
+  set of `scripts/montar_culturas.py` and go to `culturas_candidatas.csv`
+  instead; they are **not** in the engine (amendoim would take the top of the
+  ranking without production cost). Cana, café and other perennials do not fit safra + safrinha. Method,
   results and open decisions: `docs/ibge_pam.md`.
 - **Crop table** (`culturas.csv`): climate ranges from FAO ECOCROP
   (`data/ecocrop/EcoCrop_DB.csv`, latin-1 encoded, from
   github.com/OpenCLIM/ecocrop; cite as "FAO ECOCROP via
-  GAEZ"), Kc from FAO-56, price and yield from CEPEA/Conab. Crops: soja,
+  GAEZ"), Kc from FAO-56, price and yield from CEPEA/Conab (trigo: PAM/IBGE, MG
+  average). Crops: soja,
   milho, sorgo, milheto, braquiária, crotalária, feijão, girassol, algodão,
   trigo.
   Crop names in the table have no accents (`feijao`, `crotalaria`). Columns:

@@ -61,7 +61,7 @@ O CSV traz só estatísticas de elevação do polígono (mínima, máxima, médi
 
 ## 5. Tabela de culturas
 
-Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha por cultura (9). Fonte e status de cada valor em `docs/culturas_fontes.md`.
+Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha por cultura (10). As candidatas (arroz, amendoim, aveia) saem do mesmo script em `data/culturas_candidatas.csv`. Fonte e status de cada valor em `docs/culturas_fontes.md`.
 
 | Coluna | Fonte |
 |---|---|
@@ -138,7 +138,7 @@ Scripts: `scripts/puxar_pam.py` e `scripts/montar_culturas_mg.py` · método e r
 | `data/ibge/pam_mg_2025.csv` | PAM 2025 em MG, uma linha por produto (86, mais a linha `Total`) |
 | `data/ibge/pam_mg_safras_2025.csv` | milho (1ª e 2ª safra) e feijão (1ª, 2ª e 3ª), sem `valor_mil_reais` |
 | `data/culturas_mg.csv` | 22 culturas: as 10 do motor + os outros produtos com 10 mil ha ou mais em MG |
-| `data/culturas_candidatas.csv` | arroz, amendoim e aveia nas colunas da seção 5. O motor não lê. O trigo já está em `culturas.csv` |
+| `data/culturas_candidatas.csv` | arroz, amendoim e aveia nas colunas da seção 5, gerado por `montar_culturas.py`. O motor não lê |
 
 Colunas da PAM: `ano`, `produto_cod`, `produto`, `area_plantada_ha`, `area_colhida_ha`, `producao_t`, `rendimento_kg_ha`, `valor_mil_reais`. Vazio = sem dado ou não se aplica.
 
