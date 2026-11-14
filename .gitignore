@@ -4,3 +4,11 @@ __pycache__/
 *.pyc
 .env
 recordings/
+node_modules/
+target/
+dist/
+.cache/
+frontend/public/pkg/
+frontend/.tools/
+frontend/test-results/
+frontend/*.log

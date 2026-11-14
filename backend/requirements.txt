@@ -1,0 +1,4 @@
+# HTTP adapter only. The other dependencies in the repository are for data tools.
+fastapi==0.162.7
+uvicorn==0.54.0
+pandas==3.1.1

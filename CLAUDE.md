@@ -12,6 +12,10 @@ wins today may not win in 2050.
 
 Team: 3 developers (Pedro + 2), stronger in back-end and data.
 
+Who owns what: Dev 1 — data (`data/`, `scripts/`); Pedro — scoring engine
+(`motor/`); Gabriel — front end and API (`frontend/`, `backend/`). A change
+that crosses into another area goes through its owner.
+
 ## How to work with me
 
 - Keep answers short and direct. No flattery.
@@ -21,26 +25,28 @@ Team: 3 developers (Pedro + 2), stronger in back-end and data.
 
 ## MVP scope
 
-One screen:
+Current front-end requirements (supersede the previous one-screen/top-three-score proposal):
 
-1. User draws a field (talhão) on a map.
-2. User enters the current rotation (planting history), priorities
-   (water / soil / income) and horizon: next crop, or next two (safra +
-   safrinha).
-3. App ranks every one- or two-crop sequence from the crop table (9 or 81
-   options), under today's and future climate.
+1. Define one farm by drawing on a satellite map or importing existing GeoJSON.
+   Drawing produces downloadable GeoJSON; imports are previewed before use.
+2. Optionally add previous crops/seasons and observations as context for the engine.
+3. Show exactly three objective cards: highest income, best soil health and
+   greatest climate resilience. These are objectives, not the top three overall ranks.
+4. Each card opens the engine's calendar with selectable crops and monthly water balance,
+   comparing today's and future climate. Calendars can extend beyond 12 months.
 
-Output:
+The first implementation lives in `frontend/`. It also shows approximate area,
+validates the boundary and saves a local browser draft. Main UI, forms, cards
+and timeline are Rune/rune-kit; the satellite dialog uses Leaflet/Geoman through
+a small browser bridge. The UI uses the actual engine through `backend/app.py`.
+Users select the field's available month and one or two crops, matching the contract.
+History is ordered oldest to newest; years and notes are retained locally because
+the engine accepts only crop IDs. Do not add weights,
+ranking tables, editable prices or further screens without a new requirement.
 
-- Three cards for the top three rotations by today's score: score today,
-  score under future climate, estimated revenue, LLM explanation (why, risks,
-  gaps).
-- Table with the full ranking: rank today, rank under future climate, and
-  where the current rotation sits.
-- 12-month timeline: rain, NDVI, crops.
-- Crop price editable by the user.
-- Visible disclaimers: "validate with an agronomist"; price is a historical
-  average, not a forecast.
+`docs/contrato_motor.md` is the engine's contract. `frontend/docs/API.md`
+documents the HTTP transport and how the front end maps the engine output to
+the cards and the calendar.
 
 ## Out of scope
 
@@ -140,19 +146,42 @@ in `tests/dados/`.
 ## Stack
 
 - Back end: Python, FastAPI, pandas, xarray.
-- Front end: Streamlit + folium (draw plugin). React + Leaflet only if time
-  allows.
-- Data is pre-downloaded and cached for the demo area. No live API calls
-  during the demo.
+- Front end: [Rune](https://github.com/anomalyco/rune) in Rust, using
+  `rune-kit` components and consuming results from the Python/FastAPI backend.
+  This decision supersedes the earlier Streamlit/React proposal.
+- Rune revision selected for the first implementation:
+  `56f01cb88e629db2c8b8877631cde00de7f37bd5` (the revision studied on 14 Nov 2026).
+  `frontend/rune-revision.json` pins both `rune` and `rune-kit` to this revision.
+  The app workspace must also declare `[patch.crates-io]` entries for `winit`,
+  `parley_engine`, `wgpu-hal` and `accesskit_windows`, all from the same Rune
+  repository and revision; dependency patches are not inherited.
+- Start from `examples/hello`, `examples/web-hello` and
+  [crates/rune/README.md](https://github.com/anomalyco/rune/blob/56f01cb88e629db2c8b8877631cde00de7f37bd5/crates/rune/README.md#depending-on-rune).
+  That revision specifies Rust `1.99.1` and the `wasm32-unknown-unknown` target.
+  Rune was built and tested locally on 14 Nov 2026. `frontend/scripts/setup-rune.mjs`
+  checks out the pin under ignored `.cache/rune`; Cargo points to that checkout.
+  `patches/rune-wasm-instance-cache.patch` additionally makes the browser's
+  wgpu instance cache thread-local, fixing this revision's WASM compile error
+  without enabling fragile Send/Sync. Do not edit the generated cache.
+- Agronomic data is pre-downloaded and cached for the demo area. Satellite
+  imagery is fetched from Esri when the map is opened. The UI defaults to `/api`,
+  proxied to FastAPI at port 8000. `npm run dev` starts both services. An explicit
+  `VITE_API_BASE_URL` can target another compatible service; no silent demo fallback.
+  The climate tables still belong to the demo field for any drawn polygon.
 
 ## Next steps
+
+The list below is the team-wide backlog. The first front-end prototype is
+integrated with the 14 Nov engine contract.
 
 1. ~~Build `culturas.csv`.~~ Done; check the "memória" values.
 2. ~~Script for the two climate tables.~~ Done.
 3. Engine (ET0, water balance, fit, sequence rules, score, ranking). First
    version done and running on the real tables; open questions are at the end
    of `docs/contrato_motor.md`.
-4. Front end, on fake data until the engine returns real numbers.
+4. Iterate on the integrated Rune front end. It now consumes the real engine;
+   objective cards select income (today's gross revenue), soil (today's soil index),
+   and climate (future fit, with future water as tiebreaker), rather than top-three overall rank.
 
 ## Submission
 

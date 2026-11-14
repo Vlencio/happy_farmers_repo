@@ -1,0 +1,41 @@
+{
+  "cultures": [
+    {
+      "id": "soja",
+      "label": "Soja"
+    },
+    {
+      "id": "milho",
+      "label": "Milho"
+    },
+    {
+      "id": "sorgo",
+      "label": "Sorgo"
+    },
+    {
+      "id": "milheto",
+      "label": "Milheto"
+    },
+    {
+      "id": "braquiaria",
+      "label": "Braquiária"
+    },
+    {
+      "id": "crotalaria",
+      "label": "Crotalária"
+    },
+    {
+      "id": "feijao",
+      "label": "Feijão"
+    },
+    {
+      "id": "girassol",
+      "label": "Girassol"
+    },
+    {
+      "id": "algodao",
+      "label": "Algodão"
+    }
+  ],
+  "data_notice": "Clima de hoje: 2005–2024; futuro: 2041–2060. As tabelas são do talhão de demonstração, perto de -20.032, -48.526. Desenhar outra área ainda não carrega o clima daquele local. A área multiplica a receita por hectare."
+}
