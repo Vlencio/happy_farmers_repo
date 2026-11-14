@@ -128,3 +128,36 @@ Script: `scripts/processar_appeears.py` · arquivos em `data/talhao/`
 | `declividade.csv` | área, altitude e declividade (`decl_media_pct` = 4,05%, `decl_p90_pct` = 7,07%) |
 
 O NDVI usa só os pixels com centro dentro do polígono (41) e descarta datas com menos de 50% de pixels bons.
+
+## 8. IBGE PAM — culturas de Minas Gerais
+
+Scripts: `scripts/puxar_pam.py` e `scripts/montar_culturas_mg.py` · método e resultados: `docs/ibge_pam.md`
+
+| Arquivo | Conteúdo |
+|---|---|
+| `data/ibge/pam_mg_2025.csv` | PAM 2025 em MG, uma linha por produto (86, mais a linha `Total`) |
+| `data/ibge/pam_mg_safras_2025.csv` | milho (1ª e 2ª safra) e feijão (1ª, 2ª e 3ª), sem `valor_mil_reais` |
+| `data/culturas_mg.csv` | 22 culturas: as 10 do motor + os outros produtos com 10 mil ha ou mais em MG |
+| `data/culturas_candidatas.csv` | arroz, amendoim e aveia nas colunas da seção 5. O motor não lê. O trigo já está em `culturas.csv` |
+
+Colunas da PAM: `ano`, `produto_cod`, `produto`, `area_plantada_ha`, `area_colhida_ha`, `producao_t`, `rendimento_kg_ha`, `valor_mil_reais`. Vazio = sem dado ou não se aplica.
+
+Colunas de `culturas_mg.csv`:
+
+| Coluna | Significado |
+|---|---|
+| `cultura` | Nome sem acento |
+| `tipo` | `anual`, `semiperene`, `permanente` ou `cobertura` |
+| `situacao` | `no_motor`, `candidata` ou `fora_da_rotacao` |
+| `motivo` | Por que fica fora da rotação |
+| `produto_pam`, `ano_pam` | Nome do produto e ano na PAM |
+| `area_plantada_ha`, `producao_t`, `valor_mil_reais` | Direto da PAM |
+| `part_area_pct` | % da área plantada de MG |
+| `rendimento_t_ha` | Rendimento médio da PAM em t/ha |
+| `preco_pam` | R$/t = valor da produção ÷ quantidade produzida |
+| `preco_motor`, `produtividade_motor` | Valores de `culturas.csv`, para comparar |
+| `especie_ecocrop`, `temp_*`, `chuva_*`, `ciclo_ecocrop_*` | Como na seção 5 |
+| `janela_meses` | Meses usados no encaixe: o ciclo nas anuais, 12 nas demais |
+| `melhor_mes_plantio` | Mês de início com o maior encaixe hoje. Vazio nas perenes |
+| `encaixe_temp_hoje`, `encaixe_chuva_hoje`, `encaixe_hoje` | 0 a 1, contra `clima_hoje.csv`. `encaixe` é o menor dos dois |
+| `encaixe_temp_futuro`, `encaixe_chuva_futuro`, `encaixe_futuro` | O mesmo contra `clima_futuro.csv`, no mesmo mês |

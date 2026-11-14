@@ -1,0 +1,4 @@
+cultura,especie_ecocrop,temp_min,temp_max,temp_otima_min,temp_otima_max,chuva_min,chuva_max,chuva_otima_min,chuva_otima_max,ciclo_ecocrop_min,ciclo_ecocrop_max,ciclo_dias,kc_ini,kc_med,kc_fim,fixa_n,cobre_solo,mes_plantio_safra,mes_plantio_safrinha,preco,produtividade,produtividade_safrinha,temp_calor_c
+arroz,Oryza sativa,10.0,36.0,20.0,30.0,1000.0,4000.0,1500.0,2000.0,80.0,180.0,120,0.3,1.2,0.75,0,1,11,,1407,4.12,,35
+amendoim,Arachis hypogaea,10.0,45.0,22.0,32.0,400.0,4000.0,600.0,1500.0,90.0,150.0,125,0.4,1.15,0.6,1,0,10,,3632,3.62,,35
+aveia,Avena sativa,5.0,30.0,16.0,20.0,250.0,1500.0,600.0,1000.0,110.0,270.0,120,0.3,1.15,0.25,0,1,,4,660,1.66,1.66,32

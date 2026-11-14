@@ -48,6 +48,7 @@ prática no Cerrado.
 | feijão | 90 | nov | fev | feijão das águas e da seca |
 | girassol | 110 | — | fev | |
 | algodão | 170 | dez | — | ciclo longo: não sobra safrinha depois dele |
+| trigo | 120 | — | mar | trigo tropical de sequeiro, depois da soja |
 
 Status:
 - Ciclo da soja: **conferido**. O ZARC da soja em MG 2025/26 simula cultivares de 100, 115 e 130 dias.
@@ -78,11 +79,12 @@ de **memória**.
 | algodão | 0,35 | 1,18 | 0,60 | 1,15–1,20 / 0,70–0,50 |
 | braquiária | 0,40 | 0,95 | 0,85 | aproximação: "Grazing Pasture, Rotated" 0,40 / 0,85–1,05 / 0,85 |
 | crotalária | 0,40 | 0,90 | 0,85 | aproximação: "Clover hay, averaged cutting" 0,40 / 0,90 / 0,85 |
+| trigo | 0,30 | 1,15 | 0,30 | 1,15 / 0,25–0,40 |
 
 ## fixa_n e cobre_solo
 
 - `fixa_n` = 1: soja, feijão, crotalária (leguminosas).
-- `cobre_solo` = 1: milho, sorgo, milheto, braquiária, crotalária (deixam palhada).
+- `cobre_solo` = 1: milho, sorgo, milheto, braquiária, crotalária, trigo (deixam palhada).
 
 Preenchido à mão.
 
@@ -100,6 +102,7 @@ review", Climatic Change 109:583–598, lido no PDF.
 | sorgo | 36 | acima de 36/26 °C a emissão da panícula atrasa; a 44/34 °C não forma panícula | conferido |
 | soja | 38 | o regime 38/30 °C reduz a produção de pólen em 34%; média de 39 °C é letal | conferido; é a cultura com o limiar menos direto |
 | girassol | 35 | não aparece na revisão | **sem fonte**: usa o limiar geral |
+| trigo | 32 | | **memória**, não conferido na revisão |
 | milheto, braquiária, crotalária | vazio | culturas de cobertura, sem grãos | a regra de calor não se aplica |
 
 Cuidados:
@@ -121,6 +124,7 @@ traz a tabela de Minas Gerais, então os valores são **médias do Brasil**.
 | feijão | 1,17 (1ª safra) | 0,98 (2ª safra) | conferido |
 | girassol | 1,57 | 1,57 | conferido |
 | algodão | 1,89 (pluma) | — | conferido por conta: 3,94 Mt de pluma (Conab 2024/25, via Agrolink) ÷ 2,08 Mha (área da tabela Conab). A tabela traz caroço (2,66 t/ha), mas a receita vem da pluma |
+| trigo | 3,34 | 3,34 | conferido: PAM/IBGE 2025, **média de MG** (não Conab Brasil) |
 | milheto, braquiária, crotalária | 0 | 0 | cobertura, sem venda no MVP |
 
 ## Preço — R$/t
@@ -132,7 +136,21 @@ traz a tabela de Minas Gerais, então os valores são **médias do Brasil**.
 | sorgo | 870 | R$ 52/sc (CEEMA/Unijuí, RS, ago/2025). Em Goiás o sorgo esteve perto do preço do milho | referência de outra região |
 | feijão | 3.500 | ~R$ 210/sc de feijão carioca | memória, preço muito volátil. O CEPEA diz que o carioca "se sustentou" em 2025 |
 | girassol | 2.000 | | memória, não achei cotação |
+| trigo | 1.353 | valor da produção ÷ quantidade, PAM/IBGE 2025 em MG | conferido; preço ao produtor, não cotação |
 | algodão | 9.000 | ~R$ 135/@ de pluma | memória. O CEPEA registrou em out/2025 o menor indicador em 16 anos, então este valor pode estar alto |
 
 O preço é editável na tela. Para o pitch, troque os valores de **memória** por
 médias anuais do CEPEA (cepea.esalq.usp.br).
+
+## Conferência com a PAM/IBGE (Minas Gerais, 2025)
+
+A PAM dá rendimento e preço ao produtor em MG. A comparação com os valores
+desta tabela, as culturas de MG que ainda não usamos e as candidatas à
+rotação (trigo, arroz, amendoim, aveia) estão em `docs/ibge_pam.md`. Resumo:
+
+- Os preços de **memória** do feijão (3.500) e do girassol (2.000) ficam a 3%
+  do preço médio da PAM (3.599 e 2.038).
+- A produtividade em MG é maior que a média do Brasil em soja, milho 1ª safra,
+  sorgo, feijão e girassol, e menor no milho 2ª safra (5,63 contra 6,10).
+- Os valores das 9 culturas anteriores não foram trocados. O trigo entrou com
+  preço e produtividade da PAM.

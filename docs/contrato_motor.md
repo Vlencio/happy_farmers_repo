@@ -17,7 +17,7 @@ saida = recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco)
 
 Sem `clima_seco` (ou com `None`), a saída é a mesma de antes: só `hoje` e `futuro`. Quem já chama `recomendar(entrada, *carregar_dados())` não precisa mudar nada.
 
-- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, com os três cenários: ~175 KB com as 9 culturas; ~120 KB sem o ano seco).
+- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, com os três cenários: ~300 KB com as 10 culturas; ~205 KB sem o ano seco).
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
 - Rodar sempre da raiz do repo.
 
@@ -178,7 +178,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 
 `rank_hoje`, `rank_futuro`, `hoje`, `futuro`, a ordem de `sequencias` e `descartadas` não mudam com o ano seco.
 
-`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam 9 com horizonte 1 e 81 com horizonte 2. Com a tabela atual e talhão livre em outubro, são 22 viáveis e 59 descartadas. `sequencias` pode vir vazia.
+`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam N com horizonte 1 e N² com horizonte 2, sendo N o número de culturas da tabela. Com a tabela atual (10 culturas, com o trigo) e talhão livre em outubro, são 26 viáveis e 74 descartadas. `sequencias` pode vir vazia.
 
 | Campo | Significado |
 |---|---|
