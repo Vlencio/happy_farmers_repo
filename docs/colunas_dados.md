@@ -18,6 +18,11 @@ Também há `power_diario_-20.032_-48.526_2005_2024.csv`: uma linha por dia, com
 | `ALLSKY_SFC_SW_DWN` | Radiação solar (MJ/m²/dia) |
 | `RH2M` | Umidade relativa a 2 m (%) |
 | `WS2M` | Velocidade do vento a 2 m (m/s) |
+| `GWETTOP` | Umidade do solo na superfície, 0 a 5 cm. Fração de 0 (seco) a 1 (saturado) |
+| `GWETROOT` | Umidade do solo na zona das raízes, cerca de 0 a 100 cm. Mesma escala |
+| `GWETPROF` | Umidade do solo no perfil inteiro, da superfície à rocha. Mesma escala |
+
+As três colunas `GWET*` entraram em 14/11/2026, só no arquivo mensal (o diário continua com chuva e temperaturas). Os valores das outras colunas não mudaram com o novo download. São saída de modelo, não medição, e nada as lê ainda. No talhão de demonstração, o `GWETROOT` médio vai de 0,42 (agosto e setembro) a 0,58 (março), e 2020/21 é o ano agrícola mais seco da série (0,424 contra 0,498 de média).
 
 O motor usa ET0 por Hargreaves (só Tmin e Tmax), porque o NEX não tem umidade nem vento. `RH2M` e `WS2M` serviriam só para um Penman-Monteith de conferência.
 
