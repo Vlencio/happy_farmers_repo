@@ -72,7 +72,7 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
 | Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
-| Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine reads the per-threshold `dias_acima_NN` columns for the heat rule, but not the dry year yet |
+| Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine reads the per-threshold `dias_acima_NN` columns for the heat rule. The dry year is an optional third scenario in the engine (`carregar_clima_seco`, fifth argument of `recomendar`); the API and the screen do not use it yet |
 | NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 
 Column reference: `docs/colunas_dados.md`.
@@ -112,7 +112,8 @@ numbers; it never produces them.**
 Code: `motor/` (`recomendar`). Inputs, output JSON, rules and open questions:
 `docs/contrato_motor.md`. Demo: `python -m motor`. Tests:
 `python -m unittest discover tests`. It reads `data/culturas.csv`,
-`data/clima_hoje.csv` and `data/clima_futuro.csv`; the tests use fixed tables
+`data/clima_hoje.csv` and `data/clima_futuro.csv`, plus `data/clima_seco.csv`
+when the caller asks for the dry-year scenario; the tests use fixed tables
 in `tests/dados/`.
 
 1. **Two climate tables**, 12 rows each (one per month):

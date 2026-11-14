@@ -1,17 +1,23 @@
 # Contrato do motor — entradas e saída
 
-> Versão de 14/11/2026, com a regra de calor. O motor lê `data/culturas.csv`, `data/clima_hoje.csv` e `data/clima_futuro.csv` como estão hoje. Se o formato de alguma mudar, avisem.
+> Versão de 14/11/2026, com a regra de calor e o ano seco opcional. O motor lê `data/culturas.csv`, `data/clima_hoje.csv` e `data/clima_futuro.csv` como estão hoje, e `data/clima_seco.csv` se for pedido. Se o formato de alguma mudar, avisem.
 
 ## Como chamar
 
 ```python
-from motor import carregar_dados, recomendar
+from motor import carregar_clima_seco, carregar_dados, recomendar
 
 culturas, clima_hoje, clima_futuro = carregar_dados()   # lê os três CSVs de data/
 saida = recomendar(entrada, culturas, clima_hoje, clima_futuro)   # dict pronto para json.dumps
+
+# com o ano seco como terceiro cenário (opcional):
+clima_seco = carregar_clima_seco()   # data/clima_seco.csv; None se o arquivo não existe
+saida = recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco)
 ```
 
-- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, ~90 KB com as 9 culturas).
+Sem `clima_seco` (ou com `None`), a saída é a mesma de antes: só `hoje` e `futuro`. Quem já chama `recomendar(entrada, *carregar_dados())` não precisa mudar nada.
+
+- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, com os três cenários: ~175 KB com as 9 culturas; ~120 KB sem o ano seco).
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
 - Rodar sempre da raiz do repo.
 
@@ -53,7 +59,13 @@ Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje 
 
 As tabelas atuais trazem `et0_mm`, calculado com as temperaturas do POWER sem a correção da estação A520. Por isso o motor não recalcula.
 
-`dias_quentes` e `data/clima_seco.csv` (ano seco de 2020/21) não são lidos. O ano seco tem o mesmo formato e pode ser passado no lugar de `clima_hoje` ou `clima_futuro`.
+`dias_quentes` não é lido.
+
+`data/clima_seco.csv` tem o mesmo formato e entra como terceiro argumento de clima, opcional. É a safra 2020/21, o ano agrícola (julho a junho) com menos chuva no POWER de 2005 a 2024. Diferenças para as outras duas tabelas:
+
+- É **um ano real**, não uma média de 20 anos. Os dias de calor são contagens inteiras daquele ano.
+- As linhas vão de janeiro a dezembro, mas julho a dezembro são de 2020 e janeiro a junho, de 2021. Uma sequência que passa de junho para julho volta ao começo do mesmo ano seco.
+- Precisa das mesmas colunas `dias_acima_NN`; se faltar alguma, o motor dá `ValueError`.
 
 ## Entrada 3 — `data/culturas.csv`
 
@@ -145,13 +157,34 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
 }
 ```
 
+Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje e futuro:
+
+```json
+{
+  "clima": {"hoje": ["..."], "futuro": ["..."], "seco": ["... 12 meses"]},
+  "sequencias": [
+    {
+      "id": "soja>milho",
+      "rank_hoje": 1,
+      "rank_futuro": 1,
+      "rank_seco": 1,
+      "hoje": { "...": "..." },
+      "futuro": { "...": "..." },
+      "seco": { "score": 59.509, "agua": 0.663, "renda": 0.729, "...": "mesma estrutura de hoje" }
+    }
+  ]
+}
+```
+
+`rank_hoje`, `rank_futuro`, `hoje`, `futuro`, a ordem de `sequencias` e `descartadas` não mudam com o ano seco.
+
 `sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam 9 com horizonte 1 e 81 com horizonte 2. Com a tabela atual e talhão livre em outubro, são 22 viáveis e 59 descartadas. `sequencias` pode vir vazia.
 
 | Campo | Significado |
 |---|---|
 | `slots` | O slot de cada posição da sequência, na ordem |
 | `atual` | `true` na sequência que repete a rotação atual. No máximo uma, e ela pode estar em `descartadas` |
-| `rank_hoje`, `rank_futuro` | Posição (1 = melhor) em cada clima |
+| `rank_hoje`, `rank_futuro`, `rank_seco` | Posição (1 = melhor) em cada clima. `rank_seco` só existe se o ano seco foi passado |
 | `score` | 0 a 100. Média de `agua`, `solo` e `renda` com os pesos do usuário |
 | `agua`, `solo`, `renda` | As três partes do score, de 0 a 1 |
 | `receita_ha` | R$ por hectare, somando as culturas da sequência. O front multiplica pela área |
@@ -181,7 +214,8 @@ Para os cards: as três primeiras de `sequencias`. Para o LLM: mandar o item int
 12. **Partes do score:**
     - `agua` = 1 − déficit total / demanda total da sequência.
     - `solo` = média, por cultura, de (0,4 se fixa N + 0,4 se cobre o solo + 0,2 se é diferente da anterior) × o quanto a cultura cresce.
-    - `renda` = receita da sequência ÷ a maior receita entre as sequências viáveis nos dois climas.
+    - `renda` = receita da sequência ÷ a maior receita entre as sequências viáveis, hoje e no futuro. O ano seco não entra nesse teto, para os números de hoje e futuro serem os mesmos com ou sem ele. Se uma sequência render mais no ano seco que o teto, a `renda` dela no ano seco fica em 1.
+13. **Época de plantio no ano seco:** a mesma. As sequências viáveis e as descartadas não dependem do clima.
 
 ## Constantes provisórias (sem fonte, no topo de `motor/motor.py`)
 
@@ -213,10 +247,23 @@ Para os cards: as três primeiras de `sequencias`. Para o LLM: mandar o item int
 - **Talhão livre em outubro:** as três primeiras são as mesmas nos dois climas (`soja>milho`, `soja>sorgo`, `soja>crotalaria`). `soja>feijao` cai de 4º para 7º.
 - **Talhão livre em fevereiro:** hoje ganha `crotalaria>algodao`; no futuro ela cai para 12º e ganha `milho>soja`.
 
+## O que o ano seco mostra (tabelas de 14/11)
+
+No clima médio, a parte de `agua` do score quase não separa as sequências. No ano seco ela separa:
+
+| Talhão livre em | `agua` hoje | `agua` no ano seco |
+|---|---|---|
+| outubro | 0,88 a 1,00 | 0,66 a 0,90 |
+| fevereiro | 0,91 a 1,00 | 0,63 a 0,90 |
+
+- **Outubro, sem histórico:** hoje ganha `soja>milho`; no ano seco, `milho>crotalaria`. Com o histórico soja, milho, `soja>milho` continua em primeiro (o milho na safra repete a cultura anterior e perde 15%), com receita de R$ 10.337/ha contra R$ 14.171/ha hoje.
+- **Fevereiro:** hoje ganha `crotalaria>algodao`; no ano seco, `crotalaria>milho`, com ou sem o histórico soja, milho.
+
 ## Em aberto
 
 1. **Mês de plantio é um mês só.** Uma cultura de safra que libera o talhão no dia 1 de março já não deixa plantar nada de fevereiro. Hoje isso acontece com o sorgo de safra: só a crotalária (março) cabe depois dele.
 2. **Limiar de 32 °C.** O feijão e o algodão são os que mais caem, e é nesse limiar que POWER e NEX mais diferem (20%, ver `docs/colunas_dados.md`). A troca de vencedor no caso de fevereiro depende dele.
 3. **Perda de 1 para 1.** Cada dia de calor na fase sensível tira a mesma fração da produtividade. É um valor provisório (`PERDA_CALOR`), sem fonte.
 4. **Calor de hoje pode estar contado duas vezes.** A produtividade da Conab já reflete o calor atual do Brasil; a regra desconta o calor de hoje de novo. O que a regra mostra bem é a diferença entre hoje e futuro.
-5. **Ano seco.** `data/clima_seco.csv` existe e o motor roda nele, mas a saída só tem dois climas (hoje e futuro).
+5. **Ano seco na API e na tela.** O motor já devolve o terceiro cenário quando recebe `clima_seco`. A API (`backend/app.py`) ainda chama o motor sem ele, e o `Dockerfile` não copia `data/clima_seco.csv`. Ligar isso é com o Gabriel (`docs/plano_gap.md`, G4).
+6. **Um ano seco só.** É a safra 2020/21, com o clima de hoje. Não há ano seco do clima futuro.
