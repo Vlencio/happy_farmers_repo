@@ -197,8 +197,8 @@ async function readResponse(response) {
     throw new Error(response.ok ? 'A API retornou uma resposta que não é JSON.' : `Motor indisponível (HTTP ${response.status}).`);
   }
   if (!response.ok) {
-    const detail = typeof value.detail === 'string' ? value.detail : Array.isArray(value.detail)
-      ? value.detail.map((d) => `${d.loc?.slice(1).join('.') || 'entrada'}: ${d.msg}`).join('; ') : '';
+    const detail = typeof value?.detail === 'string' ? value.detail : Array.isArray(value?.detail)
+      ? value.detail.filter(d => d && typeof d.msg === 'string').map((d) => `${Array.isArray(d.loc) ? d.loc.slice(1).join('.') || 'entrada' : 'entrada'}: ${d.msg}`).join('; ') : '';
     throw new Error(`Motor retornou HTTP ${response.status}. ${detail}`.trim());
   }
   return value;
@@ -211,8 +211,8 @@ export async function requestAnalysis(baseUrl, request, { signal, fetcher = fetc
 }
 export async function requestMetadata(baseUrl, { signal, fetcher = fetch } = {}) {
   const value = await readResponse(await fetcher(`${baseUrl.replace(/\/+$/, '')}/metadata`, { signal }));
-  list(value.cultures, 'metadata.cultures', 1, 100);
-  value.cultures.forEach((crop) => { string(crop.id, 'culture.id'); string(crop.label, 'culture.label'); });
+  list(value?.cultures, 'metadata.cultures', 1, 100);
+  value.cultures.forEach((crop) => { string(crop?.id, 'culture.id'); string(crop?.label, 'culture.label'); });
   string(value.data_notice, 'data_notice');
   return value;
 }

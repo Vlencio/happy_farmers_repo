@@ -1,5 +1,11 @@
 # Verificação da integração · 14/11/2026
 
+## Rodada de QA do front-end
+
+Relatório de fluxos, falhas, layouts e correções em [QA_2026-11-14.md](QA_2026-11-14.md).
+Inclui testes repetíveis de navegador em contextos isolados. As seções abaixo
+preservam as verificações das entregas anteriores.
+
 ## Atualização — automação e Main com trigo
 
 - `front-dev3` atualizada por fast-forward para a Main `f0c81b2`, com a entrega

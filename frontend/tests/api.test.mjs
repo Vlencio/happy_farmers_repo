@@ -171,3 +171,12 @@ test('abort signals reach the API fetch', async () => {
     options.signal.throwIfAborted();
   } }), { name: 'AbortError' });
 });
+
+test('malformed error bodies and null metadata produce readable errors, not TypeErrors', async () => {
+  for (const value of [null, 'unavailable', { detail: [null, {}, { loc: 7, msg: 'Invalid input' }] }]) {
+    await assert.rejects(requestAnalysis('/api', {}, { fetcher: async () => ({ ok: false, status: 503, json: async () => value }) }), /HTTP 503/);
+  }
+  for (const value of [null, { cultures: [null] }]) {
+    await assert.rejects(requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => value }) }), /contrato/);
+  }
+});

@@ -1,0 +1,154 @@
+--- a/crates/rune/src/runtime/web/a11y.rs
++++ b/crates/rune/src/runtime/web/a11y.rs
+@@ -34,6 +34,7 @@
+     pub font_size: f32,
+     pub level: Option<u32>,
+     pub expanded: Option<bool>,
++    pub disabled: bool,
+     pub text: String,
+     pub runs: Vec<A11yRun>,
+     /// The HTML element a container stands for (`main`, `nav`, `section`, `ul`, ...).
+@@ -76,7 +77,7 @@
+
+ impl A11yItem {
+     fn new(kind: &'static str, path: &str, rect: [f32; 4]) -> Self {
+-        A11yItem { kind, path: path.to_owned(), rect, font_size: 0.0, level: None, expanded: None, text: String::new(),
++        A11yItem { kind, path: path.to_owned(), rect, font_size: 0.0, level: None, expanded: None, disabled: false, text: String::new(),
+             runs: Vec::new(), tag: None, role: None, parent: None, id: None, href: None, font: None, selectable: false }
+     }
+
+@@ -88,6 +89,7 @@
+         if self.font_size != 0.0 { obj.insert("s".into(), json!(self.font_size)); }
+         if let Some(l) = self.level { obj.insert("l".into(), json!(l)); }
+         if let Some(x) = self.expanded { obj.insert("x".into(), json!(x)); }
++        if self.disabled { obj.insert("d".into(), json!(true)); }
+         if !self.text.is_empty() { obj.insert("t".into(), json!(self.text)); }
+         if let Some(g) = self.tag { obj.insert("g".into(), json!(g)); }
+         if let Some(o) = self.role { obj.insert("o".into(), json!(o)); }
+@@ -129,7 +131,7 @@
+         "figure" => "figure",
+         // A table's parts are divs with their ARIA roles: the mirror places every element itself,
+         // and an HTML table's semantics follow its CSS display.
+-        "table" | "row" | "cell" | "columnheader" | "rowheader" => "div",
++        "table" | "row" | "cell" | "columnheader" | "rowheader" | "alert" | "status" => "div",
+         _ => return None,
+     })
+ }
+@@ -142,6 +144,8 @@
+         "cell" => "cell",
+         "columnheader" => "columnheader",
+         "rowheader" => "rowheader",
++        "alert" => "alert",
++        "status" => "status",
+         _ => return None,
+     })
+ }
+@@ -347,6 +351,13 @@
+             let parent = open.last().map(|&(_, item)| item);
+             let n = &self.nodes[i];
+             let end = ends[i];
++            // A modal can be inside this node's subtree. Skip only the excluded
++            // ancestor, otherwise opening a Select erases the entire DOM mirror.
++            if !self.modal_member(i) {
++                i += 1;
++                last_flow_parent = None;
++                continue;
++            }
+             if !self.allowed(i) || self.subtree_exiting(i) || n.vis.opacity <= 0.01 || n.a11y.hidden
+                 || matches!(n.role, "none" | "presentation")
+             {
+@@ -426,6 +437,7 @@
+                 if !label.is_empty() {
+                     let mut item = A11yItem::new("button", &n.path, rect);
+                     item.expanded = n.a11y.expanded;
++                    item.disabled = n.a11y.disabled;
+                     item.text = label;
+                     push(&mut out, item);
+                     i = end;
+--- a/crates/rune/src/runtime/web/runtime.rs
++++ b/crates/rune/src/runtime/web/runtime.rs
+@@ -210,6 +210,10 @@
+ }
+
+ impl<S: 'static> Runtime<S> {
++    pub(crate) fn web_input_label(&self) -> &str {
++        self.focused_index().and_then(|i| self.nodes[i].label.as_deref()).unwrap_or("Text input")
++    }
++
+     pub(crate) fn web_context(&self, mirror: &mut Mirror) -> bool {
+         match self.focused_input().filter(|i| i.access.is_some()) {
+             Some(input) => mirror.update(self.focus.path().unwrap_or_default(), Some(&input.edit)),
+--- a/crates/rune/src/platform/web/input.rs
++++ b/crates/rune/src/platform/web/input.rs
+@@ -6,7 +6,7 @@
+ #[wasm_bindgen(module = "/src/platform/web/bridge.js")]
+ extern "C" {
+     fn mount(canvas: &web_sys::HtmlCanvasElement, callback: &js_sys::Function, embedded: bool, fit_height: bool, document: bool) -> JsValue;
+-    fn sync(handle: &JsValue, key: &str, text: &str, base: usize, anchor: u32, focus: u32, secure: bool);
++    fn sync(handle: &JsValue, key: &str, text: &str, base: usize, anchor: u32, focus: u32, secure: bool, label: &str);
+     #[wasm_bindgen(js_name = syncCopy)]
+     fn sync_copy(handle: &JsValue, text: &str);
+     #[wasm_bindgen(js_name = syncA11y)]
+@@ -115,7 +115,7 @@
+     pub(super) fn sync_input(&mut self, focus: bool) {
+         if self.rt.web_context(&mut self.input.mirror) {
+             let m = &self.input.mirror;
+-            sync(&self.input.handle, &m.key, &m.text, m.base, m.anchor, m.focus, m.secure);
++            sync(&self.input.handle, &m.key, &m.text, m.base, m.anchor, m.focus, m.secure, self.rt.web_input_label());
+         }
+         let next_copy = self.rt.copy_text().unwrap_or_default();
+         if self.input.copy_cache != next_copy {
+--- a/crates/rune/src/platform/web/bridge.js
++++ b/crates/rune/src/platform/web/bridge.js
+@@ -49,10 +49,12 @@
+ export function mount(canvas, callback, embedded, fitHeight, page) {
+     const textarea = document.createElement('textarea');
+     textarea.setAttribute('aria-label', 'Text input');
++    textarea.setAttribute('aria-hidden', 'true');
+     textarea.setAttribute('autocapitalize', 'sentences');
+     const password = document.createElement('input');
+     password.type = 'password';
+     password.setAttribute('aria-label', 'Password input');
++    password.setAttribute('aria-hidden', 'true');
+     password.autocomplete = 'off';
+     password.setAttribute('autocorrect', 'off');
+     password.setAttribute('autocapitalize', 'off');
+@@ -287,7 +289,7 @@
+     return h;
+ }
+
+-export function sync(h, key, text, base, anchor, focus, secure) {
++export function sync(h, key, text, base, anchor, focus, secure, label) {
+     if (h.composing && key === h.key) return;
+     h.composing = false;
+     h.syncing = true;
+@@ -295,6 +297,8 @@
+     h.key = key; h.base = base; h.value = text;
+     h.password.value = '';
+     h.field = secure ? h.password : h.textarea;
++    if (key) h.field.removeAttribute('aria-hidden');
++    h.field.setAttribute('aria-label', label || 'Text input');
+     if (!key) {
+         h.textarea.value = '';
+         if (editing) h.canvas.focus({ preventScroll: true });
+@@ -310,6 +314,8 @@
+         }
+         if (editing && document.activeElement !== h.field) activate(h);
+     }
++    h.textarea.setAttribute('aria-hidden', String(!key || secure));
++    h.password.setAttribute('aria-hidden', String(!key || !secure));
+     h.syncing = false;
+ }
+
+@@ -730,6 +736,7 @@
+             if (item.o) el.setAttribute('role', item.o); else el.removeAttribute('role');
+         }
+         if (tag === 'button') {
++            el.disabled = Boolean(item.d);
+             if (item.x === true || item.x === false) el.setAttribute('aria-expanded', String(item.x));
+             else el.removeAttribute('aria-expanded');
+         }
+--- /dev/null
++++ b/changelog/unreleased/2026-11-14-web-accessibility.md
+@@ -0,0 +1 @@
++- Preserve the web accessibility mirror inside nested modals, expose disabled buttons and alerts, and name the active text field while hiding inactive input proxies.

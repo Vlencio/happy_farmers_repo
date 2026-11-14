@@ -10,14 +10,14 @@
 </head>
 <body>
   <canvas id="rune-app" aria-label="Happy Farmers, planejamento da fazenda"></canvas>
-  <div id="boot" role="status"><span class="brand-mark">hf</span><h1>Happy Farmers</h1><p>Preparando seu espaço de planejamento…</p><p id="boot-error"></p></div>
+  <div id="boot" role="status"><span class="brand-mark">hf</span><h1>Happy Farmers</h1><p>Preparando seu espaço de planejamento…</p><p id="boot-error"></p><button id="boot-retry" hidden>Recarregar página</button></div>
   <noscript>Ative JavaScript para abrir a interface Happy Farmers.</noscript>
   <input id="geojson-file" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden />
   <dialog id="map-dialog" aria-labelledby="map-title">
     <header class="map-header"><div><span class="eyebrow">SUA FAZENDA</span><h2 id="map-title">Delimite sua área no mapa</h2></div><button id="close-map" class="icon-button" aria-label="Fechar mapa">×</button></header>
     <div class="map-toolbar">
       <button id="draw-boundary" class="primary">Desenhar contorno</button>
-      <button id="finish-draw">Concluir desenho</button>
+      <button id="finish-draw" disabled>Concluir desenho</button>
       <button id="edit-boundary">Editar pontos</button>
       <button id="locate">Minha localização</button>
       <form id="coordinate-search"><label for="coordinates" class="sr-only">Latitude, longitude</label><input id="coordinates" placeholder="Latitude, longitude" autocomplete="off" /><button type="submit">Localizar</button></form>

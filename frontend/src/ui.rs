@@ -146,6 +146,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
             ))
             .role("button")
             .label(title)
+            .disabled(!enabled)
             .focusable(enabled)
             .on_press(move |s: &mut State| {
                 if enabled {
@@ -270,6 +271,8 @@ fn heading(title: &str, subtitle: &str, narrow: bool) -> El {
         .child(eyebrow("PLANEJAMENTO AGRÍCOLA"))
         .child(
             label(title, if narrow { 30.0 } else { 39.0 }, 600.0, INK)
+                .role("heading")
+                .level(1)
                 .wrap()
                 .w_full(),
         )
@@ -387,7 +390,8 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         row()
             .center_y()
             .justify_between()
-            .child(label("01  A sua fazenda", 19.0, 600.0, INK))
+            .gap(8.0)
+            .child(label("01  A sua fazenda", 19.0, 600.0, INK).wrap().shrink())
             .child(pill(
                 if s.farm.is_some() {
                     "Área definida"
@@ -434,9 +438,10 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         content = content.child(field_art(None));
     }
     if let Some(farm) = &s.farm {
-        content = content.child(row().gap(14.0).center_y().justify_between()
-            .child(col().gap(5.0).shrink().child(label(&farm.name, 19.0, 600.0, INK).wrap())
-                .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED)))
+        let stacked = narrow || farm.name.chars().count() > 36;
+        content = content.child(responsive_row(stacked).gap(14.0).center_y().justify_between()
+            .child(column_width(col().gap(5.0).child(label(&farm.name, 19.0, 600.0, INK).wrap().w_full())
+                .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
             .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).replace('.', ","), 26.0, 500.0, INK)).child(label("área aproximada", 10.0, 400.0, MUTED))))
             .child(paragraph("O centro do contorno fornece latitude e longitude da análise. A área converte a receita por hectare em receita total."))
             .child(responsive_row(narrow)
@@ -475,18 +480,6 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
                             .variant(ButtonVariant::Ghost)
                             .on_press(|_: &mut State| host(json!({"type":"sample"})))
                             .build(k)
-                            // This Rune revision reserves Enter for the window's default
-                            // button. The web example action also accepts focused Enter.
-                            .on_key(|_: &mut State, ev, tx| {
-                                if ev.key == rune::Key::Enter && ev.mods == rune::Mods::default() {
-                                    if !tx.key_repeat() {
-                                        host(json!({"type":"sample"}));
-                                    }
-                                    true
-                                } else {
-                                    false
-                                }
-                            })
                             .key("sample")
                             .h(40.0),
                     ),
@@ -985,9 +978,9 @@ fn farm_summary(s: &State) -> El {
     };
     label(
         format!(
-            "{}  /  {:.2} ha  /  {}",
+            "{}  /  {} ha  /  {}",
             farm.name,
-            farm.area_ha,
+            format!("{:.2}", farm.area_ha).replace('.', ","),
             if s.history.is_empty() {
                 "sem histórico".into()
             } else {
@@ -1192,7 +1185,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         ));
     }
     col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar os três caminhos", false, |s| s.page = Page::Results))
-        .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).wrap().w_full())
+        .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
@@ -1205,6 +1198,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(panel().gap(8.0).child(eyebrow("O QUE CONSIDERAR NESTA ESCOLHA")).child(paragraph(&rec.tradeoff)))
 }
 pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
+    // Use browser conventions for every control: Tab, Enter and Space.
+    cx.web_focus();
     let narrow = cx
         .layout_with("page-root", |rect| rect[2] < 900.0)
         .unwrap_or(false);
@@ -1241,6 +1236,7 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
         );
     }
     let mut main = col()
+        .role("main")
         .grow(1.0)
         .min_w(0.0)
         .min_h(0.0)
