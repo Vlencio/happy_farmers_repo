@@ -29,18 +29,22 @@ Duas coisas que a análise não considerou:
 
 ### Pedro — motor
 
-**P1. Ano seco como terceiro cenário.** Fecha o item 5 de "Em aberto" do contrato.
+**P1. Ano seco como terceiro cenário. Feito em 14/11, no motor.**
 
-- `recomendar` passa a aceitar `clima_seco` opcional. Com ele, a saída ganha `clima.seco`, `rank_seco` e um bloco `seco` em cada sequência, com a mesma estrutura de `hoje`. Sem ele, a saída fica igual à de hoje.
-- `carregar_dados` passa a devolver também `clima_seco.csv`. O `backend/app.py` chama `recomendar(entrada, *app.state.tables)`, então a ordem dos retornos é parte do contrato.
-- **Cuidado com a `renda`.** O teto hoje é a maior receita entre hoje e futuro. Sugestão: manter o teto só com hoje e futuro, para os números e testes atuais não mudarem, e limitar a `renda` do ano seco a 1. O front recusa `renda` fora de 0 a 1.
-- `clima_seco.csv` já tem as colunas `dias_acima_32/35/36/38`. É um ano real (2020/21), não uma média: vale dizer isso na saída ou no contrato.
-- Atualizar `docs/contrato_motor.md` e a linha das tabelas de clima em `CLAUDE.md`.
-- Pronto quando: `python -m motor --json` traz os três cenários, os testes atuais passam sem alteração e há teste novo para o bloco `seco`.
+- `recomendar` aceita `clima_seco` como quinto argumento, opcional. Com ele, a saída ganha `clima.seco`, `rank_seco` e um bloco `seco` em cada sequência, com a mesma estrutura de `hoje`. Sem ele, a saída é idêntica à de antes (conferido em 216 entradas contra o motor de `c54fe17`).
+- `carregar_dados` continua devolvendo três tabelas. A do ano seco vem de `carregar_clima_seco()`, que devolve `None` se o arquivo não existe. Assim a API e o deploy atuais não mudam até o Gabriel ligar (G4).
+- **`renda`:** o teto continua sendo a maior receita entre hoje e futuro; a `renda` do ano seco para em 1.
+- É um ano real (2020/21), não uma média. Detalhes e números em `docs/contrato_motor.md`.
+- `python -m motor` mostra os três cenários. Testes: 40 passam, 7 novos para o ano seco.
 
 **P2. Combinar com o Gabriel a regra do card de clima** (ver G1). A causa está no motor: cultura sem limiar de calor nunca perde ponto.
 
-**P3. Terminar o download do retângulo** e gerar `delta_mensal.csv`, como em `docs/plano_outros_locais.md`. Definir um horário limite; depois dele, vale o plano B.
+**P3. Download do retângulo e `delta_mensal.csv`. Feito em 14/11.**
+
+- 360 arquivos, 568 MB, todos íntegros. A grade veio com 41 × 49 quadrados (o servidor inclui a borda), e não 40 × 48; 1.888 têm dado, o resto é mar.
+- `data/nexgddp/regiao_mg/delta_mensal.csv`: 1.888 quadrados × 12 meses. No quadrado do talhão de demonstração, bate com `data/clima_correcoes.csv` (diferença máxima de 0,005).
+- **Ressalva conhecida, sem correção:** o NEX-GDDP traz 92 valores de chuva acima de 300 mm em um dia (até 1.230 mm), em maio, junho e agosto. Eles mexem o `delta_chuva_mm` em até ±23 mm em 62 quadrados ao norte da latitude −17,1 (norte e noroeste de Minas). Com um desvio desses na chuva de maio, a receita futura do motor muda em até uns 5% e o primeiro lugar pode trocar entre sequências quase empatadas. Temperatura e dias de calor não são afetados. O talhão de demonstração e o Triângulo estão fora.
+- Falta só o que depende de D1 e G5.
 
 ### Dev 1 — dados
 
@@ -85,9 +89,11 @@ Duas coisas que a análise não considerou:
 - Avisos de "valide com seu agrônomo": nos preços, nos limites de calor e nas constantes provisórias (lista no fim de `docs/contrato_motor.md`).
 - Uma linha dizendo que os dados têm resoluções diferentes (clima de um ponto, NDVI de 250 m, altitude de 30 m) e que o escopo é um talhão.
 
-**G4. Mostrar o ano seco e a faixa dos modelos.** Depende de P1 e D2.
+**G4. Mostrar o ano seco e a faixa dos modelos.** A P1 já está no motor; a faixa depende de D2.
 
+- Ligar na API: em `backend/app.py`, guardar `carregar_clima_seco()` junto das tabelas e passar como quinto argumento de `recomendar`. Com `None`, o motor devolve só hoje e futuro.
 - Terceira coluna ou seletor hoje / futuro / ano seco no calendário e nos fatos do card. `validateMotorOutput` hoje só confere `hoje` e `futuro`; campo novo não quebra, mas precisa de validação própria.
+- O JSON cresce de cerca de 120 KB para 175 KB com o terceiro cenário.
 - Faixa dos modelos como texto: "os três modelos apontam de +1,3 a +2,3 °C na máxima; na chuva, discordam do sinal".
 - Copiar `data/clima_seco.csv` no `Dockerfile`.
 

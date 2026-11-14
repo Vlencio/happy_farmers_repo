@@ -52,6 +52,12 @@ def carregar_dados(pasta=DADOS):
     )
 
 
+def carregar_clima_seco(pasta=DADOS):
+    """Le clima_seco.csv (o ano agricola mais seco do POWER). None se a pasta nao tem o arquivo."""
+    arquivo = Path(pasta) / "clima_seco.csv"
+    return pd.read_csv(arquivo) if arquivo.exists() else None
+
+
 def radiacao_extraterrestre(lat, dia_do_ano):
     """Ra em MJ/m2/dia (FAO-56, eq. 21)."""
     phi = math.radians(lat)
@@ -258,7 +264,7 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
     }
 
 
-def recomendar(entrada, culturas, clima_hoje, clima_futuro):
+def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
     Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
@@ -266,10 +272,14 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
 
     entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos.
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
+    clima_seco: opcional, mesma forma das outras duas. Se vier, a saida ganha um
+    terceiro cenario ("seco"); sem ele, a saida so tem hoje e futuro.
     Devolve um dict pronto para json.dumps.
     """
     tabela = _tabela_culturas(culturas)
     climas = {"hoje": _tabela_clima(clima_hoje), "futuro": _tabela_clima(clima_futuro)}
+    if clima_seco is not None:
+        climas["seco"] = _tabela_clima(clima_seco)
     for cen, clima in climas.items():
         faltam = sorted({coluna_de_calor(c) for c in tabela.values() if coluna_de_calor(c)} - set(clima[0]))
         if faltam:
@@ -304,13 +314,14 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
     descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
     sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
-    # renda de 0 a 1: a maior receita entre as sequencias viaveis e os dois climas vale 1
-    teto = max((aval[cen][s]["receita_ha"] for cen in aval for s in sequencias), default=0.0) or 1.0
+    # renda de 0 a 1: a maior receita entre as sequencias viaveis, hoje e no futuro, vale 1.
+    # O ano seco fica fora do teto, para nao mudar os numeros de hoje e futuro; a renda dele para em 1.
+    teto = max((aval[cen][s]["receita_ha"] for cen in ("hoje", "futuro") for s in sequencias), default=0.0) or 1.0
     rank = {}
     for cen, porseq in aval.items():
         for s in sequencias:
             a = porseq[s]
-            a["renda"] = a["receita_ha"] / teto
+            a["renda"] = min(1.0, a["receita_ha"] / teto)
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
         ordem = sorted(sequencias, key=lambda s: -porseq[s]["score"])
         rank[cen] = {s: i + 1 for i, s in enumerate(ordem)}
@@ -335,10 +346,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
                 "id": ">".join(s),
                 "culturas": list(s),
                 "atual": s == atual,
-                "rank_hoje": rank["hoje"][s],
-                "rank_futuro": rank["futuro"][s],
-                "hoje": {k: aval["hoje"][s][k] for k in campos},
-                "futuro": {k: aval["futuro"][s][k] for k in campos},
+                **{f"rank_{cen}": rank[cen][s] for cen in climas},
+                **{cen: {k: aval[cen][s][k] for k in campos} for cen in climas},
             }
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],

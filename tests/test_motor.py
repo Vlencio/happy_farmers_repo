@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from motor import carregar_dados, recomendar
+from motor import carregar_clima_seco, carregar_dados, recomendar
 from motor import motor
 
 FIXOS = Path(__file__).resolve().parent / "dados"
@@ -212,6 +212,66 @@ class TestRecomendar(unittest.TestCase):
             recomendar(ENTRADA, self.dados[0].drop(columns=["mes_plantio_safra"]), self.dados[1], self.dados[2])
 
 
+class TestAnoSeco(unittest.TestCase):
+    """Terceiro cenario, opcional. A tabela de teste e a de hoje com metade da chuva."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.seco = cls.dados[1].assign(chuva_mm=cls.dados[1]["chuva_mm"] * 0.5)
+        cls.sem = recomendar(ENTRADA, *cls.dados)
+        cls.com = recomendar(ENTRADA, *cls.dados, cls.seco)
+
+    def test_sem_a_tabela_a_saida_nao_muda(self):
+        self.assertEqual(list(self.sem["clima"]), ["hoje", "futuro"])
+        for s in self.sem["sequencias"]:
+            self.assertNotIn("seco", s)
+            self.assertNotIn("rank_seco", s)
+        self.assertEqual(recomendar(ENTRADA, *self.dados, None), self.sem)
+
+    def test_hoje_e_futuro_nao_mudam_com_a_tabela(self):
+        self.assertEqual(self.com["clima"]["hoje"], self.sem["clima"]["hoje"])
+        self.assertEqual(self.com["descartadas"], self.sem["descartadas"])
+        self.assertEqual(ids(self.com["sequencias"]), ids(self.sem["sequencias"]))
+        for com, sem in zip(self.com["sequencias"], self.sem["sequencias"]):
+            for k in ("rank_hoje", "rank_futuro", "hoje", "futuro"):
+                self.assertEqual(com[k], sem[k], (com["id"], k))
+
+    def test_bloco_seco(self):
+        self.assertEqual(list(self.com["clima"]), ["hoje", "futuro", "seco"])
+        self.assertEqual([m["mes"] for m in self.com["clima"]["seco"]], list(range(1, 13)))
+        seqs = self.com["sequencias"]
+        self.assertEqual(sorted(s["rank_seco"] for s in seqs), list(range(1, len(seqs) + 1)))
+        for s in seqs:
+            self.assertEqual(set(s["seco"]), set(s["hoje"]))
+            self.assertTrue(0 <= s["seco"]["score"] <= 100)
+            for k in ("agua", "solo", "renda"):
+                self.assertTrue(0 <= s["seco"][k] <= 1, (s["id"], k))
+            self.assertLessEqual(s["seco"]["agua"], s["hoje"]["agua"])  # metade da chuva
+            # mesma epoca de plantio: o calendario e igual nos tres cenarios
+            self.assertEqual([c["mes_plantio"] for c in s["seco"]["culturas"]],
+                             [c["mes_plantio"] for c in s["hoje"]["culturas"]])
+        self.assertLess(sum(s["seco"]["agua"] for s in seqs), sum(s["hoje"]["agua"] for s in seqs))
+        json.dumps(self.com)
+
+    def test_renda_do_seco_para_em_1(self):
+        # hoje e futuro com pouca chuva, "seco" com a chuva normal: a receita do seco passa do teto
+        pouca = self.dados[1].assign(chuva_mm=self.dados[1]["chuva_mm"] * 0.3)
+        saida = recomendar(ENTRADA, self.dados[0], pouca, pouca, self.dados[1])
+        seqs = saida["sequencias"]
+        teto = max(s[cen]["receita_ha"] for s in seqs for cen in ("hoje", "futuro"))
+        self.assertGreater(max(s["seco"]["receita_ha"] for s in seqs), teto)
+        self.assertEqual(max(s["seco"]["renda"] for s in seqs), 1.0)
+        self.assertEqual(max(s["hoje"]["renda"] for s in seqs), 1.0)
+
+    def test_falta_coluna_de_calor_no_seco(self):
+        with self.assertRaises(ValueError):
+            recomendar(ENTRADA, *self.dados, self.seco.drop(columns=["dias_acima_35"]))
+
+    def test_carregar_clima_seco(self):
+        self.assertIsNone(carregar_clima_seco(FIXOS))  # tests/dados nao tem a tabela
+
+
 class TestPecas(unittest.TestCase):
     C = {"temp_min": 10, "temp_otima_min": 20, "temp_otima_max": 30, "temp_max": 40, "chuva_min": 400, "chuva_max": 1000}
 
@@ -270,6 +330,17 @@ class TestDadosReais(unittest.TestCase):
             self.assertGreater(len(saida["sequencias"]), 0, (mes, horizonte))
             for s in saida["sequencias"]:
                 self.assertTrue(0 <= s["hoje"]["score"] <= 100)
+
+    def test_roda_com_o_ano_seco_de_data(self):
+        dados = carregar_dados()
+        seco = carregar_clima_seco()
+        self.assertEqual(len(seco), 12)
+        for mes in (10, 2):
+            saida = recomendar({**ENTRADA, "mes_plantio": mes}, *dados, seco)
+            json.dumps(saida)
+            for s in saida["sequencias"]:
+                self.assertTrue(0 <= s["seco"]["score"] <= 100)
+                self.assertTrue(0 <= s["seco"]["renda"] <= 1)
 
 
 if __name__ == "__main__":
