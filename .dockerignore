@@ -8,7 +8,9 @@ data/ecocrop
 data/inmet
 data/nexgddp
 data/power
-data/talhao
+data/talhao/*
+!data/talhao/ndvi_climatologia.csv
+!data/talhao/declividade.csv
 frontend/node_modules
 frontend/target
 frontend/dist
@@ -16,3 +18,4 @@ frontend/.cache
 frontend/.tools
 frontend/public/pkg
 frontend/test-results
+frontend/*.log

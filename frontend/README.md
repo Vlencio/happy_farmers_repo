@@ -64,11 +64,14 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Prévia, área aproximada em hectares e download do GeoJSON; furos e partes de MultiPolygon são preservados no arquivo.
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
-- Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro.
+- Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
 - Linha do tempo com as culturas, espera, plantio/colheita e tabela mensal de água, comparando hoje/futuro.
 - Calendários que atravessam dezembro e podem exceder 12 meses; tratamento de resultado vazio e motivos de descarte.
 - Rascunho local, recuperação ao recarregar, estados de erro e cancelamento de chamadas ao motor.
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
+- Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
+- Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
+- Consumo opcional de ano seco e faixa entre modelos preparado; depende de P1/D2, conforme [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API
 
@@ -87,7 +90,7 @@ A interface valida o contrato descrito em [docs/API.md](docs/API.md). Há mensag
 timeout de 45 segundos e cancelamento. Mudanças de contorno, histórico ou opções invalidam a análise anterior.
 
 O clima ainda vem das **tabelas fixas do talhão de demonstração**: desenhar outro lugar
-não busca seus dados climáticos. O contorno fornece uma latitude aproximada; a área
+não busca seus dados climáticos. O contorno fornece latitude e longitude aproximadas; a área
 multiplica a receita por hectare. Safra/ano e observações ficam salvos localmente,
 pois o contrato recebe somente a ordem das culturas. Receita não desconta custos e
 os índices não são probabilidades nem medições de solo.
@@ -124,7 +127,9 @@ Principais arquivos:
 | `web/map.mjs`, `web/geometry.mjs` | Mapa, edição, importação e GeoJSON |
 | `web/main.mjs` | Arquivos, rascunho e coordenação assíncrona |
 | `web/api.mjs` | Contrato e cliente HTTP para FastAPI |
+| `web/field.mjs` | Correspondência do contorno e apresentação dos dados do talhão |
 | `../backend/app.py` | Transporte HTTP para o motor, catálogo e validação de entrada |
+| `../backend/field_context.py` | Leitura dos CSVs de contexto e deltas opcionais por modelo |
 | `tests/fixtures/` | Saída real exportada do motor para testes |
 
 Testes Python, da raiz:

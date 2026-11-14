@@ -181,7 +181,12 @@ integrated with the 14 Nov engine contract.
    of `docs/contrato_motor.md`.
 4. Iterate on the integrated Rune front end. It now consumes the real engine;
    objective cards select income (today's gross revenue), soil (today's soil index),
-   and climate (future fit, with future water as tiebreaker), rather than top-three overall rank.
+   and climate (future fit among sequences where every future crop has positive
+   revenue; fallback to all sequences only if none qualify, future water as tiebreaker).
+   It includes demo-boundary-only NDVI/slope/station context and a glossary.
+   The optional dry-year output and per-model CSV have presentation/validation support,
+   awaiting P1/D2. Longitude is sent and validated; point-specific climate still awaits D1.
+   See `frontend/docs/API.md` and `frontend/docs/PLANO_GAP.md` for integration status.
 
 ## Submission
 

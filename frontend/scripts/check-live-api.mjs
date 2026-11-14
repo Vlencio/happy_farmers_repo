@@ -2,11 +2,13 @@
 import assert from 'node:assert/strict';
 import { buildRequest, mapMotorAnalysis, requestAnalysis, requestMetadata } from '../web/api.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
+import { buildFieldContext } from '../web/field.mjs';
 import { readFileSync } from 'node:fs';
 
 const baseUrl = process.env.HAPPY_FARMERS_TEST_API || 'http://127.0.0.1:4173/api';
 const metadata = await requestMetadata(baseUrl);
 const farm = normalizeFarm(JSON.parse(readFileSync(new URL('../public/demo-farm.geojson', import.meta.url))));
+assert.ok(buildFieldContext(farm, metadata));
 let calls = 0, empty = 0, extended = 0;
 for (const horizonte of [1, 2]) {
   for (let mes_plantio = 1; mes_plantio <= 12; mes_plantio++) {
@@ -18,6 +20,9 @@ for (const horizonte of [1, 2]) {
     assert.equal(raw.entrada.mes_plantio, mes_plantio);
     assert.equal(raw.sequencias.length + raw.descartadas.length, metadata.cultures.length ** horizonte);
     const view = mapMotorAnalysis(raw, farm);
+    if (horizonte === 2 && [2, 10].includes(mes_plantio)) {
+      assert.equal(view.recommendations[2].sequence_id, mes_plantio === 10 ? 'soja>sorgo' : 'sorgo>soja');
+    }
     assert.equal(view.recommendations.length, raw.sequencias.length ? 3 : 0);
     if (!raw.sequencias.length) empty++;
     for (const rec of view.recommendations) {

@@ -5,10 +5,13 @@ use std::cell::RefCell;
 mod model;
 mod season;
 mod ui;
-use model::{Analysis, Culture, Farm, HistoryItem, Page, Settings};
+use model::{Analysis, Culture, Farm, FieldContext, HistoryItem, Page, Settings};
 
 struct State {
     farm: Option<Farm>,
+    field_context: Option<FieldContext>,
+    field_open: bool,
+    glossary_open: bool,
     history: Vec<HistoryItem>,
     page: Page,
     analysis: Option<Analysis>,
@@ -34,6 +37,9 @@ impl Default for State {
     fn default() -> Self {
         Self {
             farm: None,
+            field_context: None,
+            field_open: true,
+            glossary_open: false,
             history: vec![],
             page: Page::Setup,
             analysis: None,
@@ -154,6 +160,9 @@ enum Command {
     Farm {
         farm: Farm,
     },
+    FieldContext {
+        context: Option<FieldContext>,
+    },
     Restore {
         farm: Option<Farm>,
         history: Vec<HistoryItem>,
@@ -188,7 +197,9 @@ fn apply_command(s: &mut State, command: Command) {
         Command::Farm { farm } => {
             s.invalidate();
             s.farm = Some(farm);
+            s.field_context = None;
         }
+        Command::FieldContext { context } => s.field_context = context,
         Command::Restore {
             farm,
             history,

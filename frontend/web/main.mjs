@@ -2,6 +2,7 @@ import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, validateSettings } from './api.mjs';
+import { buildFieldContext } from './field.mjs';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
@@ -14,18 +15,23 @@ function saveDraft() {
   } catch { send({ type: 'notice', message: 'Não foi possível salvar neste navegador. Baixe seu GeoJSON para guardar o contorno.' }); }
 }
 function invalidate() { requestId++; controller?.abort(); }
+function updateFieldContext() {
+  send({ type: 'field_context', context: buildFieldContext(farm, metadata) });
+}
 async function connect() {
   try {
     metadata = await requestMetadata(baseUrl, { signal: AbortSignal.timeout(10000) });
     send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice });
+    updateFieldContext();
   } catch (error) {
     metadata = null;
+    send({ type: 'field_context', context: null });
     send({ type: 'config', ready: false, cultures: [], data_notice: '' });
     send({ type: 'error', message: `Não foi possível conectar ao motor. Inicie a API e clique em Reconectar. ${error.message}` });
   }
 }
 const farmMap = createFarmMap((value) => {
-  invalidate(); farm = value; send({ type: 'farm', farm }); saveDraft();
+  invalidate(); farm = value; send({ type: 'farm', farm }); updateFieldContext(); saveDraft();
 });
 document.getElementById('geojson-file').onchange = async (event) => {
   const file = event.target.files?.[0]; event.target.value = '';

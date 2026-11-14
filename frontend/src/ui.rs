@@ -404,7 +404,7 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .child(col().gap(5.0).shrink().child(label(&farm.name, 19.0, 600.0, INK).wrap())
                 .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED)))
             .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).replace('.', ","), 26.0, 500.0, INK)).child(label("área aproximada", 10.0, 400.0, MUTED))))
-            .child(paragraph("O centro do contorno fornece a latitude da análise. A área converte a receita por hectare em receita total."))
+            .child(paragraph("O centro do contorno fornece latitude e longitude da análise. A área converte a receita por hectare em receita total."))
             .child(responsive_row(narrow)
                 .child(column_width(button(k, "edit-map", "Ver e editar no mapa", false, |_| host(json!({"type":"map"}))), narrow, 1.0))
                 .child(column_width(button(k, "download", "Baixar GeoJSON", false, |_| host(json!({"type":"download"}))), narrow, 1.0)))
@@ -441,6 +441,18 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
                             .variant(ButtonVariant::Ghost)
                             .on_press(|_: &mut State| host(json!({"type":"sample"})))
                             .build(k)
+                            // This Rune revision reserves Enter for the window's default
+                            // button. The web example action also accepts focused Enter.
+                            .on_key(|_: &mut State, ev, tx| {
+                                if ev.key == rune::Key::Enter && ev.mods == rune::Mods::default() {
+                                    if !tx.key_repeat() {
+                                        host(json!({"type":"sample"}));
+                                    }
+                                    true
+                                } else {
+                                    false
+                                }
+                            })
                             .key("sample")
                             .h(40.0),
                     ),
@@ -637,7 +649,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
                     .child(label(summary, 13.0, 500.0, INK).wrap())
                     .child(
                         label(
-                            "Latitude, ordem das culturas e opções do ciclo serão enviadas ao motor.",
+                            "Localização, ordem das culturas e opções do ciclo serão enviadas para a análise.",
                             11.0,
                             400.0,
                             MUTED,
@@ -656,6 +668,117 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
         view = view.child(button(k, "reconnect", "Reconectar ao motor", false, |_| {
             host(json!({"type":"connect"}))
         }));
+    }
+    if s.farm.is_some() {
+        view = view.child(field_panel(s, k, narrow));
+    }
+    view
+}
+fn field_panel(s: &State, k: &Kit, narrow: bool) -> El {
+    let mut view = panel()
+        .w_full()
+        .child(label("Seu talhão", 23.0, 600.0, INK));
+    let Some(field) = &s.field_context else {
+        return view.child(paragraph("As observações de vegetação e relevo estão disponíveis apenas para o contorno do talhão de demonstração. Ainda não há esses dados para esta área."));
+    };
+    view = view
+        .child(pill("TALHÃO DE DEMONSTRAÇÃO", "#e9efd9", INK))
+        .child(paragraph(&field.summary))
+        .child(button(
+            k,
+            "field-toggle",
+            if s.field_open {
+                "Ocultar observações do talhão"
+            } else {
+                "Mostrar observações do talhão"
+            },
+            false,
+            |s| s.field_open = !s.field_open,
+        ));
+    if !s.field_open {
+        return view;
+    }
+    let mut chart = row().gap(8.0).w_full().min_w(660.0);
+    for month in &field.months {
+        chart = chart.child(
+            col()
+                .w(0.0)
+                .grow(1.0)
+                .min_w(0.0)
+                .gap(8.0)
+                .center()
+                .child(label(&month.value, 11.0, 500.0, INK))
+                .child(
+                    col().h(100.0).w_full().justify_end().child(
+                        el().w_full()
+                            .h(month.height * 100.0)
+                            .radius(4.0)
+                            .fill(color(if month.height < 0.4 {
+                                "#ac873e"
+                            } else {
+                                "#709454"
+                            })),
+                    ),
+                )
+                .child(label(&month.label, 11.0, 600.0, INK))
+                .child(label(&month.frequency, 10.0, 400.0, MUTED)),
+        );
+    }
+    view.child(label("Vegetação ao longo do ano", 18.0, 600.0, INK))
+        .child(paragraph("Barras: NDVI médio mensal, escala de 0 a 1 neste talhão. Percentuais abaixo dos meses: frequência de indício de solo descoberto ou palhada. Deslize para ver os 12 meses."))
+        .child(el().w_full().scroll_x().child(chart))
+        .child(paragraph(&field.coverage))
+        .child(rule())
+        .child(responsive_row(narrow)
+            .child(column_width(col().gap(8.0).child(eyebrow("RELEVO")).child(paragraph(&field.terrain)), narrow, 1.0))
+            .child(column_width(col().gap(8.0).child(eyebrow("SATÉLITE + ESTAÇÃO EM SOLO")).child(paragraph(&field.station)), narrow, 1.0)))
+        .child(col().gap(8.0).padding(14.0).radius(9.0).fill(color("#eaf1ef"))
+            .child(eyebrow("O QUE MUDA ENTRE OS MODELOS CLIMÁTICOS"))
+            .child(paragraph(&field.model_spread)))
+        .child(label(&field.source, 11.0, 400.0, MUTED).wrap().w_full())
+}
+fn glossary(s: &State, k: &Kit) -> El {
+    let mut view = panel().w_full().gap(14.0)
+        .child(button(k, "glossary-toggle", if s.glossary_open { "Entenda os termos · recolher" } else { "Entenda os termos · abrir" }, false, |s| s.glossary_open = !s.glossary_open))
+        .child(label("Escopo: um talhão. As fontes têm resoluções diferentes: clima de um ponto, NDVI de 250 m e altitude de 30 m. Vegetação e relevo estão disponíveis para a área de demonstração.", 11.0, 400.0, MUTED).wrap().w_full());
+    if s.glossary_open {
+        for (term, definition) in [
+            (
+                "Evapotranspiração",
+                "Água que sai do solo e das plantas para a atmosfera. ET0 é a demanda de referência; ETc é a demanda estimada da cultura, calculada com seu Kc. Valores em milímetros.",
+            ),
+            (
+                "Kc",
+                "Coeficiente da cultura: multiplica a ET0 para estimar a ETc. Muda ao longo do ciclo; não é uma quantidade de água.",
+            ),
+            (
+                "Déficit",
+                "Parte da demanda de água que a chuva e a reserva de água do solo não conseguem atender no balanço do motor. É uma estimativa em milímetros, não uma prescrição de irrigação.",
+            ),
+            (
+                "Atendimento hídrico",
+                "Quanto da demanda foi atendida no balanço estimado. A tela mostra um índice de 0 a 100; maior significa menos demanda não atendida, não uma chance de sucesso.",
+            ),
+            (
+                "NDVI",
+                "Índice de vegetação calculado a partir da luz refletida pela superfície. Varia de −1 a 1. Valores maiores costumam indicar vegetação mais verde; valores baixos também podem ser palhada ou solo exposto. Não mede a saúde do solo diretamente.",
+            ),
+            (
+                "Encaixe",
+                "Adequação da sequência às condições de temperatura, chuva e calor usadas pelo motor. A sequência fica limitada pelo menor encaixe de suas culturas. Índice de 0 a 100, não probabilidade de resistir a eventos extremos.",
+            ),
+        ] {
+            view = view.child(
+                col()
+                    .gap(5.0)
+                    .child(label(term, 15.0, 600.0, INK))
+                    .child(paragraph(definition)),
+            );
+        }
+        view = view.child(rule())
+            .child(label("Valide com seu agrônomo", 17.0, 600.0, INK))
+            .child(paragraph("Receitas são brutas, sem custos; preços históricos e valores ainda marcados para conferência precisam de validação local. Limites de calor variam com cultivar e fase da planta. Sem limiar cadastrado, o motor não penaliza o calor; isso não comprova tolerância."))
+            .child(paragraph("As constantes ainda são provisórias: reserva de água do solo de 100 mm, fator 0,85 para repetição e 1,10 após fixadora de nitrogênio, pesos de solo 0,4/0,4/0,2, fases de Kc em 20%/45%/80% do ciclo, intervalo de colheita de 10 dias, espera máxima de 182 dias e perda proporcional de 1 para 1 pelos dias de calor na fase de 45% a 80% do ciclo. Elas não substituem medições nem recomendação agronômica."));
     }
     view
 }
@@ -834,7 +957,8 @@ fn results_view(s: &State, k: &Kit, narrow: bool) -> El {
     let mut view = col().gap(24.0).w_full()
         .child(button(k, "back-setup", "← Editar fazenda e histórico", false, |s| s.page = Page::Setup))
         .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "Três caminhos. A sua escolha." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Compare o que cada alternativa prioriza. Abra um caminho para entender sua sequência, os cuidados e os pontos de atenção." }, narrow))
-        .child(farm_summary(s)).child(analysis_banner(analysis));
+        .child(farm_summary(s)).child(analysis_banner(analysis))
+        .child(paragraph(&analysis.scenario_note));
     if analysis.recommendations.is_empty() {
         view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
             .child(paragraph("As épocas de plantio não couberam nas opções informadas. Revise o mês em que o talhão fica livre e a quantidade de culturas no planejamento.")));
@@ -859,6 +983,9 @@ fn results_view(s: &State, k: &Kit, narrow: bool) -> El {
             }
         }
         view = view.child(discarded);
+    }
+    if s.farm.is_some() {
+        view = view.child(field_panel(s, k, narrow));
     }
     view
 }
@@ -1012,13 +1139,13 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar os três caminhos", false, |s| s.page = Page::Results))
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
-        .child(farm_summary(s)).child(analysis_banner(analysis)).child(facts)
+        .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
             .child(paragraph("Selecione uma cultura para ver os detalhes. Ano 1 é o ano inicial do planejamento; o calendário pode atravessar dezembro."))
             .child(el().w_full().scroll_x().child(months.min_w(rec.month_labels.len() as f32 * 83.0))))
         .child(responsive_row(narrow).child(column_width(stages, narrow, 0.8)).child(column_width(detail, narrow, 1.2)))
         .child(panel().child(label("Água, mês a mês", 22.0, 600.0, INK))
-            .child(paragraph("Chuva, demanda e déficit: hoje / futuro, em milímetros. Dias e Kc correspondem ao período da cultura dentro de cada mês. Deslize a tabela para ver todas as colunas."))
+            .child(paragraph(&rec.water_caption))
             .child(el().w_full().scroll_x().child(water_table)))
         .child(panel().gap(8.0).child(eyebrow("O QUE CONSIDERAR NESTA ESCOLHA")).child(paragraph(&rec.tradeoff)))
 }
@@ -1044,7 +1171,7 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
         .padding(if narrow { 18.0 } else { 36.0 })
         .pt(12.0)
         .pb(40.0);
-    content = content.child(page);
+    content = content.child(page).child(glossary(s, &kit));
     if !s.notice.is_empty() {
         content = content.child(label(&s.notice, 10.0, 400.0, MUTED).wrap().w_full());
     }

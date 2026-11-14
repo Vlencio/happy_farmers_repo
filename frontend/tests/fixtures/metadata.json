@@ -37,5 +37,252 @@
       "label": "Algodão"
     }
   ],
-  "data_notice": "Clima de hoje: 2005–2024; futuro: 2041–2060. As tabelas são do talhão de demonstração, perto de -20.032, -48.526. Desenhar outra área ainda não carrega o clima daquele local. A área multiplica a receita por hectare."
+  "data_notice": "Clima de hoje: 2005–2024; futuro: 2041–2060. As tabelas são do talhão de demonstração, perto de -20.032, -48.526. Desenhar outra área ainda não carrega o clima daquele local. A área multiplica a receita por hectare.",
+  "demo_field": {
+    "id": "talhao_demo_2",
+    "name": "Talhão de demonstração",
+    "boundary": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "talhao_demo_2"
+          },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [
+                  -48.5375892,
+                  -20.030754
+                ],
+                [
+                  -48.5346149,
+                  -20.0336091
+                ],
+                [
+                  -48.5337047,
+                  -20.0335684
+                ],
+                [
+                  -48.5331413,
+                  -20.0350344
+                ],
+                [
+                  -48.5269432,
+                  -20.0406129
+                ],
+                [
+                  -48.5156306,
+                  -20.0298221
+                ],
+                [
+                  -48.5181445,
+                  -20.028804
+                ],
+                [
+                  -48.517581,
+                  -20.0275824
+                ],
+                [
+                  -48.5312342,
+                  -20.0234287
+                ],
+                [
+                  -48.5318843,
+                  -20.0243246
+                ],
+                [
+                  -48.5312775,
+                  -20.025587
+                ],
+                [
+                  -48.528937,
+                  -20.0259128
+                ],
+                [
+                  -48.530028,
+                  -20.0290626
+                ],
+                [
+                  -48.5346488,
+                  -20.0269484
+                ],
+                [
+                  -48.536029,
+                  -20.0283297
+                ],
+                [
+                  -48.5375892,
+                  -20.030754
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "ndvi": [
+      {
+        "mes": 1.0,
+        "ndvi_medio": 0.784,
+        "ndvi_min": 0.643,
+        "ndvi_max": 0.849,
+        "freq_solo": 0.0
+      },
+      {
+        "mes": 2.0,
+        "ndvi_medio": 0.746,
+        "ndvi_min": 0.542,
+        "ndvi_max": 0.814,
+        "freq_solo": 0.0
+      },
+      {
+        "mes": 3.0,
+        "ndvi_medio": 0.669,
+        "ndvi_min": 0.446,
+        "ndvi_max": 0.778,
+        "freq_solo": 0.0
+      },
+      {
+        "mes": 4.0,
+        "ndvi_medio": 0.692,
+        "ndvi_min": 0.532,
+        "ndvi_max": 0.805,
+        "freq_solo": 0.0
+      },
+      {
+        "mes": 5.0,
+        "ndvi_medio": 0.596,
+        "ndvi_min": 0.317,
+        "ndvi_max": 0.77,
+        "freq_solo": 0.1
+      },
+      {
+        "mes": 6.0,
+        "ndvi_medio": 0.495,
+        "ndvi_min": 0.294,
+        "ndvi_max": 0.672,
+        "freq_solo": 0.2
+      },
+      {
+        "mes": 7.0,
+        "ndvi_medio": 0.425,
+        "ndvi_min": 0.22,
+        "ndvi_max": 0.545,
+        "freq_solo": 0.2
+      },
+      {
+        "mes": 8.0,
+        "ndvi_medio": 0.357,
+        "ndvi_min": 0.211,
+        "ndvi_max": 0.58,
+        "freq_solo": 0.5
+      },
+      {
+        "mes": 9.0,
+        "ndvi_medio": 0.349,
+        "ndvi_min": 0.232,
+        "ndvi_max": 0.648,
+        "freq_solo": 0.6
+      },
+      {
+        "mes": 10.0,
+        "ndvi_medio": 0.402,
+        "ndvi_min": 0.238,
+        "ndvi_max": 0.734,
+        "freq_solo": 0.4
+      },
+      {
+        "mes": 11.0,
+        "ndvi_medio": 0.56,
+        "ndvi_min": 0.303,
+        "ndvi_max": 0.761,
+        "freq_solo": 0.1
+      },
+      {
+        "mes": 12.0,
+        "ndvi_medio": 0.725,
+        "ndvi_min": 0.612,
+        "ndvi_max": 0.82,
+        "freq_solo": 0.0
+      }
+    ],
+    "terrain": {
+      "area_ha": 219.19,
+      "decl_media_pct": 4.05,
+      "decl_p90_pct": 7.07,
+      "decl_max_pct": 17.82
+    },
+    "station": {
+      "name": "INMET A520 · Conceição das Alagoas",
+      "distance_km": 40,
+      "corrections": [
+        {
+          "mes": 1.0,
+          "off_tmin": -1.17,
+          "off_tmax": 1.21
+        },
+        {
+          "mes": 2.0,
+          "off_tmin": -1.34,
+          "off_tmax": 1.52
+        },
+        {
+          "mes": 3.0,
+          "off_tmin": -1.28,
+          "off_tmax": 1.37
+        },
+        {
+          "mes": 4.0,
+          "off_tmin": -1.42,
+          "off_tmax": 0.92
+        },
+        {
+          "mes": 5.0,
+          "off_tmin": -1.58,
+          "off_tmax": 0.63
+        },
+        {
+          "mes": 6.0,
+          "off_tmin": -1.67,
+          "off_tmax": 0.51
+        },
+        {
+          "mes": 7.0,
+          "off_tmin": -2.01,
+          "off_tmax": 0.41
+        },
+        {
+          "mes": 8.0,
+          "off_tmin": -2.18,
+          "off_tmax": -0.01
+        },
+        {
+          "mes": 9.0,
+          "off_tmin": -2.48,
+          "off_tmax": -0.61
+        },
+        {
+          "mes": 10.0,
+          "off_tmin": -2.12,
+          "off_tmax": -0.22
+        },
+        {
+          "mes": 11.0,
+          "off_tmin": -1.63,
+          "off_tmax": 0.26
+        },
+        {
+          "mes": 12.0,
+          "off_tmin": -1.16,
+          "off_tmax": 1.05
+        }
+      ]
+    },
+    "sources": "NDVI: MOD13Q1, 250 m, série 2014–2024; relevo: SRTM, 30 m; clima: POWER e correção local da INMET A520. Escopo: um talhão. As resoluções são diferentes."
+  },
+  "model_spread": null,
+  "point_climate_available": false
 }

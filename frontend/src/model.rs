@@ -43,6 +43,7 @@ pub enum Page {
 pub struct Analysis {
     pub demo: bool,
     pub summary: String,
+    pub scenario_note: String,
     pub recommendations: Vec<Recommendation>,
     pub discarded: Vec<String>,
 }
@@ -57,6 +58,24 @@ pub struct Recommendation {
     pub facts: Vec<Fact>,
     pub timeline: Vec<Stage>,
     pub month_labels: Vec<String>,
+    pub water_caption: String,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct FieldContext {
+    pub summary: String,
+    pub coverage: String,
+    pub terrain: String,
+    pub station: String,
+    pub source: String,
+    pub model_spread: String,
+    pub months: Vec<NdviMonth>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct NdviMonth {
+    pub label: String,
+    pub value: String,
+    pub height: f32,
+    pub frequency: String,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Fact {

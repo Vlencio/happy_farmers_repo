@@ -21,7 +21,7 @@ COPY frontend/ ./
 ENV VITE_API_BASE_URL=/
 RUN npm run build -- --release
 
-# --- 2. Execucao: FastAPI + motor + as tres tabelas + o site compilado ---
+# --- 2. Execucao: FastAPI + motor + tabelas e contexto do talhao + site ---
 FROM python:3.13-slim
 WORKDIR /app
 COPY backend/requirements.txt backend/requirements.txt
@@ -30,7 +30,8 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY motor/ motor/
 COPY backend/ backend/
 COPY deploy/ deploy/
-COPY data/culturas.csv data/clima_hoje.csv data/clima_futuro.csv data/
+COPY data/culturas.csv data/clima_*.csv data/talhao_demo_2.geojson data/
+COPY data/talhao/ndvi_climatologia.csv data/talhao/declividade.csv data/talhao/
 COPY --from=front /app/frontend/dist frontend/dist
 
 ENV PORT=8000
