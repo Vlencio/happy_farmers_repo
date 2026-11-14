@@ -132,6 +132,32 @@ class TestRecomendar(unittest.TestCase):
         self.assertAlmostEqual(safra["receita_ha"], 1000 * 5.5 * safra["fator"], delta=5)
         self.assertAlmostEqual(safrinha["receita_ha"], 1000 * 5.0 * safrinha["fator"], delta=5)
 
+    def test_calor(self):
+        for s in self.saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                for c in s[cen]["culturas"]:
+                    self.assertTrue(0 <= c["encaixe_calor"] <= 1)
+                    # a saida vem arredondada em 3 casas
+                    self.assertLessEqual(c["fator"], c["encaixe_calor"] * c["fator_sequencia"] + 2e-3)
+        # milho (limiar 35): mais dias quentes na fase sensivel no futuro
+        hoje = cultura_de(self.saida, "soja>milho", "hoje", 1)
+        futuro = cultura_de(self.saida, "soja>milho", "futuro", 1)
+        self.assertGreater(futuro["dias_calor"], hoje["dias_calor"])
+        self.assertLess(futuro["encaixe_calor"], hoje["encaixe_calor"])
+        # crotalaria nao tem limiar: a regra nao se aplica
+        crot = cultura_de(self.saida, "soja>crotalaria", "futuro", 1)
+        self.assertEqual((crot["encaixe_calor"], crot["dias_calor"]), (1.0, 0.0))
+
+    def test_calor_e_opcional_na_tabela_de_culturas(self):
+        sem = recomendar(ENTRADA, self.dados[0].drop(columns=["temp_calor_c"]), self.dados[1], self.dados[2])
+        for s in sem["sequencias"]:
+            for c in s["futuro"]["culturas"]:
+                self.assertEqual(c["encaixe_calor"], 1.0)
+
+    def test_falta_coluna_de_calor_no_clima(self):
+        with self.assertRaises(ValueError):
+            recomendar(ENTRADA, self.dados[0], self.dados[1].drop(columns=["dias_acima_35"]), self.dados[2])
+
     def test_marca_a_rotacao_atual(self):
         self.assertEqual([s["id"] for s in self.saida["sequencias"] if s["atual"]], ["soja>milho"])
 
@@ -204,12 +230,31 @@ class TestPecas(unittest.TestCase):
         self.assertIsNone(motor.dia_de_plantio(2, 59))  # livre em 1/mar: fevereiro ja passou
         self.assertEqual(motor.dia_de_plantio(2, 365 - 30), 365 + 31)  # livre em dezembro: fevereiro do ano seguinte
 
+    def clima_fixo(self, dias_quentes_por_mes=0.0):
+        return [
+            {"mes": m, "chuva_mm": 0.0, "tmin_c": 18.0, "tmax_c": 30.0, "dias_acima_38": dias_quentes_por_mes * motor.DIAS_MES[m - 1]}
+            for m in range(1, 13)
+        ]
+
     def test_solo_seca_sem_chuva(self):
-        clima = [{"mes": m, "chuva_mm": 0.0, "tmin_c": 18.0, "tmax_c": 30.0} for m in range(1, 13)]
+        clima = self.clima_fixo()
         c = motor._tabela_culturas(carregar_dados(FIXOS)[0])["soja"]
         r, agua = motor.simular_cultura(c, 0, clima, motor.et0_hargreaves(clima, -20), 0.0)
         self.assertAlmostEqual(r["atendimento_hidrico"], 0.0)
         self.assertEqual(agua, 0.0)
+
+    def test_encaixe_de_calor(self):
+        soja = motor._tabela_culturas(carregar_dados(FIXOS)[0])["soja"]  # limiar 38, ciclo 120
+        sensiveis = sum(1 for i in range(120) if motor.FASE_SENSIVEL[0] <= i / 120 < motor.FASE_SENSIVEL[1])
+        for fracao, esperado in [(0.0, 1.0), (0.25, 0.75), (1.0, 0.0)]:  # fracao dos dias acima do limiar
+            clima = self.clima_fixo(fracao)
+            r, _ = motor.simular_cultura(soja, 0, clima, motor.et0_hargreaves(clima, -20), 0.0)
+            self.assertAlmostEqual(r["encaixe_calor"], esperado)
+            self.assertAlmostEqual(r["dias_calor"], fracao * sensiveis)
+        with mock.patch.object(motor, "PERDA_CALOR", 0.5):
+            clima = self.clima_fixo(1.0)
+            r, _ = motor.simular_cultura(soja, 0, clima, motor.et0_hargreaves(clima, -20), 0.0)
+            self.assertAlmostEqual(r["encaixe_calor"], 0.5)
 
 
 class TestDadosReais(unittest.TestCase):

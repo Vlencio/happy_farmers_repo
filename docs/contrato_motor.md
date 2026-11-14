@@ -1,6 +1,6 @@
 # Contrato do motor — entradas e saída
 
-> Versão de 14/11/2026, depois da junção com as tabelas do Dev de dados. O motor lê `data/culturas.csv`, `data/clima_hoje.csv` e `data/clima_futuro.csv` como estão hoje. Se o formato de alguma mudar, avisem.
+> Versão de 14/11/2026, com a regra de calor. O motor lê `data/culturas.csv`, `data/clima_hoje.csv` e `data/clima_futuro.csv` como estão hoje. Se o formato de alguma mudar, avisem.
 
 ## Como chamar
 
@@ -11,7 +11,7 @@ culturas, clima_hoje, clima_futuro = carregar_dados()   # lê os três CSVs de d
 saida = recomendar(entrada, culturas, clima_hoje, clima_futuro)   # dict pronto para json.dumps
 ```
 
-- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, ~85 KB com as 9 culturas).
+- Demo: `python -m motor` (tabela) ou `python -m motor --json` (JSON completo, ~90 KB com as 9 culturas).
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
 - Rodar sempre da raiz do repo.
 
@@ -49,8 +49,11 @@ Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje 
 | `chuva_mm` | Chuva do mês, no balanço hídrico e no encaixe de chuva |
 | `tmin_c`, `tmax_c` | Encaixe de temperatura (média das duas) |
 | `et0_mm` | Opcional. Se vier, o motor usa esse ET0 e não recalcula. Se não vier, calcula por Hargreaves com `tmin_c`, `tmax_c` e `lat` |
+| `dias_acima_NN` | Dias do mês com máxima acima de NN °C. Regra de calor. Precisa existir uma coluna para cada limiar usado em `temp_calor_c`; se faltar, o motor dá `ValueError` |
 
 As tabelas atuais trazem `et0_mm`, calculado com as temperaturas do POWER sem a correção da estação A520. Por isso o motor não recalcula.
+
+`dias_quentes` e `data/clima_seco.csv` (ano seco de 2020/21) não são lidos. O ano seco tem o mesmo formato e pode ser passado no lugar de `clima_hoje` ou `clima_futuro`.
 
 ## Entrada 3 — `data/culturas.csv`
 
@@ -67,6 +70,7 @@ De `scripts/montar_culturas.py`. Detalhes em `docs/colunas_dados.md`, seção 5,
 | `mes_plantio_safra`, `mes_plantio_safrinha` | Mês de plantio em cada slot. Vazio = a cultura não entra naquele slot |
 | `preco` | R$/t |
 | `produtividade`, `produtividade_safrinha` | t/ha em cada slot. Safrinha vazia = usa a da safra |
+| `temp_calor_c` | Opcional. Máxima diária (°C) que prejudica o florescimento. Vazio = a regra de calor não se aplica à cultura |
 
 As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não são lidas.
 
@@ -77,7 +81,7 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
   "entrada": { "...": "a entrada, com prioridades já normalizadas" },
   "slots": ["safra", "safrinha"],
   "clima": {
-    "hoje":   [{"mes": 1, "chuva_mm": 239.14, "tmin_c": 20.22, "tmax_c": 30.93, "et0_mm": 152.35}, "... 12 meses"],
+    "hoje":   [{"mes": 1, "chuva_mm": 239.14, "tmin_c": 20.22, "tmax_c": 30.93, "et0_mm": 152.35, "dias_acima_32": 9.6, "dias_acima_35": 1.85, "dias_acima_36": 1.4, "dias_acima_38": 0.5}, "... 12 meses"],
     "futuro": ["... 12 meses"]
   },
   "sequencias": [
@@ -88,12 +92,12 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
       "rank_hoje": 1,
       "rank_futuro": 1,
       "hoje": {
-        "score": 82.124,
+        "score": 81.988,
         "agua": 0.918,
-        "solo": 0.546,
+        "solo": 0.542,
         "renda": 1.0,
-        "receita_ha": 14284.203,
-        "encaixe": 1.0,
+        "receita_ha": 14170.702,
+        "encaixe": 0.986,
         "culturas": [
           { "...": "soja, na safra" },
           {
@@ -105,6 +109,8 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
             "espera_dias": 0,
             "encaixe_temp": 1.0,
             "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.986,
+            "dias_calor": 0.67,
             "atendimento_hidrico": 0.819,
             "chuva_mm": 440.598,
             "etc_mm": 421.529,
@@ -149,8 +155,10 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
 | `score` | 0 a 100. Média de `agua`, `solo` e `renda` com os pesos do usuário |
 | `agua`, `solo`, `renda` | As três partes do score, de 0 a 1 |
 | `receita_ha` | R$ por hectare, somando as culturas da sequência. O front multiplica pela área |
-| `encaixe` | Pior encaixe de clima (temperatura ou chuva) entre as culturas, de 0 a 1 |
+| `encaixe` | Pior encaixe de clima (temperatura, chuva ou calor) entre as culturas, de 0 a 1 |
 | `culturas[]` | Uma entrada por cultura, na ordem de plantio, com os números que explicam o score |
+| `encaixe_calor` | 1 = sem dias acima do limiar na fase sensível; cai com a fração desses dias. Sempre 1 em cultura sem limiar |
+| `dias_calor` | Dias esperados acima do limiar da cultura dentro da fase sensível |
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
@@ -167,9 +175,10 @@ Para os cards: as três primeiras de `sequencias`. Para o LLM: mandar o item int
 6. **Balanço hídrico** dia a dia: demanda = Kc × ET0. A cultura usa a chuva do dia e a água guardada no solo (até 100 mm). `deficit_mm` é a demanda não atendida; `atendimento_hidrico` = 1 − déficit / demanda.
 7. **Encaixe de temperatura:** 1 dentro da faixa ótima, 0 fora dos limites absolutos, linear entre os dois. Média sobre os dias do ciclo, com a temperatura média do mês.
 8. **Encaixe de chuva:** chuva do ciclo contra `chuva_min` e `chuva_max`. Cai em proporção à falta ou ao excesso.
-9. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 se é não fixadora depois de fixadora de N; 1 nos outros casos.
-10. **Receita** = preço × produtividade do slot × `fator`, onde `fator` = menor entre encaixe de temperatura, encaixe de chuva e atendimento hídrico, vezes `fator_sequencia`.
-11. **Partes do score:**
+9. **Calor:** a fase sensível é o meio do ciclo, de 45% a 80% (florescimento e enchimento de grãos, a mesma fase do Kc médio). O motor soma os dias acima do limiar da cultura (`dias_acima_<temp_calor_c>`) que caem nessa fase. `encaixe_calor` = 1 − dias de calor / dias da fase. Exemplo: 10 dias de calor em 40 dias de fase dá 0,75.
+10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 se é não fixadora depois de fixadora de N; 1 nos outros casos.
+11. **Receita** = preço × produtividade do slot × `fator`, onde `fator` = menor entre encaixe de temperatura, encaixe de chuva, encaixe de calor e atendimento hídrico, vezes `fator_sequencia`.
+12. **Partes do score:**
     - `agua` = 1 − déficit total / demanda total da sequência.
     - `solo` = média, por cultura, de (0,4 se fixa N + 0,4 se cobre o solo + 0,2 se é diferente da anterior) × o quanto a cultura cresce.
     - `renda` = receita da sequência ÷ a maior receita entre as sequências viáveis nos dois climas.
@@ -185,9 +194,29 @@ Para os cards: as três primeiras de `sequencias`. Para o LLM: mandar o item int
 | `FASES_KC` | 20% / 45% / 80% | Fases do Kc no ciclo |
 | `DIAS_COLHEITA` | 10 | Dias entre o fim do ciclo e o talhão livre, igual para todas as culturas |
 | `ESPERA_MAX_DIAS` | 182 | Espera máxima pelo mês de plantio; mais que isso, a época do slot já passou |
+| `FASE_SENSIVEL` | 45% a 80% | Parte do ciclo em que o calor conta |
+| `PERDA_CALOR` | 1,0 | Fração da produtividade perdida se todos os dias da fase sensível passam do limiar |
+
+## O que a regra de calor muda (tabelas de 14/11)
+
+| Cultura e slot | `encaixe_calor` hoje | futuro |
+|---|---|---|
+| soja, safra (38 °C) | 0,99 | 0,97 |
+| milho, safra (35 °C) | 0,94 | 0,86 |
+| milho, safrinha | 0,99 | 0,90 |
+| sorgo, safrinha (36 °C) | 0,99 | 0,95 |
+| girassol, safrinha (35 °C) | 0,98 | 0,87 |
+| feijão, safra (32 °C) | 0,66 | 0,37 |
+| feijão, safrinha | 0,78 | 0,45 |
+| algodão, safra (32 °C) | 0,74 | 0,39 |
+
+- **Talhão livre em outubro:** as três primeiras são as mesmas nos dois climas (`soja>milho`, `soja>sorgo`, `soja>crotalaria`). `soja>feijao` cai de 4º para 7º.
+- **Talhão livre em fevereiro:** hoje ganha `crotalaria>algodao`; no futuro ela cai para 12º e ganha `milho>soja`.
 
 ## Em aberto
 
-1. **Chuva do ECOCROP: anual ou do ciclo?** `docs/culturas_fontes.md` diz que `RMIN`/`RMAX` são de chuva anual (de memória). O motor compara com a chuva do ciclo. Com a anual (1.242 mm), o sorgo (`chuva_max` = 700) seria penalizado sempre. Falta conferir na documentação da FAO.
-2. **Mês de plantio é um mês só.** Uma cultura de safra que libera o talhão no dia 1 de março já não deixa plantar nada de fevereiro. Hoje isso acontece com o sorgo de safra: só a crotalária (março) cabe depois dele.
-3. **Calor.** Com as 9 culturas, hoje e futuro já dão rankings diferentes (14 das 22 sequências mudam de posição, puxadas pelo feijão, que tem faixa ótima até 25 °C). As três primeiras não mudam. As médias mensais ainda escondem os dias de calor: nos dados diários do NEX-GDDP, os dias acima de 35 °C passam de 33 para 82 por ano. Proposta, ainda não implementada: uma coluna `dias_quentes` nas tabelas de clima e uma regra de calor no motor.
+1. **Mês de plantio é um mês só.** Uma cultura de safra que libera o talhão no dia 1 de março já não deixa plantar nada de fevereiro. Hoje isso acontece com o sorgo de safra: só a crotalária (março) cabe depois dele.
+2. **Limiar de 32 °C.** O feijão e o algodão são os que mais caem, e é nesse limiar que POWER e NEX mais diferem (20%, ver `docs/colunas_dados.md`). A troca de vencedor no caso de fevereiro depende dele.
+3. **Perda de 1 para 1.** Cada dia de calor na fase sensível tira a mesma fração da produtividade. É um valor provisório (`PERDA_CALOR`), sem fonte.
+4. **Calor de hoje pode estar contado duas vezes.** A produtividade da Conab já reflete o calor atual do Brasil; a regra desconta o calor de hoje de novo. O que a regra mostra bem é a diferença entre hoje e futuro.
+5. **Ano seco.** `data/clima_seco.csv` existe e o motor roda nele, mas a saída só tem dois climas (hoje e futuro).

@@ -28,8 +28,10 @@ PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
 ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
+FASE_SENSIVEL = FASES_KC[1:]  # florescimento e enchimento de graos: a fase de Kc medio
+PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase sensivel passam do limiar
 
-COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e opcional
+COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e dias_acima_NN sao opcionais
 COLUNAS_NUMERICAS = [
     "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
     "chuva_min", "chuva_max", "kc_ini", "kc_med", "kc_fim", "preco", "produtividade",
@@ -114,6 +116,11 @@ def encaixe_chuva(chuva, c):
     return 1.0
 
 
+def coluna_de_calor(c):
+    """Coluna do clima com os dias acima do limiar de calor da cultura. None = a regra nao se aplica."""
+    return f"dias_acima_{c['temp_calor_c']}" if c.get("temp_calor_c") is not None else None
+
+
 def ordem_dos_slots(mes_plantio, horizonte):
     """Talhao livre de julho a dezembro: a proxima epoca e a safra; de janeiro a junho, a safrinha."""
     slots = ["safra", "safrinha"] if mes_plantio >= 7 else ["safrinha", "safra"]
@@ -139,10 +146,13 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
     """Roda o ciclo de uma cultura dia a dia, com chuva e ET0 do mes.
 
     Devolve (resultado, agua que sobra no solo). O solo guarda ate CAD_MM.
+    Calor: soma os dias acima do limiar da cultura que caem na fase sensivel do ciclo.
     """
     ciclo = c["ciclo_dias"]
     meses = {}  # mes -> acumulados, na ordem do ciclo
     soma_temp = 0.0
+    calor = coluna_de_calor(c)
+    dias_sensiveis = dias_calor = 0.0
     for i in range(ciclo):
         mes = MES_DO_DIA[(dia_inicio + i) % 365]
         m = clima[mes - 1]
@@ -152,6 +162,9 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
         eta = min(etc, agua + chuva)  # a cultura so usa a agua que existe
         agua = min(CAD_MM, agua + chuva - eta)
         soma_temp += encaixe_temperatura((m["tmin_c"] + m["tmax_c"]) / 2, c)
+        if calor and FASE_SENSIVEL[0] <= i / ciclo < FASE_SENSIVEL[1]:
+            dias_sensiveis += 1
+            dias_calor += m[calor] / DIAS_MES[mes - 1]  # chance de o dia ser quente
         a = meses.setdefault(mes, {"mes": mes, "dias": 0, "kc": 0.0, "chuva_mm": 0.0, "etc_mm": 0.0, "deficit_mm": 0.0})
         a["dias"] += 1
         a["kc"] += kc
@@ -172,6 +185,8 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
         "ciclo_dias": ciclo,
         "encaixe_temp": soma_temp / ciclo,
         "encaixe_chuva": encaixe_chuva(chuva_ciclo, c),
+        "encaixe_calor": max(0.0, 1 - PERDA_CALOR * dias_calor / dias_sensiveis) if dias_sensiveis else 1.0,
+        "dias_calor": dias_calor,
         "atendimento_hidrico": 1 - deficit / etc_ciclo if etc_ciclo > 0 else 1.0,
         "chuva_mm": chuva_ciclo,
         "etc_mm": etc_ciclo,
@@ -219,7 +234,8 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
             fator_sequencia = BONUS_APOS_FIXADORA
         else:
             fator_sequencia = 1.0
-        cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["atendimento_hidrico"])  # fator mais limitante
+        # fator mais limitante
+        cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"], r["atendimento_hidrico"])
         produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
         r["fator_sequencia"] = fator_sequencia
         r["fator"] = cresce * fator_sequencia
@@ -237,7 +253,7 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         "agua": 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0,
         "solo": sum(r["solo"] for r in resultados) / len(resultados),
         "receita_ha": sum(r["receita_ha"] for r in resultados),
-        "encaixe": min(min(r["encaixe_temp"], r["encaixe_chuva"]) for r in resultados),
+        "encaixe": min(min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"]) for r in resultados),
         "culturas": resultados,
     }
 
@@ -254,6 +270,10 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro):
     """
     tabela = _tabela_culturas(culturas)
     climas = {"hoje": _tabela_clima(clima_hoje), "futuro": _tabela_clima(clima_futuro)}
+    for cen, clima in climas.items():
+        faltam = sorted({coluna_de_calor(c) for c in tabela.values() if coluna_de_calor(c)} - set(clima[0]))
+        if faltam:
+            raise ValueError(f"clima {cen} sem as colunas de calor {faltam}: rode scripts/montar_clima.py")
 
     lat = float(entrada["lat"])
     horizonte = int(entrada.get("horizonte", 2))
@@ -337,7 +357,8 @@ def _tabela_clima(df):
     linhas = df.sort_values("mes").to_dict("records")
     if [int(m["mes"]) for m in linhas] != list(range(1, 13)):
         raise ValueError("tabela de clima precisa de 12 linhas, uma por mes (1 a 12)")
-    colunas = COLUNAS_CLIMA[1:] + (["et0_mm"] if "et0_mm" in df.columns else [])
+    opcionais = [c for c in df.columns if c == "et0_mm" or c.startswith("dias_acima_")]
+    colunas = COLUNAS_CLIMA[1:] + opcionais
     return [{"mes": int(m["mes"]), **{k: float(m[k]) for k in colunas}} for m in linhas]
 
 
@@ -365,6 +386,8 @@ def _tabela_culturas(df):
                 raise ValueError(f"{nome}: mes_plantio_{slot} deve ser um mes de 1 a 12 ou vazio")
         safrinha = linha["produtividade_safrinha"]
         c["produtividade_safrinha"] = c["produtividade"] if pd.isna(safrinha) else float(safrinha)
+        limiar = linha.get("temp_calor_c")  # coluna opcional; vazio = a regra de calor nao se aplica
+        c["temp_calor_c"] = None if limiar is None or pd.isna(limiar) else int(limiar)
         tabela[nome] = c
     if not tabela:
         raise ValueError("culturas.csv esta vazio")

@@ -108,7 +108,7 @@ Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês
   - O limiar de 35 °C é uma convenção comum para estresse de calor em grãos (**memória**, sem fonte aberta). Está na constante `LIMIAR_CALOR_C` do script.
   - O motor ainda não lê esta coluna.
 - `dias_acima_32`, `dias_acima_35`, `dias_acima_36`, `dias_acima_38`: a mesma contagem, uma coluna para cada limiar de calor de `temp_calor_c` em `culturas.csv`. O script lê os limiares da tabela de culturas, então rode `montar_culturas.py` antes.
-  - Para uma cultura, usar a coluna do limiar dela: `dias_acima_<temp_calor_c>`.
+  - Para uma cultura, usar a coluna do limiar dela: `dias_acima_<temp_calor_c>`. O motor lê estas colunas na regra de calor (`docs/contrato_motor.md`, regra 9).
   - Dias por ano, POWER hoje / NEX histórico / futuro: 32 °C: 111 / 134 / 208; 35 °C: 34 / 33 / 84; 36 °C: 21 / 21 / 54; 38 °C: 7 / 7 / 23.
   - A 32 °C o POWER e o NEX histórico diferem em 20%, então o número futuro desse limiar (feijão e algodão) é menos confiável que os outros.
 

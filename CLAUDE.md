@@ -66,7 +66,7 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | MOD13Q1 (AppEEARS) | NDVI every 16 days | Manual request | `data/appeears/` | Downloaded |
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
 | Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
-| Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine does not read `dias_quentes` or the dry year yet |
+| Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine reads the per-threshold `dias_acima_NN` columns for the heat rule, but not the dry year yet |
 | NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 
 Column reference: `docs/colunas_dados.md`.
@@ -118,7 +118,10 @@ in `tests/dados/`.
    delivered as `et0_mm`; the engine uses that column and only computes
    Hargreaves itself if the column is missing.
 3. **Water balance** per crop: rain − Kc × ET0.
-4. **Climate fit** per crop against its temperature and rain ranges.
+4. **Climate fit** per crop against its temperature and rain ranges, plus a
+   **heat rule**: the share of days above the crop's `temp_calor_c` during
+   the middle of its cycle (45–80%, flowering and grain filling) comes off
+   the yield. Cover crops have no threshold and are not affected.
 5. **Revenue** per hectare: price × yield × fit factor.
 6. **Sequence rules**, so that order and history matter: penalty for repeating
    a crop, bonus for the crop that follows a nitrogen fixer (`fixa_n`). The
