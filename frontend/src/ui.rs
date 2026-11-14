@@ -398,7 +398,41 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 "#55713e",
             )),
     );
-    content = content.child(field_art(s.farm.as_ref()));
+    if let Some(farm) = &s.farm {
+        let mut preview = el()
+            .key("farm-satellite-preview")
+            .w_full()
+            .h(if narrow { 220.0 } else { 240.0 })
+            .radius(10.0)
+            .fill(color("#e7ecdd"))
+            .role("img")
+            .label(format!("Mapa satélite com o contorno de {}", farm.name))
+            .on_layout_tx(|_: &mut State, [_, _, width, height], tx| {
+                host(json!({"type":"preview_size", "width":width, "height":height}));
+                tx.live_only();
+            });
+        if s.farm_preview.size().0 > 0 {
+            preview = preview.pixels_fit(&s.farm_preview, rune::SurfaceFit::Fit);
+        } else {
+            preview = preview.center().child(field_art(Some(farm)));
+        }
+        let mut satellite = col().w_full().gap(6.0).child(preview).child(
+            label(
+                "Imagem © Esri, Vantor, Earthstar Geographics e comunidade GIS",
+                9.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+        if !s.preview_note.is_empty() {
+            satellite = satellite.child(label(&s.preview_note, 11.0, 400.0, MUTED).wrap().w_full());
+        }
+        content = content.child(satellite);
+    } else {
+        content = content.child(field_art(None));
+    }
     if let Some(farm) = &s.farm {
         content = content.child(row().gap(14.0).center_y().justify_between()
             .child(col().gap(5.0).shrink().child(label(&farm.name, 19.0, 600.0, INK).wrap())

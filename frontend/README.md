@@ -62,6 +62,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Importação de Geometry, Feature ou FeatureCollection de **uma** fazenda, com Polygon/MultiPolygon em WGS84.
 - Validação de coordenadas, fechamento, cruzamentos, anéis internos, área e limites de tamanho (2 MB / 5.000 vértices).
 - Prévia, área aproximada em hectares e download do GeoJSON; furos e partes de MultiPolygon são preservados no arquivo.
+- Prévia de satélite no cartão “A sua fazenda”, com o contorno confirmado sobre a mesma imagem Esri do editor. Atualiza ao desenhar/importar outra área, restaurar o rascunho ou redimensionar a tela; a edição continua no mapa completo.
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
 - Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
@@ -103,7 +104,9 @@ Para iniciar apenas a API, da raiz:
 
 O rascunho fica no `localStorage` deste navegador e não é uma conta ou backup remoto.
 O botão de localização só pede acesso ao dispositivo quando acionado. O mapa usa
-Esri World Imagery com atribuição visível e requer internet. Não há geocodificador externo.
+Esri World Imagery com atribuição visível e requer internet, inclusive na prévia
+do talhão salvo. A imagem não é salva no rascunho. Se o satélite falhar, o contorno
+continua visível com um aviso. Não há geocodificador externo.
 
 ## Desenvolvimento e verificação
 
@@ -125,6 +128,7 @@ Principais arquivos:
 | `src/ui.rs` | Layout, componentes rune-kit, cards e timeline |
 | `src/model.rs`, `src/season.rs` | Tipos de dados e validação de safra |
 | `web/map.mjs`, `web/geometry.mjs` | Mapa, edição, importação e GeoJSON |
+| `web/farm-preview.mjs`, `web/preview-layout.mjs`, `web/imagery.mjs` | Imagem de satélite do resumo, projeção compartilhada de contorno/tiles e fonte do mapa |
 | `web/main.mjs` | Arquivos, rascunho e coordenação assíncrona |
 | `web/api.mjs` | Contrato e cliente HTTP para FastAPI |
 | `web/field.mjs` | Correspondência do contorno e apresentação dos dados do talhão |

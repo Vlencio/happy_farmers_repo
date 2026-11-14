@@ -164,7 +164,11 @@ in `tests/dados/`.
   wgpu instance cache thread-local, fixing this revision's WASM compile error
   without enabling fragile Send/Sync. Do not edit the generated cache.
 - Agronomic data is pre-downloaded and cached for the demo area. Satellite
-  imagery is fetched from Esri when the map is opened. The UI defaults to `/api`,
+  imagery is fetched from Esri when the map is opened or the confirmed field's
+  summary preview is displayed, including draft restoration. The preview is
+  drawn through Rune pixels, with the same tile source and Web Mercator projection
+  for imagery and all boundary rings; images are not saved in the browser draft.
+  The UI defaults to `/api`,
   proxied to FastAPI at port 8000. `npm run dev` starts both services. An explicit
   `VITE_API_BASE_URL` can target another compatible service; no silent demo fallback.
   The climate tables still belong to the demo field for any drawn polygon.

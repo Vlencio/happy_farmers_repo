@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import '@geoman-io/leaflet-geoman-free';
 import { normalizeFarm } from './geometry.mjs';
+import { BOUNDARY_STYLE, SATELLITE_CREDIT, SATELLITE_TILES } from './imagery.mjs';
 
 export function downloadGeoJSON(farm) {
   const data = structuredClone(farm.geojson);
@@ -41,14 +42,14 @@ export function createFarmMap(onConfirm) {
   }
   function mount(geojson) {
     if (boundary) boundary.remove();
-    boundary = geojson ? L.geoJSON(geojson, { style: { color: '#d4f398', fillColor: '#bbdd82', fillOpacity: 0.22, weight: 3 } }).addTo(map) : null;
+    boundary = geojson ? L.geoJSON(geojson, { style: BOUNDARY_STYLE }).addTo(map) : null;
     boundary?.eachLayer((layer) => { layer.on('pm:edit', refresh); layer.on('pm:update', refresh); });
     refresh();
   }
   function init() {
     map = L.map('satellite-map', { zoomControl: true, preferCanvas: true }).setView([-20.032, -48.526], 13);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    L.tileLayer(SATELLITE_TILES, {
+      maxZoom: 19, attribution: `Tiles &copy; ${SATELLITE_CREDIT}`,
     }).on('tileerror', () => { tileWarning = true; status('Imagem satélite indisponível ou incompleta. Verifique sua conexão; é possível importar e revisar o contorno.', true); }).addTo(map);
     map.pm.setLang('pt_br');
     map.on('pm:drawstart', () => { $('confirm-boundary').disabled = true; $('download-map').disabled = true; });

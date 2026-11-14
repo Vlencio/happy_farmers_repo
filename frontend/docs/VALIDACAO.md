@@ -1,5 +1,29 @@
 # Verificação da integração · 14/11/2026
 
+## Atualização — satélite no resumo do talhão
+
+- Cartão “A sua fazenda” mostra Esri World Imagery e o contorno confirmado,
+  com atribuição, sem precisar abrir novamente o editor. Os pixels são desenhados
+  pelo Rune, mantendo a rolagem e o recorte do cartão.
+- Projeção Web Mercator única para tiles e todos os anéis do GeoJSON. Furos usam
+  preenchimento par/ímpar; partes de MultiPolygon são mantidas. O GeoJSON original
+  não é alterado e a imagem não entra no `localStorage`.
+- Carregamento limitado ao tamanho da prévia, com cancelamento e descarte de
+  respostas antigas ao mudar/apagar a área. Rolagem sem mudança de tamanho não
+  recarrega tiles. Falhas de satélite mantêm o contorno e uma mensagem.
+- `npm test`: **29 passaram**, incluindo enquadramento desktop/celular, projeção,
+  preservação de anéis e cancelamento de respostas antigas. `npm run test:rust`:
+  **1 passou**. Build otimizado WASM + Vite e `cargo fmt --check` concluídos.
+- Navegador: versão compilada conferida em **1280 × 720** e **390 × 844**. A área
+  importada existente apareceu sobre o satélite. Um desenho novo de teste, com
+  3 vértices e 16,39 ha, atualizou o resumo após “Usar esta área”. Limpeza, retorno
+  ao exemplo e restauração após recarregar também conferidos. Sem erros no console.
+  Teste de desenho em `localhost`, separado do rascunho em `127.0.0.1`.
+- Capturas locais ignoradas pelo Git: `test-results/satellite-preview-desktop.jpg`,
+  `satellite-preview-mobile.jpg` e `satellite-preview-drawn.jpg`.
+- Limites: celular físico e falha de rede real não foram exercitados nesta rodada.
+  As dependências P1/D1/D2, Docker e leitor de tela do registro anterior permanecem.
+
 ## Atualização — tarefas de Gabriel no plano de lacunas
 
 Base `origin/main` em `c54fe17`, entrega na branch `front-dev3`. As seções abaixo

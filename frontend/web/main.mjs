@@ -3,11 +3,17 @@ import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, validateSettings } from './api.mjs';
 import { buildFieldContext } from './field.mjs';
+import { createFarmPreview } from './farm-preview.mjs';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
 let wasm, farm = null, history = [], settings = { ...DEFAULT_SETTINGS }, metadata = null, controller, requestId = 0;
 const send = (command) => wasm?.receive_command(JSON.stringify(command));
+const farmPreview = createFarmPreview((frame) => {
+  if (frame.rgba) wasm?.receive_farm_preview(frame.rgba, frame.width, frame.height, frame.note);
+  else send({ type: 'preview_note', message: frame.note });
+});
+window.addEventListener('online', () => farmPreview.refresh());
 function saveDraft() {
   try {
     localStorage.setItem(storageKey, JSON.stringify({ version: 2, farm, history, settings }));
@@ -31,7 +37,7 @@ async function connect() {
   }
 }
 const farmMap = createFarmMap((value) => {
-  invalidate(); farm = value; send({ type: 'farm', farm }); updateFieldContext(); saveDraft();
+  invalidate(); farm = value; send({ type: 'farm', farm }); farmPreview.setFarm(farm); updateFieldContext(); saveDraft();
 });
 document.getElementById('geojson-file').onchange = async (event) => {
   const file = event.target.files?.[0]; event.target.value = '';
@@ -50,6 +56,7 @@ window.happyFarmersHost = {
 };
 async function dispatch(action) {
   switch (action.type) {
+    case 'preview_size': farmPreview.resize(action.width, action.height); break;
     case 'map': farmMap.open(farm); break;
     case 'import': document.getElementById('geojson-file').click(); break;
     case 'sample': {
@@ -65,6 +72,7 @@ async function dispatch(action) {
     case 'connect': await connect(); break;
     case 'clear': {
       invalidate(); farm = null; history = []; settings = { ...DEFAULT_SETTINGS };
+      farmPreview.setFarm(null);
       let stored = true;
       try { localStorage.removeItem(storageKey); } catch { stored = false; }
       send({ type: 'cleared' });
@@ -106,6 +114,7 @@ async function boot() {
           typeof item.notes === 'string' && item.notes.length <= 500).slice(0, 12) : [];
         try { settings = validateSettings(draft.settings); } catch { settings = { ...DEFAULT_SETTINGS }; }
         send({ type: 'restore', farm, history, settings });
+        farmPreview.setFarm(farm);
       }
     } catch { send({ type: 'notice', message: 'O rascunho anterior não pôde ser restaurado. Você pode iniciar uma nova área.' }); }
     document.getElementById('boot').hidden = true;

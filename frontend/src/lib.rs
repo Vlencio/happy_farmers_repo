@@ -9,6 +9,8 @@ use model::{Analysis, Culture, Farm, FieldContext, HistoryItem, Page, Settings};
 
 struct State {
     farm: Option<Farm>,
+    farm_preview: rune::Pixels,
+    preview_note: String,
     field_context: Option<FieldContext>,
     field_open: bool,
     glossary_open: bool,
@@ -37,6 +39,8 @@ impl Default for State {
     fn default() -> Self {
         Self {
             farm: None,
+            farm_preview: rune::Pixels::new(),
+            preview_note: "Carregando imagem de satélite…".into(),
             field_context: None,
             field_open: true,
             glossary_open: false,
@@ -177,6 +181,9 @@ enum Command {
     Notice {
         message: String,
     },
+    PreviewNote {
+        message: String,
+    },
     Cancelled,
     Cleared,
 }
@@ -197,6 +204,8 @@ fn apply_command(s: &mut State, command: Command) {
         Command::Farm { farm } => {
             s.invalidate();
             s.farm = Some(farm);
+            s.farm_preview = rune::Pixels::new();
+            s.preview_note = "Carregando imagem de satélite…".into();
             s.field_context = None;
         }
         Command::FieldContext { context } => s.field_context = context,
@@ -228,6 +237,7 @@ fn apply_command(s: &mut State, command: Command) {
             s.error = message;
         }
         Command::Notice { message } => s.notice = message,
+        Command::PreviewNote { message } => s.preview_note = message,
         Command::Cancelled => {
             s.loading = false;
             s.notice = "Análise cancelada.".into();
@@ -264,6 +274,33 @@ pub fn receive_command(raw: String) -> Result<(), wasm_bindgen::JsValue> {
     HANDLE.with(|slot| {
         if let Some(handle) = slot.borrow().as_ref() {
             handle.update(move |s, _| apply_command(s, command));
+        }
+    });
+    Ok(())
+}
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen::prelude::wasm_bindgen)]
+pub fn receive_farm_preview(
+    rgba: Vec<u8>,
+    width: u32,
+    height: u32,
+    note: String,
+) -> Result<(), String> {
+    if width == 0
+        || height == 0
+        || width > 1024
+        || height > 512
+        || rgba.len() != width as usize * height as usize * 4
+    {
+        return Err("Dimensões inválidas da prévia do mapa.".into());
+    }
+    HANDLE.with(|slot| {
+        if let Some(handle) = slot.borrow().as_ref() {
+            handle.update(move |s, _| {
+                if s.farm.is_some() {
+                    s.farm_preview.set(width, height, rgba);
+                    s.preview_note = note;
+                }
+            });
         }
     });
     Ok(())
