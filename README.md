@@ -8,8 +8,9 @@ current rotation and priorities (water / soil / income), and the app ranks the
 possible next rotations under today's climate and under the projected climate
 for 2041–2060.
 
-**Status:** work in progress. The data below is collected; the scoring engine
-and the front end are not built yet.
+**Status:** work in progress. The data below is collected. A first version of
+the scoring engine runs on a provisional three-crop table; the final crop
+table and the front end are not built yet.
 
 ## Layout
 
@@ -20,12 +21,19 @@ data/
   nexgddp/                projected climate, monthly (+ cache/ with the daily series)
   appeears/               NDVI (MOD13Q1) and elevation (SRTM) for the field
   ecocrop/                FAO ECOCROP crop requirements
+  provisorio/             placeholder crop and climate tables for testing the engine
 docs/
   colunas_dados.md        column reference for every source
+  contrato_motor.md       engine inputs, output JSON and rules
+motor/                    scoring engine (rules and arithmetic, no ML)
 scripts/
   puxar_power.py          downloads NASA POWER
   puxar_nexgddp.py        downloads NEX-GDDP-CMIP6
+tests/                    engine tests
 ```
+
+Run the engine demo with `python -m motor` and the tests with
+`python -m unittest discover tests`, both from the repository root.
 
 ## Data
 

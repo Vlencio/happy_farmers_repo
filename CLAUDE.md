@@ -93,12 +93,19 @@ Notes per source:
   milho, sorgo, milheto, braquiária, crotalária, feijão, girassol, algodão.
   Columns: `cultura, ciclo_dias, temp_min, temp_max, temp_otima_min,
   temp_otima_max, chuva_min, chuva_max, kc_ini, kc_med, kc_fim, fixa_n,
-  cobre_solo, preco, produtividade`.
+  cobre_solo, preco, produtividade, plantio_ini, plantio_fim`. The planting
+  window (months, may wrap the year) is not in ECOCROP; it comes from the
+  Conab planting calendar or ZARC.
 
 ## Engine (rules, no ML)
 
 The score comes from rules and arithmetic. **The LLM only explains the
 numbers; it never produces them.**
+
+Code: `motor/` (`recomendar`). Inputs, output JSON, rules and open questions:
+`docs/contrato_motor.md`. Demo: `python -m motor`. Tests:
+`python -m unittest discover tests`. It reads `data/provisorio/` (three
+crops, placeholder prices and Kc) until the final tables arrive in `data/`.
 
 1. **Two climate tables**, 12 rows each (one per month):
    - Today: POWER averaged by month.
@@ -111,7 +118,10 @@ numbers; it never produces them.**
 5. **Revenue** per hectare: price × yield × fit factor.
 6. **Sequence rules**, so that order and history matter: penalty for repeating
    a crop, bonus for the crop that follows a nitrogen fixer (`fixa_n`). The
-   last crop of the current rotation counts as the previous crop.
+   last crop of the current rotation counts as the previous crop. The field
+   is free 10 days after a crop's cycle ends (harvest time). A sequence
+   that plants a crop outside its planting window (after waiting up to 30
+   days) is dropped from the ranking and listed as discarded.
 7. **Score** per rotation, weighted by the user's priorities, for every
    sequence in the horizon. Run on both climate tables and rank each. Rank
    rotations, not single crops in isolation.

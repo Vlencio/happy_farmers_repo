@@ -68,6 +68,7 @@ Montada à mão · uma linha por cultura (8 a 10)
 | `temp_min`, `temp_max` | ECOCROP (`TMIN`, `TMAX`) |
 | `temp_otima_min`, `temp_otima_max` | ECOCROP (`TOPMN`, `TOPMX`) |
 | `chuva_min`, `chuva_max` | ECOCROP (`RMIN`, `RMAX`) |
+| `plantio_ini`, `plantio_fim` | Meses em que a cultura pode ser plantada (1 a 12). Não vem do ECOCROP: calendário de plantio da Conab ou ZARC (MAPA) |
 | `kc_ini`, `kc_med`, `kc_fim` | FAO-56 |
 | `fixa_n`, `cobre_solo` | Preenchido à mão (sim/não) |
 | `preco`, `produtividade` | CEPEA / Conab |
