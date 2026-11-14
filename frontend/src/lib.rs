@@ -5,7 +5,7 @@ use std::cell::RefCell;
 mod model;
 mod season;
 mod ui;
-use model::{Analysis, Culture, Farm, FieldContext, HistoryItem, Page, Settings};
+use model::{Analysis, Culture, Farm, FieldContext, HistoryItem, Page, SelectedStrategy, Settings};
 
 struct State {
     farm: Option<Farm>,
@@ -17,7 +17,7 @@ struct State {
     history: Vec<HistoryItem>,
     page: Page,
     analysis: Option<Analysis>,
-    selected: usize,
+    selected: SelectedStrategy,
     stage: usize,
     crop: Option<String>,
     crop_open: bool,
@@ -47,7 +47,7 @@ impl Default for State {
             history: vec![],
             page: Page::Setup,
             analysis: None,
-            selected: 0,
+            selected: SelectedStrategy::Objective(0),
             stage: 0,
             crop: None,
             crop_open: false,
@@ -71,7 +71,7 @@ impl State {
     fn invalidate(&mut self) {
         self.analysis = None;
         self.page = Page::Setup;
-        self.selected = 0;
+        self.selected = SelectedStrategy::Objective(0);
         self.stage = 0;
         self.loading = false;
         self.discarded_open = false;
@@ -133,8 +133,8 @@ impl State {
         self.loading = true;
         host(json!({"type":"analyze"}));
     }
-    fn select(&mut self, index: usize) {
-        self.selected = index;
+    fn select(&mut self, strategy: SelectedStrategy) {
+        self.selected = strategy;
         self.stage = 0;
         self.page = Page::Timeline;
     }

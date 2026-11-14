@@ -20,6 +20,82 @@ test('consumes the actual engine contract and keeps three objective winners', ()
   assert.equal(mapMotorAnalysis(february, farm).recommendations[2].sequence_id, 'sorgo>soja');
   assert.equal(result.discarded.length, 74);
 });
+test('current rotation stays beside the three winners with comparable actual engine metrics', () => {
+  const view = mapMotorAnalysis(fixture, farm);
+  const current = view.current_rotation;
+  assert.equal(current.status, 'ready');
+  assert.equal(current.title, 'Rotação atual');
+  assert.equal(current.strategy.category, 'current');
+  assert.equal(current.strategy.sequence_id, 'soja>milho');
+  // This reference also wins income; both roles must remain visible.
+  assert.equal(view.recommendations.length, 3);
+  assert.equal(current.strategy.sequence_id, view.recommendations[0].sequence_id);
+  assert.deepEqual(current.strategy.timeline, view.recommendations[0].timeline);
+  assert.deepEqual(current.strategy.facts, view.recommendations[0].facts);
+  const money = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const index = (v) => `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`;
+  for (const card of [current.strategy, ...view.recommendations]) {
+    const source = fixture.sequencias.find((seq) => seq.id === card.sequence_id);
+    assert.deepEqual(card.comparison_facts, [
+      { label: 'Receita / ha · hoje', value: money(source.hoje.receita_ha) },
+      { label: 'Solo · hoje', value: index(source.hoje.solo) },
+      { label: 'Encaixe · futuro', value: index(source.futuro.encaixe) },
+    ]);
+  }
+});
+test('current rotation outside the calendar explains the actual discard without inventing metrics', () => {
+  const view = mapMotorAnalysis(february, farm);
+  const current = view.current_rotation;
+  assert.equal(current.status, 'discarded');
+  assert.equal(current.strategy, null);
+  assert.match(current.description, /Soja → Milho/);
+  assert.match(current.description, /não tem plantio previsto na safrinha/);
+  assert.doesNotMatch(current.description, /R\$/);
+  assert.equal(view.recommendations.length, 3);
+});
+// Derived cases below exercise presentation states, not fresh engine calculations.
+test('missing history and a missing current marker have distinct states without replacing the winners', () => {
+  const data = copy();
+  for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
+  const missing = mapMotorAnalysis(data, farm);
+  assert.equal(missing.current_rotation.status, 'unavailable');
+  assert.equal(missing.current_rotation.strategy, null);
+  data.entrada.rotacao_atual = [];
+  const noHistory = mapMotorAnalysis(data, farm);
+  assert.equal(noHistory.current_rotation.status, 'no_history');
+  assert.equal(noHistory.current_rotation.strategy, null);
+  assert.match(noHistory.current_rotation.description, /Adicione seu histórico/);
+  assert.deepEqual(noHistory.recommendations.map((r) => r.sequence_id), missing.recommendations.map((r) => r.sequence_id));
+});
+test('long history never labels the engine oldest-crop marker as the current reference', () => {
+  const data = copy();
+  // The legacy marker remains soja>milho, although algodao is the newest crop.
+  data.entrada.rotacao_atual = ['soja', 'milho', 'algodao'];
+  const view = mapMotorAnalysis(data, farm);
+  assert.equal(view.current_rotation.status, 'ambiguous');
+  assert.equal(view.current_rotation.strategy, null);
+  assert.match(view.current_rotation.description, /mais safras/);
+  assert.equal(view.recommendations[0].sequence_id, 'soja>milho');
+  for (const rec of view.recommendations) assert.doesNotMatch(rec.tradeoff, /referência do histórico|repete o histórico/);
+});
+test('a one-crop history uses the repeated sequence supplied by the engine and explains it', () => {
+  const data = copy();
+  data.entrada.rotacao_atual = ['milho'];
+  for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = seq.id === 'milho>milho';
+  const view = mapMotorAnalysis(data, farm);
+  assert.equal(view.current_rotation.status, 'ready');
+  assert.equal(view.current_rotation.strategy.sequence_id, 'milho>milho');
+  assert.match(view.current_rotation.description, /repete essa cultura nas duas posições/);
+  assert.deepEqual(view.recommendations.map((r) => r.sequence_id), mapMotorAnalysis(fixture, farm).recommendations.map((r) => r.sequence_id));
+});
+test('rejects malformed history and multiple current markers across feasible and discarded sequences', () => {
+  for (const history of [undefined, null, 'soja', [null], [''], Array(13).fill('soja')]) {
+    const data = copy(); data.entrada.rotacao_atual = history;
+    assert.throws(() => validateMotorOutput(data), /entrada.rotacao_atual/);
+  }
+  const data = copy(); data.descartadas[0].atual = true;
+  assert.throws(() => validateMotorOutput(data), /mais de uma rotação atual/);
+});
 test('sends latitude/longitude, canonical crop IDs in order and cycle settings; keeps notes local', async () => {
   const history = [{ crop: 'Feijão', season: '2024', notes: 'Observação local' }, { crop: 'soja', season: '2025', notes: '' }];
   const request = buildRequest(farm, history, { mes_plantio: 2, horizonte: 1 }, metadata.cultures);
@@ -147,6 +223,10 @@ test('actual P1 dry-year output is shown without changing the three winners', ()
   assert.match(view.scenario_note, /2020\/21/);
   assert.equal(view.recommendations[0].facts.length, 9);
   assert.equal(view.recommendations[0].timeline[0].monthly[0].rain.split(' / ').length, 3);
+  assert.equal(view.current_rotation.status, 'ready');
+  assert.deepEqual(view.current_rotation.strategy.facts, view.recommendations[0].facts);
+  assert.deepEqual(view.current_rotation.strategy.timeline, view.recommendations[0].timeline);
+  assert.deepEqual(view.current_rotation.strategy.comparison_facts, view.recommendations[0].comparison_facts);
 });
 test('point provenance warning reaches Rune unchanged, including fallback and outside Minas', () => {
   const raw = copy();

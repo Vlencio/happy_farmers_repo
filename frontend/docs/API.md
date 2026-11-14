@@ -76,6 +76,54 @@ Uma sequência pode aparecer em vários cards. `encaixe` expressa adequação de
 temperatura/chuva/calor no motor; não é probabilidade nem avaliação completa de eventos extremos.
 Solo e encaixe são exibidos na escala 0–100. Receita é **bruta**, sem custos.
 Os scores/ranks gerais permanecem visíveis nos detalhes de cada alternativa.
+
+### Referência da rotação atual — Parte 1
+
+A tela acrescenta a **rotação atual** aos três objetivos, sem alterar a seleção dos
+vencedores. Os quatro cards mostram os mesmos indicadores: receita bruta por hectare
+de hoje, índice de solo de hoje e encaixe climático futuro. A referência tem calendário,
+detalhes e ano seco quando esses dados existem na resposta. Ela permanece separada
+mesmo quando a mesma sequência vence um objetivo.
+
+O adaptador produz `current_rotation: {status, title, description, strategy}` e
+`comparison_facts` em cada estratégia. Esses são modelos locais de apresentação,
+não novos campos exigidos da API. A referência usa o marcador `atual` existente:
+
+- `ready`: um único marcador em `sequencias`; usa os números recebidos.
+- `discarded`: marcador em `descartadas`; mostra o motivo, sem números ou timeline.
+- `no_history`: histórico vazio; oferece acesso à edição do histórico.
+- `ambiguous`: histórico maior que o horizonte; não apresenta o marcador antigo
+  como se identificasse as culturas mais recentes.
+- `unavailable`: histórico informado sem marcador; informa a indisponibilidade.
+
+O histórico de uma cultura pode ser repetido pelo motor em um horizonte de duas;
+a tela explica essa repetição. O front não escolhe outras culturas, alinha slots
+nem calcula uma referência substituta. A identificação definitiva ainda depende
+das duas primeiras pendências da Parte 1. As fixtures reais atuais já cobrem
+referência viável em outubro e descartada em fevereiro e foram preservadas.
+
+**Mensagem para o responsável pelo motor/API:**
+
+> Pedro, o front já mostra a referência da rotação atual junto dos três objetivos,
+> usando `atual: true` em `sequencias` ou o motivo em `descartadas`. Para fechar a
+> Parte 1, falta identificar a rotação pelas culturas mais recentes respeitando
+> safra/safrinha e devolvê-la em campo próprio, com os mesmos indicadores das
+> estratégias viáveis ou o motivo quando não couber no calendário. Hoje o marcador
+> pega o começo do histórico; por isso o front informa comparação indisponível
+> quando o histórico é maior que o horizonte. Quando definir o formato, atualize
+> `docs/contrato_motor.md` e encaminhe uma resposta de exemplo para eu adaptar o
+> consumo e as fixtures do front.
+
+Verificação em 14/11/2026: `npm test` (45 testes), `npm run test:rust` (1 teste),
+build WASM e build web aprovados. `tests/browser-current-rotation.js` passou 23
+verificações contra a API local com o contorno de demonstração: quatro detalhes,
+grade em 1440/1024/390 px, ausência de histórico, descarte, histórico longo e
+resultado vazio. Capturas em `../output/playwright/current-rotation-*.png`
+(a partir da raiz `frontend/`). A largura móvel foi simulada no navegador;
+não houve teste em celular físico ou leitor de tela.
+
+### Calendário e detalhes
+
 Com as tabelas da Main em `c54fe17`, o card climático é Soja → Sorgo em outubro
 e Sorgo → Soja em fevereiro. A regra evita escolher cobertura sem receita apenas
 porque não há limiar de calor cadastrado; não altera o motor nem cria limites de calor.

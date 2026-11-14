@@ -39,6 +39,11 @@ pub enum Page {
     Results,
     Timeline,
 }
+#[derive(Clone, Copy, Debug)]
+pub enum SelectedStrategy {
+    Objective(usize),
+    Current,
+}
 #[derive(Clone, Debug, Deserialize)]
 pub struct Analysis {
     pub demo: bool,
@@ -46,17 +51,24 @@ pub struct Analysis {
     pub source_warning: String,
     pub scenario_note: String,
     pub recommendations: Vec<Recommendation>,
+    pub current_rotation: CurrentRotation,
     pub discarded: Vec<String>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct CurrentRotation {
+    pub status: String,
+    pub title: String,
+    pub description: String,
+    pub strategy: Option<Recommendation>,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct Recommendation {
     pub category: String,
     pub crop: String,
-    pub metric: String,
-    pub metric_label: String,
     pub reason: String,
     pub tradeoff: String,
     pub facts: Vec<Fact>,
+    pub comparison_facts: Vec<Fact>,
     pub timeline: Vec<Stage>,
     pub month_labels: Vec<String>,
     pub water_caption: String,
