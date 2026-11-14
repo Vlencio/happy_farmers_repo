@@ -1,0 +1,42 @@
+[package]
+name = "happy-farmers"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+resolver = "3"
+exclude = [".cache/rune"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# scripts/setup-rune.mjs checks out the exact commit in rune-revision.json
+# and applies the tracked WASM compatibility patch before Cargo runs.
+rune = { path = ".cache/rune/crates/rune", default-features = false, features = ["embedded-fonts", "webgl", "tooling"] }
+rune-kit = { path = ".cache/rune/crates/rune-kit" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.129"
+
+[patch.crates-io]
+winit = { path = ".cache/rune/vendor/winit" }
+parley_engine = { path = ".cache/rune/vendor/parley_engine" }
+wgpu-hal = { path = ".cache/rune/vendor/wgpu-hal" }
+accesskit_windows = { path = ".cache/rune/vendor/accesskit_windows" }
+
+[profile.dev]
+debug = 0
+
+[profile.dev.package."*"]
+opt-level = 1
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+debug = 0
+

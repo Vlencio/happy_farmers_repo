@@ -1,0 +1,5 @@
+{
+  "repository": "https://github.com/anomalyco/rune",
+  "revision": "56f01cb88e629db2c8b8877631cde00de7f37bd5",
+  "patches": ["patches/rune-wasm-instance-cache.patch"]
+}

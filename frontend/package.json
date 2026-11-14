@@ -1,0 +1,24 @@
+{
+  "name": "happy-farmers-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4173 --strictPort",
+    "build": "node scripts/build.mjs",
+    "build:wasm": "node scripts/build.mjs --wasm-only",
+    "build:web": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test": "node --test tests/*.test.mjs",
+    "test:rust": "node scripts/test-rust.mjs"
+  },
+  "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "2.20.6",
+    "@turf/turf": "7.4.0",
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "vite": "8.3.8"
+  }
+}

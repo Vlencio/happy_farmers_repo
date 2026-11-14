@@ -3,13 +3,33 @@
 NASA Space Apps Challenge 2026, challenge **"Field Shift: Adapting Farms with
 NASA Data"**.
 
-A decision-support tool for crop rotation. The farmer draws a field, enters the
-current rotation and priorities (water / soil / income), and the app ranks the
-possible next rotations under today's climate and under the projected climate
-for 2041–2060.
+A decision-support tool for crop rotation. The farmer draws a boundary on a
+satellite map or imports GeoJSON, optionally supplies planting history, and
+compares three paths: income, soil health and climate resilience. Each path
+opens its own timeline. The planned engine will use observed and projected
+climate; the current interface uses explicitly labeled demonstration results.
 
-**Status:** work in progress. The data below is collected; the scoring engine
-and the front end are not built yet.
+**Status:** the first local front-end prototype is functional. The data below
+is collected; the Python/FastAPI scoring engine is a separate team workstream.
+
+The chosen front end is [Rune](https://github.com/anomalyco/rune) (Rust), using
+`rune-kit` components and consuming the Python/FastAPI backend. This replaces
+the earlier Streamlit/React proposal. Rune has now been compiled to WebAssembly
+and tested locally in the browser. Its exact revision, four required dependency
+patches and a small additional WASM compatibility patch are pinned in `frontend/`.
+
+## Run the front end
+
+On the prepared Windows workspace:
+
+```powershell
+cd D:\NasaSpaceApps\frontend
+npm run dev
+```
+
+Open [Happy Farmers locally](http://127.0.0.1:4173/). For a fresh clone, follow
+[frontend setup and architecture](frontend/README.md). The [proposed API contract](frontend/docs/API.md)
+is ready for the backend teammate; no scoring logic or Python backend is implemented by this front end.
 
 ## Layout
 
@@ -22,6 +42,7 @@ data/
   ecocrop/                FAO ECOCROP crop requirements
 docs/
   colunas_dados.md        column reference for every source
+frontend/                Rune + rune-kit web app, map bridge and API adapter
 scripts/
   puxar_power.py          downloads NASA POWER
   puxar_nexgddp.py        downloads NEX-GDDP-CMIP6
