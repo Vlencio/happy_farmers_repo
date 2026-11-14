@@ -12,12 +12,22 @@
     },
     "horizonte": 2,
     "mes_plantio": 10,
-    "precos": {}
+    "precos": {},
+    "declividade_pct": null
   },
   "slots": [
     "safra",
     "safrinha"
   ],
+  "atual": {
+    "id": "soja>milho",
+    "culturas": [
+      "soja",
+      "milho"
+    ],
+    "viavel": true,
+    "motivo": null
+  },
   "clima": {
     "hoje": [
       {
@@ -305,6 +315,56 @@
         "renda": 1.0,
         "receita_ha": 14170.702,
         "encaixe": 0.986,
+        "descoberto": {
+          "dias": 115,
+          "dias_expostos": 10,
+          "chuva_mm": 145.106,
+          "chuva_exposta_mm": 74.256,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 6,
+              "dias": 13,
+              "dias_expostos": 0,
+              "chuva_mm": 8.35,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -431,6 +491,56 @@
         "renda": 0.987,
         "receita_ha": 13989.477,
         "encaixe": 0.903,
+        "descoberto": {
+          "dias": 115,
+          "dias_expostos": 10,
+          "chuva_mm": 140.93,
+          "chuva_exposta_mm": 73.15,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 6,
+              "dias": 13,
+              "dias_expostos": 0,
+              "chuva_mm": 9.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -567,6 +677,63 @@
         "renda": 0.816,
         "receita_ha": 11563.322,
         "encaixe": 0.986,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 10,
+          "chuva_mm": 165.75,
+          "chuva_exposta_mm": 74.256,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 9.724,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -685,6 +852,63 @@
         "renda": 0.796,
         "receita_ha": 11286.837,
         "encaixe": 0.947,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 10,
+          "chuva_mm": 163.214,
+          "chuva_exposta_mm": 73.15,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 10.514,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -813,6 +1037,56 @@
         "renda": 0.58,
         "receita_ha": 8216.898,
         "encaixe": 0.986,
+        "descoberto": {
+          "dias": 150,
+          "dias_expostos": 36,
+          "chuva_mm": 313.935,
+          "chuva_exposta_mm": 237.304,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 175.59,
+              "chuva_exposta_mm": 175.59
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 14.131,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -931,6 +1205,56 @@
         "renda": 0.571,
         "receita_ha": 8086.944,
         "encaixe": 0.971,
+        "descoberto": {
+          "dias": 150,
+          "dias_expostos": 36,
+          "chuva_mm": 313.45,
+          "chuva_exposta_mm": 239.439,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 179.08,
+              "chuva_exposta_mm": 179.08
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 15.231,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1059,6 +1383,56 @@
         "renda": 0.855,
         "receita_ha": 12113.273,
         "encaixe": 0.784,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 36,
+          "chuva_mm": 301.088,
+          "chuva_exposta_mm": 237.304,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 175.59,
+              "chuva_exposta_mm": 175.59
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.285,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1177,6 +1551,56 @@
         "renda": 0.778,
         "receita_ha": 11022.274,
         "encaixe": 0.59,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 36,
+          "chuva_mm": 299.603,
+          "chuva_exposta_mm": 239.439,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 179.08,
+              "chuva_exposta_mm": 179.08
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.385,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1305,6 +1729,63 @@
         "renda": 0.768,
         "receita_ha": 10877.379,
         "encaixe": 0.776,
+        "descoberto": {
+          "dias": 160,
+          "dias_expostos": 160,
+          "chuva_mm": 190.059,
+          "chuva_exposta_mm": 190.059,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 5,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 34.034,
+              "chuva_exposta_mm": 34.034
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1423,6 +1904,63 @@
         "renda": 0.678,
         "receita_ha": 9614.311,
         "encaixe": 0.445,
+        "descoberto": {
+          "dias": 160,
+          "dias_expostos": 160,
+          "chuva_mm": 189.498,
+          "chuva_exposta_mm": 189.498,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 5,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 36.797,
+              "chuva_exposta_mm": 36.797
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 20.77
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1551,6 +2089,63 @@
         "renda": 0.819,
         "receita_ha": 11598.769,
         "encaixe": 0.979,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 140,
+          "chuva_mm": 165.75,
+          "chuva_exposta_mm": 165.75,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 9.724,
+              "chuva_exposta_mm": 9.724
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1669,6 +2264,63 @@
         "renda": 0.783,
         "receita_ha": 11096.146,
         "encaixe": 0.871,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 140,
+          "chuva_mm": 163.214,
+          "chuva_exposta_mm": 163.214,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 10.514,
+              "chuva_exposta_mm": 10.514
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 20.77
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1797,6 +2449,63 @@
         "renda": 0.58,
         "receita_ha": 8216.898,
         "encaixe": 0.966,
+        "descoberto": {
+          "dias": 160,
+          "dias_expostos": 10,
+          "chuva_mm": 190.059,
+          "chuva_exposta_mm": 74.256,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 5,
+              "dias": 28,
+              "dias_expostos": 0,
+              "chuva_mm": 34.034,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -1915,6 +2624,63 @@
         "renda": 0.571,
         "receita_ha": 8086.944,
         "encaixe": 0.971,
+        "descoberto": {
+          "dias": 160,
+          "dias_expostos": 10,
+          "chuva_mm": 189.498,
+          "chuva_exposta_mm": 73.15,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 5,
+              "dias": 28,
+              "dias_expostos": 0,
+              "chuva_mm": 36.797,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -2043,6 +2809,56 @@
         "renda": 0.58,
         "receita_ha": 8216.898,
         "encaixe": 0.862,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 10,
+          "chuva_mm": 154.741,
+          "chuva_exposta_mm": 74.256,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 6,
+              "dias": 28,
+              "dias_expostos": 0,
+              "chuva_mm": 17.985,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -2169,6 +2985,56 @@
         "renda": 0.571,
         "receita_ha": 8086.944,
         "encaixe": 0.863,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 10,
+          "chuva_mm": 151.315,
+          "chuva_exposta_mm": 73.15,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.359,
+              "chuva_exposta_mm": 60.359
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.791,
+              "chuva_exposta_mm": 12.791
+            },
+            {
+              "mes": 6,
+              "dias": 28,
+              "dias_expostos": 0,
+              "chuva_mm": 19.385,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "soja",
@@ -2305,6 +3171,49 @@
         "renda": 0.402,
         "receita_ha": 5695.815,
         "encaixe": 0.936,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 0,
+          "chuva_mm": 176.968,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 16,
+              "dias_expostos": 0,
+              "chuva_mm": 100.337,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 14.131,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -2431,6 +3340,49 @@
         "renda": 0.371,
         "receita_ha": 5255.343,
         "encaixe": 0.864,
+        "descoberto": {
+          "dias": 130,
+          "dias_expostos": 0,
+          "chuva_mm": 176.343,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 16,
+              "dias_expostos": 0,
+              "chuva_mm": 102.331,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 15.231,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -2567,6 +3519,56 @@
         "renda": 0.603,
         "receita_ha": 8550.449,
         "encaixe": 0.832,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 130,
+          "chuva_mm": 154.205,
+          "chuva_exposta_mm": 91.494,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 9.724,
+              "chuva_exposta_mm": 9.724
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -2693,6 +3695,56 @@
         "renda": 0.507,
         "receita_ha": 7183.712,
         "encaixe": 0.562,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 130,
+          "chuva_mm": 154.021,
+          "chuva_exposta_mm": 90.064,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 10.514,
+              "chuva_exposta_mm": 10.514
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 20.77
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -2829,6 +3881,49 @@
         "renda": 0.596,
         "receita_ha": 8447.996,
         "encaixe": 0.936,
+        "descoberto": {
+          "dias": 120,
+          "dias_expostos": 0,
+          "chuva_mm": 136.773,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 18,
+              "dias_expostos": 0,
+              "chuva_mm": 11.562,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -2963,6 +4058,49 @@
         "renda": 0.563,
         "receita_ha": 7973.361,
         "encaixe": 0.864,
+        "descoberto": {
+          "dias": 120,
+          "dias_expostos": 0,
+          "chuva_mm": 135.199,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 18,
+              "dias_expostos": 0,
+              "chuva_mm": 12.462,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -3107,6 +4245,49 @@
         "renda": 0.652,
         "receita_ha": 9237.974,
         "encaixe": 0.784,
+        "descoberto": {
+          "dias": 110,
+          "dias_expostos": 0,
+          "chuva_mm": 164.122,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 16,
+              "dias_expostos": 0,
+              "chuva_mm": 100.337,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.285,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -3233,6 +4414,49 @@
         "renda": 0.559,
         "receita_ha": 7923.825,
         "encaixe": 0.59,
+        "descoberto": {
+          "dias": 110,
+          "dias_expostos": 0,
+          "chuva_mm": 162.496,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 16,
+              "dias_expostos": 0,
+              "chuva_mm": 102.331,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.385,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -3369,6 +4593,56 @@
         "renda": 0.207,
         "receita_ha": 2936.707,
         "encaixe": 0.956,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 0,
+          "chuva_mm": 245.852,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 14.131,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "sorgo",
@@ -3487,6 +4761,56 @@
         "renda": 0.199,
         "receita_ha": 2814.567,
         "encaixe": 0.916,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 0,
+          "chuva_mm": 230.088,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 15.231,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "sorgo",
@@ -3615,6 +4939,70 @@
         "renda": 0.428,
         "receita_ha": 6058.473,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 10,
+          "chuva_mm": 256.308,
+          "chuva_exposta_mm": 65.597,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 2.431,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -3725,6 +5113,70 @@
         "renda": 0.333,
         "receita_ha": 4725.821,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 10,
+          "chuva_mm": 240.554,
+          "chuva_exposta_mm": 66.255,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 2.628,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -3845,6 +5297,63 @@
         "renda": 0.592,
         "receita_ha": 8394.479,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 10,
+          "chuva_mm": 239.103,
+          "chuva_exposta_mm": 65.597,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 6,
+              "dias": 7,
+              "dias_expostos": 0,
+              "chuva_mm": 4.496,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -3963,6 +5472,63 @@
         "renda": 0.503,
         "receita_ha": 7126.791,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 10,
+          "chuva_mm": 222.002,
+          "chuva_exposta_mm": 66.255,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 6,
+              "dias": 7,
+              "dias_expostos": 0,
+              "chuva_mm": 4.846,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -4091,6 +5657,42 @@
         "renda": 0.686,
         "receita_ha": 9717.767,
         "encaixe": 0.815,
+        "descoberto": {
+          "dias": 95,
+          "dias_expostos": 0,
+          "chuva_mm": 122.921,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 24,
+              "dias_expostos": 0,
+              "chuva_mm": 7.85,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -4233,6 +5835,42 @@
         "renda": 0.652,
         "receita_ha": 9238.204,
         "encaixe": 0.814,
+        "descoberto": {
+          "dias": 95,
+          "dias_expostos": 0,
+          "chuva_mm": 120.253,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 24,
+              "dias_expostos": 0,
+              "chuva_mm": 8.516,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -4385,6 +6023,63 @@
         "renda": 0.192,
         "receita_ha": 2720.341,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 175,
+          "dias_expostos": 30,
+          "chuva_mm": 374.16,
+          "chuva_exposta_mm": 191.018,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 175.59,
+              "chuva_exposta_mm": 175.59
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 14.131,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -4495,6 +6190,63 @@
         "renda": 0.106,
         "receita_ha": 1503.56,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 175,
+          "dias_expostos": 30,
+          "chuva_mm": 360.301,
+          "chuva_exposta_mm": 194.17,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 179.08,
+              "chuva_exposta_mm": 179.08
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 15.231,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -4615,6 +6367,56 @@
         "renda": 0.457,
         "receita_ha": 6478.865,
         "encaixe": 0.784,
+        "descoberto": {
+          "dias": 135,
+          "dias_expostos": 0,
+          "chuva_mm": 233.005,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.285,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "sorgo",
@@ -4733,6 +6535,56 @@
         "renda": 0.387,
         "receita_ha": 5483.048,
         "encaixe": 0.59,
+        "descoberto": {
+          "dias": 135,
+          "dias_expostos": 0,
+          "chuva_mm": 216.242,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.385,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "sorgo",
@@ -4861,6 +6713,49 @@
         "renda": 0.612,
         "receita_ha": 8675.118,
         "encaixe": 0.936,
+        "descoberto": {
+          "dias": 120,
+          "dias_expostos": 110,
+          "chuva_mm": 136.773,
+          "chuva_exposta_mm": 74.062,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 18,
+              "dias_expostos": 18,
+              "chuva_mm": 11.562,
+              "chuva_exposta_mm": 11.562
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -4995,6 +6890,49 @@
         "renda": 0.572,
         "receita_ha": 8100.241,
         "encaixe": 0.864,
+        "descoberto": {
+          "dias": 120,
+          "dias_expostos": 110,
+          "chuva_mm": 135.199,
+          "chuva_exposta_mm": 71.242,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 18,
+              "dias_expostos": 18,
+              "chuva_mm": 12.462,
+              "chuva_exposta_mm": 12.462
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -5139,6 +7077,56 @@
         "renda": 0.402,
         "receita_ha": 5695.815,
         "encaixe": 0.904,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 0,
+          "chuva_mm": 154.205,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 9.724,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -5265,6 +7253,56 @@
         "renda": 0.371,
         "receita_ha": 5255.343,
         "encaixe": 0.864,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 0,
+          "chuva_mm": 154.021,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 10.514,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -5401,6 +7439,63 @@
         "renda": 0.467,
         "receita_ha": 6616.716,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 30,
+          "chuva_mm": 361.313,
+          "chuva_exposta_mm": 191.018,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 175.59,
+              "chuva_exposta_mm": 175.59
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.285,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -5511,6 +7606,63 @@
         "renda": 0.313,
         "receita_ha": 4438.889,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 30,
+          "chuva_mm": 346.454,
+          "chuva_exposta_mm": 194.17,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 179.08,
+              "chuva_exposta_mm": 179.08
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.385,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -5631,6 +7783,49 @@
         "renda": 0.402,
         "receita_ha": 5695.815,
         "encaixe": 0.637,
+        "descoberto": {
+          "dias": 110,
+          "dias_expostos": 0,
+          "chuva_mm": 130.349,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 62.711,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 5.139,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -5765,6 +7960,49 @@
         "renda": 0.371,
         "receita_ha": 5255.343,
         "encaixe": 0.635,
+        "descoberto": {
+          "dias": 110,
+          "dias_expostos": 0,
+          "chuva_mm": 128.276,
+          "chuva_exposta_mm": 0.0,
+          "meses": [
+            {
+              "mes": 2,
+              "dias": 10,
+              "dias_expostos": 0,
+              "chuva_mm": 63.957,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 8,
+              "dias_expostos": 0,
+              "chuva_mm": 5.539,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "milho",
@@ -5909,6 +8147,70 @@
         "renda": 0.432,
         "receita_ha": 6118.045,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 134,
+          "chuva_mm": 256.308,
+          "chuva_exposta_mm": 149.798,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 2.431,
+              "chuva_exposta_mm": 2.431
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6019,6 +8321,70 @@
         "renda": 0.324,
         "receita_ha": 4590.697,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 134,
+          "chuva_mm": 240.554,
+          "chuva_exposta_mm": 148.434,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 2.628,
+              "chuva_exposta_mm": 2.628
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 20.77
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6139,6 +8505,70 @@
         "renda": 0.354,
         "receita_ha": 5022.949,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 185,
+          "dias_expostos": 154,
+          "chuva_mm": 280.618,
+          "chuva_exposta_mm": 174.108,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 5,
+              "dias": 22,
+              "dias_expostos": 22,
+              "chuva_mm": 26.741,
+              "chuva_exposta_mm": 26.741
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6249,6 +8679,70 @@
         "renda": 0.204,
         "receita_ha": 2891.514,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 185,
+          "dias_expostos": 154,
+          "chuva_mm": 266.838,
+          "chuva_exposta_mm": 174.718,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 5,
+              "dias": 22,
+              "dias_expostos": 22,
+              "chuva_mm": 28.912,
+              "chuva_exposta_mm": 28.912
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 20.77
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 11.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 5.14
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 42.64
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6369,6 +8863,70 @@
         "renda": 0.192,
         "receita_ha": 2720.341,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 185,
+          "dias_expostos": 10,
+          "chuva_mm": 280.618,
+          "chuva_exposta_mm": 65.597,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 5,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 26.741,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6479,6 +9037,70 @@
         "renda": 0.106,
         "receita_ha": 1503.56,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 185,
+          "dias_expostos": 10,
+          "chuva_mm": 266.838,
+          "chuva_exposta_mm": 66.255,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 5,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 28.912,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.77,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6599,6 +9221,63 @@
         "renda": 0.192,
         "receita_ha": 2720.341,
         "encaixe": 0.664,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 10,
+          "chuva_mm": 248.738,
+          "chuva_exposta_mm": 65.597,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 14.131,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",
@@ -6717,6 +9396,63 @@
         "renda": 0.106,
         "receita_ha": 1503.56,
         "encaixe": 0.367,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 10,
+          "chuva_mm": 232.387,
+          "chuva_exposta_mm": 66.255,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 92.12,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.09,
+              "chuva_exposta_mm": 15.09
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 51.166,
+              "chuva_exposta_mm": 51.166
+            },
+            {
+              "mes": 6,
+              "dias": 22,
+              "dias_expostos": 0,
+              "chuva_mm": 15.231,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 11.0,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 5.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.64,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
         "culturas": [
           {
             "cultura": "feijao",

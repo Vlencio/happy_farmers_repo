@@ -8,7 +8,9 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from motor import carregar_clima_seco, carregar_dados, recomendar
+import pandas as pd
+
+from motor import carregar_clima_seco, carregar_dados, carregar_diario, diario_do_power, recomendar
 from motor import motor
 
 FIXOS = Path(__file__).resolve().parent / "dados"
@@ -169,6 +171,106 @@ class TestRecomendar(unittest.TestCase):
     def test_sem_historico(self):
         saida = recomendar({**ENTRADA, "rotacao_atual": []}, *self.dados)
         self.assertFalse(any(s["atual"] for s in saida["sequencias"] + saida["descartadas"]))
+        self.assertIsNone(saida["atual"])
+
+    def test_rotacao_atual_sao_as_culturas_mais_recentes(self):
+        casos = [  # historico, horizonte -> rotacao atual
+            (["soja", "milho"], 2, ("soja", "milho")),
+            (["algodao", "soja", "milho"], 2, ("soja", "milho")),  # a mais antiga nao entra
+            (["milho", "algodao", "crotalaria", "soja", "milho"], 2, ("soja", "milho")),
+            (["algodao", "soja", "milho"], 1, ("soja",)),  # proximo slot = o da penultima, um ano antes
+            (["soja"], 2, ("soja", "soja")),  # uma cultura so: repete em todo slot
+            (["soja"], 1, ("soja",)),
+            ([], 2, None),
+        ]
+        for historico, horizonte, esperado in casos:
+            self.assertEqual(motor.rotacao_atual(historico, horizonte), esperado, (historico, horizonte))
+
+    def test_campo_atual_viavel_aponta_para_a_sequencia(self):
+        saida = recomendar({**ENTRADA, "rotacao_atual": ["algodao", "soja", "milho"]}, *self.dados)
+        self.assertEqual(saida["atual"], {"id": "soja>milho", "culturas": ["soja", "milho"], "viavel": True, "motivo": None})
+        marcadas = [s for s in saida["sequencias"] + saida["descartadas"] if s["atual"]]
+        self.assertEqual(ids(marcadas), ["soja>milho"])
+        # os numeros para comparar com as outras estao no item da propria sequencia
+        self.assertGreater(marcadas[0]["hoje"]["receita_ha"], 0)
+        self.assertIn("rank_futuro", marcadas[0])
+        # a cultura anterior continua sendo a ultima do historico: o milho na safra repetiria
+        self.assertEqual(cultura_de(saida, "milho>crotalaria", "hoje", 0)["fator_sequencia"], 0.85)
+
+    def test_campo_atual_fora_de_epoca_traz_o_motivo(self):
+        saida = recomendar({**ENTRADA, "rotacao_atual": ["soja"]}, *self.dados)
+        atual = saida["atual"]
+        self.assertEqual((atual["id"], atual["viavel"]), ("soja>soja", False))
+        # soja nao tem plantio de safrinha na tabela de teste
+        self.assertEqual(atual["motivo"], {"cultura": "soja", "posicao": 2, "slot": "safrinha", "mes_livre": 2, "mes_plantio": None})
+        descartada = next(s for s in saida["descartadas"] if s["atual"])
+        self.assertEqual(descartada["motivo"], atual["motivo"])
+
+    def test_campo_atual_com_uma_cultura(self):
+        saida = recomendar({**ENTRADA, "rotacao_atual": ["milho", "soja"], "horizonte": 1}, *self.dados)
+        self.assertEqual(saida["atual"]["id"], "milho")  # o proximo slot repete a penultima
+        self.assertTrue(saida["atual"]["viavel"])
+
+    def test_solo_descoberto(self):
+        # soja 1/out a 28/jan (120 d), colheita 10 d, milho 8/fev a 17/jun (130 d): 250 dias com cultura
+        seq = next(s for s in self.saida["sequencias"] if s["id"] == "soja>milho")
+        d = seq["hoje"]["descoberto"]
+        self.assertEqual(d["dias"], 365 - 250)
+        self.assertEqual(sum(m["dias"] for m in d["meses"]), d["dias"])
+        self.assertEqual([m["mes"] for m in d["meses"]], [1, 2, 6, 7, 8, 9])  # ordem a partir de outubro
+        self.assertEqual(d["meses"][0], {**d["meses"][0], "mes": 1, "dias": 3})  # 29 a 31 de janeiro
+        self.assertEqual(d["meses"][3]["dias"], 31)  # julho inteiro
+        # depois da soja nao ha palhada (10 dias expostos); o milho de teste tambem nao deixa
+        self.assertEqual(d["dias_expostos"], d["dias"])
+        self.assertAlmostEqual(d["chuva_mm"], sum(m["chuva_mm"] for m in d["meses"]), places=2)
+        _, hoje, _ = self.dados
+        chuva_julho = float(hoje.loc[hoje["mes"] == 7, "chuva_mm"].iloc[0])
+        self.assertAlmostEqual(d["meses"][3]["chuva_mm"], chuva_julho, places=2)
+        # os dias sao do calendario, iguais nos dois climas; a chuva muda
+        self.assertEqual(seq["futuro"]["descoberto"]["dias"], d["dias"])
+        self.assertNotEqual(seq["futuro"]["descoberto"]["chuva_mm"], d["chuva_mm"])
+        self.assertNotIn("indice_erosao", d)
+
+    def test_palhada_tira_os_dias_expostos(self):
+        # a crotalaria (cobre_solo = 1) deixa palhada: depois dela, o solo sem cultura nao conta como exposto
+        com = next(s for s in self.saida["sequencias"] if s["id"] == "soja>crotalaria")["hoje"]["descoberto"]
+        sem = next(s for s in self.saida["sequencias"] if s["id"] == "soja>milho")["hoje"]["descoberto"]
+        # soja ate 28/jan; crotalaria de 1/mar a 8/jun: expostos so os 31 dias entre as duas
+        self.assertEqual(com["dias_expostos"], 31)
+        self.assertEqual(com["dias"], 365 - 220)
+        self.assertLess(com["dias_expostos"], sem["dias_expostos"])  # 31 contra 115
+        self.assertLess(com["chuva_exposta_mm"], com["chuva_mm"])
+
+    def test_palhada_do_historico_vale_antes_da_primeira_cultura(self):
+        # algodao so e plantado em dezembro: de outubro ate la o solo fica com o que a cultura anterior deixou
+        def antes(historico):
+            saida = recomendar({**ENTRADA, "rotacao_atual": historico, "horizonte": 1}, *self.dados)
+            d = next(s for s in saida["sequencias"] if s["id"] == "algodao")["hoje"]["descoberto"]
+            return [(m["mes"], m["dias"], m["dias_expostos"]) for m in d["meses"][:2]]
+
+        self.assertEqual(antes(["crotalaria"]), [(10, 31, 0), (11, 30, 0)])
+        self.assertEqual(antes(["soja"]), [(10, 31, 31), (11, 30, 30)])
+        self.assertEqual(antes([]), [(10, 31, 31), (11, 30, 30)])  # sem historico: conta como exposto
+
+    def test_indice_de_erosao_com_declividade(self):
+        self.assertIsNone(self.saida["entrada"]["declividade_pct"])
+        saida = recomendar({**ENTRADA, "declividade_pct": 4.05}, *self.dados)
+        self.assertEqual(saida["entrada"]["declividade_pct"], 4.05)
+        s = motor.fator_declividade(4.05)
+        for seq in saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                d = seq[cen]["descoberto"]
+                self.assertAlmostEqual(d["indice_erosao"], d["chuva_exposta_mm"] * s, delta=0.01)
+        # o resto da saida nao muda com a declividade
+        self.assertEqual(ids(saida["sequencias"]), ids(self.saida["sequencias"]))
+        self.assertEqual(saida["sequencias"][0]["hoje"]["score"], self.saida["sequencias"][0]["hoje"]["score"])
+
+    def test_fator_de_declividade(self):
+        self.assertAlmostEqual(motor.fator_declividade(0), 0.03)
+        self.assertAlmostEqual(motor.fator_declividade(9), 1.0, delta=0.01)  # 9% e a referencia da RUSLE
+        self.assertAlmostEqual(motor.fator_declividade(4.05), 0.467, delta=0.001)
+        self.assertLess(motor.fator_declividade(8.99), motor.fator_declividade(9.01) + 0.01)
+        self.assertGreater(motor.fator_declividade(20), motor.fator_declividade(10))
 
     def test_regras_de_sequencia(self):
         # repetir a cultura anterior
@@ -204,6 +306,9 @@ class TestRecomendar(unittest.TestCase):
     def test_entradas_invalidas(self):
         with self.assertRaises(ValueError):
             recomendar({**ENTRADA, "horizonte": 3}, *self.dados)
+        for declividade in (-1, 101):
+            with self.assertRaises(ValueError):
+                recomendar({**ENTRADA, "declividade_pct": declividade}, *self.dados)
         with self.assertRaises(ValueError):
             recomendar({**ENTRADA, "rotacao_atual": ["abacaxi"]}, *self.dados)
         with self.assertRaises(ValueError):
@@ -317,6 +422,205 @@ class TestPecas(unittest.TestCase):
             self.assertAlmostEqual(r["encaixe_calor"], 0.5)
 
 
+def serie_das_medias(clima, primeiro_ano, ultimo_ano, lat=ENTRADA["lat"]):
+    """Serie diaria em que todo dia vale a media do mes da tabela de clima (chuva, temperaturas e ET0)."""
+    tabela = motor._tabela_clima(clima)
+    et0 = motor.et0_do_clima(tabela, lat)  # mm/dia
+    datas = pd.date_range(f"{primeiro_ano}-01-01", f"{ultimo_ano}-12-31", freq="D")
+    meses = [tabela[d.month - 1] for d in datas]
+    return pd.DataFrame({
+        "data": datas,
+        "chuva_mm": [m["chuva_mm"] / motor.DIAS_MES[m["mes"] - 1] for m in meses],
+        "tmin_c": [m["tmin_c"] for m in meses],
+        "tmax_c": [m["tmax_c"] for m in meses],
+        "et0_mm": [et0[m["mes"] - 1] for m in meses],
+    })  # fmt: skip
+
+
+class TestDiario(unittest.TestCase):
+    """Modo diario: a mesma conta do modo mensal, ano a ano, com Ky na perda por falta de agua."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.serie = serie_das_medias(cls.dados[1], 2001, 2010)
+        cls.saida = recomendar(ENTRADA, *cls.dados, diario=cls.serie)
+
+    def bloco(self, seq_id, cenario="hoje", saida=None):
+        return next(s for s in (saida or self.saida)["sequencias"] if s["id"] == seq_id)["diario"][cenario]
+
+    def test_sem_a_serie_a_saida_nao_muda(self):
+        sem = recomendar(ENTRADA, *self.dados)
+        self.assertNotIn("diario", sem)
+        self.assertNotIn("diario", sem["sequencias"][0])
+        com = json.loads(json.dumps(self.saida))
+        com.pop("diario")
+        for s in com["sequencias"]:
+            s.pop("diario")
+        self.assertEqual(com, json.loads(json.dumps(sem)))
+
+    def test_serializa_e_resume_os_anos(self):
+        json.dumps(self.saida)
+        geral = self.saida["diario"]
+        # talhao livre em outubro: a serie de 2001 a 2010 comporta as safras de 2001 a 2009
+        self.assertEqual(geral["anos"], list(range(2001, 2010)))
+        self.assertEqual(geral["n_anos"], 9)
+        self.assertEqual(geral["quantil_ruim"], motor.QUANTIL_RUIM)
+        for s in self.saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                b = s["diario"][cen]
+                self.assertEqual([a["ano"] for a in b["anos"]], geral["anos"])
+                self.assertEqual([c["cultura"] for c in b["culturas"]], s["culturas"])
+                self.assertIn(b["pior_ano"]["ano"], geral["anos"])
+
+    def test_serie_das_medias_repete_o_modo_mensal(self):
+        # 2001 a 2003 nao tem 29 de fevereiro: o calendario do modo diario e o mesmo do mensal
+        serie = serie_das_medias(self.dados[1], 2001, 2003)
+        with mock.patch.object(motor, "MIN_ANOS_DIARIO", 1):
+            saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        self.assertEqual(saida["diario"]["anos"], [2001, 2002])
+        for s in saida["sequencias"]:
+            b = s["diario"]["hoje"]
+            self.assertAlmostEqual(b["mediano"]["agua"], s["hoje"]["agua"], places=3)
+            self.assertAlmostEqual(b["ruim"]["agua"], s["hoje"]["agua"], places=3)  # todo ano e igual
+            for mensal, diaria in zip(s["hoje"]["culturas"], b["culturas"]):
+                self.assertAlmostEqual(diaria["mediano"]["atendimento_hidrico"], mensal["atendimento_hidrico"], places=3)
+
+    def test_ky_na_perda_por_falta_de_agua(self):
+        milho = self.bloco("soja>milho")["culturas"][1]["mediano"]  # milho safrinha: falta agua no fim do ciclo
+        self.assertLess(milho["atendimento_hidrico"], 0.95)
+        self.assertAlmostEqual(milho["fator_agua"], 1 - motor.KY["milho"] * (1 - milho["atendimento_hidrico"]), delta=0.002)
+        self.assertLess(milho["fator_agua"], milho["atendimento_hidrico"])  # Ky > 1: perde mais que a agua que faltou
+        self.assertLessEqual(milho["fator"], milho["fator_agua"] * motor.BONUS_APOS_FIXADORA + 0.001)
+
+    def test_ky_padrao_e_coluna_ky(self):
+        self.assertEqual(motor._tabela_culturas(self.dados[0])["crotalaria"]["ky"], motor.KY_PADRAO)
+        self.assertEqual(motor._tabela_culturas(self.dados[0])["milho"]["ky"], motor.KY["milho"])
+        culturas = self.dados[0].assign(ky=[0.5, 2.0, None, 0.5])  # soja, milho, crotalaria, algodao
+        self.assertEqual(motor._tabela_culturas(culturas)["crotalaria"]["ky"], motor.KY_PADRAO)
+        saida = recomendar(ENTRADA, culturas, *self.dados[1:], diario=self.serie)
+        milho = self.bloco("soja>milho", saida=saida)["culturas"][1]["mediano"]
+        self.assertAlmostEqual(milho["fator_agua"], max(0, 1 - 2.0 * (1 - milho["atendimento_hidrico"])), delta=0.003)
+
+    def test_ano_seco_aparece_como_pior_ano(self):
+        serie = self.serie.copy()
+        seca = (serie["data"] >= "2005-10-01") & (serie["data"] < "2006-10-01")
+        serie.loc[seca, "chuva_mm"] *= 0.2
+        saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        b = self.bloco("soja>milho", saida=saida)
+        normal = self.bloco("soja>milho")
+        self.assertEqual(b["pior_ano"]["ano"], 2005)
+        self.assertLess(b["pior_ano"]["agua"], 0.6 * normal["mediano"]["agua"])
+        self.assertLess(b["pior_ano"]["receita_ha"], b["ruim"]["receita_ha"])
+        # um ano seco em nove nao mexe no ano mediano
+        self.assertAlmostEqual(b["mediano"]["agua"], normal["mediano"]["agua"], delta=0.01)
+        ano = next(a for a in b["anos"] if a["ano"] == 2005)
+        self.assertEqual(ano["agua"], b["pior_ano"]["agua"])
+
+    def test_ruim_nunca_e_melhor_que_o_mediano(self):
+        serie = self.serie.copy()
+        for ano, fator in [(2002, 0.5), (2005, 0.3), (2007, 0.7)]:
+            serie.loc[(serie["data"] >= f"{ano}-10-01") & (serie["data"] < f"{ano + 1}-10-01"), "chuva_mm"] *= fator
+        saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        for s in saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                b = s["diario"][cen]
+                for parte in ("agua", "solo", "receita_ha", "renda"):
+                    self.assertLessEqual(b["ruim"][parte], b["mediano"][parte], (s["id"], cen, parte))
+                self.assertLessEqual(b["pior_ano"]["receita_ha"], b["ruim"]["receita_ha"])
+
+    def test_score_e_ranks(self):
+        n = len(self.saida["sequencias"])
+        pesos = {p: 1 / 3 for p in ("agua", "solo", "renda")}  # os de ENTRADA; na saida vem arredondados
+        for cen in ("hoje", "futuro"):
+            for nivel in ("mediano", "ruim"):
+                blocos = [s["diario"][cen][nivel] for s in self.saida["sequencias"]]
+                self.assertEqual(sorted(b["rank"] for b in blocos), list(range(1, n + 1)))
+                for b in blocos:
+                    self.assertTrue(0 <= b["renda"] <= 1)
+                    esperado = 100 * sum(pesos[p] * b[p] for p in ("agua", "solo", "renda"))
+                    self.assertAlmostEqual(b["score"], esperado, delta=0.1)
+                melhor = min(blocos, key=lambda b: b["rank"])
+                self.assertEqual(melhor["score"], max(b["score"] for b in blocos))
+        # a maior receita do ano mediano, hoje ou no futuro, vale renda 1
+        self.assertEqual(max(s["diario"][c]["mediano"]["renda"] for s in self.saida["sequencias"] for c in ("hoje", "futuro")), 1.0)
+
+    def test_prioridades_valem_no_modo_diario(self):
+        saida = recomendar({**ENTRADA, "prioridades": {"agua": 1}}, *self.dados, diario=self.serie)
+        for s in saida["sequencias"]:
+            b = s["diario"]["hoje"]["mediano"]
+            self.assertAlmostEqual(b["score"], 100 * b["agua"], delta=0.1)
+
+    def test_serie_futura(self):
+        hoje, futuro = motor._tabela_clima(self.dados[1]), motor._tabela_clima(self.dados[2])
+        serie = motor._serie_diaria(self.serie, ENTRADA["lat"])
+        et0_h, et0_f = motor.et0_do_clima(hoje, ENTRADA["lat"]), motor.et0_do_clima(futuro, ENTRADA["lat"])
+        fut = motor._serie_futura(serie, hoje, futuro, et0_h, et0_f)
+        i = 40  # 10 de fevereiro de 2001
+        self.assertEqual(serie["datas"][i].month, 2)
+        self.assertAlmostEqual(fut["tmax"][i] - serie["tmax"][i], futuro[1]["tmax_c"] - hoje[1]["tmax_c"])
+        self.assertAlmostEqual(fut["tmin"][i] - serie["tmin"][i], futuro[1]["tmin_c"] - hoje[1]["tmin_c"])
+        self.assertAlmostEqual(fut["chuva"][i] / serie["chuva"][i], futuro[1]["chuva_mm"] / hoje[1]["chuva_mm"])
+        self.assertAlmostEqual(fut["et0"][i] / serie["et0"][i], et0_f[1] / et0_h[1])
+        # dia sem chuva continua sem chuva; a serie de hoje nao e alterada
+        seca = {**serie, "chuva": [0.0] * len(serie["chuva"])}
+        self.assertEqual(set(motor._serie_futura(seca, hoje, futuro, et0_h, et0_f)["chuva"]), {0.0})
+        self.assertEqual(serie["tmax"][i], hoje[1]["tmax_c"])
+
+    def test_calor_conta_os_dias_da_fase_sensivel(self):
+        c = {**motor._tabela_culturas(self.dados[0])["milho"], "ciclo_dias": 100, "temp_calor_c": 35}
+        n = 100
+        serie = {"chuva": [10.0] * n, "et0": [4.0] * n, "tmin": [20.0] * n, "tmax": [30.0] * n}
+        for d in (10, 50, 60, 79, 80, 95):  # fase sensivel: dias 45 a 79
+            serie["tmax"][d] = 36.0
+        r, _ = motor.simular_cultura_diaria(c, 0, serie, 0.0)
+        self.assertEqual(r["dias_calor"], 3)
+        self.assertAlmostEqual(r["encaixe_calor"], 1 - 3 / 35)
+        sem_limiar, _ = motor.simular_cultura_diaria({**c, "temp_calor_c": None}, 0, serie, 0.0)
+        self.assertEqual(sem_limiar["encaixe_calor"], 1.0)
+
+    def test_sem_et0_calcula_hargreaves_do_dia(self):
+        serie = motor._serie_diaria(self.serie.drop(columns=["et0_mm"]), ENTRADA["lat"])
+        for v in serie["et0"]:
+            self.assertTrue(1.5 < v < 8.0, v)  # mm/dia
+        saida = recomendar(ENTRADA, *self.dados, diario=self.serie.drop(columns=["et0_mm"]))
+        self.assertEqual(saida["diario"]["n_anos"], 9)
+
+    def test_sem_sequencia_viavel(self):
+        saida = recomendar({**ENTRADA, "mes_plantio": 4, "horizonte": 1}, *self.dados, diario=self.serie)
+        self.assertEqual(saida["sequencias"], [])
+        self.assertIn("n_anos", saida["diario"])
+
+    def test_series_invalidas(self):
+        casos = [
+            self.serie.drop(columns=["chuva_mm"]),
+            self.serie.drop(index=100),  # um dia faltando
+            pd.concat([self.serie, self.serie.iloc[[5]]]),  # um dia repetido
+            self.serie.assign(tmax_c=[None] + list(self.serie["tmax_c"][1:])),
+            serie_das_medias(self.dados[1], 2001, 2003),  # so 2 safras completas
+        ]
+        for caso in casos:
+            with self.assertRaises(ValueError):
+                recomendar(ENTRADA, *self.dados, diario=caso)
+
+    def test_diario_do_power(self):
+        power = pd.DataFrame({
+            "data": pd.date_range("2020-01-30", periods=4, freq="D"),
+            "PRECTOTCORR": [0.0, 5.5, 12.0, 1.0], "T2M_MIN": [20.0] * 4, "T2M_MAX": [30.0] * 4,
+        })  # fmt: skip
+        correcoes = pd.DataFrame({"mes": range(1, 13), "off_tmin": [-1.0] * 12, "off_tmax": [1.0, 2.0] + [0.0] * 10})
+        sem, com = diario_do_power(power, -20.0), diario_do_power(power, -20.0, correcoes)
+        self.assertEqual(list(sem.columns), ["data", "chuva_mm", "tmin_c", "tmax_c", "et0_mm"])
+        self.assertEqual(list(sem["chuva_mm"]), [0.0, 5.5, 12.0, 1.0])
+        self.assertEqual(list(com["tmin_c"]), [19.0] * 4)
+        self.assertEqual(list(com["tmax_c"]), [31.0, 31.0, 32.0, 32.0])  # janeiro +1, fevereiro +2
+        self.assertEqual(list(com["et0_mm"]), list(sem["et0_mm"]))  # o ET0 nao leva a correcao
+        self.assertTrue(4.0 < sem["et0_mm"][0] < 7.0)  # mm/dia, verao a 20 graus S
+
+    def test_carregar_diario_sem_arquivo(self):
+        self.assertIsNone(carregar_diario(FIXOS))
+
+
 class TestDadosReais(unittest.TestCase):
     """As tabelas de data/ carregam e produzem um ranking. Nao testa numeros."""
 
@@ -341,6 +645,25 @@ class TestDadosReais(unittest.TestCase):
             for s in saida["sequencias"]:
                 self.assertTrue(0 <= s["seco"]["score"] <= 100)
                 self.assertTrue(0 <= s["seco"]["renda"] <= 1)
+
+    def test_roda_com_a_serie_diaria_de_data(self):
+        dados = carregar_dados()
+        diario = carregar_diario()
+        self.assertEqual(list(diario.columns), ["data", "chuva_mm", "tmin_c", "tmax_c", "et0_mm"])
+        # a serie e a origem de clima_hoje.csv: a chuva media por ano tem que bater
+        anos = diario["data"].dt.year.nunique()
+        self.assertAlmostEqual(diario["chuva_mm"].sum() / anos, dados[1]["chuva_mm"].sum(), delta=5)
+        self.assertAlmostEqual(diario["et0_mm"].sum() / anos, dados[1]["et0_mm"].sum(), delta=30)
+        for mes, horizonte in [(10, 2), (10, 1), (2, 2), (2, 1)]:
+            saida = recomendar({**ENTRADA, "mes_plantio": mes, "horizonte": horizonte}, *dados, diario=diario)
+            json.dumps(saida)
+            self.assertGreaterEqual(saida["diario"]["n_anos"], 15, (mes, horizonte))
+            for s in saida["sequencias"]:
+                for cen in ("hoje", "futuro"):
+                    b = s["diario"][cen]
+                    self.assertTrue(0 <= b["ruim"]["score"] <= b["mediano"]["score"] + 100)
+                    self.assertTrue(0 <= b["ruim"]["agua"] <= b["mediano"]["agua"] <= 1)
+                    self.assertLessEqual(b["ruim"]["receita_ha"], b["mediano"]["receita_ha"])
 
 
 if __name__ == "__main__":

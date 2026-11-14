@@ -154,6 +154,13 @@ in `tests/dados/`.
 7. **Score** per rotation, weighted by the user's priorities, for every
    sequence in the horizon. Run on both climate tables and rank each. Rank
    rotations, not single crops in isolation.
+8. **Daily mode (optional)**, `recomendar(..., diario=carregar_diario())`:
+   the same rules run on the daily POWER series, one year at a time (2005 to
+   2023), with the water loss through the FAO yield response factor Ky. Each
+   sequence gets a median year and a bad year (1 in 5), today and in the
+   future. Without `diario` the output is unchanged; the API and the screen
+   do not use it yet. Showing "bad year" on screen touches "win rates or
+   probabilities" in "Out of scope" and needs the team to reopen it.
 
 ## Stack
 

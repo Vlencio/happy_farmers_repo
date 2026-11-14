@@ -6,9 +6,14 @@ Uso:
 
 Demo: python -m motor
 Contrato de entrada e saida: docs/contrato_motor.md
+
+Modo diario (opcional): recomendar(..., diario=carregar_diario()) roda a mesma conta
+com a serie diaria de cada ano, em vez da media mensal, e resume ano mediano e ano ruim.
 """
+import datetime
 import itertools
 import math
+import statistics
 from pathlib import Path
 
 import pandas as pd
@@ -30,6 +35,17 @@ DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
 ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
 FASE_SENSIVEL = FASES_KC[1:]  # florescimento e enchimento de graos: a fase de Kc medio
 PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase sensivel passam do limiar
+
+# Modo diario. Ky = queda relativa da produtividade por queda relativa da evapotranspiracao
+# (FAO-56, eq. 90). Valores da FAO-56, tabela 24, que repete o FAO Irrigation and Drainage
+# Paper 33. Trigo: "spring wheat" (trigo de sequeiro do Cerrado).
+KY = {"soja": 0.85, "milho": 1.25, "sorgo": 0.90, "feijao": 1.15, "girassol": 0.95, "algodao": 0.85, "trigo": 1.15}
+KY_PADRAO = 1.0  # cultura sem Ky na tabela da FAO: perda proporcional, como no modo mensal
+QUANTIL_RUIM = 0.2  # "ano ruim": cerca de 1 em cada 5 anos fica nesse valor ou abaixo
+MIN_ANOS_DIARIO = 5  # menos anos completos que isso: nao resumir
+COLUNAS_DIARIO = ["data", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm (mm no dia) e opcional
+DIARIO_DEMO = Path("power") / "power_diario_-20.032_-48.526_2005_2024.csv"  # talhao de demonstracao
+LAT_DEMO = -20.032
 
 COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e dias_acima_NN sao opcionais
 COLUNAS_NUMERICAS = [
@@ -56,6 +72,42 @@ def carregar_clima_seco(pasta=DADOS):
     """Le clima_seco.csv (o ano agricola mais seco do POWER). None se a pasta nao tem o arquivo."""
     arquivo = Path(pasta) / "clima_seco.csv"
     return pd.read_csv(arquivo) if arquivo.exists() else None
+
+
+def carregar_diario(pasta=DADOS):
+    """Serie diaria do talhao de demonstracao (POWER 2005-2024). None se a pasta nao tem o arquivo.
+
+    tmin_c e tmax_c levam a correcao da estacao A520 (clima_correcoes.csv), como em
+    clima_hoje.csv; o ET0 usa as temperaturas sem a correcao, tambem como la.
+    """
+    pasta = Path(pasta)
+    arquivo = pasta / DIARIO_DEMO
+    if not arquivo.exists():
+        return None
+    correcoes = pasta / "clima_correcoes.csv"
+    return diario_do_power(
+        pd.read_csv(arquivo, parse_dates=["data"]), LAT_DEMO, pd.read_csv(correcoes) if correcoes.exists() else None
+    )
+
+
+def diario_do_power(power, lat, correcoes=None):
+    """Serie diaria do POWER (data, PRECTOTCORR, T2M_MIN, T2M_MAX) nas colunas do modo diario.
+
+    et0_mm: Hargreaves de cada dia, com as temperaturas do POWER.
+    correcoes: opcional, tabela por mes com off_tmin e off_tmax (estacao em solo), somados
+    em tmin_c e tmax_c depois do ET0.
+    """
+    datas = pd.to_datetime(power["data"])
+    tmin, tmax = power["T2M_MIN"].astype(float), power["T2M_MAX"].astype(float)
+    ra = [0.408 * radiacao_extraterrestre(lat, d.timetuple().tm_yday) for d in datas]  # MJ -> mm/dia
+    et0 = 0.0023 * ((tmin + tmax) / 2 + 17.8) * (tmax - tmin).clip(lower=0) ** 0.5 * ra
+    if correcoes is not None:
+        off = correcoes.set_index("mes")
+        tmin = tmin + datas.dt.month.map(off["off_tmin"])
+        tmax = tmax + datas.dt.month.map(off["off_tmax"])
+    return pd.DataFrame({
+        "data": datas, "chuva_mm": power["PRECTOTCORR"].astype(float), "tmin_c": tmin, "tmax_c": tmax, "et0_mm": et0,
+    })  # fmt: skip
 
 
 def radiacao_extraterrestre(lat, dia_do_ano):
@@ -133,6 +185,21 @@ def ordem_dos_slots(mes_plantio, horizonte):
     return slots[:horizonte]
 
 
+def rotacao_atual(historico, horizonte):
+    """A rotacao atual repetida nos proximos slots: as culturas mais recentes do historico.
+
+    O historico vem na ordem de plantio, uma cultura por slot, sem pular slot. A ultima
+    cultura ocupou o slot anterior ao proximo; a penultima, o mesmo slot do proximo, um
+    ano antes. Entao, com duas ou mais culturas no historico, a proxima posicao repete a
+    penultima e a seguinte repete a ultima. Com uma cultura so, ela se repete em todo slot.
+    None sem historico.
+    """
+    if not historico:
+        return None
+    ciclo = min(len(historico), len(SLOTS))
+    return tuple(historico[len(historico) - ciclo + i % ciclo] for i in range(horizonte))
+
+
 def dia_de_plantio(mes, dia_livre):
     """Dia em que a cultura entra, dado o mes tipico de plantio dela no slot.
 
@@ -202,14 +269,36 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
     return resultado, agua
 
 
+def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos):
+    """Regras de sequencia, receita e parte de solo de uma cultura. Preenche r."""
+    nome = c["cultura"]
+    if nome == anterior:
+        fator_sequencia = PENALIDADE_REPETICAO
+    elif anterior in culturas and culturas[anterior]["fixa_n"] and not c["fixa_n"]:
+        fator_sequencia = BONUS_APOS_FIXADORA
+    else:
+        fator_sequencia = 1.0
+    produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
+    r["fator_sequencia"] = fator_sequencia
+    r["fator"] = cresce * fator_sequencia
+    r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
+    r["solo"] = cresce * (
+        PESO_SOLO["fixa_n"] * c["fixa_n"]
+        + PESO_SOLO["cobre_solo"] * c["cobre_solo"]
+        + PESO_SOLO["diversidade"] * (nome != anterior)
+    )
+
+
 def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos):
     """Simula as culturas em fila, uma por slot, com o talhao livre no dia 1 de mes_plantio.
 
     Se uma cultura nao pode ser plantada no slot dela, devolve so {"fora_de_epoca": motivo}.
     """
-    dia = sum(DIAS_MES[: mes_plantio - 1])  # dia em que o talhao fica livre
+    dia = dia_livre = sum(DIAS_MES[: mes_plantio - 1])  # dia em que o talhao fica livre
     sem_cultura = dia  # desde quando o solo esta sem cultura
     agua = 0.0  # o solo comeca vazio
+    palhada_inicial = anterior in culturas and bool(culturas[anterior]["cobre_solo"])
+    ciclos = []  # (dia do plantio, dia do fim do ciclo, a cultura deixa palhada?)
     resultados = []
     for nome, slot in zip(nomes, slots):
         c = culturas[nome]
@@ -232,25 +321,12 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         r["slot"] = slot
         r["espera_dias"] = plantio - dia
         sem_cultura = plantio + c["ciclo_dias"]
+        ciclos.append((plantio, sem_cultura, bool(c["cobre_solo"])))
         dia = sem_cultura + DIAS_COLHEITA  # o talhao so fica livre depois da colheita
 
-        if nome == anterior:
-            fator_sequencia = PENALIDADE_REPETICAO
-        elif anterior in culturas and culturas[anterior]["fixa_n"] and not c["fixa_n"]:
-            fator_sequencia = BONUS_APOS_FIXADORA
-        else:
-            fator_sequencia = 1.0
         # fator mais limitante
         cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"], r["atendimento_hidrico"])
-        produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
-        r["fator_sequencia"] = fator_sequencia
-        r["fator"] = cresce * fator_sequencia
-        r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
-        r["solo"] = cresce * (
-            PESO_SOLO["fixa_n"] * c["fixa_n"]
-            + PESO_SOLO["cobre_solo"] * c["cobre_solo"]
-            + PESO_SOLO["diversidade"] * (nome != anterior)
-        )
+        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos)
         resultados.append(r)
         anterior = nome
 
@@ -260,11 +336,218 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         "solo": sum(r["solo"] for r in resultados) / len(resultados),
         "receita_ha": sum(r["receita_ha"] for r in resultados),
         "encaixe": min(min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"]) for r in resultados),
+        "descoberto": solo_descoberto(dia_livre, ciclos, palhada_inicial, clima),
         "culturas": resultados,
     }
 
 
-def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
+def solo_descoberto(dia_livre, ciclos, palhada_inicial, clima):
+    """Dias sem cultura e chuva que cai neles, nos 365 dias a partir do talhao livre.
+
+    ciclos: (dia do plantio, dia do fim do ciclo, deixa palhada?) de cada cultura, na ordem.
+    Dia sem cultura = nenhuma cultura em pe (espera pelo plantio, colheita, depois da ultima).
+    Dia exposto = dia sem cultura em que a cultura anterior nao deixa palhada (cobre_solo = 0).
+    Antes da 1a cultura vale a ultima do historico; sem historico, conta como exposto.
+    """
+    meses = {}  # mes -> acumulados, na ordem do calendario a partir do talhao livre
+    for d in range(dia_livre, dia_livre + 365):
+        palhada = palhada_inicial
+        em_pe = False
+        for plantio, fim, deixa_palhada in ciclos:
+            if plantio <= d < fim:
+                em_pe = True
+            elif fim <= d:
+                palhada = deixa_palhada
+        if em_pe:
+            continue
+        mes = MES_DO_DIA[d % 365]
+        chuva = clima[mes - 1]["chuva_mm"] / DIAS_MES[mes - 1]
+        a = meses.setdefault(mes, {"mes": mes, "dias": 0, "dias_expostos": 0, "chuva_mm": 0.0, "chuva_exposta_mm": 0.0})
+        a["dias"] += 1
+        a["chuva_mm"] += chuva
+        if not palhada:
+            a["dias_expostos"] += 1
+            a["chuva_exposta_mm"] += chuva
+    lista = list(meses.values())
+    return {
+        **{k: sum(a[k] for a in lista) for k in ("dias", "dias_expostos", "chuva_mm", "chuva_exposta_mm")},
+        "meses": lista,
+    }
+
+
+def fator_declividade(declividade_pct):
+    """Fator S da RUSLE (McCool et al., 1987): quanto a declividade multiplica a perda de solo.
+
+    1 em 9% de declividade; abaixo disso, menor que 1.
+    """
+    seno = math.sin(math.atan(declividade_pct / 100))
+    return 10.8 * seno + 0.03 if declividade_pct < 9 else 16.8 * seno - 0.50
+
+
+def simular_cultura_diaria(c, inicio, serie, agua):
+    """Como simular_cultura, com a chuva, o ET0 e as temperaturas de cada dia de um ano real.
+
+    inicio: posicao do dia do plantio na serie. Calor: conta os dias da fase sensivel com
+    maxima acima do limiar da cultura. fator_agua: 1 - Ky x (1 - atendimento hidrico).
+    """
+    ciclo = c["ciclo_dias"]
+    limiar = c["temp_calor_c"]
+    chuvas, et0s, tmins, tmaxs = serie["chuva"], serie["et0"], serie["tmin"], serie["tmax"]
+    soma_temp = chuva_ciclo = etc_ciclo = deficit = 0.0
+    dias_sensiveis = dias_calor = 0
+    for i in range(ciclo):
+        d = inicio + i
+        fracao = i / ciclo
+        chuva = chuvas[d]
+        etc = kc_do_dia(c, fracao) * et0s[d]
+        eta = min(etc, agua + chuva)  # a cultura so usa a agua que existe
+        agua = min(CAD_MM, agua + chuva - eta)
+        soma_temp += encaixe_temperatura((tmins[d] + tmaxs[d]) / 2, c)
+        if limiar is not None and FASE_SENSIVEL[0] <= fracao < FASE_SENSIVEL[1]:
+            dias_sensiveis += 1
+            dias_calor += tmaxs[d] > limiar
+        chuva_ciclo += chuva
+        etc_ciclo += etc
+        deficit += etc - eta
+    atendimento = 1 - deficit / etc_ciclo if etc_ciclo > 0 else 1.0
+    resultado = {
+        "encaixe_temp": soma_temp / ciclo,
+        "encaixe_chuva": encaixe_chuva(chuva_ciclo, c),
+        "encaixe_calor": max(0.0, 1 - PERDA_CALOR * dias_calor / dias_sensiveis) if dias_sensiveis else 1.0,
+        "dias_calor": float(dias_calor),
+        "atendimento_hidrico": atendimento,
+        "fator_agua": max(0.0, 1 - c["ky"] * (1 - atendimento)),
+        "chuva_mm": chuva_ciclo,
+        "etc_mm": etc_ciclo,
+        "deficit_mm": deficit,
+    }
+    return resultado, agua
+
+
+def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, serie, precos, cache):
+    """A sequencia em um ano da serie diaria, com o talhao livre na posicao `inicio`.
+
+    esperas: dias de espera de cada cultura, os mesmos do modo mensal. O calendario
+    (epocas de plantio, colheita) nao muda de um ano para o outro.
+    """
+    dia = sem_cultura = inicio
+    agua = 0.0  # o solo comeca vazio
+    resultados = []
+    for nome, slot, espera in zip(nomes, slots, esperas):
+        c = culturas[nome]
+        plantio = dia + espera
+        for d in range(sem_cultura, plantio):  # solo sem cultura so acumula chuva
+            agua = min(CAD_MM, agua + serie["chuva"][d])
+        chave = (nome, plantio, agua)  # a 1a cultura se repete em varias sequencias
+        if chave not in cache:
+            cache[chave] = simular_cultura_diaria(c, plantio, serie, agua)
+        r, agua = cache[chave]
+        r = {"cultura": nome, "slot": slot, **r}
+        sem_cultura = plantio + c["ciclo_dias"]
+        dia = sem_cultura + DIAS_COLHEITA
+        # fator mais limitante; a agua entra pela resposta de produtividade (Ky)
+        cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"], r["fator_agua"])
+        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos)
+        resultados.append(r)
+        anterior = nome
+    etc = sum(r["etc_mm"] for r in resultados)
+    return {
+        "agua": 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0,
+        "solo": sum(r["solo"] for r in resultados) / len(resultados),
+        "receita_ha": sum(r["receita_ha"] for r in resultados),
+        "culturas": resultados,
+    }
+
+
+def _quantil_ruim(valores):
+    v = sorted(valores)
+    return v[int(len(v) * QUANTIL_RUIM)]
+
+
+def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos):
+    """Roda cada sequencia viavel em cada ano da serie diaria, no clima de hoje e no futuro.
+
+    Devolve (resumo geral, {sequencia: bloco "diario"}). Por sequencia e clima: ano mediano
+    e ano ruim (QUANTIL_RUIM) de agua, solo e receita, cada um com score e rank.
+    """
+    hoje = _serie_diaria(diario, lat)
+    series = {"hoje": hoje, "futuro": _serie_futura(hoje, climas["hoje"], climas["futuro"], et0["hoje"], et0["futuro"])}
+    esperas = {s: [r["espera_dias"] for r in aval_hoje[s]["culturas"]] for s in sequencias}
+    # dias do talhao livre ate o fim do ultimo ciclo, na sequencia mais longa
+    duracao = max(
+        (sum(e + tabela[n]["ciclo_dias"] for e, n in zip(esperas[s], s)) + DIAS_COLHEITA * (len(s) - 1) for s in sequencias),
+        default=0,
+    )
+    datas = hoje["datas"]
+    inicios = {}  # ano em que o talhao fica livre -> posicao desse dia na serie
+    for ano in range(datas[0].year, datas[-1].year + 1):
+        i = (datetime.date(ano, mes_plantio, 1) - datas[0]).days
+        if i >= 0 and i + duracao <= len(datas):
+            inicios[ano] = i
+    if sequencias and len(inicios) < MIN_ANOS_DIARIO:
+        raise ValueError(
+            f"serie diaria com menos de {MIN_ANOS_DIARIO} anos completos para o talhao livre no mes {mes_plantio}"
+        )
+
+    por_ano = {}  # clima -> sequencia -> ano -> resultado
+    for cen, serie in series.items():
+        cache = {}
+        por_ano[cen] = {
+            s: {
+                ano: avaliar_sequencia_diaria(s, slots, anterior, tabela, esperas[s], i, serie, precos, cache)
+                for ano, i in inicios.items()
+            }
+            for s in sequencias
+        }
+
+    niveis = {"mediano": statistics.median, "ruim": _quantil_ruim}
+    partes = ("agua", "solo", "receita_ha")
+    resumo = {
+        cen: {
+            s: {nivel: {p: f([a[p] for a in anos.values()]) for p in partes} for nivel, f in niveis.items()}
+            for s, anos in porseq.items()
+        }
+        for cen, porseq in por_ano.items()
+    }
+    # renda de 0 a 1: a maior receita do ano mediano entre as sequencias, hoje e no futuro, vale 1
+    teto = max((resumo[cen][s]["mediano"]["receita_ha"] for cen in resumo for s in sequencias), default=0.0) or 1.0
+    for cen in resumo:
+        for nivel in niveis:
+            for s in sequencias:
+                a = resumo[cen][s][nivel]
+                a["renda"] = min(1.0, a["receita_ha"] / teto)
+                a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
+            for i, s in enumerate(sorted(sequencias, key=lambda s: -resumo[cen][s][nivel]["score"])):
+                resumo[cen][s][nivel]["rank"] = i + 1
+
+    campos_cultura = ("atendimento_hidrico", "fator_agua", "encaixe_calor", "fator", "receita_ha")
+    blocos = {}
+    for s in sequencias:
+        blocos[s] = {}
+        for cen in por_ano:
+            anos = por_ano[cen][s]
+            pior = min(anos, key=lambda ano: (anos[ano]["receita_ha"], anos[ano]["agua"]))
+            blocos[s][cen] = {
+                **resumo[cen][s],
+                "pior_ano": {"ano": pior, "agua": anos[pior]["agua"], "receita_ha": anos[pior]["receita_ha"]},
+                "culturas": [
+                    {
+                        "cultura": nome,
+                        "slot": slot,
+                        **{
+                            nivel: {k: f([a["culturas"][i][k] for a in anos.values()]) for k in campos_cultura}
+                            for nivel, f in niveis.items()
+                        },
+                    }
+                    for i, (nome, slot) in enumerate(zip(s, slots))
+                ],
+                "anos": [{"ano": ano, **{p: a[p] for p in partes}} for ano, a in anos.items()],
+            }
+    geral = {"anos": list(inicios), "n_anos": len(inicios), "quantil_ruim": QUANTIL_RUIM}
+    return geral, blocos
+
+
+def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, diario=None):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
     Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
@@ -274,6 +557,9 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
     clima_seco: opcional, mesma forma das outras duas. Se vier, a saida ganha um
     terceiro cenario ("seco"); sem ele, a saida so tem hoje e futuro.
+    diario: opcional, serie diaria de hoje (data, chuva_mm, tmin_c, tmax_c e, se houver,
+    et0_mm). Se vier, a saida ganha "diario": cada sequencia viavel em cada ano da serie,
+    com ano mediano e ano ruim. Os campos que ja existiam nao mudam.
     Devolve um dict pronto para json.dumps.
     """
     tabela = _tabela_culturas(culturas)
@@ -290,6 +576,10 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
     mes_plantio = int(entrada.get("mes_plantio", 10))
     historico = list(entrada.get("rotacao_atual") or [])
     precos = {k: float(v) for k, v in (entrada.get("precos") or {}).items()}
+    declividade = entrada.get("declividade_pct")
+    declividade = None if declividade is None else float(declividade)
+    if declividade is not None and not 0 <= declividade <= 100:
+        raise ValueError("declividade_pct deve estar entre 0 e 100")
     if horizonte not in (1, 2):
         raise ValueError("horizonte deve ser 1 ou 2")
     if not 1 <= mes_plantio <= 12:
@@ -301,8 +591,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
 
     slots = ordem_dos_slots(mes_plantio, horizonte)
     anterior = historico[-1] if historico else None
-    # "atual" = repetir a rotacao atual nas proximas safras
-    atual = tuple(historico[i % len(historico)] for i in range(horizonte)) if historico else None
+    atual = rotacao_atual(historico, horizonte)
 
     todas = list(itertools.product(tabela, repeat=horizonte))
     et0 = {cen: et0_do_clima(clima, lat) for cen, clima in climas.items()}
@@ -323,10 +612,18 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
             a = porseq[s]
             a["renda"] = min(1.0, a["receita_ha"] / teto)
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
+            if declividade is not None:  # chuva sobre solo exposto, ponderada pela declividade; fora do score
+                a["descoberto"]["indice_erosao"] = a["descoberto"]["chuva_exposta_mm"] * fator_declividade(declividade)
         ordem = sorted(sequencias, key=lambda s: -porseq[s]["score"])
         rank[cen] = {s: i + 1 for i, s in enumerate(ordem)}
 
-    campos = ["score", "agua", "solo", "renda", "receita_ha", "encaixe", "culturas"]
+    geral_diario = blocos_diario = None
+    if diario is not None:
+        geral_diario, blocos_diario = _modo_diario(
+            diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos
+        )
+
+    campos = ["score", "agua", "solo", "renda", "receita_ha", "encaixe", "descoberto", "culturas"]
     saida = {
         "entrada": {
             "lat": lat,
@@ -335,8 +632,19 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
             "horizonte": horizonte,
             "mes_plantio": mes_plantio,
             "precos": precos,
+            "declividade_pct": declividade,
         },
         "slots": slots,
+        # a rotacao atual, para comparar com as outras: os numeros dela estao em "sequencias"
+        # (item com o mesmo id) se for viavel; se nao for, "motivo" diz por que nao cabe
+        "atual": None
+        if atual is None
+        else {
+            "id": ">".join(atual),
+            "culturas": list(atual),
+            "viavel": atual in sequencias,
+            "motivo": aval["hoje"][atual].get("fora_de_epoca"),
+        },
         "clima": {
             cen: [{**m, "et0_mm": et0[cen][i] * DIAS_MES[i]} for i, m in enumerate(clima)]
             for cen, clima in climas.items()
@@ -348,6 +656,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
                 "atual": s == atual,
                 **{f"rank_{cen}": rank[cen][s] for cen in climas},
                 **{cen: {k: aval[cen][s][k] for k in campos} for cen in climas},
+                **({"diario": blocos_diario[s]} if blocos_diario is not None else {}),
             }
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],
@@ -356,7 +665,53 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None):
             for s in descartadas
         ],
     }
+    if geral_diario is not None:
+        saida["diario"] = geral_diario
     return _arredondar(saida)
+
+
+def _serie_diaria(df, lat):
+    """Confere a serie diaria e devolve listas por dia. Sem et0_mm, calcula Hargreaves de cada dia."""
+    faltam = [c for c in COLUNAS_DIARIO if c not in df.columns]
+    if faltam:
+        raise ValueError(f"serie diaria sem as colunas: {faltam}")
+    d = df.sort_values("data")
+    datas = [x.date() for x in pd.to_datetime(d["data"])]
+    if not datas or any((b - a).days != 1 for a, b in zip(datas, datas[1:])):
+        raise ValueError("serie diaria precisa de uma linha por dia, sem dias faltando ou repetidos")
+    serie = {"datas": datas, "mes": [x.month for x in datas]}
+    for chave, coluna in (("chuva", "chuva_mm"), ("tmin", "tmin_c"), ("tmax", "tmax_c")):
+        serie[chave] = [float(v) for v in d[coluna]]
+    if "et0_mm" in d.columns:
+        serie["et0"] = [float(v) for v in d["et0_mm"]]
+    else:
+        serie["et0"] = [
+            0.0023 * ((tn + tx) / 2 + 17.8) * max(tx - tn, 0) ** 0.5 * 0.408 * radiacao_extraterrestre(lat, x.timetuple().tm_yday)
+            for x, tn, tx in zip(datas, serie["tmin"], serie["tmax"])
+        ]  # fmt: skip
+    if not all(math.isfinite(v) for chave in ("chuva", "tmin", "tmax", "et0") for v in serie[chave]):
+        raise ValueError("serie diaria com valores vazios")
+    return serie
+
+
+def _serie_futura(serie, hoje, futuro, et0_hoje, et0_futuro):
+    """A serie de hoje com a mudanca mensal entre as duas tabelas de clima.
+
+    Temperaturas: soma a diferenca do mes. Chuva e ET0: multiplica pela razao do mes,
+    para os dias sem chuva continuarem sem chuva.
+    """
+    d_tmin = [f["tmin_c"] - h["tmin_c"] for h, f in zip(hoje, futuro)]
+    d_tmax = [f["tmax_c"] - h["tmax_c"] for h, f in zip(hoje, futuro)]
+    r_chuva = [f["chuva_mm"] / h["chuva_mm"] if h["chuva_mm"] > 0 else 1.0 for h, f in zip(hoje, futuro)]
+    r_et0 = [f / h if h > 0 else 1.0 for h, f in zip(et0_hoje, et0_futuro)]
+    meses = serie["mes"]
+    return {
+        **serie,
+        "chuva": [v * r_chuva[m - 1] for v, m in zip(serie["chuva"], meses)],
+        "tmin": [v + d_tmin[m - 1] for v, m in zip(serie["tmin"], meses)],
+        "tmax": [v + d_tmax[m - 1] for v, m in zip(serie["tmax"], meses)],
+        "et0": [v * r_et0[m - 1] for v, m in zip(serie["et0"], meses)],
+    }
 
 
 def _tabela_clima(df):
@@ -397,6 +752,8 @@ def _tabela_culturas(df):
         c["produtividade_safrinha"] = c["produtividade"] if pd.isna(safrinha) else float(safrinha)
         limiar = linha.get("temp_calor_c")  # coluna opcional; vazio = a regra de calor nao se aplica
         c["temp_calor_c"] = None if limiar is None or pd.isna(limiar) else int(limiar)
+        ky = linha.get("ky")  # coluna opcional; sem ela, vale a tabela KY. So o modo diario usa
+        c["ky"] = KY.get(nome, KY_PADRAO) if ky is None or pd.isna(ky) else float(ky)
         tabela[nome] = c
     if not tabela:
         raise ValueError("culturas.csv esta vazio")

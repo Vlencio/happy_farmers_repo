@@ -1,3 +1,3 @@
-from .motor import carregar_clima_seco, carregar_dados, recomendar
+from .motor import carregar_clima_seco, carregar_dados, carregar_diario, diario_do_power, recomendar
 
-__all__ = ["carregar_clima_seco", "carregar_dados", "recomendar"]
+__all__ = ["carregar_clima_seco", "carregar_dados", "carregar_diario", "diario_do_power", "recomendar"]
