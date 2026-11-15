@@ -193,7 +193,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [ ] API (Pedro): aceitar e validar `ajuste` em `backend/app.py`, repassar ao motor e anunciar `capabilities.ajuste: true` em `/metadata`. O front exige os mesmos valores de volta em `entrada.ajuste`.
 - [ ] Integração: testar os controles contra a API real após a liberação; hoje o endpoint rejeita `ajuste` com 422.
 - [ ] Chat (Pedro): contextualizar no prompt que `entrada.ajuste` altera os números de todos os cenários, incluindo o ano seco; são hipóteses, não observações originais.
-- [ ] Dados (Brenno, opcional): uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py`. Hoje os dias quentes entre os limiares são interpolados, e abaixo de 32 °C, extrapolados.
+- [x] Dados (Brenno): uma coluna `dias_acima_NN` por grau, de 26 a 40, em `scripts/montar_clima.py` e `scripts/clima_ponto.py` (15/11). Na mesma entrega, os dias quentes do futuro passaram a ser contados na Tmax diária do POWER deslocada pelo delta do mês (69,5 dias/ano acima de 35 °C, eram 83,6) e a chuva do futuro passou a ser por razão na demonstração (1.234 mm/ano, eram 1.229). Rank de hoje igual; no futuro, as três primeiras não mudam. Faltam os números do contrato e as fixtures.
 - [ ] Chat (Gabriel, opcional): a IA traduz "e se chover menos?" em `ajuste` e chama o motor; o número continua vindo do motor.
 
 **Feito quando:** a tela permite pedir "20% menos chuva" e o resultado muda.
@@ -202,7 +202,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). Breno entregou `data/clima_modelos.csv` em `dados-calor`, commit `5deed52` (15/11/2026), ainda fora da `main` e da `front-dev3`. O leitor da API e o painel do front aceitam essa entrega para o contorno de demonstração; sem o CSV no servidor, a tela continua informando que a faixa não está disponível. Isso descreve a faixa climática do talhão, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). Breno entregou `data/clima_modelos.csv` em `dados-calor`, commit `5deed52` (15/11/2026), já na `main` (merge `89138fe`). O leitor da API e o painel do front aceitam essa entrega para o contorno de demonstração; sem o CSV no servidor, a tela continua informando que a faixa não está disponível. Isso descreve a faixa climática do talhão, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 

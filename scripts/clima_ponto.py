@@ -16,9 +16,12 @@ De onde vem cada tabela:
 - Outro ponto: POWER diario 2005-2024 daquele ponto, sem a correcao da A520
   (a estacao so vale perto do talhao). Le de data/power/ se o arquivo existir;
   senao chama a API e guarda o arquivo.
-- Futuro: hoje + delta do NEX-GDDP. Por enquanto o delta e sempre o do talhao de
-  demonstracao (data/clima_correcoes.csv); `origem["delta"]` diz isso. Quando
-  houver delta regional, ele entra pelo parametro `deltas`.
+- Futuro: hoje + delta do NEX-GDDP. O delta padrao e o do talhao de demonstracao
+  (data/clima_correcoes.csv); o regional entra pelo parametro `deltas`.
+  `origem["delta"]` diz qual foi usado.
+  - Dias quentes: os dias do POWER do ponto com a Tmax somada ao delta_tmax_c do mes.
+  - Chuva: hoje x razao_chuva quando `deltas` tem essa coluna; senao hoje +
+    delta_chuva_mm. `origem["chuva_futuro"]` diz qual ("razao" ou "delta_somado").
 - Se o POWER falhar: devolve as tabelas da demonstracao e avisa em `origem`.
 """
 import math
@@ -51,8 +54,8 @@ def arquivo_power(lat, lon):
 def deltas_demo():
     """Deltas do NEX-GDDP do talhao de demonstracao, por mes."""
     d = pd.read_csv(mc.DADOS / "clima_correcoes.csv", index_col="mes")
-    if not [c for c in d.columns if c.startswith("delta_dias_acima_")]:
-        raise ValueError("clima_correcoes.csv sem delta_dias_acima_NN: rode scripts/montar_clima.py")
+    if "razao_chuva" not in d.columns:
+        raise ValueError("clima_correcoes.csv sem razao_chuva: rode scripts/montar_clima.py")
     return d
 
 
@@ -91,15 +94,17 @@ def tabelas_do_diario(diario, lat, deltas):
     if len(base) < 12 or anos.min() < MIN_ANOS:
         raise ValueError(f"POWER com menos de {MIN_ANOS} anos de dados em algum mes")
 
-    limiares = sorted(int(c.rsplit("_", 1)[1]) for c in deltas.columns if c.startswith("delta_dias_acima_"))
+    limiares = mc.limiares_de_calor()
     cont_hoje = mc.contar_dias_quentes(diario, None, limiares)
-    delta_calor = deltas[[f"delta_dias_acima_{lim}" for lim in limiares]].set_axis(limiares, axis=1)
-    cont_fut = (cont_hoje + delta_calor).clip(lower=0).clip(upper=pd.Series(mc.DIAS_INT, index=base.index), axis=0)
+    cont_fut = mc.contar_dias_quentes(diario, deltas["delta_tmax_c"], limiares)  # Tmax de cada dia + delta do mes
 
     hoje = base.copy()
     hoje["et0_mm"] = mc.et0_hargreaves(base["tmin_c"], base["tmax_c"], lat)
     fut = pd.DataFrame(index=base.index)
-    fut["chuva_mm"] = (base["chuva_mm"] + deltas["delta_chuva_mm"]).clip(lower=0)
+    if "razao_chuva" in deltas.columns:
+        fut["chuva_mm"] = base["chuva_mm"] * deltas["razao_chuva"]
+    else:  # delta regional ainda sem a razao
+        fut["chuva_mm"] = (base["chuva_mm"] + deltas["delta_chuva_mm"]).clip(lower=0)
     fut["tmin_c"] = base["tmin_c"] + deltas["delta_tmin_c"]
     fut["tmax_c"] = base["tmax_c"] + deltas["delta_tmax_c"]
     fut["et0_mm"] = mc.et0_hargreaves(fut["tmin_c"], fut["tmax_c"], lat)
@@ -109,12 +114,16 @@ def tabelas_do_diario(diario, lat, deltas):
     return hoje.round(2).reset_index(), fut.round(2).reset_index()
 
 
+def metodo_chuva(deltas):
+    return "razao" if "razao_chuva" in deltas.columns else "delta_somado"
+
+
 def clima_por_ponto(lat, lon, puxar=None, deltas=None, origem_delta="nex_talhao_demo"):
     """Devolve {"clima_hoje", "clima_futuro", "origem"} para o ponto.
 
     puxar:  funcao (lat, lon) -> serie diaria do POWER; padrao: a API. Serve para teste.
-    deltas: tabela por mes com delta_chuva_mm, delta_tmin_c, delta_tmax_c e
-            delta_dias_acima_NN. Padrao: os do talhao de demonstracao.
+    deltas: tabela por mes com delta_chuva_mm, delta_tmin_c, delta_tmax_c e,
+            se houver, razao_chuva. Padrao: os do talhao de demonstracao.
     origem_delta: rotulo de `deltas`, copiado para origem["delta"].
     """
     lat, lon = float(lat), float(lon)
@@ -124,7 +133,7 @@ def clima_por_ponto(lat, lon, puxar=None, deltas=None, origem_delta="nex_talhao_
     origem = {
         "lat": lat, "lon": lon, "distancia_demo_km": round(dist, 1),
         "hoje": "tabela_demo", "delta": "nex_talhao_demo", "correcao_a520": True,
-        "periodos": PERIODOS, "aviso": None,
+        "chuva_futuro": "razao", "periodos": PERIODOS, "aviso": None,
     }
 
     def demo():
@@ -150,10 +159,10 @@ def clima_por_ponto(lat, lon, puxar=None, deltas=None, origem_delta="nex_talhao_
                            f"Usando as tabelas do talhao de demonstracao, a {dist:.0f} km.")
         return demo()
 
-    origem.update(hoje=fonte, delta=origem_delta, correcao_a520=False)
+    origem.update(hoje=fonte, delta=origem_delta, correcao_a520=False, chuva_futuro=metodo_chuva(deltas))
     if origem_delta == "nex_talhao_demo":
         origem["aviso"] = (f"A mudanca do clima (2041-2060) e a do talhao de demonstracao, a {dist:.0f} km, "
-                           "somada ao clima de hoje deste ponto.")
+                           "aplicada ao clima de hoje deste ponto.")
     return {"clima_hoje": hoje, "clima_futuro": fut, "origem": origem}
 
 

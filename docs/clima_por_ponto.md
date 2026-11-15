@@ -33,6 +33,7 @@ Um dicionário com três chaves:
 |---|---|
 | `hoje` | `tabela_demo`, `power_arquivo`, `power_api` ou `fallback_tabela_demo` |
 | `delta` | `nex_talhao_demo` ou o rótulo passado em `origem_delta` |
+| `chuva_futuro` | `razao` (hoje × razão do NEX) ou `delta_somado` (hoje + delta em mm, quando `deltas` não traz `razao_chuva`) |
 | `correcao_a520` | `true` só quando as tabelas são as da demonstração |
 | `distancia_demo_km` | Distância do ponto ao talhão de demonstração |
 | `lat`, `lon` | O ponto pedido |
@@ -53,14 +54,20 @@ dele. O ET0 usa Hargreaves com a latitude do ponto.
 
 ## O delta (mudança do clima)
 
-Hoje só existe o delta do talhão de demonstração, em `data/clima_correcoes.csv`.
-Somá-lo ao clima de outro ponto é o plano B do `plano_gap.md`, e `origem` avisa.
+O delta padrão é o do talhão de demonstração, em `data/clima_correcoes.csv`.
+O regional (`data/nexgddp/regiao_mg/delta_mensal.csv`, escolhido por
+`backend/point_climate.py`) entra em `deltas`, com `origem_delta="nex_regional"`.
 
-Quando houver delta regional (P3), passar em `deltas` uma tabela com 12 linhas e
-as colunas `mes`, `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c` e uma
-`delta_dias_acima_NN` para cada limiar de calor de `culturas.csv` (hoje 32, 35,
-36 e 38), com `origem_delta="nex_regional"`. O `delta_mensal.csv` citado no
-plano ainda não existe no repositório; este formato é uma proposta.
+`deltas` é uma tabela de 12 linhas com `mes`, `delta_chuva_mm`, `delta_tmin_c`,
+`delta_tmax_c` e, se houver, `razao_chuva`. Como cada parte do futuro é feita
+(desde 15/11):
+
+- **Temperaturas:** hoje + delta do mês.
+- **Dias quentes (`dias_acima_NN`, de 26 a 40 °C):** os dias do POWER do ponto com
+  a máxima somada ao `delta_tmax_c` do mês. As colunas `delta_dias_acima_NN` de
+  `deltas` não são mais lidas.
+- **Chuva:** hoje × `razao_chuva`. Sem essa coluna (caso do `delta_mensal.csv`
+  regional de hoje), hoje + `delta_chuva_mm`; `origem["chuva_futuro"]` diz qual.
 
 ## Limites
 

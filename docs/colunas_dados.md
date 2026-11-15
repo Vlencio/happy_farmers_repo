@@ -92,9 +92,9 @@ Script: `scripts/montar_clima.py` · 12 linhas cada, uma por mês
 | Arquivo | Conteúdo |
 |---|---|
 | `data/clima_hoje.csv` | POWER 2005–2024 em média por mês; `tmin_c` e `tmax_c` corrigidos pela estação INMET A520 |
-| `data/clima_futuro.csv` | hoje + (NEX `ssp245` − `historical`), média dos 3 modelos |
+| `data/clima_futuro.csv` | temperaturas: hoje + (NEX `ssp245` − `historical`), média dos 3 modelos. Chuva: hoje × (`ssp245` ÷ `historical`). Dias quentes: ver abaixo |
 | `data/clima_seco.csv` | o ano agrícola (jul–jun) com menos chuva no POWER 2005–2024: a safra **2020/21** |
-| `data/clima_correcoes.csv` | offsets da A520 e deltas do NEX por mês, para conferência |
+| `data/clima_correcoes.csv` | offsets da A520, deltas do NEX por mês e `razao_chuva` (4 casas). `scripts/clima_ponto.py` lê daqui `delta_tmin_c`, `delta_tmax_c` e `razao_chuva`. As colunas `delta_dias_quentes` e `delta_dias_acima_NN` são o delta de contagem do NEX, só para conferência: não entram mais no futuro |
 | `data/clima_modelos.csv` | delta do NEX por modelo e mês, antes da média (`modelo`, `mes`, `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c`); só o talhão de demonstração. A média dos três é o delta de `clima_futuro` |
 
 **Ano seco.** É um ano real, não uma média, no mesmo formato das outras tabelas, então o motor roda nele sem mudança. O script escolhe sozinho o ano agrícola completo com menos chuva.
@@ -105,11 +105,14 @@ Script: `scripts/montar_clima.py` · 12 linhas cada, uma por mês
 - É um cenário, não uma probabilidade: não diz com que frequência um ano assim acontece.
 - O motor ainda não lê esta tabela por conta própria. Ela pode ser passada no lugar de `clima_hoje` ou `clima_futuro`.
 
-Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês), `dias_quentes`.
+Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês), `dias_quentes` e uma `dias_acima_NN` por grau, de 26 a 40 °C (desde 15/11; antes só 32, 35, 36 e 38).
+
+- `chuva_mm` do futuro (desde 15/11): chuva de hoje × razão do mês entre o `ssp245` e o `historical`, com a média dos 3 modelos de cada lado. Antes era hoje + delta em mm. Os modelos são 19 a 24% mais úmidos que o POWER (1.483 a 1.537 mm/ano contra 1.242), então a razão leva a mudança relativa. Chuva anual do futuro: 1.234 mm (era 1.229). Nenhum dos 36 deltas mensais de chuva por modelo é significativo (Welch, p < 0,05): a mudança de chuva é ruído.
 
 - `dias_quentes`: média de dias do mês com máxima acima de 35 °C.
   - Hoje: POWER diário 2005–2024, com a correção da A520 no Tmax.
-  - Futuro: hoje + (dias no `ssp245` − dias no `historical`) do NEX diário, por modelo e mês, média dos 3 modelos. Limitado entre 0 e os dias do mês.
+  - Futuro (desde 15/11): os mesmos dias do POWER, com a máxima de cada dia somada ao `delta_tmax_c` do mês (e a correção da A520). É o método do modo diário do motor. Dá 69,5 dias por ano acima de 35 °C; o método anterior (hoje + delta de contagem do NEX) dava 83,6.
+- `dias_acima_NN`: o mesmo para cada grau NN. `dias_quentes` é igual a `dias_acima_35`.
   - Total: **34 dias por ano hoje e 84 no futuro**. Setembro: 10,5 → 18,9. Outubro: 10,1 → 16,5.
   - O POWER hoje (34) e o NEX histórico (33) quase coincidem, o que valida usar a diferença.
   - O limiar de 35 °C é uma convenção comum para estresse de calor em grãos (**memória**, sem fonte aberta). Está na constante `LIMIAR_CALOR_C` do script.
