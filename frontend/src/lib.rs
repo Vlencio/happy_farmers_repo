@@ -54,7 +54,7 @@ impl Default for State {
             history: vec![],
             page: Page::Setup,
             analysis: None,
-            selected: SelectedStrategy::Objective(0),
+            selected: SelectedStrategy::Ranked(0),
             stage: 0,
             exposure_month: 0,
             crop: None,
@@ -104,7 +104,7 @@ impl State {
         self.reset_chat();
         self.analysis = None;
         self.page = Page::Setup;
-        self.selected = SelectedStrategy::Objective(0);
+        self.selected = SelectedStrategy::Ranked(0);
         self.stage = 0;
         self.exposure_month = 0;
         self.loading = false;
@@ -179,6 +179,27 @@ impl State {
         self.month_open = false;
         self.horizon_open = false;
         host(json!({"type":"settings", "settings":self.settings}));
+    }
+    fn set_priority(&mut self, index: usize, value: u8) {
+        if value > 3 {
+            return;
+        }
+        let priority = match index {
+            0 => &mut self.settings.prioridades.agua,
+            1 => &mut self.settings.prioridades.solo,
+            _ => &mut self.settings.prioridades.renda,
+        };
+        if *priority == value {
+            return;
+        }
+        *priority = value;
+        let reanalyze = self.page != Page::Setup || self.loading;
+        self.invalidate();
+        if reanalyze && self.ready && self.farm.is_some() {
+            self.page = Page::Results;
+            self.loading = true;
+        }
+        host(json!({"type":"priorities", "settings":self.settings, "analyze":self.loading}));
     }
     fn crop_label(&self, id: &str) -> String {
         self.cultures
@@ -271,14 +292,7 @@ fn apply_command(s: &mut State, command: Command) {
             s.settings = settings;
             s.notice = "Seu rascunho foi restaurado neste navegador.".into();
         }
-        Command::Analysis { mut analysis } => {
-            analysis
-                .recommendations
-                .sort_by_key(|r| match r.category.as_str() {
-                    "income" => 0,
-                    "soil" => 1,
-                    _ => 2,
-                });
+        Command::Analysis { analysis } => {
             s.loading = false;
             s.error.clear();
             s.analysis = Some(analysis);

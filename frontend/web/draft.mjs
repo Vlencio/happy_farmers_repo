@@ -15,7 +15,7 @@ export function restoreDraft(text) {
   if (!text) return null;
   const draft = JSON.parse(text);
   if (!draft || ![1, 2].includes(draft.version)) throw new Error('Versão de rascunho não reconhecida.');
-  let farm = null, settings = { ...DEFAULT_SETTINGS }, repaired = false;
+  let farm = null, settings = validateSettings(DEFAULT_SETTINGS), repaired = false;
   if (draft.farm) {
     try {
       farm = normalizeFarm(draft.farm.geojson, {
@@ -29,6 +29,10 @@ export function restoreDraft(text) {
   const history = items.filter(item => item && typeof item.crop === 'string' && item.crop.trim() && item.crop.length <= 80 &&
     validSeason(item.season) && typeof item.notes === 'string' && [...item.notes].length <= 500).slice(0, 12);
   repaired ||= history.length !== items.length;
-  try { settings = validateSettings(draft.settings); } catch { repaired ||= draft.version !== 1; }
+  try { settings = validateSettings(draft.settings); } catch {
+    repaired ||= draft.version !== 1;
+    // A damaged priority control must not erase a valid planning calendar.
+    try { settings = validateSettings({ ...draft.settings, prioridades: undefined }); } catch { /* Keep defaults. */ }
+  }
   return { farm, history, settings, repaired };
 }

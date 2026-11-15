@@ -24,14 +24,20 @@ for (const horizonte of [1, 2]) {
     assert.equal(raw.sequencias.length + raw.descartadas.length, metadata.cultures.length ** horizonte);
     const view = mapMotorAnalysis(raw, farm);
     assert.match(view.source_warning, /talhão de demonstração/);
-    if (horizonte === 2 && [2, 10].includes(mes_plantio)) {
-      assert.equal(view.recommendations[2].sequence_id, mes_plantio === 10 ? 'soja>sorgo' : 'sorgo>soja');
+    assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id));
+    assert.equal(view.recommendations.length, Math.min(3, raw.sequencias.length));
+    if (horizonte === 1 && [3, 4, 5, 12].includes(mes_plantio)) {
+      const expected = { 3: ['trigo', 'crotalaria'], 4: [], 5: ['soja', 'milho'], 12: ['algodao'] };
+      assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), expected[mes_plantio]);
     }
-    assert.equal(view.recommendations.length, raw.sequencias.length ? 3 : 0);
     if (!raw.sequencias.length) empty++;
     for (const rec of [...view.recommendations, ...(view.current_rotation.strategy ? [view.current_rotation.strategy] : [])]) {
       assert.equal(rec.timeline.length, horizonte);
       const source = raw.sequencias.find(seq => seq.id === rec.sequence_id);
+      assert.deepEqual(rec.rank_facts.map(fact => fact.value), [
+        `#${source.rank_hoje}`, `${source.hoje.score.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`,
+        `#${source.rank_futuro}`, `${source.futuro.score.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`,
+      ]);
       assert.ok(Array.isArray(source.avisos), 'A API deve repassar os avisos do motor atualizado.');
       assert.equal(rec.warnings.risks.length, source.avisos.filter(warning => warning.tipo === 'risco').length);
       assert.equal(rec.warnings.gaps.length, source.avisos.filter(warning => warning.tipo === 'lacuna').length);
@@ -84,3 +90,36 @@ for (const { crops, month, horizon, id, status } of currentCases) {
   }
 }
 console.log(`${currentCases.length} casos de rotação atual passaram na API real, incluindo histórico longo, slot equivalente, descarte e ausência de histórico.`);
+
+// Ranking comes from a new engine analysis for each set of priorities.
+// Keep the demo field and soybean/corn history used in the engine's examples:
+// history contributes to soil diversity, so empty history can change tied scores.
+const weightedHistory = ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' }));
+const weightedCases = [
+  { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
+  { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>trigo', 'soja>girassol'] },
+  { name: 'só solo', prioridades: { agua: 0, solo: 3, renda: 0 }, ids: ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'] },
+  { name: 'só água e desempate do motor', prioridades: { agua: 3, solo: 0, renda: 0 }, ids: ['soja>sorgo', 'soja>feijao', 'soja>girassol'] },
+  { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
+];
+for (const { name, prioridades, ids } of weightedCases) {
+  const request = buildRequest(farm, weightedHistory, { mes_plantio: 10, horizonte: 2, prioridades }, metadata.cultures);
+  assert.deepEqual(request.prioridades, prioridades, name);
+  const raw = await requestAnalysis(baseUrl, request);
+  const view = mapMotorAnalysis(raw, farm);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ids, name);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id), name);
+  assert.equal(view.current_rotation.status, 'ready');
+  assert.equal(view.current_rotation.strategy.sequence_id, 'soja>milho');
+  assert.ok(view.recommendations.every(rec => rec.reason.includes(view.priority_note)), name);
+  if (prioridades.agua === 3) assert.ok(raw.sequencias.slice(0, 3).every(seq => seq.hoje.score === 100));
+  if (name.includes('iguais')) assert.deepEqual(raw.entrada.prioridades, { agua: 0.333, solo: 0.333, renda: 0.333 });
+}
+const futureShift = await requestAnalysis(baseUrl, buildRequest(farm, weightedHistory, { mes_plantio: 2, horizonte: 2 }, metadata.cultures));
+assert.equal(futureShift.sequencias[0].id, 'crotalaria>algodao');
+assert.equal(futureShift.sequencias[0].rank_hoje, 1);
+assert.equal(futureShift.sequencias[0].rank_futuro, 12);
+assert.equal(futureShift.sequencias[0].hoje.score, 79.218);
+assert.equal(futureShift.sequencias[0].futuro.score, 64.583);
+assert.equal(mapMotorAnalysis(futureShift, farm).recommendations[0].rank_facts[2].value, '#12');
+console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro mantém a 1ª de hoje com 12ª posição no futuro.`);

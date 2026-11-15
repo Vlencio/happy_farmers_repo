@@ -649,6 +649,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
         .child(steps(s, narrow))
         .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
+    view = view.child(priorities_panel(s, k, narrow));
     let action = Button::new(if s.loading {
         "Analisando…"
     } else {
@@ -813,6 +814,84 @@ fn glossary(s: &State, k: &Kit) -> El {
     }
     view
 }
+fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
+    let weights = s.settings.prioridades;
+    let mut view = panel().gap(16.0).w_full()
+        .child(label("Suas prioridades", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("Escolha quanto cada parte deve pesar na pontuação. Zero tira seu peso da pontuação; não exclui culturas."));
+    for (index, name, description, selected) in [
+        (
+            0,
+            "Água",
+            "Atendimento à necessidade de água das culturas",
+            weights.agua,
+        ),
+        (
+            1,
+            "Solo",
+            "Cobertura, fixação de nitrogênio e diversidade",
+            weights.solo,
+        ),
+        (
+            2,
+            "Renda",
+            "Receita bruta estimada, sem descontar custos",
+            weights.renda,
+        ),
+    ] {
+        let mut choices = row().gap(6.0).w_full();
+        for (value, title) in [(0, "nada"), (1, "pouco"), (2, "médio"), (3, "muito")] {
+            let chosen = selected == value;
+            choices = choices.child(
+                row()
+                    .key(format!("priority-{index}-{value}"))
+                    .w(0.0)
+                    .min_w(0.0)
+                    .grow(1.0)
+                    .h(44.0)
+                    .center()
+                    .radius(8.0)
+                    .fill(color(if chosen { "#355e3e" } else { "#f4f6ee" }))
+                    .border(1.0, color(if chosen { "#355e3e" } else { LINE }))
+                    .child(label(
+                        format!("{value} {title}"),
+                        11.0,
+                        600.0,
+                        if chosen { "#ffffff" } else { INK },
+                    ))
+                    .role("button")
+                    .label(format!(
+                        "{name}: prioridade {value} ({title}){}",
+                        if chosen { ", selecionada" } else { "" }
+                    ))
+                    .checked(chosen)
+                    .focusable(true)
+                    .on_press(move |s: &mut State| s.set_priority(index, value)),
+            );
+        }
+        view = view.child(
+            responsive_row(narrow)
+                .child(column_width(
+                    col()
+                        .gap(5.0)
+                        .child(label(name, 15.0, 600.0, INK))
+                        .child(label(description, 12.0, 400.0, MUTED).wrap().w_full()),
+                    narrow,
+                    1.0,
+                ))
+                .child(column_width(choices, narrow, 1.4)),
+        );
+    }
+    if weights.agua == 0 && weights.solo == 0 && weights.renda == 0 {
+        view = view.child(paragraph(
+            "Tudo em zero: o motor usa pesos iguais para água, solo e renda.",
+        ));
+    }
+    if s.page != Page::Setup {
+        view = view.child(label("Mudar uma prioridade refaz a análise e reinicia o chat. Em empate de pontuação, o motor considera a média de água, solo e renda.", 12.0, 400.0, MUTED).wrap().w_full());
+    }
+    view
+}
 fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     let month = Select::new("month-select", MONTHS)
         .appearance(SelectAppearance::Field)
@@ -871,11 +950,21 @@ fn category(category: &str) -> (&'static str, &'static str, &'static str, &'stat
             "#71624a",
             "#f0ebe2",
         ),
-        "income" => ("MAIOR RENDA", "Produzir com retorno", "#a47930", "#f3ebd7"),
-        "soil" => ("SAÚDE DO SOLO", "Cuidar da base", "#5d7d38", "#e9efd9"),
+        "rank1" => (
+            "1ª DE HOJE",
+            "Maior pontuação com suas prioridades",
+            "#a47930",
+            "#f3ebd7",
+        ),
+        "rank2" => (
+            "2ª DE HOJE",
+            "Segunda maior pontuação",
+            "#5d7d38",
+            "#e9efd9",
+        ),
         _ => (
-            "RESILIÊNCIA CLIMÁTICA",
-            "Adaptar para seguir",
+            "3ª DE HOJE",
+            "Terceira maior pontuação",
             "#4d7c88",
             "#e4eff0",
         ),
@@ -890,8 +979,9 @@ fn recommendation_card(
 ) -> El {
     let (name, tagline, accent, tint) = category(&rec.category);
     let comparison_label = rec
-        .comparison_facts
+        .rank_facts
         .iter()
+        .chain(rec.comparison_facts.iter())
         .chain(
             rec.exposure
                 .iter()
@@ -926,31 +1016,37 @@ fn recommendation_card(
     );
     let marker = match selection {
         SelectedStrategy::Current => "REF.".to_owned(),
-        SelectedStrategy::Objective(i) => format!("0{}", i + 1),
+        SelectedStrategy::Ranked(i) => format!("0{}", i + 1),
     };
     let mut metrics = col().gap(13.0).w_full().py(10.0);
-    for (i, fact) in rec.comparison_facts.iter().enumerate() {
-        let highlighted = rec.category == "current"
-            || matches!(
-                (rec.category.as_str(), i),
-                ("income", 0) | ("soil", 1) | ("climate", 2)
-            );
+    for fact in &rec.comparison_facts {
         metrics = metrics.child(
             col()
                 .gap(4.0)
                 .w_full()
                 .child(label(&fact.label, 11.0, 400.0, MUTED).wrap().w_full())
-                .child(
-                    label(
-                        &fact.value,
-                        22.0,
-                        600.0,
-                        if highlighted { accent } else { INK },
-                    )
-                    .wrap()
-                    .w_full(),
-                ),
+                .child(label(&fact.value, 22.0, 600.0, INK).wrap().w_full()),
         );
+    }
+    let mut rankings = col()
+        .gap(12.0)
+        .w_full()
+        .padding(10.0)
+        .radius(9.0)
+        .fill(color(tint));
+    for pair in rec.rank_facts.chunks(2) {
+        let mut line = row().gap(8.0).w_full();
+        for fact in pair {
+            line = line.child(column_width(
+                col()
+                    .gap(5.0)
+                    .child(label(&fact.label, 11.0, 400.0, MUTED).wrap().w_full())
+                    .child(label(&fact.value, 18.0, 600.0, accent).wrap().w_full()),
+                false,
+                1.0,
+            ));
+        }
+        rankings = rankings.child(line);
     }
     let mut exposure_summary = col()
         .gap(9.0)
@@ -988,8 +1084,9 @@ fn recommendation_card(
                 .child(pill(name, tint, accent))
                 .child(label(marker, 12.0, 400.0, accent)),
         )
-        .child(label(tagline, 12.0, 400.0, MUTED))
+        .child(label(tagline, 12.0, 400.0, MUTED).wrap().w_full())
         .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full())
+        .child(rankings)
         .child(metrics)
         .child(exposure_summary)
         .child(rule())
@@ -1672,7 +1769,36 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
 }
 fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     let Some(analysis) = &s.analysis else {
-        return el();
+        return col()
+            .gap(20.0)
+            .w_full()
+            .child(heading(
+                if s.loading {
+                    "Atualizando suas estratégias…"
+                } else {
+                    "Vamos consultar suas estratégias?"
+                },
+                "O ranking é calculado pelo motor com as prioridades escolhidas.",
+                narrow,
+            ))
+            .child(priorities_panel(s, k, narrow))
+            .child(if s.loading {
+                button(k, "cancel-priorities", "Cancelar análise", false, |s| {
+                    s.page = Page::Setup;
+                    host(json!({"type":"cancel"}));
+                })
+            } else {
+                button(k, "retry-priorities", "Analisar novamente", true, |s| {
+                    s.analyze()
+                })
+            })
+            .child(button(
+                k,
+                "back-setup",
+                "← Editar fazenda e histórico",
+                false,
+                |s| s.page = Page::Setup,
+            ));
     };
     let mut card_items = vec![current_rotation_card(
         &analysis.current_rotation,
@@ -1683,7 +1809,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     for (i, rec) in analysis.recommendations.iter().enumerate() {
         card_items.push(recommendation_card(
             rec,
-            SelectedStrategy::Objective(i),
+            SelectedStrategy::Ranked(i),
             k,
             narrow,
             analysis.demo,
@@ -1708,8 +1834,10 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     }
     let mut view = col().gap(24.0).w_full()
         .child(button(k, "back-setup", "← Editar fazenda e histórico", false, |s| s.page = Page::Setup))
-        .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "Três caminhos. A sua escolha." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Compare sua rotação atual com três caminhos. Os mesmos indicadores em cada card ajudam a entender o que muda. Abra uma estratégia para explorar o calendário." }, narrow))
+        .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "As melhores pontuações de hoje." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Até três estratégias na ordem do motor, com as suas prioridades. Compare a posição e a pontuação de hoje e do futuro, junto da sua rotação atual." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
+        .child(priorities_panel(s, k, narrow))
+        .child(paragraph(&analysis.priority_note))
         .child(paragraph(&analysis.scenario_note))
         .child(chat_panel(s, k, narrow))
         .child(cards);
@@ -1717,7 +1845,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
             .child(paragraph("As épocas de plantio não couberam nas opções informadas. Revise o mês em que o talhão fica livre e a quantidade de culturas no planejamento.")));
     } else {
-        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Uma mesma sequência pode vencer mais de um objetivo. Receita é bruta, sem custos. Os índices de solo e clima vão de 0 a 100; não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Os cards seguem a pontuação de hoje; a posição no futuro pode mudar. Receita é bruta, sem custos. Os índices não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
     }
     if !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(
@@ -1748,7 +1876,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         return el();
     };
     let selected = match s.selected {
-        SelectedStrategy::Objective(i) => analysis.recommendations.get(i),
+        SelectedStrategy::Ranked(i) => analysis.recommendations.get(i),
         SelectedStrategy::Current => analysis.current_rotation.strategy.as_ref(),
     };
     let Some(rec) = selected else {
@@ -1831,8 +1959,9 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         );
     let mut facts = col().gap(12.0).w_full();
     let all_facts: Vec<_> = rec
-        .facts
+        .rank_facts
         .iter()
+        .chain(rec.facts.iter())
         .chain(rec.comparison_facts.iter().skip(1))
         .collect();
     for chunk in all_facts.chunks(3) {
@@ -1903,6 +2032,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
+        .child(paragraph(&analysis.priority_note))
         .child(chat_panel(s, k, narrow))
         .child(benefits_panel(rec))
         .child(warnings_panel(rec, narrow))

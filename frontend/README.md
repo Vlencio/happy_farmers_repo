@@ -1,6 +1,6 @@
 # Happy Farmers · front-end Rune
 
-Primeira versão funcional do fluxo de fazenda → contexto → três caminhos → linha do tempo.
+Fluxo de fazenda → contexto e prioridades → melhores pontuações → linha do tempo.
 A interface principal é Rust/Rune com `rune-kit`. O adaptador em `../backend/` usa
 Python/FastAPI para chamar o motor existente, seguindo `../docs/contrato_motor.md`.
 As regras agronômicas continuam em `../motor/`, sem alterações feitas por esta integração.
@@ -65,7 +65,8 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Prévia de satélite no cartão “A sua fazenda”, com o contorno confirmado sobre a mesma imagem Esri do editor. Atualiza ao desenhar/importar outra área, restaurar o rascunho ou redimensionar a tela; a edição continua no mapa completo.
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
-- Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
+- Prioridades de água, solo e renda entre 0 e 3, iniciando em 1/1/1; tudo em zero usa pesos iguais. Nos resultados, mudar uma prioridade refaz a análise e reinicia o chat.
+- Até três cards na ordem do ranking de hoje devolvido pelo motor, com posição e score de hoje/futuro. Não escolhe vencedores por objetivo nem recalcula o ranking (Parte 5 em `docs/API.md`).
 - Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
 - Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; a API aceita a declividade enviada para o contorno exato da demonstração (Parte 2 em `docs/API.md`).
 - Riscos e lacunas por estratégia, inclusive na rotação atual: resumo separado nos cards e todos os avisos com cultura, cenário e dados do motor no detalhe. Lista vazia e resposta antiga sem avisos têm mensagens diferentes (Parte 3 em `docs/API.md`).
@@ -83,7 +84,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 ## Motor e API
 
 O app chama `/api/analyze`, por proxy para a API local. A resposta é a saída do motor
-sem recalcular os números, acrescida de `origem` quando há longitude; a interface seleciona os vencedores por objetivo.
+sem recalcular os números, acrescida de `origem` quando há longitude; a interface mostra as três primeiras sequências do ranking de hoje.
 Não há demonstração fictícia automática. As fixtures do motor são usadas só nos testes.
 
 Para usar outro serviço compatível, copie `.env.example` para `.env` e configure:

@@ -22,7 +22,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
-| 5 | Prioridades e restrições do agricultor | Motor e API prontos; falta a tela; restrições em aberto | Gabriel | Não | Reaberto (15/11) |
+| 5 | Prioridades e restrições do agricultor | Prioridades e ranking integrados na tela; restrições em aberto | Pedro, Gabriel | Não | Reaberto (15/11) |
 | 6 | Controles de cenário | Motor feito; faltam API e tela | Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
@@ -62,7 +62,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 - [ ] Tela (Gabriel): um bloco "Sua rotação atual" ao lado dos três cards. Com `atual.viavel`, ler o item de `sequencias` pelo `id` e mostrar os mesmos números dos cards (receita de hoje e do futuro, solo, encaixe). Sem `viavel`, mostrar o motivo com o texto que já existe para as descartadas. Sem histórico, convidar a informar.
 - [ ] Tela: em cada card, a diferença para a rotação atual (receita, solo, encaixe).
-- [ ] `CLAUDE.md` diz "exactly three objective cards": a rotação atual entra como referência, não como quarto objetivo. Confirmar com o time.
+- [x] Decisão de 15/11: a rotação atual permanece como referência ao lado das até três melhores sequências pelo score de hoje, conforme as prioridades escolhidas.
 - [ ] Pousio e slot de cada cultura do histórico: o motor supõe uma cultura por slot, sem pular. Quem deixa a safrinha vazia não consegue informar a rotação atual ("Em aberto", item 13 do contrato).
 
 **Feito quando:** com um histórico informado, a tela mostra quatro estratégias (a atual e as três dos cards) com receita, solo e encaixe comparáveis.
@@ -164,10 +164,12 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 - [x] Time: decisão de 14/11 reaberta por Pedro.
 - [x] Motor: desempate do ranking. Com peso só em água, várias sequências empatam em 100 (a parte `agua` satura no modo mensal); o empate agora vai para a maior média simples de `agua`, `solo` e `renda`. Com pesos iguais nada muda; fixtures iguais.
+- [x] Tela (Gabriel): controles de água, solo e renda de 0 a 3, padrão 1/1/1, persistidos no rascunho. Nos resultados, mudar refaz a análise e reinicia o chat.
+- [x] Tela: até três primeiras de `sequencias`, sem reordenar, com posição e score de hoje/futuro em cada card; rotação atual preservada como referência. Casos com 0, 1 e 2 opções conferidos na API real.
+- [x] Integração: exemplos de outubro com histórico Soja → Milho e fevereiro (1ª hoje → 12ª no futuro) conferidos na API e no navegador. Contrato do front atualizado em `frontend/docs/API.md`.
 
 **Falta:**
 
-- [ ] Tela (Gabriel): controle de prioridade e os três cards pelo `rank_hoje`, com o `rank_futuro` em cada um.
 - [ ] Motor: entrada de restrições (culturas que o produtor não quer ou não consegue plantar; irrigação). Fora desta decisão.
 
 **Feito quando:** mudar a prioridade na tela muda os três cards mostrados.

@@ -1,5 +1,34 @@
 # Verificação da integração · 14/11/2026
 
+## Parte 5 — prioridades e ranking · 15/11/2026
+
+`front-dev3` atualizada por fast-forward para a Main `2413f15`. Os controles de
+água, solo e renda enviam os valores escolhidos; os cards preservam as três
+primeiras posições do motor, com posição e score de hoje/futuro. A referência
+atual permanece separada. Contrato vigente em [API.md](API.md).
+
+- 132 testes Python (99 raiz e 33 backend), 102 JS e 1 Rust passaram.
+- As quatro fixtures conferem com o motor atual, sem regeneração ou download.
+- Integração HTTP real: 24 combinações de mês/horizonte, 6 referências, 5 conjuntos
+  de prioridades e o caso de fevereiro que muda da 1ª para a 12ª posição no futuro.
+- Build Rune/WASM e Vite passou. Motor/API não receberam mudanças locais.
+- `tests/browser-priorities.js`: 83 verificações no Chromium, incluindo 8 com
+  chat simulado (5 chamadas interceptadas, nenhuma consulta à Anthropic). Rankings,
+  scores e análises vieram do motor real. Cobriu migração do rascunho, persistência,
+  reanálise por prioridade, 0/0/0, referências, 0/1/2 opções, detalhe e foco/reset do chat.
+- Após os ajustes finais de quebra de texto e nome acessível da opção selecionada,
+  outras 9 verificações passaram: seleção dos controles, cancelamento de análise
+  pendente e descarte de resposta antiga. Esse teste usou a API real com atraso
+  controlado no transporte. A verificação de seleção também entrou no roteiro
+  versionado (84 verificações na próxima execução completa).
+- Capturas em `output/playwright/priorities-*.png`, na raiz do repositório,
+  conferidas em 1440 px e 390 px. Sem erros de JavaScript.
+- Celular físico, leitores de tela, Anthropic real e deploy não foram testados.
+  Geada e chuva extrema da Main continuam restritas ao motor diário; dependem
+  da API da Parte 8 para aparecer na tela.
+
+Os registros abaixo são históricos e podem descrever os antigos cards por objetivo.
+
 ## Rodada de QA do front-end
 
 Relatório de fluxos, falhas, layouts e correções em [QA_2026-11-14.md](QA_2026-11-14.md).
