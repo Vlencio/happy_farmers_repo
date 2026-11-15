@@ -1144,7 +1144,7 @@ fn glossary(s: &State, k: &Kit) -> El {
             .child(label("Check with your agronomist", 17.0, 600.0, INK))
             .child(paragraph("Revenue is gross, before costs; historical prices and values flagged for review need local validation. Heat thresholds vary by cultivar and growth stage. When no threshold is recorded, the engine does not apply a heat penalty; this does not establish heat tolerance."))
             .child(paragraph("The calculation uses a water reserve of 30 mm for sandy soil, 45 mm for medium texture and 60 mm for clay soil. With no texture specified, the reference is 60 mm. These are class references, not measurements of this field."))
-            .child(paragraph("Sequence rules use a 0.85 factor for repeated crops and a 1.10 bonus for a non-fixing crop planted within 60 days after green manure. This window is provisional. Pairs that share a pest or disease may receive another penalty; details show the applied factor. Soil index weights are 0.4/0.4/0.2 and do not measure actual soil quality. These rules do not replace an agronomic assessment."));
+            .child(paragraph("Sequence rules use a 0.85 factor for repeated crops and a 1.10 bonus for a non-fixing crop planted within 60 days after green manure. This window is provisional. Pairs that share a pest or disease may receive another penalty; details show the applied factor. Soil index weights are 0.4/0.4/0.2 (nitrogen fixation, soil cover, diversity); grain legumes such as soybean and bean get half of the nitrogen weight because the harvest exports the fixed nitrogen. The index does not measure actual soil quality. These rules do not replace an agronomic assessment."));
     }
     view
 }

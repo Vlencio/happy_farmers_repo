@@ -331,9 +331,9 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 17. **Avisos:** cada sequência viável traz a lista `avisos`, gerada dos números dela. A lista explica o resultado; não muda score nem rank.
 
 ```json
-{"tipo": "risco", "codigo": "fator_limitante", "cultura": "algodao", "cenario": "hoje",
- "dados": {"fator": "calor", "valor": 0.744, "slot": "safra"},
- "texto": "algodao na safra, clima hoje: o calor limita a produtividade a 74%."}
+{"tipo": "risco", "codigo": "fator_limitante", "cultura": "feijao", "cenario": "hoje",
+ "dados": {"fator": "calor", "valor": 0.664, "slot": "safra"},
+ "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."}
 ```
 
 `cultura` e `cenario` são `null` quando o aviso vale para a sequência inteira. `dados` traz os números que geraram o aviso. `texto` é uma frase pronta, com o nome da cultura como está na tabela (sem acento); a tela pode montar a sua a partir de `codigo` e `dados`.
@@ -614,6 +614,7 @@ A revisão agronômica apontou que `soja>feijao` e `feijao>soja` subiam sem cust
 | feijão, safra (32 °C) | 0,66 | 0,37 |
 | feijão, safrinha | 0,78 | 0,45 |
 | algodão, safra (32 °C) | 0,74 | 0,39 |
+| algodão, safra (35 °C, desde 15/11) | 0,96 | 0,90 |
 
 - **Talhão livre em outubro:** as três primeiras são as mesmas nos dois climas (`soja>milho`, `soja>sorgo`, `soja>crotalaria`). `soja>feijao` cai de 4º para 7º.
 - **Talhão livre em fevereiro:** hoje ganha `crotalaria>algodao`; no futuro ela cai para 13º (12º com o histórico soja, milho) e ganha `crotalaria>soja`. Conferido em 14/11 com as 10 culturas.
@@ -674,7 +675,7 @@ Receita em R$/ha, sem histórico:
 ## Em aberto
 
 1. **Janela de plantio fixa e sem perda.** Desde 15/11 a cultura entra no mês da tabela ou no seguinte (`JANELA_PLANTIO_MESES` = 1, de memória, regra 3), sem perda de produtividade pelo atraso; só o aviso `plantio_tardio`. Falta: a janela por cultura e slot do ZARC (por exemplo, sorgo safrinha até 20/3, não 31/3), a perda de produtividade do plantio tardio e o risco climático da janela. Efeito colateral em dezembro: com a safra tardia (sorgo, feijão) cabendo, o motor não cai mais na ordem safrinha>safra (regra 2), e os três primeiros caem de cerca de 75 para cerca de 60 pontos; esperar fevereiro (`crotalaria>soja`) não é mais comparado.
-2. **Limiar de 32 °C.** O feijão e o algodão são os que mais caem, e é nesse limiar que POWER e NEX mais diferem (20%, ver `docs/colunas_dados.md`). A troca de vencedor no caso de fevereiro depende dele.
+2. **Limiar de 32 °C.** O feijão é o que mais cai (o trigo também usa 32 °C, mas sai pela altitude no talhão de demonstração), e é nesse limiar que POWER e NEX mais diferem (20%, ver `docs/colunas_dados.md`). O algodão passou a 35 °C em 15/11 (`docs/culturas_fontes.md`): o encaixe de calor da safra foi de 0,74 para 0,96 hoje e de 0,39 para 0,90 no futuro, e as sequências com algodão sobem (em fevereiro, `milho>algodao` foi de 12º para 6º hoje e de 24º para 6º no futuro), sem mudar as três primeiras de outubro e fevereiro.
 3. **Perda de 1 para 1.** Cada dia de calor na fase sensível tira a mesma fração da produtividade. É um valor provisório (`PERDA_CALOR`), sem fonte.
 4. **Calor de hoje pode estar contado duas vezes.** A produtividade da Conab já reflete o calor atual do Brasil; a regra desconta o calor de hoje de novo. O que a regra mostra bem é a diferença entre hoje e futuro.
 5. **Ano seco na API e na tela.** O motor já devolve o terceiro cenário quando recebe `clima_seco`. A API (`backend/app.py`) ainda chama o motor sem ele, e o `Dockerfile` não copia `data/clima_seco.csv`. Ligar isso é com o Gabriel (`docs/plano_gap.md`, G4).
