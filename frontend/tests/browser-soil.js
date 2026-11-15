@@ -5,7 +5,8 @@
 // horizon 2, dry climate and declividade_pct 4.05: baseline plus each solo_textura.
 // Each fixture is {request: the complete /analyze request including lon, result}.
 // The soil metadata capability, suggestion envelope and analysis transport are
-// SIMULATED until the API implements them. Scores are actual local-engine results.
+// SIMULATED to exercise unavailable/error/late-response cases independently.
+// Scores are actual local-engine results; browser-soil-api.js checks real transport.
 // No cloud model or external climate data provider is called.
 async (originalPage) => {
   const context = await originalPage.context().browser().newContext({ viewport: { width: 1440, height: 1100 } });

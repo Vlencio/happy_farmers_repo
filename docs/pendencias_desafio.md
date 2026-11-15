@@ -24,9 +24,9 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Prioridades e ranking integrados na tela; restrições em aberto | Pedro, Gabriel | Não | Reaberto (15/11) |
 | 6 | Controles de cenário | Motor, API e front feitos; falta testar a tela contra a API real | Gabriel | Não | Não |
-| 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
+| 7 | Incerteza entre os modelos climáticos | Motor, API e tela integrados na demonstração; falta faixa regional | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
-| 9 | Informação local de solo | Motor feito (textura → água do solo); faltam a textura sugerida por ponto, a API e a tela | Brenno, Gabriel | Sim (GLDAS ou HWSD/GAEZ) | Não |
+| 9 | Informação local de solo | Textura GLDAS sugerida por ponto, API e seletor integrados; produtor pode trocar | Brenno, Gabriel | GLDAS entregue | Não |
 | 10 | Atributos de cultura que faltam | Falta | Brenno, Pedro | Fontes a levantar | Não |
 | 11 | Umidade do solo e vegetação observadas | Falta e incompleto | Brenno, Pedro | Sim (SMAP) | Sim (SMAP) |
 | 12 | Tendência de água de longo prazo | Falta | Brenno | Talvez (GRACE) | Não |
@@ -222,7 +222,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Motor (15/11, depois das revisões estatística e agronômica, branch `motor-integracao`): a parte `agua` voltou a ser o atendimento hídrico (`AGUA_REF_MIN` = 0; o piso de 0,6 multiplicava a água por 2,5 e punha `soja>feijao` em 1º); a parte `solo` não usa mais a água; mosca-branca soja→feijão com fator próprio de 0,75 (provisório); avisos de repetição e de bônus por marca, não por igualdade de número; ano mediano e ano ruim do modo diário são anos reais, escolhidos pelo score. Ranking em "O que mudou em 15/11 depois das duas revisões" no contrato: outubro `soja>milho`, `soja>sorgo`, `soja>crotalaria`; fevereiro `sorgo>soja`, `crotalaria>soja` (empate).
 - [x] Dados (Brenno, 15/11): `razao_chuva` e `dias_acima_NN` por modelo em `clima_modelos.csv`; crotalária em fevereiro (Embrapa CT 44, 2018; ensaio em MS); coluna `altitude_min_m` em `culturas.csv` (trigo 800 m). Com a crotalária em fevereiro, `soja>crotalaria` passa a 1º hoje (78,2), à frente de `soja>milho` (77,9).
 - [ ] Motor (Pedro): ler `altitude_min_m` contra a altitude do talhão (tirar ou marcar o trigo) e os `dias_acima_NN` por modelo. A tolerância de chuva de `test_roda_com_os_modelos_de_data` já foi para 2,5 mm (Brenno, 15/11): com a razão de cada modelo, a média dos três fica até 2 mm de `clima_futuro`.
-- [ ] Tela (Gabriel): mostrar 1º e 2º como empate quando a diferença for menor que ~2 pontos (ruído entre anos de 1 a 1,3 ponto); testes do front com os números novos.
+- [x] Tela (Gabriel): empate técnico abaixo de 2 pontos da líder, preservando score e ordem do motor; testes atualizados para a crotalária em fevereiro, inclusive referência atual no top 3.
 - [ ] Declarar no pitch: pesos não são frações do resultado (renda ~metade com pesos iguais); água do mensal otimista (sem veranicos); faixa de 3 modelos não é intervalo; deltas de chuva não significativos; queda do feijão depende do limiar de 32 °C.
 - [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
 
@@ -230,7 +230,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). D2 (`5deed52`) foi integrado pela Main `8049494`, incluindo a fixture canônica com os três modelos. O leitor da API e o painel mostram a faixa climática para o contorno de demonstração. O motor já devolve a faixa de receita e de rank por estratégia com `clima_modelos` (branch `motor-modelos`); a API ainda não passa o argumento. O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro principal é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). D2 (`5deed52`) foi integrado pela Main `8049494`, incluindo a fixture canônica com os três modelos. O leitor da API e o painel mostram a faixa climática para o contorno de demonstração. A API já passa `clima_modelos` no clima de demonstração e o front apresenta as faixas de receita e rank por estratégia. Na `api-solo-modelos`, os dados `88afbb8` acrescentam razão de chuva exata e dias quentes por modelo. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 
@@ -238,8 +238,8 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Integração: D2 na `main`, API local reiniciada e fixture canônica regenerada. A fixture `metadata-d2.json` preserva a validação anterior ao merge.
 - [x] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank. Feito em 15/11 (branch `motor-modelos`): `recomendar(..., clima_modelos=carregar_clima_modelos())` dá a cada sequência viável `modelos` (score, rank e receita por ano de cada modelo, mín/máx de rank e de receita) e o aviso `rank_varia_entre_modelos` (faixa acima de 5 posições, provisório). Regra 20 e "Em aberto" 22 do contrato. Sem o argumento, a saída não muda. Outubro: o 1º do futuro é `soja>milho` em MIROC6 e MRI-ESM2-0 e `soja>sorgo` em ACCESS-CM2 (0,5 ponto). Fevereiro: `sorgo>soja` em 1º nos três modelos.
 - [x] Dados: acrescentar `razao_chuva` (ssp245 ÷ historical, por modelo e mês) a `clima_modelos.csv`. Feito em 15/11.
-- [ ] API: passar `clima_modelos` ao motor só no talhão de demonstração (onde `clima_futuro` é a média dos mesmos modelos). A imagem já copia `data/clima_modelos.csv` e `data/clima_correcoes.csv` pelo glob `data/clima_*.csv`.
-- [x] Tela: consumo opcional de `modelos.rank_min`–`rank_max` nos cards e faixa de receita anual nos detalhes; identificação de aproximação na chuva e aviso próprio `rank_varia_entre_modelos`. Integração com a API publicada ainda pendente; contrato em `frontend/docs/API.md`.
+- [x] API: passar `clima_modelos` ao motor só no clima de demonstração (onde `clima_futuro` é a média dos mesmos modelos). Entregue na main `3cbf07b`. A imagem já copia `data/clima_modelos.csv` e `data/clima_correcoes.csv` pelo glob `data/clima_*.csv`.
+- [x] Tela: consumo opcional de `modelos.rank_min`–`rank_max` nos cards e faixa de receita anual nos detalhes; identificação de aproximação na chuva e aviso próprio `rank_varia_entre_modelos`. Integração local com a API entregue; contrato em `frontend/docs/API.md`. Deploy não verificado nesta rodada.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 
 **Feito quando:** cada estratégia mostra a faixa entre os três modelos, e não só a média.
@@ -265,15 +265,15 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Texto:** "uses NASA Earth observations along with local soil information".
 
-**Hoje:** o solo é um balde de 100 mm igual para qualquer talhão (`CAD_MM`), sem fonte.
+**Hoje:** a textura escolhida define uma reserva de 30, 45 ou 60 mm no motor; sem escolha, a referência é 60 mm. A API sugere a textura regional GLDAS e a tela permite confirmar, trocar ou usar a referência padrão. São parâmetros de cálculo, não medições do talhão.
 
 **Falta:**
 
 - [x] Time (15/11): fonte de textura escolhida entre as da lista do desafio, sem reabrir SoilGrids: GLDAS (NASA, 0,25°) ou HWSD/GAEZ (FAO, ~1 km). A textura do ponto é sugestão; o produtor confirma ou troca.
 - [x] Motor (15/11, branch `motor-solo`): entrada `solo_textura` (`arenoso`, `medio`, `argiloso`) → água que o solo guarda de 30, 45 ou 60 mm (classes do ZARC; regra 6 e `CAD_POR_TEXTURA` no contrato). Sem o campo, 60 mm, como antes.
 - [x] Dados (Brenno, 15/11): textura sugerida por quadrado de 0,25° a partir do GLDAS2/Noah (NASA), em `data/solo/regiao_mg/textura.csv`, nos mesmos centros de `delta_mensal.csv` (`scripts/puxar_solo.py`, `scripts/montar_solo_mg.py`; colunas em `docs/colunas_dados.md`, seção 9). Quadrado do talhão de demonstração: argiloso (51,8% de argila), igual ao padrão do motor.
-- [ ] API: aceitar `solo_textura`, anunciar `capabilities.solo_textura`, e devolver a textura sugerida do ponto com a fonte. Proposta de transporte `GET /metadata?lat&lon` em `frontend/docs/API.md`; falta também copiar a tabela de solo no Docker.
-- [x] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), sugestão/fonte, escolha manual, persistência, reset e validação do eco preparados sob capability explícita. A API atual ainda não ativa o seletor; confirmação do contrato e teste ponta a ponta com ela continuam pendentes.
+- [x] API: aceita `solo_textura`, anuncia `capabilities.solo_textura` e devolve a sugestão com fonte em `GET /metadata?lat&lon`. Entregue na main `3cbf07b`, incluindo a tabela no Docker. Contrato em `frontend/docs/API.md`.
+- [x] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), sugestão/fonte, escolha manual, persistência, reset e validação do eco integrados sob capability explícita. Fora da cobertura, aceita textura e fonte nulas, mantendo escolha manual disponível.
 
 **Feito quando:** dois talhões com solos diferentes dão balanços hídricos diferentes com o mesmo clima.
 
@@ -351,12 +351,13 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Texto:** "explaining scientific terms such as evapotranspiration, soil moisture anomalies, vegetation indices (e.g., NDVI), frost risk, and water‑balance indicators"; "brief explanations of how nitrogen‑fixing crops, cover crops, deep‑rooting crops, or drought‑tolerant crops contribute to long‑term soil health".
 
-**Hoje:** o glossário cobre evapotranspiração, Kc, déficit, atendimento hídrico, NDVI e encaixe.
+**Hoje:** o glossário cobre evapotranspiração, Kc, déficit, atendimento hídrico, NDVI, encaixe, água disponível no solo, risco de geada, Ky, ano ruim e empate técnico, além dos quatro tipos de cultura abaixo. Os termos do modo diário explicam o contrato; a visualização anual continua na Parte 8.
 
 **Falta:**
 
-- [ ] Glossário: anomalia de umidade do solo, risco de geada, ano ruim, Ky.
-- [ ] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca.
+- [x] Glossário: água disponível no solo, risco de geada, ano ruim, Ky e empate técnico (15/11, front na `api-solo-modelos`).
+- [ ] Glossário: anomalia de umidade do solo.
+- [x] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca (15/11, front na `api-solo-modelos`).
 - [x] API: `POST /chat` responde dúvidas do produtor sobre a análise na tela, só com os números do motor (`docs/chat.md`).
 - [x] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat: true`, com foco dos cards e histórico reenviado. Credencial e teste com a Anthropic real continuam pendentes; ver `docs/chat.md`.
 

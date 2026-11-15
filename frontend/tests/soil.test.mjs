@@ -120,6 +120,14 @@ test('suggested soil is requested for the exact point and retains its source and
   assert.equal(await requestSoilSuggestion('/api', point, { fetcher: async () => ({ ok: true, json: async () => ({}) }) }), null);
 });
 
+test('an uncovered point accepts the API null source without weakening point or texture validation', async () => {
+  const uncovered = { ...point, textura_sugerida: null, fonte: null };
+  assert.deepEqual(await requestSoilSuggestion('/api', point, { fetcher: async () => response(uncovered) }), uncovered);
+  for (const soil of [{ ...uncovered, lat: point.lat + 1 }, { ...uncovered, textura_sugerida: 'argiloso' }]) {
+    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /não corresponde ao ponto/);
+  }
+});
+
 test('a suggestion for another point, malformed texture or missing source is rejected', async () => {
   const original = { ...point, textura_sugerida: 'medio', fonte: 'GLDAS · NASA' };
   const changes = [

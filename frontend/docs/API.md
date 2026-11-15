@@ -487,8 +487,8 @@ dados ou metadados, reiniciar a API e regenerar as fixtures com
 `python -m backend.export_fixture` na raiz do projeto.
 
 Essa faixa descreve o clima do talhão. Desde `7d8c1fe`, o motor também pode avaliar
-cada modelo separadamente; a API ainda precisa passar `clima_modelos` para
-entregar as faixas por estratégia. O front já consome esses blocos opcionais
+cada modelo separadamente; desde `3cbf07b` na main, a API passa `clima_modelos`
+no clima de demonstração para entregar as faixas por estratégia. O front consome esses blocos opcionais
 (ver integração da revisão abaixo). Fora da demonstração, faltam deltas
 regionais separados por modelo.
 
@@ -505,7 +505,7 @@ restaurada para `hospedeiro_comum`, que agora tem apresentação própria.
 - `fator_agua_diario`: fator de água, atendimento e Ky do ano mediano, sem
   confundir esse resumo com a avaliação mensal.
 - `rank_varia_entre_modelos`: faixa de posições, ranks de cada modelo e limite
-  informado. Os dois últimos códigos só aparecem quando a API entregar os dados.
+  informado. O aviso diário depende de a API chamar esse modo; o de modelos já pode aparecer no clima de demonstração.
 - O detalhe valida e apresenta `repete`, `bonus_n`, `penalidade_hospedeiro`,
   `dias_apos_anterior` e `hospedeiro_comum` quando presentes. Bônus: cultura não
   fixadora até 60 dias após adubo verde, janela provisória. Campos ausentes em
@@ -524,20 +524,21 @@ A mesma sequência na referência recebe a mesma indicação. É uma faixa de
 apresentação solicitada pelo time, não um teste estatístico. Não modifica
 `rank_hoje`, score, ordem, foco do chat ou escolha das três sequências.
 
-### Faixas futuras por modelo (consumo pronto, transporte pendente)
+### Faixas futuras por modelo
 
 Com `modelos` no topo e em todas as sequências viáveis, a tela valida nomes,
 cenários, posições e extremos e apresenta `rank_min`–`rank_max` nos cards.
 Os detalhes incluem `receita_ano_ha_min`–`receita_ano_ha_max`. A faixa considera
 somente os modelos; `rank_futuro` da média continua separado. Sem o bloco não há
-faixa inventada. `modelos.chuva: "aproximada"` mantém a ressalva na tela.
+faixa inventada. Com os dados `88afbb8`, `modelos.chuva: "razao"` usa a razão
+entregue por modelo; respostas antigas com `"aproximada"` mantêm a ressalva na tela.
 
-A API deve carregar `carregar_clima_modelos()` e passar o resultado somente
-quando estiver usando o clima do talhão de demonstração. Não usar esses deltas
+A API carrega `carregar_clima_modelos()` e passa o resultado somente
+quando está usando o clima do talhão de demonstração. Não usar esses deltas
 na grade regional. O Dockerfile **já** inclui `clima_modelos.csv` e
 `clima_correcoes.csv` por `data/clima_*.csv`.
 
-### Textura do solo (contrato HTTP proposto, ainda não entregue na API)
+### Textura do solo (API entregue em `3cbf07b` na main)
 
 A tela só mostra o seletor com `capabilities.solo_textura: true`. Valores enviados
 em `/analyze`: `solo_textura: "arenoso" | "medio" | "argiloso"`. O motor já
@@ -545,9 +546,8 @@ suporta o campo e devolve `entrada.solo_textura` e `entrada.cad_mm`; o front exi
 esse eco antes de exibir a análise. Sem escolha, omite o campo e usa a referência
 do motor. A capacidade exibida nos resultados é a retornada, sem recalcular.
 
-**Proposta para Pedro confirmar/implementar:** aproveitar
-`GET /metadata?lat=...&lon=...`, consultando somente a tabela local de solos
-(sem iniciar download POWER), e incluir:
+`GET /metadata?lat=...&lon=...` consulta somente a tabela local de solos
+(sem iniciar download POWER) e inclui:
 
 ```json
 {
@@ -561,10 +561,10 @@ do motor. A capacidade exibida nos resultados é a retornada, sem recalcular.
 ```
 
 `lat`/`lon` devem repetir o **ponto consultado**, não o centro da célula.
-`textura_sugerida: null` significa sem cobertura; a ausência de `solo` também é
+`textura_sugerida: null` com `fonte: null` significa sem cobertura; a ausência de `solo` também é
 tratada como sugestão indisponível. Sem parâmetros, o metadata normal continua
 válido. A capability deve anunciar que a API aceita a entrada e essa consulta.
-Falta copiar `data/solo/regiao_mg/textura.csv` para a imagem de produção.
+O Dockerfile copia `data/solo/regiao_mg/textura.csv` para a imagem de produção.
 
 A sugestão preenche a primeira escolha; a pessoa pode trocar ou usar a referência
 de 60 mm. Uma escolha manual salva é preservada ao recarregar. A marca local

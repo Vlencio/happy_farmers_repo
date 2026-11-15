@@ -1,8 +1,8 @@
 """Export reviewed-engine examples for browser QA; never downloads or changes data.
 
 From the repository: .venv/Scripts/python.exe frontend/scripts/export-reviewed-models.py
-The browser test simulates API transport for per-model and daily results that the
-current API does not yet provide. All numerical outputs come from the actual engine.
+The browser test simulates transport to isolate per-model and optional daily cases.
+The API already supplies model ranges, but not daily mode. All numbers come from the engine.
 """
 import argparse
 import json
@@ -32,7 +32,7 @@ def main():
         ("october", {}, False, True),
         ("february", {"mes_plantio": 2}, False, True),
         ("daily_hosts", {"rotacao_atual": ["soja", "feijao"]}, True, True),
-        ("rank_warning", {"mes_plantio": 2, "rotacao_atual": ["crotalaria", "algodao"]}, False, True),
+        ("rank_warning", {"mes_plantio": 2, "rotacao_atual": ["milho", "algodao"]}, False, True),
         ("without_models", {}, False, False),
     ]:
         request = {**base, **changes}

@@ -79,8 +79,9 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
 - Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
 - Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
-- Ano seco real (2020/21) ligado para a demonstração. D2 integrado: o painel consome a faixa climática dos modelos para o contorno de demonstração. O motor da Main `7d8c1fe` já calcula faixas por estratégia e o front já as apresenta quando recebidas; falta a API passá-las (Parte 7). O futuro é apresentado como “por volta de 2060”.
-- Comparação com empate técnico para sugestões a menos de 2 pontos do líder, preservando ranks reais. Avisos novos de hospedeiro comum, água diária e variação entre modelos têm textos próprios. Textura de solo preparada sob `capabilities.solo_textura`; o contrato HTTP da sugestão ainda depende da API. Detalhes em `docs/API.md`.
+- Ano seco real (2020/21) ligado para a demonstração. D2 integrado: o painel consome a faixa climática dos modelos para o contorno de demonstração. A API também entrega as faixas por estratégia, apresentadas nos cards e detalhes (Parte 7). O futuro é apresentado como “por volta de 2060”.
+- Comparação com empate técnico para sugestões a menos de 2 pontos do líder, preservando ranks reais. Avisos de hospedeiro comum, água diária e variação entre modelos têm textos próprios. Textura de solo e sugestão regional integradas sob `capabilities.solo_textura`; faixas por modelo disponíveis no clima de demonstração. Detalhes em `docs/API.md`.
+- Glossário com reserva de água por textura, geada, Ky, ano ruim e empate técnico, além do papel de fixadoras, cobertura/palhada, raízes profundas e culturas tolerantes à seca.
 - POWER por ponto com delta regional de Minas, cache diário e avisos de origem/fallback/cobertura; veja o [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API

@@ -16,15 +16,15 @@ test('consumes the actual engine contract and keeps its first three ranked seque
   const result = mapMotorAnalysis(fixture, farm);
   assert.equal(result.demo, false);
   assert.deepEqual(result.recommendations.map((r) => r.category), ['rank1', 'rank2', 'rank3']);
-  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>crotalaria', 'soja>milho', 'soja>sorgo']);
   assert.match(result.priority_note, /água 33,3%, solo 33,3% e renda 33,3%.*Pesos iguais/);
   const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
-  assert.equal(februaryWinner.sequence_id, 'sorgo>soja');
+  assert.equal(februaryWinner.sequence_id, 'crotalaria>soja');
   assert.deepEqual(februaryWinner.rank_facts, [
-    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '76,7 / 100' },
-    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '75,7 / 100' },
+    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '78,1 / 100' },
+    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '77,5 / 100' },
   ]);
-  assert.equal(result.discarded.length, 74);
+  assert.equal(result.discarded.length, 75);
 });
 test('current rotation stays beside the three winners with comparable actual engine metrics', () => {
   const view = mapMotorAnalysis(fixture, farm);
@@ -33,12 +33,14 @@ test('current rotation stays beside the three winners with comparable actual eng
   assert.equal(current.title, 'Rotação atual');
   assert.equal(current.strategy.category, 'current');
   assert.equal(current.strategy.sequence_id, 'soja>milho');
-  // This reference is also ranked first; both roles must remain visible.
+  // The reference is also the second ranked card; both roles must remain visible.
   assert.equal(view.recommendations.length, 3);
-  assert.equal(current.strategy.sequence_id, view.recommendations[0].sequence_id);
-  assert.deepEqual(current.strategy.timeline, view.recommendations[0].timeline);
-  assert.deepEqual(current.strategy.facts, view.recommendations[0].facts);
-  assert.deepEqual(current.strategy.rank_facts, view.recommendations[0].rank_facts);
+  const rankedCurrent = view.recommendations.find(card => card.sequence_id === current.strategy.sequence_id);
+  assert.equal(rankedCurrent.category, 'rank2');
+  assert.deepEqual(current.strategy.timeline, rankedCurrent.timeline);
+  assert.deepEqual(current.strategy.facts, rankedCurrent.facts);
+  assert.deepEqual(current.strategy.rank_facts, rankedCurrent.rank_facts);
+  assert.doesNotMatch(view.recommendations[0].tradeoff, /referência do histórico/);
   const money = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
   const index = (v) => `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`;
   for (const card of [current.strategy, ...view.recommendations]) {
@@ -82,16 +84,19 @@ test('long history uses the corrected engine reference without a horizon-length 
   const view = mapMotorAnalysis(data, farm);
   assert.equal(view.current_rotation.status, 'ready');
   assert.equal(view.current_rotation.strategy.sequence_id, 'soja>milho');
-  assert.deepEqual(view.current_rotation.strategy.comparison_facts, view.recommendations[0].comparison_facts);
-  assert.equal(view.recommendations[0].sequence_id, 'soja>milho');
-  assert.match(view.recommendations[0].tradeoff, /referência do histórico/);
+  const rankedCurrent = view.recommendations.find(card => card.sequence_id === 'soja>milho');
+  assert.deepEqual(view.current_rotation.strategy.comparison_facts, rankedCurrent.comparison_facts);
+  assert.match(rankedCurrent.tradeoff, /referência do histórico/);
+  assert.doesNotMatch(view.recommendations[0].tradeoff, /referência do histórico/);
 });
 test('dedicated reference supplies identity and discard reason while markers remain a legacy fallback', () => {
   const data = copy();
   for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
   const current = mapMotorAnalysis(data, farm).current_rotation;
   assert.equal(current.strategy.sequence_id, data.atual.id);
-  assert.match(mapMotorAnalysis(data, farm).recommendations[0].tradeoff, /referência do histórico/);
+  const cards = mapMotorAnalysis(data, farm).recommendations;
+  assert.match(cards.find(card => card.sequence_id === data.atual.id).tradeoff, /referência do histórico/);
+  assert.ok(cards.filter(card => card.sequence_id !== data.atual.id).every(card => !card.tradeoff.includes('referência do histórico')));
 
   const discarded = structuredClone(february);
   discarded.descartadas = [];
@@ -109,7 +114,7 @@ test('dedicated reference supplies identity and discard reason while markers rem
   const oldView = mapMotorAnalysis(legacy, farm);
   assert.equal(oldView.current_rotation.status, 'unavailable');
   assert.equal(oldView.current_rotation.strategy, null);
-  assert.doesNotMatch(oldView.recommendations[0].tradeoff, /referência do histórico/);
+  assert.ok(oldView.recommendations.every(card => !card.tradeoff.includes('referência do histórico')));
 });
 test('rejects malformed dedicated references rather than displaying another sequence or empty metrics', () => {
   for (const change of [
@@ -215,6 +220,9 @@ test('one or two viable sequences produce exactly that many distinct cards', () 
     const data = copy();
     // Keep the first entries and renumber the future rank so the reduced response stays a valid ranking.
     data.sequencias = data.sequencias.slice(0, count).map((seq, i) => ({ ...seq, rank_futuro: i + 1 }));
+    // This presentation-only case has no history: slicing can remove the current rotation.
+    data.entrada.rotacao_atual = []; data.atual = null;
+    for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
     const view = mapMotorAnalysis(data, farm);
     assert.equal(view.recommendations.length, count);
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.map(seq => seq.id));
@@ -234,7 +242,8 @@ test('timeline crosses December and preserves monthly actual/future water figure
   const result = mapMotorAnalysis(fixture, farm).recommendations[0];
   assert.deepEqual(result.month_labels.slice(0, 4), ['out · ano 1', 'nov · ano 1', 'dez · ano 1', 'jan · ano 2']);
   assert.equal(result.timeline[1].start_month, 5);
-  assert.equal(result.timeline[1].end_month, 9);
+  assert.equal(result.sequence_id, 'soja>crotalaria');
+  assert.equal(result.timeline[1].end_month, 8);
   assert.equal(result.timeline[1].monthly[0].month, 'fev · ano 2');
   const source = fixture.sequencias.find((s) => s.id === result.sequence_id);
   assert.equal(result.timeline[1].monthly.length, source.hoje.culturas[1].meses.length);
@@ -245,7 +254,7 @@ test('empty viable sequences remain empty, with reasons from the engine', () => 
   delete data.atual; // This synthetic legacy result has no current reference.
   const result = mapMotorAnalysis(data, farm);
   assert.deepEqual(result.recommendations, []);
-  assert.equal(result.discarded.length, 74);
+  assert.equal(result.discarded.length, 75);
   assert.ok(result.discarded.some((reason) => reason.includes('não tem plantio')));
   assert.ok(result.discarded.some((reason) => reason.includes('só fica livre')));
 });
@@ -306,9 +315,11 @@ test('actual P1 dry-year output is shown without changing the three winners', ()
   assert.equal(view.recommendations[0].facts.length, 18);
   assert.equal(view.recommendations[0].timeline[0].monthly[0].rain.split(' / ').length, 3);
   assert.equal(view.current_rotation.status, 'ready');
-  assert.deepEqual(view.current_rotation.strategy.facts, view.recommendations[0].facts);
-  assert.deepEqual(view.current_rotation.strategy.timeline, view.recommendations[0].timeline);
-  assert.deepEqual(view.current_rotation.strategy.comparison_facts, view.recommendations[0].comparison_facts);
+  const rankedCurrent = view.recommendations.find(card => card.sequence_id === view.current_rotation.strategy.sequence_id);
+  assert.equal(rankedCurrent.category, 'rank2');
+  assert.deepEqual(view.current_rotation.strategy.facts, rankedCurrent.facts);
+  assert.deepEqual(view.current_rotation.strategy.timeline, rankedCurrent.timeline);
+  assert.deepEqual(view.current_rotation.strategy.comparison_facts, rankedCurrent.comparison_facts);
 });
 test('point provenance warning reaches Rune unchanged, including fallback and outside Minas', () => {
   const raw = copy();
@@ -347,10 +358,10 @@ test('near-leading scores are shown as a technical tie without changing engine r
   const view = mapMotorAnalysis(fixture, farm);
   assert.match(view.ranking_note, /Empate técnico entre as três.*menos de 2 pontos.*não igualdade exata/);
   assert.ok(view.recommendations.every(card => card.tie_note === 'Empate técnico · hoje'));
-  assert.equal(view.current_rotation.strategy.tie_note, view.recommendations[0].tie_note);
+  assert.equal(view.current_rotation.strategy.tie_note, view.recommendations.find(card => card.sequence_id === view.current_rotation.strategy.sequence_id).tie_note);
   assert.deepEqual(view.recommendations.map(card => card.sequence_id), fixture.sequencias.slice(0, 3).map(seq => seq.id));
   assert.deepEqual(view.recommendations.map(card => card.rank_facts[0].value), ['#1', '#2', '#3']);
-  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['77,9 / 100', '76,5 / 100', '76,5 / 100']);
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['78,2 / 100', '77,9 / 100', '76,5 / 100']);
 });
 
 test('tie threshold is strict and measured from the leader rather than chaining adjacent scores', () => {
@@ -367,13 +378,30 @@ test('tie threshold is strict and measured from the leader rather than chaining 
     const view = mapMotorAnalysis(data, farm);
     assert.deepEqual(view.recommendations.map(card => Boolean(card.tie_note)), expected);
     assert.equal(Boolean(view.ranking_note), expected[0]);
-    assert.equal(Boolean(view.current_rotation.strategy.tie_note), expected[0]);
+    assert.equal(Boolean(view.current_rotation.strategy.tie_note), expected[1]);
     assert.deepEqual(view.recommendations.map(card => card.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
   }
   const one = copy(); one.sequencias = [one.sequencias[0]];
+  one.entrada.rotacao_atual = []; one.atual = null;
+  for (const seq of [...one.sequencias, ...one.descartadas]) seq.atual = false;
   assert.equal(mapMotorAnalysis(one, farm).ranking_note, '');
   const empty = copy(); empty.sequencias = []; empty.atual = null; empty.entrada.rotacao_atual = [];
   assert.equal(mapMotorAnalysis(empty, farm).ranking_note, '');
+});
+
+test('current reference gets a tie only when its own sequence belongs to the leading group', () => {
+  // The third card is close to the second, but outside the strict two-point band of the leader.
+  const data = copy();
+  data.sequencias.slice(0, 3).forEach((seq, i) => { seq.hoje.score = [90, 89, 87.5][i]; });
+  const current = data.sequencias[2];
+  data.entrada.rotacao_atual = [...current.culturas];
+  data.atual = { id: current.id, culturas: current.culturas, viavel: true, motivo: null };
+  for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = seq.id === current.id;
+  const view = mapMotorAnalysis(data, farm);
+  assert.deepEqual(view.recommendations.map(card => Boolean(card.tie_note)), [true, true, false]);
+  assert.equal(view.current_rotation.strategy.tie_note, '');
+  assert.equal(view.current_rotation.strategy.sequence_id, current.id);
+  assert.deepEqual(view.current_rotation.strategy.rank_facts, view.recommendations[2].rank_facts);
 });
 
 test('raw sequence water attendance is shown separately from the rescaled water score and is optional on legacy responses', () => {
@@ -462,7 +490,10 @@ test('future model ranges use only per-model ranks and annual revenues, keeping 
     { label: 'Posição · futuro entre modelos', value: '#2–#3' },
     { label: 'Receita / ha / ano · futuro entre modelos', value: 'R$\u00a01.000 a R$\u00a01.050' },
   ]);
-  assert.equal(view.current_rotation.strategy.model_note, card.model_note);
+  const rankedCurrent = view.recommendations.find(rec => rec.sequence_id === view.current_rotation.strategy.sequence_id);
+  assert.equal(view.current_rotation.strategy.model_note, rankedCurrent.model_note);
+  assert.match(view.current_rotation.strategy.model_note, /3ª–4ª posição/);
+  assert.notEqual(view.current_rotation.strategy.model_note, card.model_note);
   assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
   assert.ok(mapMotorAnalysis(fixture, farm).recommendations.every(rec => rec.model_note === ''));
   data.modelos.chuva = 'razao';

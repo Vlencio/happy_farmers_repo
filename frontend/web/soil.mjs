@@ -27,7 +27,7 @@ export function soilNote(raw) {
     ? `Solo ${labels[texture].toLowerCase()}: reserva de água de ${capacity.toLocaleString('pt-BR')} mm usada nesta análise. É uma referência do cálculo, não uma medição do talhão.`
     : 'Textura não informada: esta análise usa a reserva de referência de 60 mm. Não é uma medição do talhão.';
 }
-// Proposed metadata extension, pending API integration. Only used with the capability.
+// Point metadata is available only when the API announces the soil capability.
 // lat/lon identify the requested point, not the center of a regional grid cell.
 export async function requestSoilSuggestion(baseUrl, point, { signal, fetcher = fetch } = {}) {
   const response = await fetcher(`${baseUrl.replace(/\/+$/, '')}/metadata?${new URLSearchParams(point)}`, { signal });
@@ -35,7 +35,8 @@ export async function requestSoilSuggestion(baseUrl, point, { signal, fetcher = 
   const body = await response.json(), soil = body?.solo;
   if (soil == null) return null;
   if (typeof soil !== 'object' || Array.isArray(soil) || soil.lat !== point.lat || soil.lon !== point.lon ||
-      typeof soil.fonte !== 'string' || !soil.fonte.trim() || soil.fonte.length > 2000 ||
+      !((soil.textura_sugerida === null && soil.fonte === null) ||
+        (typeof soil.fonte === 'string' && soil.fonte.trim() && soil.fonte.length <= 2000)) ||
       (soil.textura_sugerida !== null && !SOIL_TEXTURES.includes(soil.textura_sugerida))) {
     throw new Error('A sugestão de solo não corresponde ao ponto consultado. Você pode informar a textura.');
   }

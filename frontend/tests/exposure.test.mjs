@@ -17,8 +17,11 @@ test('actual exposure distinguishes no standing crop from exposed soil for diffe
     { label: 'Dias expostos · 365 dias', value: '10 dias' },
     { label: 'Chuva em solo exposto · hoje', value: '74,3 mm' },
   ]);
-  assert.equal(soil.card_facts[0].value, '36 dias');
-  assert.equal(soil.card_facts[1].value, '237,3 mm');
+  // February planting now leaves the same exposed gap as corn, despite a
+  // longer period without a standing crop: the engine retains cover residue.
+  assert.equal(find(fixture, 'soja>crotalaria').hoje.culturas[1].mes_plantio, 2);
+  assert.equal(soil.card_facts[0].value, '10 dias');
+  assert.equal(soil.card_facts[1].value, '74,3 mm');
   assert.equal(income.facts[0].value, '115 dias');
   assert.equal(soil.facts[0].value, '150 dias');
   assert.match(income.note, /palhada dura até o próximo plantio/);
@@ -47,8 +50,9 @@ test('February starts a new exposure window and calendars over 12 months do not 
   // This delivered long sequence no longer ranks in the top three. Select it as
   // the reference to exercise presentation without changing its calendar or facts.
   const raw = structuredClone(february);
-  const long = find(raw, 'crotalaria>algodao');
-  raw.entrada.rotacao_atual = ['algodao', 'crotalaria'];
+  const long = find(raw, 'milho>algodao');
+  assert.ok(long, 'Fixture must contain the viable long sequence');
+  raw.entrada.rotacao_atual = long.culturas;
   raw.atual = { id: long.id, culturas: long.culturas, viavel: true, motivo: null };
   for (const seq of [...raw.sequencias, ...raw.descartadas]) seq.atual = seq.id === long.id;
   const extended = mapMotorAnalysis(raw, { area_ha: 2 }).current_rotation.strategy;
@@ -102,7 +106,9 @@ test('legacy responses without exposure retain winners, current reference and al
   assert.deepEqual(withoutExposure(old.current_rotation.strategy), withoutExposure(current.current_rotation.strategy));
   assert.ok(old.recommendations.every((rec) => rec.exposure === null));
   assert.equal(old.current_rotation.strategy.exposure, null);
-  assert.deepEqual(current.current_rotation.strategy.exposure, current.recommendations[0].exposure);
+  const matchingCard = current.recommendations.find(rec => rec.sequence_id === current.current_rotation.strategy.sequence_id);
+  assert.equal(matchingCard.sequence_id, 'soja>milho');
+  assert.deepEqual(current.current_rotation.strategy.exposure, matchingCard.exposure);
 });
 
 test('zero-day synthetic window differs from missing data and has twelve explicitly empty months', () => {

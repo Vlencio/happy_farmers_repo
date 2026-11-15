@@ -1,5 +1,50 @@
 # Verificação da integração · 14/11/2026
 
+## Crotalária em fevereiro, solo/modelos HTTP e glossário · 15/11/2026
+
+Main local atualizada para `1268224`. Trabalho na `api-solo-modelos`, base
+`353bb8f`, que inclui os dados `88afbb8` de Brenno e a API de solo/modelos.
+Nenhuma alteração no backend, motor, dados ou Docker nesta rodada do front.
+
+- Fixtures canônicas regeneradas com `python -m backend.export_fixture`;
+  uma segunda exportação produziu os mesmos arquivos. As 17 falhas iniciais
+  foram corrigidas preservando as verificações de comportamento.
+- **143 testes JS**, **206 Python** (169 motor/dados + 37 backend), **1 Rust**,
+  formatação Rust e build Rune/WASM + Vite passaram. Avisos de compilação do
+  Rune e tamanho do bundle permanecem.
+- **44 análises HTTP válidas + rejeição 422**: meses/horizontes, referência,
+  prioridades, fevereiro e ajustes de cenário. Outubro: soja→crotalária,
+  soja→milho, soja→sorgo; fevereiro: crotalária→soja, sorgo→soja, feijão→soja.
+- Referência atual verificada pelo ID, inclusive quando é o segundo card;
+  foco do chat sem duplicação, empate abaixo de 2 pontos medido da líder,
+  calendário e exposição preservados. Um caso sintético adicional garante
+  que a referência fora da faixa de empate não herde o selo da líder.
+- **287 verificações de navegador**: 98 prioridades, 50 modelos/avisos,
+  37 benefícios, 37 renda anual, 46 solo/modelos HTTP e 19 de apresentação
+  do glossário em desktop/celular simulado. Sem erros JavaScript.
+- Nos testes de prioridades, oito verificações usam chat simulado. O roteiro
+  de modelos/avisos usa cinco saídas reais do motor com transporte simulado,
+  inclusive modo diário. Nos roteiros de renda, benefícios e solo, o HTTP é
+  real; solo/modelos executa seis análises, sem mock de capability ou sugestão.
+- A API real sugere solo argiloso da GLDAS para a demonstração; escolhas de
+  30/45/60 mm, persistência manual e reset foram conferidos. Sem cobertura,
+  o front agora aceita `textura_sugerida: null, fonte: null`, ainda exigindo
+  o ponto consultado e fonte válida quando houver sugestão.
+- A API entrega três modelos com `modelos.chuva: "razao"`; os cards mostram
+  as faixas reais sem aviso de aproximação. O fallback `"aproximada"` continua
+  coberto pelos testes unitários. O caso real de aviso de variação passou a
+  milho→algodão em fevereiro, faixa 13ª–22ª, pois crotalária→algodão é descartada.
+- Glossário ampliado com nove entradas. Capturas de 1440 px e 390 px
+  inspecionadas, legíveis e sem corte horizontal. Artefatos locais ignorados:
+  `output/playwright/glossary-*.png`, `soil-api-mobile.png`, `annual-*.png` e
+  logs `feb-*.log`; testes locais também em `frontend/.cache/feb-*.log`.
+
+Para reproduzir a integração nova, executar via Playwright CLI
+`frontend/tests/browser-soil-api.js` com API em 8000 e web em 4173.
+Nenhuma chamada ao LLM ou download POWER foi feito. Docker, deploy, CI remoto,
+celular físico e leitor de tela não foram verificados nesta rodada.
+O descarte do trigo por altitude ainda aguarda a entrega do motor/API.
+
 ## Revisão integrada da main `7d8c1fe` · 15/11/2026
 
 Trabalho do front na `front-dev3`, após atualizar a main e preservar `28c8a9c`.

@@ -79,9 +79,9 @@ async (originalPage) => {
     check(names.length === 4, 'The reference and all three ranked cards remain available');
     check(recs.every((rec, i) => names[i].includes(rec.benefits.summary) && names[i].includes(rec.benefits.items[0].card_summary)),
       'All four accessible card names include their own benefit summaries');
-    check(recs[0].sequence_id === recs[1].sequence_id && names[0] !== names[1],
-      'A duplicated winning sequence keeps both reference and first-ranked cards');
-    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>milho|soja>sorgo|soja>crotalaria',
+    check(recs[0].sequence_id === recs[2].sequence_id && names[0] !== names[2],
+      'The current rotation also ranked second keeps separate reference and ranked cards');
+    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>crotalaria|soja>milho|soja>sorgo',
       'Benefit presentation preserves the three weighted winners');
     await align(cards().first());
     await page.screenshot({ path: 'output/playwright/benefits-cards-desktop.png' });
@@ -101,13 +101,13 @@ async (originalPage) => {
         await align(page.getByRole('heading', { name: 'Estabilidade de receita no futuro', exact: true }));
         await page.screenshot({ path: 'output/playwright/benefits-evidence-desktop.png' });
       }
-      if (i === 2) {
+      if (rec.sequence_id === 'soja>sorgo') {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
         check(rec.sequence_id === 'soja>sorgo' && source.beneficios.some(item => item.codigo === 'clima_favoravel')
           && (await text()).includes('não inclui o ano seco') && source.avisos.some(item => item.cenario === 'seco'),
           'Favorable climate benefit for soybean-sorghum excludes its dry-year risks');
       }
-      if (i === 3) {
+      if (rec.sequence_id === 'soja>crotalaria') {
         check((await text()).includes('Crotalária') && !(await text()).includes('crotalaria'), 'Cover-crop benefit labels preserve Portuguese accents');
       }
       await click('← Comparar estratégias');

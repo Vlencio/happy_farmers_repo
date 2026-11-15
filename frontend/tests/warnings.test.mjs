@@ -53,7 +53,7 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
 test('adapter preserves engine ranking and gives current rotation the same sequence warnings', () => {
   const raw = structuredClone(fixtures[2]);
   const view = mapMotorAnalysis(raw, { area_ha: 2 });
-  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>crotalaria', 'soja>milho', 'soja>sorgo']);
   for (const rec of [...view.recommendations, view.current_rotation.strategy]) {
     assert.deepEqual(rec.warnings, show(find(rec.sequence_id, raw)));
   }

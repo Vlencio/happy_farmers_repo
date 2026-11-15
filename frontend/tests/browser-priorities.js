@@ -181,7 +181,7 @@ async (originalPage) => {
     check(first.request.rotacao_atual.join('|') === 'soja|milho' && first.request.mes_plantio === 10 && first.request.horizonte === 2,
       'Migration preserves history, month, horizon, and usable farm');
     check(await priorityHeading().count() === 1, 'Results keeps the editable priorities panel');
-    await verifyRanking(first, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'Equal weights in October');
+    await verifyRanking(first, ['soja>crotalaria', 'soja>milho', 'soja>sorgo'], 'Equal weights in October');
     await align(priorityHeading());
     await page.screenshot({ path: 'output/playwright/priorities-desktop.png' });
 
@@ -192,9 +192,9 @@ async (originalPage) => {
       'Priority clicks rerun the API automatically and preserve the current rotation');
     await setPriority('solo', 1);
     const soil = await setPriority('renda', 0);
-    await verifyRanking(soil, ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'], 'Only soil in October');
+    await verifyRanking(soil, ['soja>crotalaria', 'feijao>crotalaria', 'milho>crotalaria'], 'Only soil in October');
     const zeros = await setPriority('solo', 0);
-    await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'All zero priorities in October');
+    await verifyRanking(zeros, ['soja>crotalaria', 'soja>milho', 'soja>sorgo'], 'All zero priorities in October');
     check(same(zeros.request.prioridades, { agua: 0, solo: 0, renda: 0 }) && same(zeros.raw.entrada.prioridades, first.raw.entrada.prioridades),
       'Zero values reach the engine, which applies equal normalized weights');
     check((await text()).includes('Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1.'),
@@ -209,10 +209,10 @@ async (originalPage) => {
     check(same(strong.request.prioridades, { agua: 0, solo: 0, renda: 3 }), 'The maximum priority value is sent without frontend normalization');
 
     const february = await analyze(2);
-    check(february.raw.sequencias[0].id === 'sorgo>soja' && february.raw.sequencias[0].rank_futuro === 1,
-      'Real February winner is sorghum-soybean with annual income scoring');
-    check(february.raw.sequencias[1].id === 'crotalaria>soja' && february.raw.sequencias[1].rank_futuro === 2,
-      'Real February runner-up is crotalaria-soybean in both climates');
+    check(february.raw.sequencias[0].id === 'crotalaria>soja' && february.raw.sequencias[0].rank_futuro === 1,
+      'Real February winner is crotalaria-soybean with February planting');
+    check(february.raw.sequencias[1].id === 'sorgo>soja' && february.raw.sequencias[1].rank_futuro === 2,
+      'Real February runner-up is sorghum-soybean in both climates');
     check(february.raw.sequencias[2].id === 'feijao>soja' && february.raw.sequencias[2].rank_futuro === 10,
       'Real February third sequence moves to tenth in the future');
     await verifyRanking(february, february.raw.sequencias.slice(0, 3).map(seq => seq.id), 'February future comparison');
@@ -221,7 +221,7 @@ async (originalPage) => {
     await click(await rankedCards().first().textContent());
     await waitText('Seu ciclo, etapa por etapa');
     const detail = await text();
-    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '76,7 / 100', '75,7 / 100'].every(value => detail.includes(value)),
+    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '78,1 / 100', '77,5 / 100'].every(value => detail.includes(value)),
       'February detail retains the real current and future ranks and scores');
     await click('← Comparar estratégias');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
@@ -235,8 +235,8 @@ async (originalPage) => {
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-mobile.png' });
     await page.setViewportSize({ width: 1440, height: 1100 }); await page.waitForTimeout(350);
-    const two = await analyze(3, 1);
-    await verifyRanking(two, ['crotalaria', 'trigo'], 'March one-crop horizon has only two viable choices');
+    const two = await analyze(5, 1);
+    await verifyRanking(two, ['soja', 'milho'], 'May one-crop horizon has only two viable choices');
     const one = await analyze(12, 1);
     await verifyRanking(one, ['algodao'], 'December one-crop horizon has only one viable choice');
     const empty = await analyze(4);

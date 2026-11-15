@@ -797,6 +797,26 @@ fn glossary(s: &State, k: &Kit) -> El {
                 "Quanto da demanda foi atendida no balanço estimado. A tela mostra um índice de 0 a 100; maior significa menos demanda não atendida, não uma chance de sucesso.",
             ),
             (
+                "Água disponível no solo",
+                "Reserva de água que o solo guarda para a planta entre uma chuva e outra. No cálculo, usamos 30 mm para solo arenoso, 45 mm para médio e 60 mm para argiloso; são referências por textura, não medições do talhão.",
+            ),
+            (
+                "Ky · resposta à falta de água",
+                "Indica quanto a produtividade cai quando falta água, no modo diário do motor. Acima de 1, a perda proporcional de produtividade é maior que a falta de água: no milho, Ky de 1,25 significa que 10% de demanda não atendida reduz a produtividade estimada em 12,5% por esse fator.",
+            ),
+            (
+                "Risco de geada",
+                "O motor diário conta os dias com temperatura mínima de 3 °C ou menos no abrigo meteorológico. A folha pode estar mais fria e congelar mesmo com o ar acima de 0 °C; a contagem sinaliza risco, não confirma dano à cultura.",
+            ),
+            (
+                "Ano ruim",
+                "É um ano real entre os de menor pontuação no modo diário: com 19 anos avaliados, o motor escolhe o 4º pior pelo score, próximo de 1 em cada 5. Essa posição resume a série analisada; não é uma previsão da frequência de perdas futuras.",
+            ),
+            (
+                "Empate técnico",
+                "Na tela, são as opções a menos de 2 pontos da líder no score de hoje. Essa margem considera a variação natural entre anos: sinaliza resultados próximos, mantendo a pontuação e a ordem calculadas pelo motor.",
+            ),
+            (
                 "NDVI",
                 "Índice de vegetação calculado a partir da luz refletida pela superfície. Varia de −1 a 1. Valores maiores costumam indicar vegetação mais verde; valores baixos também podem ser palhada ou solo exposto. Não mede a saúde do solo diretamente.",
             ),
@@ -804,11 +824,28 @@ fn glossary(s: &State, k: &Kit) -> El {
                 "Encaixe",
                 "Adequação da sequência às condições de temperatura, chuva e calor usadas pelo motor. A sequência fica limitada pelo menor encaixe de suas culturas. Índice de 0 a 100, não probabilidade de resistir a eventos extremos.",
             ),
+            (
+                "Fixadora de nitrogênio",
+                "Soja, feijão e crotalária captam nitrogênio do ar com ajuda de bactérias nas raízes; na soja e no feijão, grande parte sai com o grão, e o motor só considera crédito para a cultura seguinte após o adubo verde, como a crotalária.",
+            ),
+            (
+                "Cobertura / palhada",
+                "Milho, sorgo, milheto, braquiária e crotalária ajudam a cobrir o solo ou deixam palhada, protegendo-o da chuva e do sol e reduzindo a erosão.",
+            ),
+            (
+                "Raiz profunda",
+                "Milho, sorgo e braquiária podem buscar água em camadas mais profundas e ajudar a estrutura do solo; o alcance das raízes depende das condições do talhão.",
+            ),
+            (
+                "Tolerante à seca",
+                "Sorgo e milheto conseguem manter melhor a produtividade na safrinha com pouca chuva; tolerância não significa ausência de perdas por falta de água.",
+            ),
         ] {
             view = view.child(
                 col()
                     .gap(5.0)
-                    .child(label(term, 15.0, 600.0, INK))
+                    .w_full()
+                    .child(label(term, 15.0, 600.0, INK).wrap().w_full())
                     .child(paragraph(definition)),
             );
         }

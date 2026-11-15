@@ -1,7 +1,7 @@
 // Run with playwright-cli run-code --filename=frontend/tests/browser-reviewed-models.js.
 // Prepare cases with .venv/Scripts/python.exe frontend/scripts/export-reviewed-models.py.
-// /analyze transport is SIMULATED: API integration of per-model and daily results
-// is still pending. Every result in output/playwright/reviewed-models.json must
+// /analyze transport is SIMULATED to isolate per-model and optional daily cases.
+// Daily mode is not yet exposed by the API. Every result in output/playwright/reviewed-models.json must
 // come unmodified from the real local engine and delivered tables. No LLM calls.
 async (originalPage) => {
   const context = await originalPage.context().browser().newContext({ viewport: { width: 1440, height: 1100 } });
@@ -26,6 +26,12 @@ async (originalPage) => {
     if (new URL(request.url()).pathname.endsWith('/chat')) chats.push(request.postDataJSON());
   });
   await page.route('**/qa-reviewed-models', route => route.fulfill({ path: 'output/playwright/reviewed-models.json', contentType: 'application/json' }));
+  // Isolate these legacy input fixtures from the independent regional soil selector.
+  await page.route('**/api/metadata', async route => {
+    const response = await route.fetch(), body = await response.json();
+    body.capabilities = { ...body.capabilities, solo_textura: false };
+    await route.fulfill({ response, json: body });
+  });
   await page.route('**/api/analyze', async route => {
     const expected = cases[selected];
     const request = route.request().postDataJSON();
@@ -125,18 +131,18 @@ async (originalPage) => {
     cases = await page.evaluate(async () => (await fetch('/qa-reviewed-models')).json());
     const october = await analyze('october');
     await verifyCards(october, 3, 'October with three nearby scores');
-    check(october.raw.sequencias.slice(0, 3).map(seq => seq.id).join('|') === 'soja>milho|soja>sorgo|soja>crotalaria', 'October uses the delivered reviewed ranking');
-    check(october.view.recommendations.every(rec => /Faixa mín–máx, não intervalo de confiança/.test(rec.model_note)
-      && rec.model_note.includes('Chuva por aproximação.')), 'Model limits distinguish a range from confidence and identify approximate rain');
+    check(october.raw.sequencias.slice(0, 3).map(seq => seq.id).join('|') === 'soja>crotalaria|soja>milho|soja>sorgo', 'October uses the delivered reviewed ranking');
+    check(october.raw.modelos.chuva === 'razao' && october.view.recommendations.every(rec => /Faixa mín–máx, não intervalo de confiança/.test(rec.model_note)
+      && !rec.model_note.includes('Chuva por aproximação.')), 'Exact model rain ratios retain range limits without the approximate-rain notice');
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/reviewed-models-cards-desktop.png' });
-    const sorghum = october.raw.sequencias[1];
-    check(sorghum.modelos.rank_min === 2 && sorghum.modelos.rank_max === 3, 'The real sorghum case exercises a nonzero model rank range');
+    const corn = october.raw.sequencias[1];
+    check(corn.id === 'soja>milho' && corn.modelos.rank_min === 1 && corn.modelos.rank_max === 2, 'The real corn case exercises a nonzero model rank range');
     await click(await rankedCards().nth(1).textContent()); await waitText('Seu ciclo, etapa por etapa');
     let screen = await text();
-    check(screen.includes(october.view.recommendations[1].model_note) && screen.includes('2ª–3ª posição'), 'Detail exposes the same real model rank range as the card');
-    check(normalized(screen).includes(normalized(`POSIÇÃO · FUTURO ENTRE MODELOS#${sorghum.modelos.rank_min}–#${sorghum.modelos.rank_max}`)), 'Model rank fact preserves both supplied endpoints');
-    check(normalized(screen).includes(normalized(`RECEITA / HA / ANO · FUTURO ENTRE MODELOS${money(sorghum.modelos.receita_ano_ha_min)} a ${money(sorghum.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
+    check(screen.includes(october.view.recommendations[1].model_note) && screen.includes('1ª–2ª posição'), 'Detail exposes the same real model rank range as the card');
+    check(normalized(screen).includes(normalized(`POSIÇÃO · FUTURO ENTRE MODELOS#${corn.modelos.rank_min}–#${corn.modelos.rank_max}`)), 'Model rank fact preserves both supplied endpoints');
+    check(normalized(screen).includes(normalized(`RECEITA / HA / ANO · FUTURO ENTRE MODELOS${money(corn.modelos.receita_ano_ha_min)} a ${money(corn.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
     await align(page.getByText(october.view.recommendations[1].model_note, { exact: true }));
     await page.screenshot({ path: 'output/playwright/reviewed-models-detail-desktop.png' });
     await click('← Comparar estratégias');
@@ -161,8 +167,8 @@ async (originalPage) => {
     const rankWarning = await analyze('rank_warning');
     await openCurrent(rankWarning);
     screen = await text();
-    check(screen.includes('Posição varia entre modelos climáticos') && screen.includes('14ª a 21ª'), 'A real 14–21 model range receives the dedicated warning');
-    check(screen.includes('ACCESS-CM2: 21ª') && screen.includes('MIROC6: 21ª') && screen.includes('MRI-ESM2-0: 14ª'), 'Rank warning keeps every model and its real position');
+    check(screen.includes('Posição varia entre modelos climáticos') && screen.includes('13ª a 22ª'), 'A real 13–22 model range receives the dedicated warning');
+    check(screen.includes('ACCESS-CM2: 21ª') && screen.includes('MIROC6: 22ª') && screen.includes('MRI-ESM2-0: 13ª'), 'Rank warning keeps every model and its real position');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300);
     const warningHeading = page.getByRole('heading', { name: 'Posição varia entre modelos climáticos', exact: true });
     await align(warningHeading);

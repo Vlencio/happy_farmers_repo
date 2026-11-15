@@ -50,7 +50,8 @@ test('benefits remain strategy-specific and use accented crop names', () => {
   assert.ok(bean.items.slice(0, 2).every(item => item.title === 'Fixação de nitrogênio'));
   assert.equal(bean.items[2].title, 'Estabilidade de receita no futuro');
   assert.equal(cover.items[1].context, 'Crotalária');
-  assert.match(cover.items[3].evidence, /36 dias.*237,3 mm/);
+  assert.equal(find('soja>crotalaria').hoje.culturas[1].mes_plantio, 2);
+  assert.match(cover.items[3].evidence, /10 dias.*74,3 mm/);
   assert.ok(!JSON.stringify(bean).includes('feijao'));
   assert.ok(!JSON.stringify(cover).includes('crotalaria'));
 });

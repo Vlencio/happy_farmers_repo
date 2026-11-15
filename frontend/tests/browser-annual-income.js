@@ -90,11 +90,11 @@ async (originalPage) => {
     const raw = await analysisResponse.json();
     await waitText('ANÁLISE DO MOTOR');
     check(raw.origem?.hoje === 'tabela_demo', 'Analysis uses demo tables without an external POWER query');
-    check(raw.sequencias[0].id === 'sorgo>soja', 'New February winner is sorghum-soybean');
+    check(raw.sequencias[0].id === 'crotalaria>soja', 'New February winner is crotalaria-soybean');
     const cards = page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
     check(await cards.count() === 3, 'Three ranked cards remain visible');
     const labels = await cards.allTextContents();
-    check(['Sorgo → Soja', 'Crotalária → Soja', 'Feijão → Soja'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
+    check(['Crotalária → Soja', 'Sorgo → Soja', 'Feijão → Soja'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
     check((await text()).includes('receita dos cards soma toda a sequência; a prioridade renda considera a receita por ano'), 'Results distinguish sequence revenue from the annual ranking basis');
     check((await text()).includes('por volta de 2060') && !/2041[–-]2060|2050/.test(await text()), 'Results retain the corrected future date');
     await capture('cards-desktop', cards.first());
@@ -112,7 +112,9 @@ async (originalPage) => {
     const annualHeading = () => page.getByText('RECEITA / HA / ANO · HOJE', { exact: true });
     await capture('detail-desktop', annualHeading());
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
-    const annualLabels = await Promise.all((await page.getByText(/^RECEITA \/ HA \/ ANO ·/).all()).map(label => label.boundingBox()));
+    // The API now adds a fourth annual-revenue fact for the model range; this
+    // assertion compares only the three complete climate scenarios above.
+    const annualLabels = await Promise.all((await page.getByText(/^RECEITA \/ HA \/ ANO · (HOJE|FUTURO|ANO SECO)$/).all()).map(label => label.boundingBox()));
     check(annualLabels.length === 3 && annualLabels.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'All three annual labels fit the mobile viewport');
     await capture('detail-mobile', annualHeading());
     await click('← Comparar estratégias');
