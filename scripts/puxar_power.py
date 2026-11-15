@@ -15,7 +15,11 @@ import pandas as pd
 import requests
 
 URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
-PARAMS = ["PRECTOTCORR", "T2M", "T2M_MAX", "T2M_MIN", "ALLSKY_SFC_SW_DWN", "RH2M", "WS2M"]
+# GWET*: umidade do solo, de 0 (seco) a 1 (saturado). Vao so para o arquivo mensal.
+PARAMS = [
+    "PRECTOTCORR", "T2M", "T2M_MAX", "T2M_MIN", "ALLSKY_SFC_SW_DWN", "RH2M", "WS2M",
+    "GWETTOP", "GWETROOT", "GWETPROF",
+]  # fmt: skip
 SAIDA = Path(__file__).resolve().parent.parent / "data" / "power"
 
 
