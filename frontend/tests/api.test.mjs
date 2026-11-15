@@ -17,12 +17,12 @@ test('consumes the actual engine contract and keeps its first three ranked seque
   assert.equal(result.demo, false);
   assert.deepEqual(result.recommendations.map((r) => r.category), ['rank1', 'rank2', 'rank3']);
   assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>crotalaria', 'soja>milho', 'soja>sorgo']);
-  assert.match(result.priority_note, /água 33,3%, solo 33,3% e renda 33,3%.*Pesos iguais/);
+  assert.match(result.priority_note, /water 33\.3%, soil 33\.3% and income 33\.3%.*Equal weights/);
   const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
   assert.equal(februaryWinner.sequence_id, 'crotalaria>soja');
   assert.deepEqual(februaryWinner.rank_facts, [
-    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '78,1 / 100' },
-    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '77,5 / 100' },
+    { label: 'Rank · today', value: '#1' }, { label: 'Score · today', value: '78.1 / 100' },
+    { label: 'Rank · future', value: '#1' }, { label: 'Score · future', value: '77.5 / 100' },
   ]);
   assert.equal(result.discarded.length, 75);
 });
@@ -30,7 +30,7 @@ test('current rotation stays beside the three winners with comparable actual eng
   const view = mapMotorAnalysis(fixture, farm);
   const current = view.current_rotation;
   assert.equal(current.status, 'ready');
-  assert.equal(current.title, 'Rotação atual');
+  assert.equal(current.title, 'Current rotation');
   assert.equal(current.strategy.category, 'current');
   assert.equal(current.strategy.sequence_id, 'soja>milho');
   // The reference is also the second ranked card; both roles must remain visible.
@@ -40,15 +40,15 @@ test('current rotation stays beside the three winners with comparable actual eng
   assert.deepEqual(current.strategy.timeline, rankedCurrent.timeline);
   assert.deepEqual(current.strategy.facts, rankedCurrent.facts);
   assert.deepEqual(current.strategy.rank_facts, rankedCurrent.rank_facts);
-  assert.doesNotMatch(view.recommendations[0].tradeoff, /referência do histórico/);
-  const money = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-  const index = (v) => `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`;
+  assert.doesNotMatch(view.recommendations[0].tradeoff, /reference from your crop history/);
+  const money = (v) => v.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
+  const index = (v) => `${(v * 100).toLocaleString('en-US', { maximumFractionDigits: 1 })} / 100`;
   for (const card of [current.strategy, ...view.recommendations]) {
     const source = fixture.sequencias.find((seq) => seq.id === card.sequence_id);
     assert.deepEqual(card.comparison_facts, [
-      { label: 'Receita / ha · hoje', value: money(source.hoje.receita_ha) },
-      { label: 'Solo · hoje', value: index(source.hoje.solo) },
-      { label: 'Encaixe · futuro', value: index(source.futuro.encaixe) },
+      { label: 'Revenue / ha · today', value: money(source.hoje.receita_ha) },
+      { label: 'Soil · today', value: index(source.hoje.solo) },
+      { label: 'Suitability · future', value: index(source.futuro.encaixe) },
     ]);
   }
 });
@@ -57,9 +57,9 @@ test('current rotation outside the calendar explains the actual discard without 
   const current = view.current_rotation;
   assert.equal(current.status, 'discarded');
   assert.equal(current.strategy, null);
-  assert.match(current.description, /Soja → Milho/);
-  assert.match(current.description, /não tem plantio previsto na safrinha/);
-  assert.doesNotMatch(current.description, /R\$/);
+  assert.match(current.description, /Soybean → Corn/);
+  assert.match(current.description, /has no planting window in the second season/);
+  assert.doesNotMatch(current.description, /BRL/);
   assert.equal(view.recommendations.length, 3);
 });
 
@@ -90,19 +90,19 @@ test('altitude discards explain the minimum and field elevation in both referenc
     const raw = structuredClone(data);
     if (legacy) delete raw.atual;
     const view = mapMotorAnalysis(raw, farm);
-    const reason = view.discarded.find(reason => reason.startsWith('Soja → Trigo:'));
-    assert.match(reason, /Trigo.*altitude mínima de 800 m.*talhão tem 484,41 m/);
-    assert.doesNotMatch(reason, /só fica livre|não tem plantio/);
+    const reason = view.discarded.find(reason => reason.startsWith('Soybean → Wheat:'));
+    assert.match(reason, /Wheat.*minimum elevation of 800 m.*field is at 484\.41 m/);
+    assert.doesNotMatch(reason, /only available|has no planting window/);
     assert.equal(view.current_rotation.status, 'discarded');
     assert.equal(view.current_rotation.strategy, null);
-    assert.match(view.current_rotation.description, /descartada por altitude.*800 m.*484,41 m/);
-    assert.doesNotMatch(view.current_rotation.description, /calendário|R\$/);
-    assert.match(view.summary, /descartadas pelo motor/);
+    assert.match(view.current_rotation.description, /excluded due to elevation.*800 m.*484\.41 m/);
+    assert.doesNotMatch(view.current_rotation.description, /calendar|BRL/);
+    assert.match(view.summary, /excluded by the engine/);
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
   }
   // The dedicated reference is sufficient even if no full discarded list is sent.
   data.descartadas = [];
-  assert.match(mapMotorAnalysis(data, farm).current_rotation.description, /descartada por altitude/);
+  assert.match(mapMotorAnalysis(data, farm).current_rotation.description, /excluded due to elevation/);
 });
 
 test('legacy calendar reasons keep their explanation even when the API echoes altitude', () => {
@@ -111,7 +111,7 @@ test('legacy calendar reasons keep their explanation even when the API echoes al
   const view = mapMotorAnalysis(raw, farm);
   assert.deepEqual(view.current_rotation, old.current_rotation);
   assert.deepEqual(view.discarded, old.discarded);
-  assert.match(view.current_rotation.description, /não cabe no calendário.*não tem plantio previsto/);
+  assert.match(view.current_rotation.description, /does not fit the selected calendar.*has no planting window/);
 });
 
 test('altitude discard evidence must be complete, finite, below the minimum and agree with the input', () => {
@@ -149,7 +149,7 @@ test('missing history and a missing current marker have distinct states without 
   const noHistory = mapMotorAnalysis(data, farm);
   assert.equal(noHistory.current_rotation.status, 'no_history');
   assert.equal(noHistory.current_rotation.strategy, null);
-  assert.match(noHistory.current_rotation.description, /Adicione seu histórico/);
+  assert.match(noHistory.current_rotation.description, /Add your crop history/);
   assert.deepEqual(noHistory.recommendations.map((r) => r.sequence_id), missing.recommendations.map((r) => r.sequence_id));
 });
 test('long history uses the corrected engine reference without a horizon-length block', () => {
@@ -160,8 +160,8 @@ test('long history uses the corrected engine reference without a horizon-length 
   assert.equal(view.current_rotation.strategy.sequence_id, 'soja>milho');
   const rankedCurrent = view.recommendations.find(card => card.sequence_id === 'soja>milho');
   assert.deepEqual(view.current_rotation.strategy.comparison_facts, rankedCurrent.comparison_facts);
-  assert.match(rankedCurrent.tradeoff, /referência do histórico/);
-  assert.doesNotMatch(view.recommendations[0].tradeoff, /referência do histórico/);
+  assert.match(rankedCurrent.tradeoff, /reference from your crop history/);
+  assert.doesNotMatch(view.recommendations[0].tradeoff, /reference from your crop history/);
 });
 test('dedicated reference supplies identity and discard reason while markers remain a legacy fallback', () => {
   const data = copy();
@@ -169,14 +169,14 @@ test('dedicated reference supplies identity and discard reason while markers rem
   const current = mapMotorAnalysis(data, farm).current_rotation;
   assert.equal(current.strategy.sequence_id, data.atual.id);
   const cards = mapMotorAnalysis(data, farm).recommendations;
-  assert.match(cards.find(card => card.sequence_id === data.atual.id).tradeoff, /referência do histórico/);
-  assert.ok(cards.filter(card => card.sequence_id !== data.atual.id).every(card => !card.tradeoff.includes('referência do histórico')));
+  assert.match(cards.find(card => card.sequence_id === data.atual.id).tradeoff, /reference from your crop history/);
+  assert.ok(cards.filter(card => card.sequence_id !== data.atual.id).every(card => !card.tradeoff.includes('reference from your crop history')));
 
   const discarded = structuredClone(february);
   discarded.descartadas = [];
   for (const seq of discarded.sequencias) seq.atual = false;
   assert.equal(mapMotorAnalysis(discarded, farm).current_rotation.status, 'discarded');
-  assert.match(mapMotorAnalysis(discarded, farm).current_rotation.description, /não tem plantio previsto na safrinha/);
+  assert.match(mapMotorAnalysis(discarded, farm).current_rotation.description, /has no planting window in the second season/);
 
   const legacy = copy(); delete legacy.atual;
   assert.deepEqual(mapMotorAnalysis(legacy, farm).current_rotation, mapMotorAnalysis(fixture, farm).current_rotation);
@@ -188,7 +188,7 @@ test('dedicated reference supplies identity and discard reason while markers rem
   const oldView = mapMotorAnalysis(legacy, farm);
   assert.equal(oldView.current_rotation.status, 'unavailable');
   assert.equal(oldView.current_rotation.strategy, null);
-  assert.ok(oldView.recommendations.every(card => !card.tradeoff.includes('referência do histórico')));
+  assert.ok(oldView.recommendations.every(card => !card.tradeoff.includes('reference from your crop history')));
 });
 test('rejects malformed dedicated references rather than displaying another sequence or empty metrics', () => {
   for (const change of [
@@ -200,7 +200,7 @@ test('rejects malformed dedicated references rather than displaying another sequ
     (v) => v.atual.motivo = {},
     (v) => { v.atual.id = 'desconhecida>milho'; v.atual.culturas[0] = 'desconhecida'; },
     (v) => { v.atual.viavel = false; v.atual.motivo = null; },
-  ]) { const data = copy(); change(data); assert.throws(() => validateMotorOutput(data), /contrato/); }
+  ]) { const data = copy(); change(data); assert.throws(() => validateMotorOutput(data), /contract/); }
 });
 test('a one-crop history uses the repeated sequence supplied by the engine and explains it', () => {
   const data = copy();
@@ -210,7 +210,7 @@ test('a one-crop history uses the repeated sequence supplied by the engine and e
   const view = mapMotorAnalysis(data, farm);
   assert.equal(view.current_rotation.status, 'ready');
   assert.equal(view.current_rotation.strategy.sequence_id, 'milho>milho');
-  assert.match(view.current_rotation.description, /repete essa cultura nas duas posições/);
+  assert.match(view.current_rotation.description, /repeats it in both positions/);
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), mapMotorAnalysis(fixture, farm).recommendations.map((r) => r.sequence_id));
 });
 test('rejects malformed history and multiple current markers across feasible and discarded sequences', () => {
@@ -219,7 +219,7 @@ test('rejects malformed history and multiple current markers across feasible and
     assert.throws(() => validateMotorOutput(data), /entrada.rotacao_atual/);
   }
   const data = copy(); data.descartadas[0].atual = true;
-  assert.throws(() => validateMotorOutput(data), /mais de uma rotação atual/);
+  assert.throws(() => validateMotorOutput(data), /more than one current rotation/);
 });
 test('sends latitude/longitude, canonical crop IDs in order and cycle settings; keeps notes local', async () => {
   const history = [{ crop: 'Feijão', season: '2024', notes: 'Observação local' }, { crop: 'soja', season: '2025', notes: '' }];
@@ -235,8 +235,8 @@ test('sends latitude/longitude, canonical crop IDs in order and cycle settings; 
   assert.deepEqual(JSON.parse(captured.options.body), request);
 });
 test('unsupported restored crops block submission rather than silently losing history', () => {
-  assert.throws(() => buildRequest(farm, [{ crop: 'Café' }], undefined, metadata.cultures), /Café.*catálogo/);
-  assert.throws(() => buildRequest(farm, [], { mes_plantio: 0, horizonte: 2 }), /mês/);
+  assert.throws(() => buildRequest(farm, [{ crop: 'Café' }], undefined, metadata.cultures), /Café.*catalog/);
+  assert.throws(() => buildRequest(farm, [], { mes_plantio: 0, horizonte: 2 }), /month/);
 });
 test('preserves engine order despite individual revenue, soil and future metrics', () => {
   const data = copy();
@@ -255,8 +255,8 @@ test('does not re-sort or break ties in the engine ranking', () => {
   data.sequencias.reverse(); // Adapter-only case: the response order is authoritative.
   const view = mapMotorAnalysis(data, farm);
   assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
-  assert.match(view.priority_note, /água 100%, solo 0% e renda 0%/);
-  assert.doesNotMatch(view.priority_note, /Pesos iguais/);
+  assert.match(view.priority_note, /water 100%, soil 0% and income 0%/);
+  assert.doesNotMatch(view.priority_note, /Equal weights/);
 });
 test('keeps cover crops ranked by the engine without a commercial filter', () => {
   const data = copy();
@@ -266,8 +266,8 @@ test('keeps cover crops ranked by the engine without a commercial filter', () =>
   data.sequencias = [cover, ...data.sequencias.filter(seq => seq !== cover)];
   const rec = mapMotorAnalysis(data, farm).recommendations[0];
   assert.equal(rec.sequence_id, cover.id);
-  assert.match(rec.reason, /posição entre as sequências viáveis.*prioridades/i);
-  assert.doesNotMatch(rec.reason, /todas as culturas geram receita|objetivo/);
+  assert.match(rec.reason, /Rank.*among viable sequences.*Priorities/i);
+  assert.doesNotMatch(rec.reason, /all crops generate revenue|objective/);
 });
 test('sends every UI priority exactly, including all zeros, and rejects invalid controls', () => {
   for (const prioridades of [{ agua: 3, solo: 2, renda: 0 }, { agua: 0, solo: 0, renda: 3 }, { agua: 0, solo: 0, renda: 0 }]) {
@@ -278,7 +278,7 @@ test('sends every UI priority exactly, including all zeros, and rejects invalid 
   assert.deepEqual(validateSettings({ mes_plantio: 2, horizonte: 1 }).prioridades, { agua: 1, solo: 1, renda: 1 });
   for (const invalid of [null, {}, { agua: 1, solo: 1 }, { agua: -1, solo: 1, renda: 1 }, { agua: 4, solo: 1, renda: 1 },
     { agua: 0.5, solo: 1, renda: 1 }, { agua: '1', solo: 1, renda: 1 }, { agua: NaN, solo: 1, renda: 1 }]) {
-    assert.throws(() => validateSettings({ ...DEFAULT_SETTINGS, prioridades: invalid }), /prioridade de 0 a 3/);
+    assert.throws(() => validateSettings({ ...DEFAULT_SETTINGS, prioridades: invalid }), /priority from 0 to 3/);
   }
 });
 
@@ -308,17 +308,17 @@ test('multiplies gross revenue by farm hectares without changing engine metrics'
   const result = mapMotorAnalysis(fixture, { area_ha: 2 });
   const facts = result.recommendations[0].facts;
   const source = fixture.sequencias.find((s) => s.id === result.recommendations[0].sequence_id);
-  const money = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const money = (v) => v.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
   assert.equal(facts[0].value, money(source.hoje.receita_ha));
   assert.equal(facts[3].value, money(source.hoje.receita_ha * 2));
 });
 test('timeline crosses December and preserves monthly actual/future water figures', () => {
   const result = mapMotorAnalysis(fixture, farm).recommendations[0];
-  assert.deepEqual(result.month_labels.slice(0, 4), ['out · ano 1', 'nov · ano 1', 'dez · ano 1', 'jan · ano 2']);
+  assert.deepEqual(result.month_labels.slice(0, 4), ['Oct · year 1', 'Nov · year 1', 'Dec · year 1', 'Jan · year 2']);
   assert.equal(result.timeline[1].start_month, 5);
   assert.equal(result.sequence_id, 'soja>crotalaria');
   assert.equal(result.timeline[1].end_month, 8);
-  assert.equal(result.timeline[1].monthly[0].month, 'fev · ano 2');
+  assert.equal(result.timeline[1].monthly[0].month, 'Feb · year 2');
   const source = fixture.sequencias.find((s) => s.id === result.sequence_id);
   assert.equal(result.timeline[1].monthly.length, source.hoje.culturas[1].meses.length);
   assert.match(result.timeline[1].monthly[0].deficit, /\//);
@@ -329,8 +329,8 @@ test('empty viable sequences remain empty, with reasons from the engine', () => 
   const result = mapMotorAnalysis(data, farm);
   assert.deepEqual(result.recommendations, []);
   assert.equal(result.discarded.length, 75);
-  assert.ok(result.discarded.some((reason) => reason.includes('não tem plantio')));
-  assert.ok(result.discarded.some((reason) => reason.includes('só fica livre')));
+  assert.ok(result.discarded.some((reason) => reason.includes('has no planting window')));
+  assert.ok(result.discarded.some((reason) => reason.includes('only available')));
 });
 test('rejects nonfinite metrics, malformed scenarios, calendars and duplicated sequence IDs', () => {
   for (const change of [
@@ -343,7 +343,7 @@ test('rejects nonfinite metrics, malformed scenarios, calendars and duplicated s
     (v) => v.sequencias[0].futuro.culturas[0].encaixe_calor = 1.1,
     (v) => v.sequencias[0].futuro.culturas[0].dias_calor = -1,
     (v) => delete v.sequencias[0].futuro.culturas[0].dias_calor,
-  ]) { const data = copy(); change(data); assert.throws(() => validateMotorOutput(data), /contrato/); }
+  ]) { const data = copy(); change(data); assert.throws(() => validateMotorOutput(data), /contract/); }
 });
 // Synthetic extension of the contract, not an engine calculation for 2020/21.
 function withDryScenario() {
@@ -359,16 +359,16 @@ function withDryScenario() {
 test('dry scenario is optional and supplies a third set of facts and monthly numbers when complete', () => {
   const current = mapMotorAnalysis(fixture, farm);
   assert.equal(current.recommendations[0].facts.length, 12);
-  assert.match(current.scenario_note, /ainda não está disponível/);
+  assert.match(current.scenario_note, /is not available/);
   const data = withDryScenario();
   const view = mapMotorAnalysis(data, { area_ha: 2 });
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), current.recommendations.map((r) => r.sequence_id));
   const rec = view.recommendations[0];
   assert.equal(rec.facts.length, 18);
-  assert.equal(rec.facts[7].value.replace(/\s/g, ''), 'R$2.468');
+  assert.equal(rec.facts[7].value.replace(/\s/g, ''), 'BRL2,468');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').at(-1), '7');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').length, 3);
-  assert.match(rec.water_caption, /hoje \/ futuro \/ ano seco/);
+  assert.match(rec.water_caption, /today \/ future \/ dry year/);
   assert.match(view.scenario_note, /2020\/21/);
 });
 test('rejects partial, invalid and calendar-misaligned dry scenarios', () => {
@@ -380,7 +380,7 @@ test('rejects partial, invalid and calendar-misaligned dry scenarios', () => {
     (v) => v.sequencias[0].seco.receita_ha = NaN,
     (v) => v.sequencias[0].seco.culturas[0].meses[0].dias = 1,
     (v) => v.clima.seco[1].mes = v.clima.seco[0].mes,
-  ]) { const data = withDryScenario(); change(data); assert.throws(() => validateMotorOutput(data), /contrato/); }
+  ]) { const data = withDryScenario(); change(data); assert.throws(() => validateMotorOutput(data), /contract/); }
 });
 test('actual P1 dry-year output is shown without changing the three winners', () => {
   const view = mapMotorAnalysis(dryYear, farm);
@@ -395,17 +395,24 @@ test('actual P1 dry-year output is shown without changing the three winners', ()
   assert.deepEqual(view.current_rotation.strategy.timeline, rankedCurrent.timeline);
   assert.deepEqual(view.current_rotation.strategy.comparison_facts, rankedCurrent.comparison_facts);
 });
-test('point provenance warning reaches Rune unchanged, including fallback and outside Minas', () => {
+test('point provenance warning reaches Rune in English without losing fallback or coverage warnings', () => {
   const raw = copy();
   raw.origem = { hoje: 'fallback_tabela_demo', aviso: 'POWER fora do ar. O ponto do talhão está fora de Minas Gerais.' };
-  assert.equal(mapMotorAnalysis(raw, farm).source_warning, raw.origem.aviso);
+  assert.equal(mapMotorAnalysis(raw, farm).source_warning, 'POWER is unavailable. The field point is outside Minas Gerais.');
   assert.equal(mapMotorAnalysis(fixture, farm).source_warning, '');
   raw.origem.aviso = { unexpected: true };
   assert.throws(() => validateMotorOutput(raw), /origem.aviso/);
 });
-test('metadata loads the engine catalog with friendly accents', async () => {
+test('metadata loads the engine catalog with English labels and stable crop IDs', async () => {
+  const before = structuredClone(metadata);
   const result = await requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => metadata }) });
-  assert.equal(result.cultures.find((c) => c.id === 'crotalaria').label, 'Crotalária');
+  assert.equal(result.cultures.find((c) => c.id === 'crotalaria').label, 'Sunn hemp');
+  assert.deepEqual(result.cultures.map(crop => crop.id), metadata.cultures.map(crop => crop.id));
+  for (const crop of result.cultures) {
+    assert.equal(buildRequest(farm, [{ crop: crop.label }], DEFAULT_SETTINGS, result.cultures).rotacao_atual[0], crop.id);
+  }
+  assert.match(result.data_notice, /Today’s climate.*future: around 2060/);
+  assert.deepEqual(metadata, before, 'Presentation localization must not mutate the original API payload');
 });
 test('HTTP validation errors explain the invalid field; outages never become fake results', async () => {
   await assert.rejects(requestAnalysis('/api', {}, { fetcher: async () => ({ ok: false, status: 503, json: async () => ({}) }) }), /503/);
@@ -424,18 +431,18 @@ test('malformed error bodies and null metadata produce readable errors, not Type
     await assert.rejects(requestAnalysis('/api', {}, { fetcher: async () => ({ ok: false, status: 503, json: async () => value }) }), /HTTP 503/);
   }
   for (const value of [null, { cultures: [null] }]) {
-    await assert.rejects(requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => value }) }), /contrato/);
+    await assert.rejects(requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => value }) }), /contract/);
   }
 });
 
 test('near-leading scores are shown as a technical tie without changing engine ranks, scores, or current reference', () => {
   const view = mapMotorAnalysis(fixture, farm);
-  assert.match(view.ranking_note, /Empate técnico entre as três.*menos de 2 pontos.*não igualdade exata/);
-  assert.ok(view.recommendations.every(card => card.tie_note === 'Empate técnico · hoje'));
+  assert.match(view.ranking_note, /Technical tie among the top three.*less than 2 points.*not exact equality/);
+  assert.ok(view.recommendations.every(card => card.tie_note === 'Technical tie · today'));
   assert.equal(view.current_rotation.strategy.tie_note, view.recommendations.find(card => card.sequence_id === view.current_rotation.strategy.sequence_id).tie_note);
   assert.deepEqual(view.recommendations.map(card => card.sequence_id), fixture.sequencias.slice(0, 3).map(seq => seq.id));
   assert.deepEqual(view.recommendations.map(card => card.rank_facts[0].value), ['#1', '#2', '#3']);
-  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['78,2 / 100', '77,9 / 100', '76,5 / 100']);
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['78.2 / 100', '77.9 / 100', '76.5 / 100']);
 });
 
 test('tie threshold is strict and measured from the leader rather than chaining adjacent scores', () => {
@@ -483,9 +490,9 @@ test('raw sequence water attendance is shown separately from the rescaled water 
   data.sequencias[0].hoje.atendimento_hidrico = .875;
   data.sequencias[0].hoje.agua = .4; // These fields may differ; the UI must not equate them.
   const card = mapMotorAnalysis(data, farm).recommendations[0];
-  assert.equal(card.facts.find(fact => fact.label === 'Atendimento de água · hoje').value, '87,5% da demanda');
+  assert.equal(card.facts.find(fact => fact.label === 'Water demand met · today').value, '87.5% of demand');
   for (const seq of data.sequencias) for (const scenario of ['hoje', 'futuro']) delete seq[scenario].atendimento_hidrico;
-  assert.ok(mapMotorAnalysis(data, farm).recommendations.every(rec => rec.facts.every(fact => !fact.label.startsWith('Atendimento de água'))));
+  assert.ok(mapMotorAnalysis(data, farm).recommendations.every(rec => rec.facts.every(fact => !fact.label.startsWith('Water demand met'))));
   for (const value of [null, '0.5', -.01, 1.01, NaN, Infinity]) {
     const invalid = copy(); invalid.sequencias[0].hoje.atendimento_hidrico = value;
     assert.throws(() => validateMotorOutput(invalid), /atendimento_hidrico/);
@@ -497,16 +504,16 @@ test('crop sequence factors explain supplied repetition, green-manure bonus and 
   const host = data.sequencias.find(seq => seq.id === 'soja>feijao');
   data.atual = { id: host.id, culturas: host.culturas, viavel: true, motivo: null };
   const hostView = mapMotorAnalysis(data, farm).current_rotation.strategy;
-  assert.match(hostView.timeline[1].soil, /Compartilha praga ou doença com Soja.*0,75×/);
-  assert.match(hostView.timeline[1].description, /10 dias entre o fim da cultura anterior/);
+  assert.match(hostView.timeline[1].soil, /Shares a pest or disease with Soybean.*0\.75×/);
+  assert.match(hostView.timeline[1].description, /10 days between the end of the previous crop/);
   // Presentation-only extension exercises a combined 1.1 × .92 factor supplied by the engine.
   const crop = data.sequencias[0].hoje.culturas[0];
   crop.bonus_n = true; crop.fator_sequencia = 1.012; crop.dias_apos_anterior = 60;
   const bonus = mapMotorAnalysis(data, farm).recommendations[0].timeline[0];
-  assert.match(bonus.soil, /1,012×.*bônus após adubo verde.*60 dias/);
-  assert.match(bonus.description, /60 dias.*suposição do cálculo/);
+  assert.match(bonus.soil, /1\.012×.*green-manure bonus.*60-day/);
+  assert.match(bonus.description, /60 days.*assumption in the calculation/);
   crop.bonus_n = false; crop.repete = true;
-  assert.match(mapMotorAnalysis(data, farm).recommendations[0].timeline[0].soil, /Repete a cultura anterior/);
+  assert.match(mapMotorAnalysis(data, farm).recommendations[0].timeline[0].soil, /Repeats the previous crop/);
   for (const seq of data.sequencias) for (const scenario of ['hoje', 'futuro']) for (const item of seq[scenario].culturas) {
     for (const key of ['repete', 'bonus_n', 'penalidade_hospedeiro', 'dias_apos_anterior', 'hospedeiro_comum']) delete item[key];
   }
@@ -558,20 +565,20 @@ test('future model ranges use only per-model ranks and annual revenues, keeping 
   const data = withModelRanges();
   const view = mapMotorAnalysis(data, farm);
   const card = view.recommendations[0];
-  assert.match(card.model_note, /2ª–3ª posição \(2 modelos\).*não intervalo de confiança.*Chuva por aproximação/);
+  assert.match(card.model_note, /ranks #2–#3 \(2 models\).*not a confidence interval.*Rainfall is approximated/);
   assert.equal(card.rank_facts[2].value, '#1'); // Mean future can lie outside the individual-model rank range.
   assert.deepEqual(card.facts.slice(-2), [
-    { label: 'Posição · futuro entre modelos', value: '#2–#3' },
-    { label: 'Receita / ha / ano · futuro entre modelos', value: 'R$\u00a01.000 a R$\u00a01.050' },
+    { label: 'Rank · future across models', value: '#2–#3' },
+    { label: 'Revenue / ha / year · future across models', value: 'BRL\u00a01,000 to BRL\u00a01,050' },
   ]);
   const rankedCurrent = view.recommendations.find(rec => rec.sequence_id === view.current_rotation.strategy.sequence_id);
   assert.equal(view.current_rotation.strategy.model_note, rankedCurrent.model_note);
-  assert.match(view.current_rotation.strategy.model_note, /3ª–4ª posição/);
+  assert.match(view.current_rotation.strategy.model_note, /ranks #3–#4/);
   assert.notEqual(view.current_rotation.strategy.model_note, card.model_note);
   assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
   assert.ok(mapMotorAnalysis(fixture, farm).recommendations.every(rec => rec.model_note === ''));
   data.modelos.chuva = 'razao';
-  assert.doesNotMatch(mapMotorAnalysis(data, farm).recommendations[0].model_note, /aproximação/);
+  assert.doesNotMatch(mapMotorAnalysis(data, farm).recommendations[0].model_note, /approximated/);
 });
 
 test('model ranges reject incomplete sets, malformed climates and inconsistent ranges instead of showing invented uncertainty', () => {

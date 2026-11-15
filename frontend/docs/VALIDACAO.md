@@ -1,5 +1,57 @@
 # Verificação da integração · 14/11/2026
 
+## Interface em inglês para apresentação · 15/11/2026
+
+Trabalho local na `front-dev3`, atualizada por fast-forward até `2787fb9`, com
+as entregas anteriores de solo, modelos e altitude. Esta rodada muda somente
+o front, seus testes e documentação; backend, motor, dados e fixtures canônicas
+permanecem iguais à base integrada.
+
+- UI Rune, HTML, mapa/Geoman, acessibilidade, mensagens, glossário, riscos,
+  benefícios, exposição, fontes e rótulos do catálogo em inglês. Documento com
+  `lang="en-US"`, números en-US e moeda BRL explícita, sem conversão de valores.
+  Campos e IDs do protocolo permanecem em português; notas e nomes do usuário
+  não são traduzidos. Nomes próprios de fontes e localidades são preservados.
+- **151 testes JavaScript**, **1 Rust**, `cargo fmt --check`, `git diff --check`
+  e build Rune/WASM + Vite passaram. Os avisos conhecidos de compilação do Rune
+  e tamanho do bundle continuam. O backend/Python não foi alterado nesta rodada.
+- **45 análises HTTP válidas + rejeição 422** passaram: calendário, referência
+  atual, altitude, prioridades, fevereiro, ajustes e reset. Tradução não muda
+  cálculos, ordenação, foco do chat ou o payload enviado.
+- **515 verificações de navegador**: prioridades 98, renda anual 38, solo/API
+  46, cenários/API 85, exposição 28, referência atual 26, benefícios 37,
+  modelos/avisos 50, avisos 35, chat 38 e revisão de inglês 34.
+- Limites dos testes: prioridades inclui oito verificações de chat simulado;
+  exposição e avisos incluem quatro verificações simuladas cada. Modelos/avisos
+  usa cinco saídas reais do motor com transporte simulado. Chat inclui 33
+  verificações simuladas e 22 POSTs interceptados, sem provedor real. Revisão
+  de inglês usa uma análise real e uma falha de metadata simulada para conferir
+  o rascunho offline. As demais suites citadas usam a API local real.
+- O teste de renda anual agora aguarda a sugestão de solo antes de preparar o
+  histórico via localStorage e confirma o histórico enviado; a espera evita
+  uma corrida do próprio teste. Nos testes de teclado, os controles de cenário
+  do Rune são grupos focáveis, e sua ordem foi incluída na navegação.
+- Corrigidos vazamentos de idioma na atribuição do mapa, fontes de solo/API e
+  fallback dos nomes de culturas quando metadata falha. A recusa fixa do chat
+  é traduzida apenas na projeção para a tela; testes confirmam o reenvio do
+  texto original na próxima pergunta. Essa última mudança foi coberta por
+  unidade depois do teste de navegador do chat.
+- Desktop 1440 px e celular simulado 390 px inspecionados: mapa, confirmação,
+  cards, valores, detalhes e glossário legíveis, sem corte horizontal.
+  Capturas: `output/playwright/english-*.png`; logs de navegador
+  `output/playwright/english-*.log` e `frontend/.cache/english-browser.log`.
+  Unitários, HTTP e build: `frontend/.cache/english-*.log`.
+
+Suites principais e afetadas foram executadas; os demais roteiros antigos de
+navegador tiveram seus seletores/textos adaptados e sintaxe conferida, sem
+afirmar que todos foram executados. Sem chamada ao LLM nem download POWER.
+Não houve verificação de Docker, CI remoto, produção, celular físico ou leitor
+de tela. Sessões de navegador de QA foram fechadas.
+
+Pendência externa: a instrução do chat no backend ainda pede respostas em
+português. A interface está em inglês, mas respostas livres da IA precisam da
+alteração descrita em [ENGLISH_HANDOFF.md](ENGLISH_HANDOFF.md).
+
 ## Crotalária em fevereiro, solo/modelos HTTP e glossário · 15/11/2026
 
 Main local atualizada para `1268224`. Trabalho na `api-solo-modelos`, base

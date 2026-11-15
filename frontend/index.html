@@ -1,32 +1,32 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en-US">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#193d30" />
-  <meta name="description" content="Happy Farmers — explore caminhos de renda, saúde do solo e adaptação ao clima para sua fazenda." />
-  <title>Happy Farmers · Planeje o próximo ciclo</title>
+  <meta name="description" content="Happy Farmers — explore income, soil health and climate adaptation options for your farm." />
+  <title>Happy Farmers · Plan your next growing season</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 </head>
 <body>
-  <canvas id="rune-app" aria-label="Happy Farmers, planejamento da fazenda"></canvas>
-  <div id="boot" role="status"><span class="brand-mark">hf</span><h1>Happy Farmers</h1><p>Preparando seu espaço de planejamento…</p><p id="boot-error"></p><button id="boot-retry" hidden>Recarregar página</button></div>
-  <noscript>Ative JavaScript para abrir a interface Happy Farmers.</noscript>
+  <canvas id="rune-app" aria-label="Happy Farmers, farm planning"></canvas>
+  <div id="boot" role="status"><span class="brand-mark">hf</span><h1>Happy Farmers</h1><p>Preparing your planning workspace…</p><p id="boot-error"></p><button id="boot-retry" hidden>Reload page</button></div>
+  <noscript>Enable JavaScript to open Happy Farmers.</noscript>
   <input id="geojson-file" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden />
   <dialog id="map-dialog" aria-labelledby="map-title">
-    <header class="map-header"><div><span class="eyebrow">SUA FAZENDA</span><h2 id="map-title">Delimite sua área no mapa</h2></div><button id="close-map" class="icon-button" aria-label="Fechar mapa">×</button></header>
+    <header class="map-header"><div><span class="eyebrow">YOUR FARM</span><h2 id="map-title">Outline your field on the map</h2></div><button id="close-map" class="icon-button" aria-label="Close map">×</button></header>
     <div class="map-toolbar">
-      <button id="draw-boundary" class="primary">Desenhar contorno</button>
-      <button id="finish-draw" disabled>Concluir desenho</button>
-      <button id="edit-boundary">Editar pontos</button>
-      <button id="locate">Minha localização</button>
-      <form id="coordinate-search"><label for="coordinates" class="sr-only">Latitude, longitude</label><input id="coordinates" placeholder="Latitude, longitude" autocomplete="off" /><button type="submit">Localizar</button></form>
+      <button id="draw-boundary" class="primary">Draw boundary</button>
+      <button id="finish-draw" disabled>Finish drawing</button>
+      <button id="edit-boundary">Edit points</button>
+      <button id="locate">My location</button>
+      <form id="coordinate-search"><label for="coordinates" class="sr-only">Latitude, longitude</label><input id="coordinates" placeholder="Latitude, longitude" autocomplete="off" /><button type="submit">Find location</button></form>
     </div>
-    <p class="map-help" id="map-help">Aproxime o mapa, escolha Desenhar contorno e marque os limites. Toque no primeiro ponto para fechar.</p>
-    <div id="satellite-map" aria-label="Mapa satélite para delimitar a fazenda"></div>
-    <div class="map-meta"><label>Nome da fazenda<input id="farm-name" maxlength="100" value="Minha fazenda" /></label><div><span class="eyebrow">ÁREA DELIMITADA</span><strong id="map-area">Nenhum contorno</strong></div><p id="map-status" role="status" aria-live="polite"></p></div>
-    <details class="geojson-preview"><summary>Visualizar GeoJSON</summary><pre id="geojson-preview">Desenhe ou importe um contorno.</pre></details>
-    <footer class="map-footer"><span>Imagem: Esri World Imagery · área aproximada</span><div><button id="download-map" disabled>Baixar GeoJSON</button><button id="confirm-boundary" class="primary" disabled>Usar esta área</button></div></footer>
+    <p class="map-help" id="map-help">Zoom in, choose Draw boundary and mark the field edges. Tap the first point to close the shape.</p>
+    <div id="satellite-map" aria-label="Satellite map for outlining your field"></div>
+    <div class="map-meta"><label>Farm name<input id="farm-name" maxlength="100" value="My farm" /></label><div><span class="eyebrow">FIELD AREA</span><strong id="map-area">No boundary</strong></div><p id="map-status" role="status" aria-live="polite"></p></div>
+    <details class="geojson-preview"><summary>View GeoJSON</summary><pre id="geojson-preview">Draw or import a boundary.</pre></details>
+    <footer class="map-footer"><span>Imagery: Esri World Imagery · approximate area</span><div><button id="download-map" disabled>Download GeoJSON</button><button id="confirm-boundary" class="primary" disabled>Use this area</button></div></footer>
   </dialog>
   <script type="module" src="/web/main.mjs"></script>
 </body>

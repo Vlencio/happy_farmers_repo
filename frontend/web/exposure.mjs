@@ -1,9 +1,9 @@
-const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // The engine uses a fixed 365-day calendar, including February with 28 days.
 const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const RAIN_TOLERANCE = 0.01;
-const number = (value) => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-const invalid = (path) => { throw new Error(`Resposta incompatível com o contrato do motor: descoberto.${path}.`); };
+const number = (value) => value.toLocaleString('en-US', { maximumFractionDigits: 1 });
+const invalid = (path) => { throw new Error(`Response does not match the engine contract: descoberto.${path}.`); };
 const hasOwn = (value, key) => value != null && Object.hasOwn(value, key);
 function finite(value, path) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) invalid(path);
@@ -25,7 +25,7 @@ export function validateSequenceExposure(seq, scenarios, firstMonth) {
   integer(firstMonth, 'mes_inicial', 1, 12);
   const presence = scenarios.map((key) => hasOwn(seq[key], 'descoberto'));
   if (!presence.some(Boolean)) return false; // Legacy response: absent is not zero exposure.
-  if (!presence.every(Boolean)) invalid('cenários incompletos');
+  if (!presence.every(Boolean)) invalid('incomplete scenarios');
   const blocks = scenarios.map((key) => seq[key].descoberto);
   for (const [i, block] of blocks.entries()) {
     const path = scenarios[i];
@@ -35,14 +35,14 @@ export function validateSequenceExposure(seq, scenarios, firstMonth) {
     for (const month of block.meses) {
       integer(month?.mes, `${path}.meses.mes`, 1, 12);
       const offset = (month.mes - firstMonth + 12) % 12;
-      if (offset <= previous) invalid(`${path}.meses: ordem ou repetição`);
+      if (offset <= previous) invalid(`${path}.meses: order or duplicate`);
       previous = offset;
       validateAmounts(month, `${path}.meses`, MONTH_DAYS[month.mes - 1], 1);
     }
     for (const key of ['dias', 'dias_expostos', 'chuva_mm', 'chuva_exposta_mm']) {
       const sum = block.meses.reduce((total, month) => total + month[key], 0);
       const tolerance = key.startsWith('chuva') ? RAIN_TOLERANCE : 0;
-      if (Math.abs(block[key] - sum) > tolerance + 1e-9) invalid(`${path}.${key}: soma mensal`);
+      if (Math.abs(block[key] - sum) > tolerance + 1e-9) invalid(`${path}.${key}: monthly sum`);
     }
     if (hasOwn(block, 'indice_erosao')) finite(block.indice_erosao, `${path}.indice_erosao`);
   }
@@ -52,8 +52,8 @@ export function validateSequenceExposure(seq, scenarios, firstMonth) {
       other.meses.length !== baseline.meses.length || other.meses.some((month, i) => {
         const base = baseline.meses[i];
         return month.mes !== base.mes || month.dias !== base.dias || month.dias_expostos !== base.dias_expostos;
-      })) invalid('dias diferentes entre cenários');
-    if (hasOwn(other, 'indice_erosao') !== hasOwn(baseline, 'indice_erosao')) invalid('índice de erosão incompleto');
+      })) invalid('different days across scenarios');
+    if (hasOwn(other, 'indice_erosao') !== hasOwn(baseline, 'indice_erosao')) invalid('incomplete erosion index');
   }
   return true;
 }
@@ -63,27 +63,27 @@ export function buildExposure(seq, firstMonth) {
   if (!validateSequenceExposure(seq, scenarios, firstMonth)) return null;
   const blocks = scenarios.map((key) => seq[key].descoberto);
   const today = blocks[0];
-  const order = seq.seco ? 'hoje / futuro / ano seco' : 'hoje / futuro';
+  const order = seq.seco ? 'today / future / dry year' : 'today / future';
   const compare = (key) => blocks.map((block) => number(block[key])).join(' / ');
-  const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · ano ${Math.floor(absolute / 12) + 1}`;
+  const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · year ${Math.floor(absolute / 12) + 1}`;
   const hasErosion = hasOwn(today, 'indice_erosao');
   return {
-    period: `Primeiros 365 dias: ${monthLabel(firstMonth - 1)} → ${monthLabel(firstMonth + 10)}.`,
-    caption: `Chuva: ${order}, em milímetros. Os dias são os mesmos em todos os cenários. Esta janela cobre somente os primeiros 12 meses do planejamento, mesmo quando o calendário das culturas continua.`,
-    note: 'Sem cultura: dias sem plantas em pé, incluindo espera, colheita e o período após a última cultura. Exposto: a parte desses dias sem palhada. O motor supõe que a palhada dura até o próximo plantio; sem histórico, a espera inicial conta como exposta. As barras mostram proporções de dias no mês, não as datas exatas dos intervalos.',
+    period: `First 365 days: ${monthLabel(firstMonth - 1)} → ${monthLabel(firstMonth + 10)}.`,
+    caption: `Rainfall: ${order}, in millimeters. Days are the same in every scenario. This window covers only the first 12 months of the plan, even when the crop calendar continues.`,
+    note: 'Without a standing crop: days including the wait, harvest and period after the final crop. Exposed: the share of those days without crop residue. The engine assumes residue lasts until the next planting; without crop history, the initial wait counts as exposed. Bars show proportions of days per month, not the exact dates of each interval.',
     erosion_note: hasErosion
-      ? 'O índice de exposição à erosão permite comparar sequências no mesmo talhão. Combina chuva em solo exposto e declividade; não representa perda de solo em t/ha e não altera o score nem o ranking.'
-      : 'Índice de exposição à erosão indisponível nesta análise. É necessário considerar a declividade do talhão; os dias e a chuva em solo exposto continuam disponíveis.',
+      ? 'The erosion exposure index compares sequences in the same field. It combines rainfall on exposed soil with slope; it does not represent soil loss in t/ha and does not change the score or ranking.'
+      : 'The erosion exposure index is unavailable in this analysis. It requires the field slope; days and rainfall on exposed soil are still available.',
     card_facts: [
-      { label: 'Dias expostos · 365 dias', value: `${today.dias_expostos} dias` },
-      { label: 'Chuva em solo exposto · hoje', value: `${number(today.chuva_exposta_mm)} mm` },
+      { label: 'Exposed days · 365 days', value: `${today.dias_expostos} days` },
+      { label: 'Rainfall on exposed soil · today', value: `${number(today.chuva_exposta_mm)} mm` },
     ],
     facts: [
-      { label: 'Dias sem cultura · 365 dias', value: `${today.dias} dias` },
-      { label: 'Dias expostos · 365 dias', value: `${today.dias_expostos} dias` },
-      { label: `Chuva sem cultura · ${order}`, value: `${compare('chuva_mm')} mm` },
-      { label: `Chuva em solo exposto · ${order}`, value: `${compare('chuva_exposta_mm')} mm` },
-      ...(hasErosion ? [{ label: `Índice de exposição à erosão · ${order}`, value: compare('indice_erosao') }] : []),
+      { label: 'Days without a standing crop · 365 days', value: `${today.dias} days` },
+      { label: 'Exposed days · 365 days', value: `${today.dias_expostos} days` },
+      { label: `Rainfall without a standing crop · ${order}`, value: `${compare('chuva_mm')} mm` },
+      { label: `Rainfall on exposed soil · ${order}`, value: `${compare('chuva_exposta_mm')} mm` },
+      ...(hasErosion ? [{ label: `Erosion exposure index · ${order}`, value: compare('indice_erosao') }] : []),
     ],
     months: Array.from({ length: 12 }, (_, offset) => {
       const absolute = firstMonth - 1 + offset;

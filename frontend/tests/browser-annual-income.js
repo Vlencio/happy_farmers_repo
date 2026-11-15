@@ -9,8 +9,8 @@ async (originalPage) => {
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const button = name => page.getByRole('button', { name, exact: true });
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
-  const money = value => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-  const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const money = value => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
+  const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
   const normalized = value => value.replace(/\s/g, '');
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
@@ -53,16 +53,20 @@ async (originalPage) => {
   try {
     const metadataResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/metadata'));
     await page.goto(originalPage.url());
-    await waitText('Motor conectado');
+    await waitText('Engine connected');
     const response = await metadataResponse;
     check(response.status() === 200, 'Real metadata transport succeeds');
     const metadata = await response.json();
+    // The wire contract is unchanged; the frontend translates its displayed period.
     check(metadata.climate_periods.futuro === 'por volta de 2060', 'API future period is centred around 2060');
     check(metadata.model_spread?.models.length === 3 && metadata.model_spread.scope === 'talhao_demo_2', 'Integrated D2 metadata provides the three models');
-    await click('Usar área de exemplo');
+    await click('Use sample field');
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
     await page.locator('#confirm-boundary').click();
-    await waitText('Talhão de demonstração');
+    await waitText('Demonstration field');
+    // Let the asynchronous suggestion save its state before seeding the draft.
+    // A direct localStorage edit does not update the running host's history.
+    await waitText('Regional suggestion: clay');
     // Restore the same history as the real February fixture without modifying
     // the user's draft; this entire flow has its own isolated browser context.
     await page.evaluate(() => {
@@ -70,54 +74,55 @@ async (originalPage) => {
       draft.history = [{ crop: 'soja', season: '2024', notes: '' }, { crop: 'milho', season: '2025', notes: '' }];
       localStorage.setItem('happy-farmers-draft-v1', JSON.stringify(draft));
     });
-    await page.reload(); await waitText('Motor conectado');
-    await choose('Mês em que o talhão fica livre', 'Fevereiro');
+    await page.reload(); await waitText('Engine connected');
+    await choose('Month when the field becomes available', 'February');
     check(await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).settings.mes_plantio) === 2, 'The visible month control saves February');
-    check((await text()).includes('receita bruta por hectare e por ano de ocupação. Os custos não são descontados.'), 'Income priority explains annual field occupancy');
-    check((await text()).includes('por volta de 2060') && !/2041[–-]2060|2050/.test(await text()), 'Setup shows the corrected future label without the old date');
-    if (await button('Mostrar observações do talhão').count()) await click('Mostrar observações do talhão');
-    check((await text()).includes('+1,34 a +2,31 °C; chuva anual de -79,6 a +32,7 mm.'), 'D2 range is visible from the integrated real metadata');
-    await click('Entenda os termos · abrir');
+    check((await text()).includes('gross revenue per hectare and per year of field occupancy. Costs are not deducted.'), 'Income priority explains annual field occupancy');
+    check((await text()).includes('around 2060') && !/2041[–-]2060|2050/.test(await text()), 'Setup shows the corrected future label without the old date');
+    if (await button('Show field observations').count()) await click('Show field observations');
+    check((await text()).includes('+1.34 to +2.31 °C; annual rainfall from -79.6 to +32.7 mm.'), 'D2 range is visible from the integrated real metadata');
+    await click('Understand the terms · expand');
     const glossaryText = await text();
-    check(['30 mm para solo arenoso', '45 mm para médio', '60 mm para argiloso', 'Sem textura informada, a referência é 60 mm', 'não medições deste talhão']
+    check(['30 mm for sandy soil', '45 mm for medium texture', '60 mm for clay soil', 'With no texture specified, the reference is 60 mm', 'not measurements of this field']
       .every(value => glossaryText.includes(value)), 'Glossary uses soil texture references and preserves the default');
-    check(glossaryText.includes('São referências por classe, não medições deste talhão'), 'Soil reserve is distinguished from a field measurement');
-    await capture('context-desktop', page.getByText(/^A reserva de água usada no cálculo é de 30 mm/));
+    check(glossaryText.includes('These are class references, not measurements of this field'), 'Soil reserve is distinguished from a field measurement');
+    await capture('context-desktop', page.getByText(/^The calculation uses a water reserve of 30 mm/));
     const pendingAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     const analysisResponse = await pendingAnalysis;
     check(analysisResponse.status() === 200, 'Real February analysis succeeds');
     const raw = await analysisResponse.json();
-    await waitText('ANÁLISE DO MOTOR');
+    check(raw.entrada.rotacao_atual.join('|') === 'soja|milho', 'Analysis retains the seeded crop history after the soil suggestion completes');
+    await waitText('ENGINE ANALYSIS');
     check(raw.origem?.hoje === 'tabela_demo', 'Analysis uses demo tables without an external POWER query');
-    check(raw.sequencias[0].id === 'crotalaria>soja', 'New February winner is crotalaria-soybean');
-    const cards = page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
+    check(raw.sequencias[0].id === 'crotalaria>soja', 'New February winner is crotalaria-soybean: ' + JSON.stringify({ entry: raw.entrada, first: raw.sequencias[0].id }));
+    const cards = page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
     check(await cards.count() === 3, 'Three ranked cards remain visible');
     const labels = await cards.allTextContents();
-    check(['Crotalária → Soja', 'Sorgo → Soja', 'Feijão → Soja'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
-    check((await text()).includes('receita dos cards soma toda a sequência; a prioridade renda considera a receita por ano'), 'Results distinguish sequence revenue from the annual ranking basis');
-    check((await text()).includes('por volta de 2060') && !/2041[–-]2060|2050/.test(await text()), 'Results retain the corrected future date');
+    check(['Sunn hemp → Soybean', 'Sorghum → Soybean', 'Common bean → Soybean'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
+    check((await text()).includes('Revenue on each card covers the whole sequence; the income priority uses revenue per year'), 'Results distinguish sequence revenue from the annual ranking basis');
+    check((await text()).includes('around 2060') && !/2041[–-]2060|2050/.test(await text()), 'Results retain the corrected future date');
     await capture('cards-desktop', cards.first());
     await click(labels[0]);
-    await waitText('Seu ciclo, etapa por etapa');
+    await waitText('Your crop cycle, step by step');
     const detail = normalized(await text());
-    for (const [scenario, label] of [['hoje', 'HOJE'], ['futuro', 'FUTURO'], ['seco', 'ANO SECO']]) {
+    for (const [scenario, label] of [['hoje', 'TODAY'], ['futuro', 'FUTURE'], ['seco', 'DRY YEAR']]) {
       const expected = raw.sequencias[0][scenario];
-      check(detail.includes(normalized(`RECEITA / HA / ANO · ${label}${money(expected.receita_ano_ha)}`)), `Detail shows supplied annual revenue for ${scenario}`);
-      check(detail.includes(normalized(`ANOS CONSIDERADOS · ${label}${number(expected.anos_ocupados)} ${expected.anos_ocupados === 1 ? 'ano' : 'anos'}`)), `Detail shows supplied occupied years for ${scenario}`);
-      check(detail.includes(normalized(`RECEITA / HA · ${label}${money(expected.receita_ha)}`)), `Detail preserves full-sequence revenue for ${scenario}`);
+      check(detail.includes(normalized(`REVENUE / HA / YEAR · ${label}${money(expected.receita_ano_ha)}`)), `Detail shows supplied annual revenue for ${scenario}`);
+      check(detail.includes(normalized(`YEARS ACCOUNTED FOR · ${label}${number(expected.anos_ocupados)} ${expected.anos_ocupados === 1 ? 'year' : 'years'}`)), `Detail shows supplied occupied years for ${scenario}`);
+      check(detail.includes(normalized(`REVENUE / HA · ${label}${money(expected.receita_ha)}`)), `Detail preserves full-sequence revenue for ${scenario}`);
     }
     check(money(raw.sequencias[0].hoje.receita_ha) !== money(raw.sequencias[0].hoje.receita_ano_ha), 'The tested February amounts distinguish annual and total revenue');
-    check((await text()).includes('mínimo de 1 ano; uma sequência mais curta não é multiplicada'), 'Detail explains the annual occupancy floor');
-    const annualHeading = () => page.getByText('RECEITA / HA / ANO · HOJE', { exact: true });
+    check((await text()).includes('minimum of one year; a shorter sequence is not multiplied'), 'Detail explains the annual occupancy floor');
+    const annualHeading = () => page.getByText('REVENUE / HA / YEAR · TODAY', { exact: true });
     await capture('detail-desktop', annualHeading());
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
     // The API now adds a fourth annual-revenue fact for the model range; this
     // assertion compares only the three complete climate scenarios above.
-    const annualLabels = await Promise.all((await page.getByText(/^RECEITA \/ HA \/ ANO · (HOJE|FUTURO|ANO SECO)$/).all()).map(label => label.boundingBox()));
+    const annualLabels = await Promise.all((await page.getByText(/^REVENUE \/ HA \/ YEAR · (TODAY|FUTURE|DRY YEAR)$/).all()).map(label => label.boundingBox()));
     check(annualLabels.length === 3 && annualLabels.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'All three annual labels fit the mobile viewport');
     await capture('detail-mobile', annualHeading());
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
     const mobileCards = await Promise.all((await cards.all()).map(card => card.boundingBox()));
     check(mobileCards.length === 3 && mobileCards.every((box, i) => box && box.x >= 0 && box.x + box.width <= 391 && (i === 0 || box.y > mobileCards[i - 1].y)), 'Mobile stacks all ranked cards within the viewport');
     await capture('cards-mobile', cards.first());

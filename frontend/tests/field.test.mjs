@@ -14,11 +14,11 @@ const farm = normalizeFarm(boundary);
 test('real field facts retain the 50% August / 60% September distinction and source resolutions', () => {
   const field = buildFieldContext(farm, metadata);
   assert.equal(field.months.length, 12);
-  assert.match(field.coverage, /agosto 50%, setembro 60% e outubro 40%/);
-  assert.match(field.terrain, /4,05%.*7,07%.*17,82%/);
-  assert.match(field.station, /-2,5 a -1,2 °C/);
+  assert.match(field.coverage, /August 50%, September 60% and October 40%/);
+  assert.match(field.terrain, /4\.05%.*7\.07%.*17\.82%/);
+  assert.match(field.station, /-2\.5 to -1\.2 °C/);
   assert.match(field.source, /250 m.*30 m/);
-  assert.match(buildFieldContext(farm, { ...metadata, model_spread: null }).model_spread, /ainda não/);
+  assert.match(buildFieldContext(farm, { ...metadata, model_spread: null }).model_spread, /not provided/);
 });
 test('demo facts follow the boundary, including imported, reversed and rotated rings', () => {
   const imported = structuredClone(farm); imported.source = 'file'; imported.name = 'Meu arquivo';
@@ -74,7 +74,7 @@ test('supported demo slope must be finite and within the engine accepted range',
     const enabled = structuredClone(metadata);
     enabled.capabilities = { declividade_pct: true };
     enabled.demo_field.terrain.decl_media_pct = value;
-    assert.throws(() => getAnalysisSlope(farm, enabled), /inválidos/);
+    assert.throws(() => getAnalysisSlope(farm, enabled), /invalid/);
   }
 });
 test('invalid monthly observations are rejected instead of rendered as zero or extrapolated', () => {
@@ -83,7 +83,7 @@ test('invalid monthly observations are rejected instead of rendered as zero or e
     (m) => m.demo_field.ndvi[0].freq_solo = 2,
     (m) => m.demo_field.ndvi[0].ndvi_medio = NaN,
     (m) => m.demo_field.ndvi[0].mes = 2,
-  ]) { const m = structuredClone(metadata); change(m); assert.throws(() => buildFieldContext(farm, m), /inválidos/); }
+  ]) { const m = structuredClone(metadata); change(m); assert.throws(() => buildFieldContext(farm, m), /invalid/); }
 });
 test('model range is computed from delivery, including rainfall sign disagreement; never shown on another field', () => {
   const spread = { scope: 'talhao_demo_2', models: [
@@ -91,24 +91,24 @@ test('model range is computed from delivery, including rainfall sign disagreemen
     { model: 'B', rain_delta_mm: 8, tmax_delta_c: 2.3 },
     { model: 'C', rain_delta_mm: 33, tmax_delta_c: 1.5 },
   ] };
-  assert.match(modelSpreadText(spread), /3 modelos.*\+1,3 a \+2,3.*-80 a \+33.*discordam do sinal/);
+  assert.match(modelSpreadText(spread), /3 models.*\+1\.3 to \+2\.3.*-80 to \+33.*disagree on the direction/);
   const other = normalizeFarm({ type: 'Polygon', coordinates: [[[-49,-21],[-48,-21],[-48,-20],[-49,-20],[-49,-21]]] });
   assert.equal(buildFieldContext(other, { ...metadata, model_spread: spread }), null);
   spread.models[1].rain_delta_mm = NaN;
-  assert.throws(() => modelSpreadText(spread), /inválidos/);
+  assert.throws(() => modelSpreadText(spread), /invalid/);
 });
 
 test('delivered D2 metadata shows the real range with two temperature decimals and rainfall disagreement', () => {
   assert.deepEqual(metadataD2.model_spread.models.map(model => model.model), ['ACCESS-CM2', 'MIROC6', 'MRI-ESM2-0']);
   const field = buildFieldContext(normalizeFarm(metadataD2.demo_field.boundary), metadataD2);
-  assert.equal(field.model_spread, '3 modelos: mudança na temperatura máxima média de +1,34 a +2,31 °C; chuva anual de -79,6 a +32,7 mm. Na chuva, os modelos discordam do sinal da mudança. Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.');
+  assert.equal(field.model_spread, '3 models: change in mean maximum temperature from +1.34 to +2.31 °C; annual rainfall from -79.6 to +32.7 mm. The models disagree on the direction of rainfall change. Range across models, not a confidence interval. Future minus historical.');
 });
 
 test('delivered D2 range follows an equivalent imported boundary and disappears when a vertex moves', () => {
   const imported = normalizeFarm(metadataD2.demo_field.boundary, { source: 'file' });
   const ring = imported.geojson.geometry.coordinates[0].slice(0, -1).reverse();
   imported.geojson.geometry.coordinates[0] = [...ring, ring[0]];
-  assert.match(buildFieldContext(imported, metadataD2).model_spread, /3 modelos/);
+  assert.match(buildFieldContext(imported, metadataD2).model_spread, /3 models/);
   imported.geojson.geometry.coordinates[0][1][0] += 0.00001;
   assert.equal(buildFieldContext(imported, metadataD2), null);
 });

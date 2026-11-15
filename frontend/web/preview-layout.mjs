@@ -7,7 +7,7 @@ export function projectCoordinate([lon, lat]) {
 
 export function previewDimensions(width, height, ratio = 1) {
   if (![width, height, ratio].every(Number.isFinite) || width <= 0 || height <= 0 || ratio <= 0) {
-    throw new Error('Dimensões inválidas para a prévia do mapa.');
+    throw new Error('Invalid dimensions for the map preview.');
   }
   const scale = Math.min(ratio, 2, 1024 / width, 512 / height);
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)), scale };

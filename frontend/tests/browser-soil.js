@@ -24,14 +24,14 @@ async (originalPage) => {
     return (root?.textContent + [...(root?.querySelectorAll('[role="alert"], [role="status"]') || [])]
       .map(node => node.getAttribute('aria-label') || '').join(' ')).includes(value);
   }, value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
-  const heading = () => page.getByRole('heading', { name: 'Textura do solo', exact: true });
+  const heading = () => page.getByRole('heading', { name: 'Soil texture', exact: true });
   const button = name => page.getByRole('button', { name, exact: true });
-  const labels = { arenoso: 'Arenoso · 30 mm', medio: 'Médio · 45 mm', argiloso: 'Argiloso · 60 mm' };
-  const soilName = texture => new RegExp(`^${labels[texture]}(?: · selecionado)?$`);
-  const cards = () => page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
-  const reset = 'Usar referência padrão · 60 mm';
+  const labels = { arenoso: 'Sandy · 30 mm', medio: 'Medium · 45 mm', argiloso: 'Clay · 60 mm' };
+  const soilName = texture => new RegExp(`^${labels[texture]}(?: · selected)?$`);
+  const cards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
+  const reset = 'Use default reference · 60 mm';
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
     if (request.method() !== 'POST') return;
@@ -63,7 +63,7 @@ async (originalPage) => {
       await page.waitForTimeout(150);
     }
   }
-  const bodyForPoint = (url, texture = 'argiloso', source = 'SIMULAÇÃO: GLDAS · NASA, grade de 0,25°') => ({
+  const bodyForPoint = (url, texture = 'argiloso', source = 'SIMULATED: GLDAS · NASA, 0.25° grid') => ({
     solo: { lat: Number(url.searchParams.get('lat')), lon: Number(url.searchParams.get('lon')), textura_sugerida: texture, fonte: source },
   });
   async function releaseSuggestions(texture = 'argiloso') {
@@ -85,17 +85,17 @@ async (originalPage) => {
   }
   async function expectTexture(texture) {
     await page.waitForFunction(texture => JSON.parse(localStorage.getItem('happy-farmers-draft-v1'))?.settings.solo_textura === texture, texture);
-    if (texture) check(await button(`${labels[texture]} · selecionado`).count() === 1, `SIMULATED soil ${texture}: selection is visible`);
+    if (texture) check(await button(`${labels[texture]} · selected`).count() === 1, `SIMULATED soil ${texture}: selection is visible`);
   }
   const responseFor = texture => page.waitForResponse(response => response.request().method() === 'POST'
     && new URL(response.url()).pathname.endsWith('/analyze')
     && response.request().postDataJSON().solo_textura === texture, { timeout: 30000 });
-  async function analyze(texture, action = 'Analisar fazenda →') {
+  async function analyze(texture, action = 'Analyze farm →') {
     const pending = responseFor(texture);
     await click(action);
     const response = await pending, raw = await response.json(), request = response.request().postDataJSON();
     check(response.status() === 200 && request.solo_textura === texture, `SIMULATED transport submits texture ${texture ?? 'omitted'}`);
-    await waitText('ANÁLISE DO MOTOR'); await page.waitForTimeout(180);
+    await waitText('ENGINE ANALYSIS'); await page.waitForTimeout(180);
     check(raw.entrada.solo_textura === texture, 'The actual-engine fixture echoes the requested texture');
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
@@ -135,67 +135,67 @@ async (originalPage) => {
     fixtures = await page.evaluate(async () => (await fetch('/qa-soil-fixtures')).json());
     await seed(); await expectTexture('argiloso');
     check(await heading().count() === 1 && suggestions.length > 0, 'SIMULATED capability exposes the selector and requests a point suggestion');
-    check((await text()).includes('Sugestão regional: argiloso') && (await text()).includes('GLDAS · NASA'), 'Suggestion and its source are shown without claiming a field measurement');
+    check((await text()).includes('Regional suggestion: clay') && (await text()).includes('GLDAS · NASA'), 'Suggestion and its source are shown without claiming a field measurement');
     check(requests.length === 0, 'Suggestion does not submit an analysis by itself');
     const clay = await analyze('argiloso');
     check(clay.entrada.cad_mm === 60, 'Clay fixture comes from the engine with 60 mm');
     const sandy = await analyze('arenoso', soilName('arenoso'));
     check(sandy.entrada.cad_mm === 30 && !same(sandy.sequencias, clay.sequencias), 'Selecting sandy soil reruns the analysis and the actual engine output changes');
     await expectTexture('arenoso');
-    await page.reload(); await waitConnected(); await waitText('Sugestão regional: argiloso');
-    check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selecionado`).count() === 1, 'Reload preserves the manual texture despite a different regional suggestion');
+    await page.reload(); await waitConnected(); await waitText('Regional suggestion: clay');
+    check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selected`).count() === 1, 'Reload preserves the manual texture despite a different regional suggestion');
     await analyze('arenoso');
     const baseline = await analyze(undefined, reset);
     check(!Object.hasOwn(requests.at(-1), 'solo_textura') && !Object.hasOwn(requests.at(-1), 'solo_padrao'), 'Reset omits both soil and local-only reset preference from the API request');
     check(same(baseline, fixtures.baseline.result), 'Reset restores the exact baseline engine output');
-    await page.reload(); await waitConnected(); await waitText('Sugestão regional: argiloso');
+    await page.reload(); await waitConnected(); await waitText('Regional suggestion: clay');
     check((await draft()).settings.solo_textura === undefined, 'Explicit default survives reload and is not replaced by automatic suggestion');
     await analyze(undefined);
 
     await analyze('medio', soilName('medio'));
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300);
     await align(heading());
-    const boxes = await Promise.all([...Object.values(labels).map(name => new RegExp(`^${name}(?: · selecionado)?$`)), reset].map(name => button(name).boundingBox()));
+    const boxes = await Promise.all([...Object.values(labels).map(name => new RegExp(`^${name}(?: · selected)?$`)), reset].map(name => button(name).boundingBox()));
     check(boxes.every(box => box && box.x >= 0 && box.x + box.width <= 391 && box.height >= 44), 'Soil controls fit a 390 px viewport with 44 px tap targets');
     await page.screenshot({ path: 'output/playwright/soil-mobile.png' });
     await page.setViewportSize({ width: 1440, height: 1100 }); await page.waitForTimeout(250);
     await align(heading()); await page.screenshot({ path: 'output/playwright/soil-desktop.png' });
 
     support = false; await seed();
-    check(await heading().count() === 0 && !(await button('Analisar fazenda →').isDisabled()), 'Legacy server without capability keeps normal analysis available and hides soil controls');
+    check(await heading().count() === 0 && !(await button('Analyze farm →').isDisabled()), 'Legacy server without capability keeps normal analysis available and hides soil controls');
     const beforeLegacy = suggestions.length;
     await analyze(undefined);
     check(suggestions.length === beforeLegacy, 'Legacy server receives no proposed soil metadata queries');
     await seed('arenoso');
-    check(await button('Analisar fazenda →').isDisabled() && (await text()).includes('A textura salva está indisponível'), 'Saved soil on a legacy server blocks silent fallback');
+    check(await button('Analyze farm →').isDisabled() && (await text()).includes('The saved soil texture is unavailable'), 'Saved soil on a legacy server blocks silent fallback');
     await click(reset);
-    check(!await button('Analisar fazenda →').isDisabled() && (await draft()).settings.solo_textura === undefined, 'Explicit reset unblocks analysis on a legacy server');
+    check(!await button('Analyze farm →').isDisabled() && (await draft()).settings.solo_textura === undefined, 'Explicit reset unblocks analysis on a legacy server');
     await analyze(undefined);
 
     support = true;
     for (const mode of ['missing', 'wrong']) {
       suggestionMode = 'none'; echoMode = mode; await seed('arenoso');
-      const pending = responseFor('arenoso'); await click('Analisar fazenda →'); await pending;
-      await waitText('não confirmou a textura de solo');
+      const pending = responseFor('arenoso'); await click('Analyze farm →'); await pending;
+      await waitText('did not confirm the selected soil texture');
       check(await cards().count() === 0, `SIMULATED ${mode} soil echo is rejected instead of displaying misleading cards`);
     }
     echoMode = 'correct';
     for (const mode of ['wrong-point', 'error', 'none']) {
       suggestionMode = mode; await seed();
-      await waitText(mode === 'none' ? 'Sem sugestão disponível para este ponto' : 'Não foi possível obter a sugestão do ponto');
-      check((await draft()).settings.solo_textura === undefined && !await button('Analisar fazenda →').isDisabled(), `SIMULATED ${mode} lookup leaves manual/default choice usable`);
+      await waitText(mode === 'none' ? 'No suggestion is available for this point' : 'Unable to get a soil suggestion for this point');
+      check((await draft()).settings.solo_textura === undefined && !await button('Analyze farm →').isDisabled(), `SIMULATED ${mode} lookup leaves manual/default choice usable`);
     }
 
     suggestionMode = 'normal'; holdSuggestions = true; await seed();
-    await waitText('Consultando a sugestão regional de solo');
+    await waitText('Looking up the regional soil suggestion');
     check(pendingSuggestions.length === 1, 'A delayed point suggestion is pending for the current farm');
     await click(soilName('arenoso')); await releaseSuggestions(); await page.waitForTimeout(200);
     check((await draft()).settings.solo_textura === 'arenoso', 'Late regional suggestion cannot replace a manual soil choice');
-    await seed(); await waitText('Consultando a sugestão regional de solo');
+    await seed(); await waitText('Looking up the regional soil suggestion');
     await analyze(undefined); await releaseSuggestions(); await page.waitForTimeout(200);
     check((await draft()).settings.solo_textura === undefined && await cards().count() === 3, 'Late suggestion after Analyze cannot change the texture or invalidate the displayed baseline');
 
-    await seed(); await waitText('Consultando a sugestão regional de solo');
+    await seed(); await waitText('Looking up the regional soil suggestion');
     const oldPoint = pendingSuggestions[0].url.href;
     const boundary = await page.evaluate(() => {
       const geo = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm.geojson;
@@ -204,15 +204,15 @@ async (originalPage) => {
     });
     await page.locator('#geojson-file').setInputFiles({ name: 'different-soil-field.geojson', mimeType: 'application/geo+json', buffer: Buffer.from(JSON.stringify(boundary)) });
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
-    await page.locator('#farm-name').fill('Outro talhão para solo');
+    await page.locator('#farm-name').fill('Another field for soil testing');
     await page.locator('#confirm-boundary').click();
-    await waitText('Outro talhão para solo'); await page.waitForTimeout(200);
+    await waitText('Another field for soil testing'); await page.waitForTimeout(200);
     check(pendingSuggestions.length === 2 && pendingSuggestions[1].url.href !== oldPoint, 'Changing the boundary requests soil for the new point');
     const newest = pendingSuggestions.pop();
-    await newest.route.fulfill({ status: 200, json: bodyForPoint(newest.url, 'medio', 'SIMULAÇÃO: sugestão do novo ponto') });
+    await newest.route.fulfill({ status: 200, json: bodyForPoint(newest.url, 'medio', 'SIMULATED: suggestion for the new point') });
     await expectTexture('medio');
     await releaseSuggestions('argiloso'); await page.waitForTimeout(200);
-    check((await draft()).settings.solo_textura === 'medio' && (await text()).includes('sugestão do novo ponto'), 'The old farm reply cannot overwrite the new point soil or source');
+    check((await draft()).settings.solo_textura === 'medio' && (await text()).includes('suggestion for the new point'), 'The old farm reply cannot overwrite the new point soil or source');
     check(chats.length === 0 && errors.length === 0, 'No LLM requests or uncaught JavaScript errors');
     return { passed: checks.length, simulated_transport: true, real_engine_fixture_cases: Object.keys(fixtures), analyses: requests.length, checks };
   } catch (error) {

@@ -14,26 +14,26 @@ test('actual exposure distinguishes no standing crop from exposed soil for diffe
   const income = buildExposure(find(fixture, 'soja>milho'), 10);
   const soil = buildExposure(find(fixture, 'soja>crotalaria'), 10);
   assert.deepEqual(income.card_facts, [
-    { label: 'Dias expostos · 365 dias', value: '10 dias' },
-    { label: 'Chuva em solo exposto · hoje', value: '74,3 mm' },
+    { label: 'Exposed days · 365 days', value: '10 days' },
+    { label: 'Rainfall on exposed soil · today', value: '74.3 mm' },
   ]);
   // February planting now leaves the same exposed gap as corn, despite a
   // longer period without a standing crop: the engine retains cover residue.
   assert.equal(find(fixture, 'soja>crotalaria').hoje.culturas[1].mes_plantio, 2);
-  assert.equal(soil.card_facts[0].value, '10 dias');
-  assert.equal(soil.card_facts[1].value, '74,3 mm');
-  assert.equal(income.facts[0].value, '115 dias');
-  assert.equal(soil.facts[0].value, '150 dias');
-  assert.match(income.note, /palhada dura até o próximo plantio/);
-  assert.match(income.note, /proporções.*não as datas exatas/);
+  assert.equal(soil.card_facts[0].value, '10 days');
+  assert.equal(soil.card_facts[1].value, '74.3 mm');
+  assert.equal(income.facts[0].value, '115 days');
+  assert.equal(soil.facts[0].value, '150 days');
+  assert.match(income.note, /residue lasts until the next planting/);
+  assert.match(income.note, /proportions.*not the exact dates/);
 });
 
 test('fills only omitted months in the first 365 days, keeping month boundaries and years', () => {
   const exposure = buildExposure(find(fixture, 'soja>milho'), 10);
   assert.equal(exposure.months.length, 12);
-  assert.match(exposure.period, /Primeiros 365 dias: out · ano 1 → set · ano 2/);
-  assert.deepEqual(exposure.months.slice(0, 4).map((m) => m.label), ['out · ano 1', 'nov · ano 1', 'dez · ano 1', 'jan · ano 2']);
-  assert.deepEqual(exposure.months[0], { label: 'out · ano 1', month_days: 31, days: 0, exposed_days: 0, rain: '0 / 0', exposed_rain: '0 / 0' });
+  assert.match(exposure.period, /First 365 days: Oct · year 1 → Sep · year 2/);
+  assert.deepEqual(exposure.months.slice(0, 4).map((m) => m.label), ['Oct · year 1', 'Nov · year 1', 'Dec · year 1', 'Jan · year 2']);
+  assert.deepEqual(exposure.months[0], { label: 'Oct · year 1', month_days: 31, days: 0, exposed_days: 0, rain: '0 / 0', exposed_rain: '0 / 0' });
   assert.equal(exposure.months[3].days, 8);
   assert.equal(exposure.months[3].exposed_days, 8);
   assert.equal(exposure.months[4].month_days, 28);
@@ -44,8 +44,8 @@ test('fills only omitted months in the first 365 days, keeping month boundaries 
 
 test('February starts a new exposure window and calendars over 12 months do not extend it', () => {
   const exposure = buildExposure(find(february, 'milho>soja'), 2);
-  assert.equal(exposure.months[0].label, 'fev · ano 1');
-  assert.equal(exposure.months[11].label, 'jan · ano 2');
+  assert.equal(exposure.months[0].label, 'Feb · year 1');
+  assert.equal(exposure.months[11].label, 'Jan · year 2');
   assert.equal(exposure.months[11].exposed_days, 8);
   // This delivered long sequence no longer ranks in the top three. Select it as
   // the reference to exercise presentation without changing its calendar or facts.
@@ -58,26 +58,26 @@ test('February starts a new exposure window and calendars over 12 months do not 
   const extended = mapMotorAnalysis(raw, { area_ha: 2 }).current_rotation.strategy;
   assert.ok(extended.month_labels.length > 12, 'Fixture must exercise a calendar longer than 12 months');
   assert.equal(extended.exposure.months.length, 12);
-  assert.match(extended.exposure.caption, /somente os primeiros 12 meses/);
+  assert.match(extended.exposure.caption, /only the first 12 months/);
 });
 
 test('real dry-year exposure keeps all supplied rainfall scenarios and the same day counts', () => {
   const exposure = buildExposure(find(dryYear, 'soja>milho'), 10);
-  assert.equal(exposure.facts[3].value, '74,3 / 73,3 / 51,3 mm');
-  assert.equal(exposure.months[3].exposed_rain, '61,7 / 60,5 / 41,1');
-  assert.equal(exposure.months[4].exposed_rain, '12,5 / 12,7 / 10,2');
-  assert.match(exposure.caption, /hoje \/ futuro \/ ano seco, em milímetros/);
+  assert.equal(exposure.facts[3].value, '74.3 / 73.3 / 51.3 mm');
+  assert.equal(exposure.months[3].exposed_rain, '61.7 / 60.5 / 41.1');
+  assert.equal(exposure.months[4].exposed_rain, '12.5 / 12.7 / 10.2');
+  assert.match(exposure.caption, /today \/ future \/ dry year, in millimeters/);
   assert.equal(exposure.months[3].exposed_days, 8);
 });
 
 test('zero exposure is a real result while a missing erosion index remains unavailable', () => {
   const exposure = buildExposure(find(fixture, 'milho>crotalaria'), 10);
-  assert.equal(exposure.card_facts[0].value, '0 dias');
+  assert.equal(exposure.card_facts[0].value, '0 days');
   assert.equal(exposure.card_facts[1].value, '0 mm');
   assert.ok(exposure.months.every((month) => month.exposed_days === 0));
   assert.ok(exposure.months.some((month) => month.days > 0));
   assert.equal(exposure.facts.length, 4);
-  assert.match(exposure.erosion_note, /indisponível.*declividade/);
+  assert.match(exposure.erosion_note, /unavailable.*slope/);
 });
 
 test('optional erosion values are displayed unchanged, including zero, without a front-end formula', () => {
@@ -86,11 +86,11 @@ test('optional erosion values are displayed unchanged, including zero, without a
   seq.hoje.descoberto.indice_erosao = 0;
   seq.futuro.descoberto.indice_erosao = 123.45;
   const exposure = buildExposure(seq, 10);
-  assert.equal(exposure.facts.at(-1).value, '0 / 123,5');
-  assert.match(exposure.facts.at(-1).label, /Índice de exposição à erosão/);
-  assert.match(exposure.erosion_note, /mesmo talhão/);
-  assert.match(exposure.erosion_note, /não representa perda de solo em t\/ha/);
-  assert.match(exposure.erosion_note, /não altera o score nem o ranking/);
+  assert.equal(exposure.facts.at(-1).value, '0 / 123.5');
+  assert.match(exposure.facts.at(-1).label, /Erosion exposure index/);
+  assert.match(exposure.erosion_note, /same field/);
+  assert.match(exposure.erosion_note, /does not represent soil loss in t\/ha/);
+  assert.match(exposure.erosion_note, /does not change the score or ranking/);
 });
 
 test('legacy responses without exposure retain winners, current reference and all existing facts', () => {
@@ -117,7 +117,7 @@ test('zero-day synthetic window differs from missing data and has twelve explici
     dias: 0, dias_expostos: 0, chuva_mm: 0, chuva_exposta_mm: 0, meses: [],
   };
   const exposure = buildExposure(seq, 10);
-  assert.equal(exposure.facts[0].value, '0 dias');
+  assert.equal(exposure.facts[0].value, '0 days');
   assert.equal(exposure.months.length, 12);
   assert.ok(exposure.months.every((month) => month.days === 0 && month.exposed_days === 0));
 });
@@ -146,7 +146,7 @@ test('rejects incomplete scenarios, invalid counts, rain, chronology and aggrega
     (seq) => { seq.hoje.descoberto.indice_erosao = -1; seq.futuro.descoberto.indice_erosao = 1; },
   ]) {
     const seq = clone(); change(seq);
-    assert.throws(() => validateSequenceExposure(seq, ['hoje', 'futuro'], 10), /contrato.*descoberto/);
+    assert.throws(() => validateSequenceExposure(seq, ['hoje', 'futuro'], 10), /contract.*descoberto/);
   }
 });
 
@@ -158,7 +158,7 @@ test('accepts independent three-decimal rounding but rejects differing days acro
   other.futuro.descoberto.dias_expostos--;
   other.futuro.descoberto.meses[0].dias--;
   other.futuro.descoberto.meses[0].dias_expostos--;
-  assert.throws(() => validateSequenceExposure(other, ['hoje', 'futuro'], 10), /dias diferentes entre cenários/);
+  assert.throws(() => validateSequenceExposure(other, ['hoje', 'futuro'], 10), /different days across scenarios/);
 });
 
 test('the API rejects malformed exposure before it reaches a displayed strategy', () => {
@@ -167,5 +167,5 @@ test('the API rejects malformed exposure before it reaches a displayed strategy'
   assert.throws(() => validateMotorOutput(raw), /descoberto/);
   const incompleteDry = structuredClone(dryYear);
   delete incompleteDry.sequencias[0].seco.descoberto;
-  assert.throws(() => validateMotorOutput(incompleteDry), /cenários incompletos/);
+  assert.throws(() => validateMotorOutput(incompleteDry), /incomplete scenarios/);
 });

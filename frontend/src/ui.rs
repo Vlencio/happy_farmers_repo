@@ -17,20 +17,20 @@ const INK: &str = "#193d30";
 const MUTED: &str = "#68766a";
 const LINE: &str = "#e0e6da";
 const MONTHS: &[&str] = &[
-    "Janeiro",
-    "Fevereiro",
-    "Março",
-    "Abril",
-    "Maio",
-    "Junho",
-    "Julho",
-    "Agosto",
-    "Setembro",
-    "Outubro",
-    "Novembro",
-    "Dezembro",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ];
-const HORIZONS: &[&str] = &["Próxima cultura", "Próximas duas culturas"];
+const HORIZONS: &[&str] = &["Next crop", "Next two crops"];
 
 fn color(value: &str) -> Color {
     rune::color::hex(value).expect("static palette color")
@@ -118,7 +118,7 @@ fn logo(compact: bool) -> El {
                     600.0,
                     "#ffffff",
                 ))
-                .child(label("CULTIVE POSSIBILIDADES", 8.0, 500.0, "#b4c7ae")),
+                .child(label("GROW POSSIBILITIES", 8.0, 500.0, "#b4c7ae")),
         )
 }
 fn sidebar(s: &State, _: &Kit) -> El {
@@ -170,11 +170,11 @@ fn sidebar(s: &State, _: &Kit) -> El {
             col()
                 .gap(7.0)
                 .pt(25.0)
-                .child(label("SEU PLANEJAMENTO", 9.0, 600.0, "#9cb299").mb(9.0))
+                .child(label("YOUR PLAN", 9.0, 600.0, "#9cb299").mb(9.0))
                 .child(nav(
                     "nav-farm",
                     "01",
-                    "Sua fazenda",
+                    "Your farm",
                     s.page == Page::Setup,
                     true,
                     Page::Setup,
@@ -182,7 +182,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
                 .child(nav(
                     "nav-results",
                     "02",
-                    "Seus caminhos",
+                    "Your options",
                     s.page != Page::Setup,
                     s.analysis.is_some(),
                     Page::Results,
@@ -197,7 +197,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
                 .fill(color("#264734"))
                 .child(
                     label(
-                        "O próximo ciclo\ncomeça com uma\nboa escolha.",
+                        "Your next cycle\nstarts with a\ngood choice.",
                         19.0,
                         500.0,
                         "#e0ebcb",
@@ -206,7 +206,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
                 )
                 .child(
                     label(
-                        "Renda, solo e clima.\nTrês olhares para sua fazenda.",
+                        "Income, soil and climate.\nThree perspectives on your farm.",
                         11.0,
                         400.0,
                         "#b5c7ad",
@@ -219,14 +219,14 @@ fn sidebar(s: &State, _: &Kit) -> El {
                 .gap(6.0)
                 .child(label("NASA SPACE APPS 2026", 9.0, 600.0, "#b4c7ae"))
                 .child(label(
-                    "Field Shift · Protótipo v0.1",
+                    "Field Shift · Prototype v0.1",
                     10.0,
                     400.0,
                     "#8fa58e",
                 )),
         )
         .child(
-            Button::new("Recomeçar")
+            Button::new("Start over")
                 .variant(ButtonVariant::Ghost)
                 .on_press(|s: &mut State| {
                     s.clear_confirm = true;
@@ -239,9 +239,9 @@ fn sidebar(s: &State, _: &Kit) -> El {
 }
 fn header(s: &State, narrow: bool) -> El {
     let mode = if s.ready {
-        "Motor conectado"
+        "Engine connected"
     } else {
-        "Motor desconectado"
+        "Engine disconnected"
     };
     let head = if narrow {
         logo(true)
@@ -249,7 +249,7 @@ fn header(s: &State, narrow: bool) -> El {
         row()
             .gap(10.0)
             .center_y()
-            .child(label("Seu espaço de cultivo", 13.0, 500.0, INK))
+            .child(label("Your growing space", 13.0, 500.0, INK))
     };
     row()
         .w_full()
@@ -261,7 +261,7 @@ fn header(s: &State, narrow: bool) -> El {
         .child(head)
         .child(pill(
             if narrow {
-                if s.ready { "Conectado" } else { "Sem conexão" }
+                if s.ready { "Connected" } else { "Disconnected" }
             } else {
                 mode
             },
@@ -272,7 +272,7 @@ fn header(s: &State, narrow: bool) -> El {
 fn heading(title: &str, subtitle: &str, narrow: bool) -> El {
     col()
         .gap(10.0)
-        .child(eyebrow("PLANEJAMENTO AGRÍCOLA"))
+        .child(eyebrow("FARM PLANNING"))
         .child(
             label(title, if narrow { 30.0 } else { 39.0 }, 600.0, INK)
                 .role("heading")
@@ -284,16 +284,16 @@ fn heading(title: &str, subtitle: &str, narrow: bool) -> El {
 }
 fn steps(s: &State, narrow: bool) -> El {
     let labels = [
-        if narrow { "Área" } else { "Defina sua área" },
+        if narrow { "Field" } else { "Define your field" },
         if narrow {
-            "Histórico"
+            "History"
         } else {
-            "Conte o histórico"
+            "Add crop history"
         },
         if narrow {
-            "Caminhos"
+            "Options"
         } else {
-            "Explore os caminhos"
+            "Explore your options"
         },
     ];
     let mut line = row().w_full().gap(if narrow { 8.0 } else { 20.0 });
@@ -386,7 +386,7 @@ fn field_art(farm: Option<&Farm>) -> El {
                 .w_full()
                 .max_w(296.0)
                 .aspect_ratio(2.0)
-                .label("Prévia do contorno da fazenda"),
+                .label("Farm boundary preview"),
         )
 }
 fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
@@ -395,12 +395,12 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .center_y()
             .justify_between()
             .gap(8.0)
-            .child(label("01  A sua fazenda", 19.0, 600.0, INK).wrap().shrink())
+            .child(label("01  Your farm", 19.0, 600.0, INK).wrap().shrink())
             .child(pill(
                 if s.farm.is_some() {
-                    "Área definida"
+                    "Field defined"
                 } else {
-                    "Primeiro passo"
+                    "First step"
                 },
                 "#eff3e6",
                 "#55713e",
@@ -414,7 +414,10 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .radius(10.0)
             .fill(color("#e7ecdd"))
             .role("img")
-            .label(format!("Mapa satélite com o contorno de {}", farm.name))
+            .label(format!(
+                "Satellite map showing the boundary of {}",
+                farm.name
+            ))
             .on_layout_tx(|_: &mut State, [_, _, width, height], tx| {
                 host(json!({"type":"preview_size", "width":width, "height":height}));
                 tx.live_only();
@@ -426,7 +429,7 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         }
         let mut satellite = col().w_full().gap(6.0).child(preview).child(
             label(
-                "Imagem © Esri, Vantor, Earthstar Geographics e comunidade GIS",
+                "Imagery © Esri, Vantor, Earthstar Geographics and the GIS community",
                 9.0,
                 400.0,
                 MUTED,
@@ -445,30 +448,30 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         let stacked = narrow || farm.name.chars().count() > 36;
         content = content.child(responsive_row(stacked).gap(14.0).center_y().justify_between()
             .child(column_width(col().gap(5.0).child(label(&farm.name, 19.0, 600.0, INK).wrap().w_full())
-                .child(label(format!("{} vértices · {}", farm.point_count, match farm.source.as_str() { "sample" => "área de exemplo", "import" => "GeoJSON importado", _ => "contorno desenhado" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
-            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).replace('.', ","), 26.0, 500.0, INK)).child(label("área aproximada", 10.0, 400.0, MUTED))))
-            .child(paragraph("O centro do contorno fornece latitude e longitude da análise. A área converte a receita por hectare em receita total."))
+                .child(label(format!("{} vertices · {}", farm.point_count, match farm.source.as_str() { "sample" => "sample field", "import" => "imported GeoJSON", _ => "drawn boundary" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
+            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).to_owned(), 26.0, 500.0, INK)).child(label("approximate area", 10.0, 400.0, MUTED))))
+            .child(paragraph("The boundary center provides the latitude and longitude for the analysis. Area converts revenue per hectare into total revenue."))
             .child(responsive_row(narrow)
-                .child(column_width(button(k, "edit-map", "Ver e editar no mapa", false, |_| host(json!({"type":"map"}))), narrow, 1.0))
-                .child(column_width(button(k, "download", "Baixar GeoJSON", false, |_| host(json!({"type":"download"}))), narrow, 1.0)))
-            .child(Button::new("Importar outro GeoJSON").variant(ButtonVariant::Ghost).on_press(|_: &mut State| host(json!({"type":"import"}))).build(k).key("replace-import").h(40.0));
+                .child(column_width(button(k, "edit-map", "View and edit on map", false, |_| host(json!({"type":"map"}))), narrow, 1.0))
+                .child(column_width(button(k, "download", "Download GeoJSON", false, |_| host(json!({"type":"download"}))), narrow, 1.0)))
+            .child(Button::new("Import another GeoJSON").variant(ButtonVariant::Ghost).on_press(|_: &mut State| host(json!({"type":"import"}))).build(k).key("replace-import").h(40.0));
     } else {
         content = content
-            .child(label("Sua área, o ponto de partida.", 20.0, 500.0, INK).wrap())
+            .child(label("Your field is the starting point.", 20.0, 500.0, INK).wrap())
             .child(paragraph(
-                "Desenhe os limites no mapa satélite ou use um arquivo GeoJSON que você já tem.",
+                "Draw its boundary on the satellite map or use a GeoJSON file you already have.",
             ))
             .child(
                 responsive_row(narrow)
                     .child(column_width(
-                        button(k, "draw-map", "Desenhar no mapa", true, |_| {
+                        button(k, "draw-map", "Draw on map", true, |_| {
                             host(json!({"type":"map"}))
                         }),
                         narrow,
                         1.0,
                     ))
                     .child(column_width(
-                        button(k, "import", "Importar GeoJSON", false, |_| {
+                        button(k, "import", "Import GeoJSON", false, |_| {
                             host(json!({"type":"import"}))
                         }),
                         narrow,
@@ -478,9 +481,9 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .child(
                 responsive_row(narrow)
                     .gap(8.0)
-                    .child(label("Polygon ou MultiPolygon · até 2 MB", 10.0, 400.0, MUTED).wrap())
+                    .child(label("Polygon or MultiPolygon · up to 2 MB", 10.0, 400.0, MUTED).wrap())
                     .child(
-                        Button::new("Usar área de exemplo")
+                        Button::new("Use sample field")
                             .variant(ButtonVariant::Ghost)
                             .on_press(|_: &mut State| host(json!({"type":"sample"})))
                             .build(k)
@@ -495,8 +498,8 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
     let crops: Vec<String> = s.cultures.iter().map(|c| c.label.clone()).collect();
     let crop = Select::new("crop-select", &crops)
         .appearance(SelectAppearance::Field)
-        .placeholder("Selecione a cultura")
-        .label("Cultura anterior")
+        .placeholder("Select a crop")
+        .label("Previous crop")
         .current(s.crop.as_deref())
         .open(s.crop_open)
         .on_toggle(|s: &mut State| {
@@ -513,17 +516,17 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
         .w_full()
         .h(44.0);
     let mut content = panel().gap(14.0)
-        .child(row().center_y().justify_between().child(label("02  O que já foi plantado?", 18.0, 600.0, INK).wrap().shrink())
-            .child(pill("Opcional", "#f0f1ea", MUTED)))
-        .child(paragraph("Adicione da cultura mais antiga à mais recente. A última será a cultura anterior para o motor. Você pode seguir sem histórico."))
-        .child(label("Safras e observações ficam no rascunho; o motor recebe apenas a ordem das culturas.", 11.0, 400.0, MUTED).wrap().w_full())
-        .child(col().gap(6.0).child(eyebrow("CULTURA ANTERIOR")).child(crop));
+        .child(row().center_y().justify_between().child(label("02  What has been planted?", 18.0, 600.0, INK).wrap().shrink())
+            .child(pill("Optional", "#f0f1ea", MUTED)))
+        .child(paragraph("Add crops from oldest to newest. The last entry will be the previous crop used by the engine. You can continue without a history."))
+        .child(label("Seasons and notes stay in your draft; the engine receives only the crop order.", 11.0, 400.0, MUTED).wrap().w_full())
+        .child(col().gap(6.0).child(eyebrow("PREVIOUS CROP")).child(crop));
     content = content
         .child(
-            col().gap(6.0).child(eyebrow("SAFRA / ANO")).child(
+            col().gap(6.0).child(eyebrow("SEASON / YEAR")).child(
                 TextInput::new(&s.season)
-                    .placeholder("Ex.: 2025/26")
-                    .label("Safra ou ano")
+                    .placeholder("e.g. 2025/26")
+                    .label("Season or year")
                     .width(None)
                     .height(44.0)
                     .on_edit(|s: &mut State| &mut s.season)
@@ -533,10 +536,10 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
             ),
         )
         .child(
-            col().gap(6.0).child(eyebrow("OBSERVAÇÃO OPCIONAL")).child(
+            col().gap(6.0).child(eyebrow("OPTIONAL NOTE")).child(
                 TextInput::new(&s.notes)
-                    .placeholder("Ex.: pouca chuva no fim do ciclo")
-                    .label("Observações da safra")
+                    .placeholder("e.g. little rain near the end of the cycle")
+                    .label("Season notes")
                     .width(None)
                     .height(44.0)
                     .on_edit(|s: &mut State| &mut s.notes)
@@ -549,7 +552,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
             button(
                 k,
                 "add-history",
-                "+ Adicionar ao histórico",
+                "+ Add to history",
                 false,
                 State::add_history,
             )
@@ -566,7 +569,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
                         s.crop_label(&item.crop),
                         item.season,
                         if i + 1 == s.history.len() {
-                            " · mais recente"
+                            " · most recent"
                         } else {
                             ""
                         }
@@ -598,7 +601,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
                             })
                             .build(k)
                             .key(format!("history-up-{i}"))
-                            .label("Mover cultura para antes")
+                            .label("Move crop earlier")
                             .h(40.0),
                     )
                     .child(
@@ -613,11 +616,11 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
                             })
                             .build(k)
                             .key(format!("history-down-{i}"))
-                            .label("Mover cultura para depois")
+                            .label("Move crop later")
                             .h(40.0),
                     )
                     .child(
-                        Button::new("Remover")
+                        Button::new("Remove")
                             .variant(ButtonVariant::Ghost)
                             .on_press(move |s: &mut State| {
                                 if i < s.history.len() {
@@ -634,7 +637,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
     } else {
         content = content.child(
             label(
-                "Nenhum registro. Você pode continuar assim.",
+                "No entries. You can continue without them.",
                 11.0,
                 400.0,
                 MUTED,
@@ -646,7 +649,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
 }
 fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     let mut view = col().w_full().gap(25.0)
-        .child(heading("Qual será o seu próximo ciclo?", "Comece pela sua fazenda. Depois, explore as possibilidades para produzir, cuidar do solo e se adaptar ao clima.", narrow))
+        .child(heading("What will your next crop cycle be?", "Start with your farm. Then explore ways to grow crops, care for the soil and adapt to a changing climate.", narrow))
         .child(steps(s, narrow))
         .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
@@ -654,9 +657,9 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     view = view.child(soil_panel(s, k, narrow));
     view = view.child(scenario_panel(s, k, narrow));
     let action = Button::new(if s.loading {
-        "Analisando…"
+        "Analyzing…"
     } else {
-        "Analisar fazenda  →"
+        "Analyze farm  →"
     })
     .variant(ButtonVariant::Contrast)
     .control_size(ControlSize::ExtraLarge)
@@ -669,11 +672,14 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     .h(50.0)
     .min_w(if narrow { 0.0 } else { 240.0 });
     let summary = if s.farm.is_none() {
-        "Defina uma área para continuar.".into()
+        "Define a field to continue.".into()
     } else if s.history.is_empty() {
-        "Área pronta · análise sem histórico de plantio".into()
+        "Field ready · analysis without crop history".into()
     } else {
-        format!("Área pronta · {} registro(s) de plantio", s.history.len())
+        format!(
+            "Field ready · {} crop history entry/entries",
+            s.history.len()
+        )
     };
     view = view.child(
         responsive_row(narrow)
@@ -685,7 +691,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
                     .child(label(summary, 13.0, 500.0, INK).wrap())
                     .child(
                         label(
-                            "Localização, ordem das culturas e opções do ciclo serão enviadas para a análise.",
+                            "Your location, crop order and planning options will be sent for analysis.",
                             11.0,
                             400.0,
                             MUTED,
@@ -696,13 +702,13 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
             .child(if narrow { action.w_full() } else { action }),
     );
     if s.loading {
-        view = view.child(paragraph("Consultando o clima e calculando os caminhos. A primeira consulta ao POWER pode levar alguns minutos; o limite de espera é de 6 minutos. Você pode cancelar e continuar editando."));
-        view = view.child(button(k, "cancel", "Cancelar análise", false, |_| {
+        view = view.child(paragraph("Looking up climate data and calculating your options. The first POWER request may take a few minutes; the timeout is 6 minutes. You can cancel and continue editing."));
+        view = view.child(button(k, "cancel", "Cancel analysis", false, |_| {
             host(json!({"type":"cancel"}))
         }));
     }
     if !s.ready {
-        view = view.child(button(k, "reconnect", "Reconectar ao motor", false, |_| {
+        view = view.child(button(k, "reconnect", "Reconnect to engine", false, |_| {
             host(json!({"type":"connect"}))
         }));
     }
@@ -714,20 +720,20 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
 fn field_panel(s: &State, k: &Kit, narrow: bool) -> El {
     let mut view = panel()
         .w_full()
-        .child(label("Seu talhão", 23.0, 600.0, INK));
+        .child(label("Your field", 23.0, 600.0, INK));
     let Some(field) = &s.field_context else {
-        return view.child(paragraph("As observações de vegetação e relevo estão disponíveis apenas para o contorno do talhão de demonstração. Ainda não há esses dados para esta área."));
+        return view.child(paragraph("Vegetation and terrain observations are available only for the demonstration field boundary. These data are not yet available for this field."));
     };
     view = view
-        .child(pill("TALHÃO DE DEMONSTRAÇÃO", "#e9efd9", INK))
+        .child(pill("DEMONSTRATION FIELD", "#e9efd9", INK))
         .child(paragraph(&field.summary))
         .child(button(
             k,
             "field-toggle",
             if s.field_open {
-                "Ocultar observações do talhão"
+                "Hide field observations"
             } else {
-                "Mostrar observações do talhão"
+                "Show field observations"
             },
             false,
             |s| s.field_open = !s.field_open,
@@ -761,84 +767,84 @@ fn field_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 .child(label(&month.frequency, 10.0, 400.0, MUTED)),
         );
     }
-    view.child(label("Vegetação ao longo do ano", 18.0, 600.0, INK))
-        .child(paragraph("Barras: NDVI médio mensal, escala de 0 a 1 neste talhão. Percentuais abaixo dos meses: frequência de indício de solo descoberto ou palhada. Deslize para ver os 12 meses."))
+    view.child(label("Vegetation through the year", 18.0, 600.0, INK))
+        .child(paragraph("Bars: mean monthly NDVI, on a 0–1 scale for this field. Percentages below the months: frequency of bare-soil or crop-residue indicators. Swipe to see all 12 months."))
         .child(el().w_full().scroll_x().child(chart))
         .child(paragraph(&field.coverage))
         .child(rule())
         .child(responsive_row(narrow)
-            .child(column_width(col().gap(8.0).child(eyebrow("RELEVO")).child(paragraph(&field.terrain)), narrow, 1.0))
-            .child(column_width(col().gap(8.0).child(eyebrow("SATÉLITE + ESTAÇÃO EM SOLO")).child(paragraph(&field.station)), narrow, 1.0)))
+            .child(column_width(col().gap(8.0).child(eyebrow("TERRAIN")).child(paragraph(&field.terrain)), narrow, 1.0))
+            .child(column_width(col().gap(8.0).child(eyebrow("SATELLITE + GROUND STATION")).child(paragraph(&field.station)), narrow, 1.0)))
         .child(col().gap(8.0).padding(14.0).radius(9.0).fill(color("#eaf1ef"))
-            .child(eyebrow("O QUE MUDA ENTRE OS MODELOS CLIMÁTICOS"))
+            .child(eyebrow("HOW THE CLIMATE MODELS DIFFER"))
             .child(paragraph(&field.model_spread)))
         .child(label(&field.source, 11.0, 400.0, MUTED).wrap().w_full())
 }
 fn glossary(s: &State, k: &Kit) -> El {
     let mut view = panel().w_full().gap(14.0)
-        .child(button(k, "glossary-toggle", if s.glossary_open { "Entenda os termos · recolher" } else { "Entenda os termos · abrir" }, false, |s| s.glossary_open = !s.glossary_open))
-        .child(label("Escopo: um talhão. As fontes têm resoluções diferentes: clima de um ponto, NDVI de 250 m e altitude de 30 m. Vegetação e relevo estão disponíveis para a área de demonstração.", 11.0, 400.0, MUTED).wrap().w_full());
+        .child(button(k, "glossary-toggle", if s.glossary_open { "Understand the terms · collapse" } else { "Understand the terms · expand" }, false, |s| s.glossary_open = !s.glossary_open))
+        .child(label("Scope: one field. Sources have different resolutions: climate at a point, NDVI at 250 m and elevation at 30 m. Vegetation and terrain data are available for the demonstration field.", 11.0, 400.0, MUTED).wrap().w_full());
     if s.glossary_open {
         for (term, definition) in [
             (
-                "Evapotranspiração",
-                "Água que sai do solo e das plantas para a atmosfera. ET0 é a demanda de referência; ETc é a demanda estimada da cultura, calculada com seu Kc. Valores em milímetros.",
+                "Evapotranspiration",
+                "Water that moves from the soil and plants into the atmosphere. ET0 is reference demand; ETc is estimated crop demand, calculated using its Kc. Values are in millimeters.",
             ),
             (
                 "Kc",
-                "Coeficiente da cultura: multiplica a ET0 para estimar a ETc. Muda ao longo do ciclo; não é uma quantidade de água.",
+                "Crop coefficient: multiplies ET0 to estimate ETc. It changes through the crop cycle; it is not an amount of water.",
             ),
             (
-                "Déficit",
-                "Parte da demanda de água que a chuva e a reserva de água do solo não conseguem atender no balanço do motor. É uma estimativa em milímetros, não uma prescrição de irrigação.",
+                "Deficit",
+                "The part of water demand that rainfall and stored soil water cannot meet in the engine's water balance. It is an estimate in millimeters, not an irrigation prescription.",
             ),
             (
-                "Atendimento hídrico",
-                "Quanto da demanda foi atendida no balanço estimado. A tela mostra um índice de 0 a 100; maior significa menos demanda não atendida, não uma chance de sucesso.",
+                "Water demand met",
+                "How much demand was met in the estimated water balance. The screen shows a 0–100 index; higher means less unmet demand, not a probability of success.",
             ),
             (
-                "Água disponível no solo",
-                "Reserva de água que o solo guarda para a planta entre uma chuva e outra. No cálculo, usamos 30 mm para solo arenoso, 45 mm para médio e 60 mm para argiloso; são referências por textura, não medições do talhão.",
+                "Available soil water",
+                "Water the soil stores for plants between rain events. The calculation uses 30 mm for sandy soil, 45 mm for medium texture and 60 mm for clay soil; these are texture references, not field measurements.",
             ),
             (
-                "Ky · resposta à falta de água",
-                "Indica quanto a produtividade cai quando falta água, no modo diário do motor. Acima de 1, a perda proporcional de produtividade é maior que a falta de água: no milho, Ky de 1,25 significa que 10% de demanda não atendida reduz a produtividade estimada em 12,5% por esse fator.",
+                "Ky · response to water shortage",
+                "Describes how much yield falls when water is scarce in the engine's daily mode. Above 1, the proportional yield loss exceeds the water shortage: corn has a Ky of 1.25, so 10% unmet demand reduces estimated yield by 12.5% through this factor.",
             ),
             (
-                "Risco de geada",
-                "O motor diário conta os dias com temperatura mínima de 3 °C ou menos no abrigo meteorológico. A folha pode estar mais fria e congelar mesmo com o ar acima de 0 °C; a contagem sinaliza risco, não confirma dano à cultura.",
+                "Frost risk",
+                "The daily engine counts days with a minimum air temperature of 3 °C or below in a weather shelter. Leaves can be colder and freeze even when the air is above 0 °C; the count indicates risk, not confirmed crop damage.",
             ),
             (
-                "Ano ruim",
-                "É um ano real entre os de menor pontuação no modo diário: com 19 anos avaliados, o motor escolhe o 4º pior pelo score, próximo de 1 em cada 5. Essa posição resume a série analisada; não é uma previsão da frequência de perdas futuras.",
+                "Bad year",
+                "An actual year among those with the lowest scores in daily mode: with 19 years assessed, the engine selects the 4th worst by score, roughly 1 in 5. This position summarizes the historical series; it does not predict the frequency of future losses.",
             ),
             (
-                "Empate técnico",
-                "Na tela, são as opções a menos de 2 pontos da líder no score de hoje. Essa margem considera a variação natural entre anos: sinaliza resultados próximos, mantendo a pontuação e a ordem calculadas pelo motor.",
+                "Technical tie",
+                "On this screen, options less than 2 points behind the leader in today's score. This margin accounts for natural year-to-year variation: it flags close results while preserving the engine's scores and order.",
             ),
             (
                 "NDVI",
-                "Índice de vegetação calculado a partir da luz refletida pela superfície. Varia de −1 a 1. Valores maiores costumam indicar vegetação mais verde; valores baixos também podem ser palhada ou solo exposto. Não mede a saúde do solo diretamente.",
+                "A vegetation index calculated from light reflected by the surface, ranging from −1 to 1. Higher values often indicate greener vegetation; low values may also indicate crop residue or bare soil. It does not directly measure soil health.",
             ),
             (
-                "Encaixe",
-                "Adequação da sequência às condições de temperatura, chuva e calor usadas pelo motor. A sequência fica limitada pelo menor encaixe de suas culturas. Índice de 0 a 100, não probabilidade de resistir a eventos extremos.",
+                "Climate suitability",
+                "How well the sequence fits the temperature, rainfall and heat conditions used by the engine. The sequence is limited by its least suitable crop. A 0–100 index, not the probability of withstanding extreme events.",
             ),
             (
-                "Fixadora de nitrogênio",
-                "Soja, feijão e crotalária captam nitrogênio do ar com ajuda de bactérias nas raízes; na soja e no feijão, grande parte sai com o grão, e o motor só considera crédito para a cultura seguinte após o adubo verde, como a crotalária.",
+                "Nitrogen-fixing crop",
+                "Soybean, common bean and sunn hemp capture nitrogen from the air with help from root bacteria; much of it leaves with the grain in soybean and common bean, so the engine only gives the next crop a nitrogen credit after green manure such as sunn hemp.",
             ),
             (
-                "Cobertura / palhada",
-                "Milho, sorgo, milheto, braquiária e crotalária ajudam a cobrir o solo ou deixam palhada, protegendo-o da chuva e do sol e reduzindo a erosão.",
+                "Cover crops / crop residue",
+                "Corn, sorghum, pearl millet, brachiaria and sunn hemp help cover the soil or leave crop residue, shielding it from rain and sun and reducing erosion.",
             ),
             (
-                "Raiz profunda",
-                "Milho, sorgo e braquiária podem buscar água em camadas mais profundas e ajudar a estrutura do solo; o alcance das raízes depende das condições do talhão.",
+                "Deep roots",
+                "Corn, sorghum and brachiaria can reach water in deeper layers and improve soil structure; rooting depth depends on field conditions.",
             ),
             (
-                "Tolerante à seca",
-                "Sorgo e milheto conseguem manter melhor a produtividade na safrinha com pouca chuva; tolerância não significa ausência de perdas por falta de água.",
+                "Drought tolerance",
+                "Sorghum and pearl millet can better maintain yield in a second season with limited rainfall; tolerance does not mean there are no losses from water shortage.",
             ),
         ] {
             view = view.child(
@@ -850,10 +856,10 @@ fn glossary(s: &State, k: &Kit) -> El {
             );
         }
         view = view.child(rule())
-            .child(label("Valide com seu agrônomo", 17.0, 600.0, INK))
-            .child(paragraph("Receitas são brutas, sem custos; preços históricos e valores ainda marcados para conferência precisam de validação local. Limites de calor variam com cultivar e fase da planta. Sem limiar cadastrado, o motor não penaliza o calor; isso não comprova tolerância."))
-            .child(paragraph("A reserva de água usada no cálculo é de 30 mm para solo arenoso, 45 mm para médio e 60 mm para argiloso. Sem textura informada, a referência é 60 mm. São referências por classe, não medições deste talhão."))
-            .child(paragraph("As regras de sequência usam fator 0,85 para repetição e bônus 1,10 para uma cultura não fixadora plantada até 60 dias depois de um adubo verde. Essa janela é provisória. Pares que compartilham praga ou doença podem receber outro desconto; os detalhes mostram o fator aplicado. Os pesos do índice de solo são 0,4/0,4/0,2, sem medir a qualidade real do solo. Essas regras não substituem avaliação agronômica."));
+            .child(label("Check with your agronomist", 17.0, 600.0, INK))
+            .child(paragraph("Revenue is gross, before costs; historical prices and values flagged for review need local validation. Heat thresholds vary by cultivar and growth stage. When no threshold is recorded, the engine does not apply a heat penalty; this does not establish heat tolerance."))
+            .child(paragraph("The calculation uses a water reserve of 30 mm for sandy soil, 45 mm for medium texture and 60 mm for clay soil. With no texture specified, the reference is 60 mm. These are class references, not measurements of this field."))
+            .child(paragraph("Sequence rules use a 0.85 factor for repeated crops and a 1.10 bonus for a non-fixing crop planted within 60 days after green manure. This window is provisional. Pairs that share a pest or disease may receive another penalty; details show the applied factor. Soil index weights are 0.4/0.4/0.2 and do not measure actual soil quality. These rules do not replace an agronomic assessment."));
     }
     view
 }
@@ -862,21 +868,21 @@ fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
         return el();
     }
     let mut view = panel().gap(14.0).w_full()
-        .child(label("Textura do solo", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("A textura define a reserva de água considerada no cálculo. Confira a sugestão regional ou escolha o solo que você conhece no talhão."));
+        .child(label("Soil texture", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("Texture determines the water reserve used in the calculation. Check the regional suggestion or select the soil you know in your field."));
     if s.soil_available {
         let mut choices = responsive_row(narrow);
         for (texture, name) in [
-            (SoilTexture::Arenoso, "Arenoso · 30 mm"),
-            (SoilTexture::Medio, "Médio · 45 mm"),
-            (SoilTexture::Argiloso, "Argiloso · 60 mm"),
+            (SoilTexture::Arenoso, "Sandy · 30 mm"),
+            (SoilTexture::Medio, "Medium · 45 mm"),
+            (SoilTexture::Argiloso, "Clay · 60 mm"),
         ] {
             let chosen = s.settings.solo_textura == Some(texture);
             choices = choices.child(column_width(
                 button(
                     k,
                     &format!("soil-{texture:?}"),
-                    &format!("{name}{}", if chosen { " · selecionado" } else { "" }),
+                    &format!("{name}{}", if chosen { " · selected" } else { "" }),
                     chosen,
                     move |s| s.set_soil(Some(texture)),
                 ),
@@ -886,14 +892,14 @@ fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
         }
         view = view.child(choices);
         if s.soil_context.loading {
-            view = view.child(paragraph("Consultando a sugestão regional de solo…"));
+            view = view.child(paragraph("Looking up the regional soil suggestion…"));
         } else if let Some(suggestion) = s.soil_context.suggestion {
             let name = match suggestion {
-                SoilTexture::Arenoso => "arenoso",
-                SoilTexture::Medio => "médio",
-                SoilTexture::Argiloso => "argiloso",
+                SoilTexture::Arenoso => "sandy",
+                SoilTexture::Medio => "medium",
+                SoilTexture::Argiloso => "clay",
             };
-            view = view.child(paragraph(format!("Sugestão regional: {name}. Confira antes de analisar; a grade regional não representa uma medição no talhão.")));
+            view = view.child(paragraph(format!("Regional suggestion: {name}. Check before analyzing; the regional grid is not a field measurement.")));
         }
         if !s.soil_context.source.is_empty() {
             view = view.child(
@@ -907,49 +913,49 @@ fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
         }
         if s.settings.solo_textura.is_none() {
             view = view.child(paragraph(
-                "Sem textura informada: a análise usará a referência de 60 mm.",
+                "No texture specified: the analysis will use the 60 mm reference.",
             ));
         }
     } else {
-        view = view.child(paragraph("A textura salva está indisponível nesta análise. Use a referência padrão para continuar."));
+        view = view.child(paragraph("The saved soil texture is unavailable for this analysis. Use the default reference to continue."));
     }
     view = view
-        .child(button(k, "soil-default", "Usar referência padrão · 60 mm", false, |s| s.set_soil(None)))
-        .child(label(if s.page == Page::Setup { "A escolha será usada ao analisar. Valores em milímetros de água armazenada, não de irrigação." } else { "Mudar a textura refaz a análise e reinicia o chat. Os valores representam a reserva usada no cálculo, não uma medição." }, 12.0, 400.0, MUTED).wrap().w_full());
+        .child(button(k, "soil-default", "Use default reference · 60 mm", false, |s| s.set_soil(None)))
+        .child(label(if s.page == Page::Setup { "Your choice will be used in the analysis. Values are millimeters of stored water, not irrigation." } else { "Changing texture reruns the analysis and resets the chat. Values represent the water reserve used in the calculation, not a measurement." }, 12.0, 400.0, MUTED).wrap().w_full());
     view
 }
 fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     let weights = s.settings.prioridades;
     let total = weights.agua as f64 + weights.solo as f64 + weights.renda as f64;
     let mut view = panel().gap(16.0).w_full()
-        .child(label("Suas prioridades", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("Escolha o que você quer favorecer na comparação. Cada critério recebe um peso na nota que ordena as rotações; até três opções com as maiores notas aparecem nas sugestões."));
+        .child(label("Your priorities", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("Choose what matters most in the comparison. Each criterion has a weight in the score that ranks rotations; up to three options with the highest scores are suggested."));
     for (index, name, description, selected) in [
         (
             0,
-            "Água",
-            "Favorece rotações com a necessidade de água mais bem atendida pela chuva e pela reserva do solo.",
+            "Water",
+            "Favors rotations whose water needs are better met by rainfall and stored soil water.",
             weights.agua,
         ),
         (
             1,
-            "Solo",
-            "Favorece cobertura do solo, fixação de nitrogênio e diversidade de culturas.",
+            "Soil",
+            "Favors soil cover, nitrogen fixation and crop diversity.",
             weights.solo,
         ),
         (
             2,
-            "Renda",
-            "Favorece maior receita bruta por hectare e por ano de ocupação. Os custos não são descontados.",
+            "Income",
+            "Favors higher gross revenue per hectare and per year of field occupancy. Costs are not deducted.",
             weights.renda,
         ),
     ] {
         let mut choices = row().gap(6.0).w_full();
         for (value, title, visible_title) in [
-            (0, "sem peso", "Sem peso"),
-            (1, "baixo", "Baixo"),
-            (2, "médio", "Médio"),
-            (3, "alto", "Alto"),
+            (0, "no weight", "No weight"),
+            (1, "low", "Low"),
+            (2, "medium", "Medium"),
+            (3, "high", "High"),
         ] {
             let chosen = selected == value;
             choices = choices.child(
@@ -971,8 +977,8 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
                     ))
                     .role("button")
                     .label(format!(
-                        "{name}: prioridade {value} ({title}){}",
-                        if chosen { ", selecionada" } else { "" }
+                        "{name}: priority {value} ({title}){}",
+                        if chosen { ", selected" } else { "" }
                     ))
                     .checked(chosen)
                     .focusable(true)
@@ -995,9 +1001,9 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     // Preview only the relative weights; scores and rankings still come from the API.
     let mut shares = row().gap(8.0).w_full();
     for (name, weight) in [
-        ("Água", weights.agua),
-        ("Solo", weights.solo),
-        ("Renda", weights.renda),
+        ("Water", weights.agua),
+        ("Soil", weights.solo),
+        ("Income", weights.renda),
     ] {
         let percent = if total == 0.0 {
             100.0 / 3.0
@@ -1007,7 +1013,7 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
         let value = format!("{percent:.1}")
             .trim_end_matches('0')
             .trim_end_matches('.')
-            .replace('.', ",");
+            .to_owned();
         shares = shares.child(
             col()
                 .w(0.0)
@@ -1022,18 +1028,18 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     }
     view = view
         .child(col().gap(10.0).padding(14.0).radius(9.0).fill(color("#eaf1ef"))
-            .child(label("Pesos no cálculo", 14.0, 600.0, INK).wrap().w_full())
+            .child(label("Calculation weights", 14.0, 600.0, INK).wrap().w_full())
             .child(shares)
             .child(label(if total == 0.0 {
-                "Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1."
+                "All set to zero: we use equal weights for the three criteria, just like 1/1/1."
             } else {
-                "Os pesos são relativos: 3 dá três vezes o peso de 1. A ordem das sugestões pode mudar, mas isso depende das opções disponíveis."
+                "Weights are relative: 3 has three times the weight of 1. The order of suggestions may change, depending on the available options."
             }, 12.0, 400.0, MUTED).wrap().w_full()))
-        .child(label("Sem peso retira o critério da nota principal, sem excluir culturas ou esconder riscos. Em caso de empate, os três critérios são considerados.", 12.0, 400.0, MUTED).wrap().w_full());
+        .child(label("No weight removes a criterion from the main score without excluding crops or hiding risks. All three criteria are considered when breaking an exact tie.", 12.0, 400.0, MUTED).wrap().w_full());
     if s.page != Page::Setup {
         view = view.child(
             label(
-                "Mudar uma prioridade refaz a análise e reinicia o chat.",
+                "Changing a priority reruns the analysis and resets the chat.",
                 12.0,
                 400.0,
                 MUTED,
@@ -1044,7 +1050,7 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     } else {
         view = view.child(
             label(
-                "Suas escolhas serão usadas ao clicar em Analisar fazenda.",
+                "Your choices will be used when you click Analyze farm.",
                 12.0,
                 400.0,
                 MUTED,
@@ -1062,7 +1068,7 @@ fn scenario_value(value: f64, unit: &str) -> String {
         format!("{value:+.2}")
             .trim_end_matches('0')
             .trim_end_matches('.')
-            .replace('.', ",")
+            .to_owned()
     };
     format!("{number}{unit}")
 }
@@ -1070,25 +1076,25 @@ fn scenario_control(s: &State, k: &Kit, field: usize) -> El {
     let adjustment = s.adjustment_preview.unwrap_or(s.settings.ajuste);
     let (name, value, min, max, step, unit, down, up) = if field == 0 {
         (
-            "Chuva",
+            "Rainfall",
             adjustment.chuva_pct,
             -50.0,
             30.0,
             5.0,
             "%",
-            "Diminuir chuva em 5%",
-            "Aumentar chuva em 5%",
+            "Decrease rainfall by 5%",
+            "Increase rainfall by 5%",
         )
     } else {
         (
-            "Temperatura",
+            "Temperature",
             adjustment.temp_c,
             0.0,
             4.0,
             0.5,
             " °C",
-            "Diminuir temperatura em 0,5 °C",
-            "Aumentar temperatura em 0,5 °C",
+            "Decrease temperature by 0.5 °C",
+            "Increase temperature by 0.5 °C",
         )
     };
     let fraction = ((value - min) / (max - min)) as f32;
@@ -1105,10 +1111,7 @@ fn scenario_control(s: &State, k: &Kit, field: usize) -> El {
         .h(44.0)
         .center_y()
         .role("group")
-        .label(format!(
-            "{name} do cenário: {}",
-            scenario_value(value, unit)
-        ))
+        .label(format!("Scenario {name}: {}", scenario_value(value, unit)))
         .child(
             row()
                 .w_full()
@@ -1218,24 +1221,24 @@ fn scenario_control(s: &State, k: &Kit, field: usize) -> El {
 }
 fn scenario_panel(s: &State, k: &Kit, narrow: bool) -> El {
     let mut view = panel().key("scenario-panel").w_full().gap(16.0)
-        .child(label("Simule outro clima", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("E se chover menos ou fizer mais calor? É uma simulação, não uma previsão. O mesmo ajuste vale para todos os meses dos cenários de hoje, futuro e ano seco, quando disponível."))
+        .child(label("Simulate another climate", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("What if it rains less or gets hotter? This is a simulation, not a forecast. The same adjustment applies to every month of today's, future and dry-year scenarios, when available."))
         .child(responsive_row(narrow)
             .child(column_width(scenario_control(s, k, 0), narrow, 1.0))
             .child(column_width(scenario_control(s, k, 1), narrow, 1.0)));
     if !s.scenario_available {
         view = view.child(paragraph(
-            "Os ajustes de cenário ainda não estão disponíveis neste servidor.",
+            "Scenario adjustments are not yet available on this server.",
         ));
     } else {
-        view = view.child(label("Arraste os controles ou use − e +. No teclado, use as setas, Home e End. Ajuste a chuva de 5 em 5% e a temperatura de 0,5 em 0,5 °C; depois aplique para recalcular.", 12.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("Drag the controls or use − and +. On a keyboard, use the arrow keys, Home and End. Change rainfall in 5% steps and temperature in 0.5 °C steps, then apply to recalculate.", 12.0, 400.0, MUTED).wrap().w_full());
     }
     if s.adjustment_blocked() {
-        let message = "Seu rascunho tem um cenário ajustado. Volte ao clima sem ajuste para analisar neste servidor; os valores não serão ignorados.";
+        let message = "Your draft has an adjusted scenario. Reset the climate to analyze on this server; the saved values will not be ignored.";
         view = view.child(col().role("alert").label(message).child(paragraph(message)));
     }
     view = view.child(
-        Button::new("Voltar ao clima sem ajuste")
+        Button::new("Reset climate adjustments")
             .variant(ButtonVariant::Outline)
             .disabled(!s.settings.ajuste.active())
             .on_press(|s: &mut State| s.save_adjustment(Adjustment::default()))
@@ -1245,7 +1248,7 @@ fn scenario_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .w_full(),
     );
     if s.page != Page::Setup {
-        view = view.child(label("Ao mudar o cenário, a análise anterior e o chat são reiniciados. Use Aplicar cenário para consultar os novos resultados.", 12.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("Changing the scenario resets the previous analysis and chat. Use Apply scenario to request the new results.", 12.0, 400.0, MUTED).wrap().w_full());
     }
     view
 }
@@ -1257,13 +1260,13 @@ fn adjustment_banner(analysis: &Analysis) -> El {
         .fill(color("#fff4df"))
         .gap(8.0)
         .w_full()
-        .child(eyebrow("CENÁRIO HIPOTÉTICO"))
+        .child(eyebrow("WHAT-IF SCENARIO"))
         .child(paragraph(&analysis.adjustment_note))
 }
 fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     let month = Select::new("month-select", MONTHS)
         .appearance(SelectAppearance::Field)
-        .label("Mês em que o talhão fica livre")
+        .label("Month when the field becomes available")
         .current(Some(MONTHS[(s.settings.mes_plantio - 1) as usize]))
         .open(s.month_open)
         .on_toggle(|s: &mut State| {
@@ -1283,7 +1286,7 @@ fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> E
         .h(44.0);
     let horizon = Select::new("horizon-select", HORIZONS)
         .appearance(SelectAppearance::Field)
-        .label("Quantidade de culturas a planejar")
+        .label("Number of crops to plan")
         .current(Some(HORIZONS[(s.settings.horizonte - 1) as usize]))
         .open(s.horizon_open)
         .on_toggle(|s: &mut State| {
@@ -1301,41 +1304,31 @@ fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> E
         .build(k, overlays)
         .w_full()
         .h(44.0);
-    panel().child(label("03  Seu próximo ciclo", 19.0, 600.0, INK))
+    panel().child(label("03  Your next crop cycle", 19.0, 600.0, INK))
         .child(responsive_row(narrow)
-            .child(column_width(col().gap(8.0).child(eyebrow("TALHÃO LIVRE A PARTIR DE")).child(month), narrow, 1.0))
-            .child(column_width(col().gap(8.0).child(eyebrow("O QUE PLANEJAR")).child(horizon), narrow, 1.0)))
-        .child(paragraph("O calendário considera o talhão livre no dia 1 desse mês. O motor verifica as épocas de plantio de cada cultura."))
+            .child(column_width(col().gap(8.0).child(eyebrow("FIELD AVAILABLE FROM")).child(month), narrow, 1.0))
+            .child(column_width(col().gap(8.0).child(eyebrow("PLANNING HORIZON")).child(horizon), narrow, 1.0)))
+        .child(paragraph("The calendar assumes the field is available on the first day of this month. The engine checks each crop's planting windows."))
         .child(col().padding(14.0).gap(6.0).radius(10.0).fill(color("#f5f0e2"))
-            .child(eyebrow("BASE CLIMÁTICA DESTE TESTE"))
-            .child(paragraph(if s.data_notice.is_empty() { "Conecte ao motor para consultar o catálogo de culturas e a origem dos dados." } else { &s.data_notice })))
+            .child(eyebrow("CLIMATE BASELINE FOR THIS ANALYSIS"))
+            .child(paragraph(if s.data_notice.is_empty() { "Connect to the engine to load the crop catalog and data sources." } else { &s.data_notice })))
 }
 fn category(category: &str) -> (&'static str, &'static str, &'static str, &'static str) {
     match category {
         "current" => (
-            "ROTAÇÃO ATUAL",
-            "Sua referência de comparação",
+            "CURRENT ROTATION",
+            "Your comparison reference",
             "#71624a",
             "#f0ebe2",
         ),
         "rank1" => (
-            "1ª DE HOJE",
-            "Maior pontuação com suas prioridades",
+            "1ST TODAY",
+            "Highest score for your priorities",
             "#a47930",
             "#f3ebd7",
         ),
-        "rank2" => (
-            "2ª DE HOJE",
-            "Segunda maior pontuação",
-            "#5d7d38",
-            "#e9efd9",
-        ),
-        _ => (
-            "3ª DE HOJE",
-            "Terceira maior pontuação",
-            "#4d7c88",
-            "#e4eff0",
-        ),
+        "rank2" => ("2ND TODAY", "Second-highest score", "#5d7d38", "#e9efd9"),
+        _ => ("3RD TODAY", "Third-highest score", "#4d7c88", "#e4eff0"),
     }
 }
 fn recommendation_card(
@@ -1359,7 +1352,7 @@ fn recommendation_card(
         .collect::<Vec<_>>()
         .join("; ");
     let warnings_label = rec.warnings.as_ref().map_or_else(
-        || "Avisos indisponíveis nesta resposta do motor.".to_owned(),
+        || "Warnings are unavailable in this engine response.".to_owned(),
         |warnings| {
             let first = warnings
                 .risks
@@ -1373,7 +1366,7 @@ fn recommendation_card(
         },
     );
     let benefits_label = rec.benefits.as_ref().map_or_else(
-        || "Benefícios indisponíveis nesta resposta do motor.".to_owned(),
+        || "Benefits are unavailable in this engine response.".to_owned(),
         |benefits| {
             format!(
                 "{} {}",
@@ -1434,7 +1427,7 @@ fn recommendation_card(
     } else {
         exposure_summary = exposure_summary.child(
             label(
-                "Solo entre culturas: dados indisponíveis nesta análise.",
+                "Soil between crops: data are unavailable in this analysis.",
                 11.0,
                 400.0,
                 MUTED,
@@ -1453,7 +1446,7 @@ fn recommendation_card(
                     if rec.tie_note.is_empty() || matches!(selection, SelectedStrategy::Current) {
                         name
                     } else {
-                        "EMPATE TÉCNICO"
+                        "TECHNICAL TIE"
                     },
                     tint,
                     accent,
@@ -1465,7 +1458,7 @@ fn recommendation_card(
                 if rec.tie_note.is_empty() {
                     tagline
                 } else {
-                    "Pontuações próximas no clima de hoje"
+                    "Close scores in today's climate"
                 },
                 12.0,
                 400.0,
@@ -1494,9 +1487,9 @@ fn recommendation_card(
         .child(warnings_card(rec))
         .child(label(
             if demo {
-                "EXEMPLO ILUSTRATIVO"
+                "ILLUSTRATIVE EXAMPLE"
             } else {
-                "RESULTADO DO MOTOR"
+                "ENGINE RESULT"
             },
             9.0,
             600.0,
@@ -1507,7 +1500,7 @@ fn recommendation_card(
                 .center_y()
                 .justify_between()
                 .pt(8.0)
-                .child(label("Explorar linha do tempo", 12.0, 600.0, INK))
+                .child(label("Explore timeline", 12.0, 600.0, INK))
                 .child(label("→", 22.0, 400.0, accent)),
         );
     column_width(
@@ -1522,7 +1515,7 @@ fn recommendation_card(
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. {} {} {} {} Abrir linha do tempo",
+                "{}: {}. {}. {} {} {} {} Open timeline",
                 name,
                 rec.crop,
                 comparison_label,
@@ -1542,7 +1535,7 @@ fn warnings_card(rec: &Recommendation) -> El {
     let Some(warnings) = &rec.warnings else {
         return view.child(
             label(
-                "Avisos indisponíveis nesta resposta do motor.",
+                "Warnings are unavailable in this engine response.",
                 12.0,
                 400.0,
                 MUTED,
@@ -1555,14 +1548,19 @@ fn warnings_card(rec: &Recommendation) -> El {
         return view
             .child(label(&warnings.summary, 12.0, 500.0, MUTED).wrap().w_full())
             .child(
-                label("Isso não garante ausência de risco.", 11.0, 400.0, MUTED)
-                    .wrap()
-                    .w_full(),
+                label(
+                    "This does not guarantee an absence of risk.",
+                    11.0,
+                    400.0,
+                    MUTED,
+                )
+                .wrap()
+                .w_full(),
             );
     }
     for (title, items, ink, bg) in [
-        ("Riscos", &warnings.risks, "#855535", "#f6f0e6"),
-        ("Lacunas", &warnings.gaps, "#416773", "#edf3f4"),
+        ("Risks", &warnings.risks, "#855535", "#f6f0e6"),
+        ("Data gaps", &warnings.gaps, "#416773", "#edf3f4"),
     ] {
         let mut group = col()
             .gap(6.0)
@@ -1579,7 +1577,7 @@ fn warnings_card(rec: &Recommendation) -> El {
             label(
                 items
                     .first()
-                    .map_or("Nenhum aviso sinalizado.", |warning| &warning.card_summary),
+                    .map_or("No warnings flagged.", |warning| &warning.card_summary),
                 12.0,
                 400.0,
                 INK,
@@ -1589,7 +1587,7 @@ fn warnings_card(rec: &Recommendation) -> El {
         );
         if items.len() > 1 {
             group = group.child(
-                label(format!("+{} no detalhe", items.len() - 1), 11.0, 500.0, ink)
+                label(format!("+{} in details", items.len() - 1), 11.0, 500.0, ink)
                     .wrap()
                     .w_full(),
             );
@@ -1608,7 +1606,7 @@ fn benefits_card(rec: &Recommendation) -> El {
     let Some(benefits) = &rec.benefits else {
         return view.child(
             label(
-                "Benefícios indisponíveis nesta resposta do motor.",
+                "Benefits are unavailable in this engine response.",
                 12.0,
                 400.0,
                 MUTED,
@@ -1620,7 +1618,7 @@ fn benefits_card(rec: &Recommendation) -> El {
     view = view
         .child(
             label(
-                format!("Benefícios · {}", benefits.items.len()),
+                format!("Benefits · {}", benefits.items.len()),
                 12.0,
                 600.0,
                 "#496b35",
@@ -1644,7 +1642,7 @@ fn benefits_card(rec: &Recommendation) -> El {
     if benefits.items.len() > 1 {
         view = view.child(
             label(
-                format!("+{} no detalhe", benefits.items.len() - 1),
+                format!("+{} in details", benefits.items.len() - 1),
                 11.0,
                 500.0,
                 "#496b35",
@@ -1657,7 +1655,7 @@ fn benefits_card(rec: &Recommendation) -> El {
 }
 fn benefits_panel(rec: &Recommendation) -> El {
     let mut view = panel().gap(16.0).w_full().child(
-        label("Benefícios considerados pelo motor", 22.0, 600.0, INK)
+        label("Benefits considered by the engine", 22.0, 600.0, INK)
             .wrap()
             .w_full()
             .role("heading")
@@ -1665,7 +1663,7 @@ fn benefits_panel(rec: &Recommendation) -> El {
     );
     let Some(benefits) = &rec.benefits else {
         return view.child(paragraph(
-            "Benefícios indisponíveis nesta resposta do motor.",
+            "Benefits are unavailable in this engine response.",
         ));
     };
     view = view.child(paragraph(&benefits.summary));
@@ -1687,14 +1685,9 @@ fn benefits_panel(rec: &Recommendation) -> El {
                 .child(label(&item.context, 12.0, 600.0, "#496b35").wrap().w_full())
                 .child(paragraph(&item.description))
                 .child(
-                    label(
-                        format!("Dado do motor: {}", item.evidence),
-                        12.0,
-                        500.0,
-                        INK,
-                    )
-                    .wrap()
-                    .w_full(),
+                    label(format!("Engine data: {}", item.evidence), 12.0, 500.0, INK)
+                        .wrap()
+                        .w_full(),
                 ),
         );
     }
@@ -1709,7 +1702,9 @@ fn warning_group(title: &str, items: &[StrategyWarning], ink: &str, bg: &str) ->
             .level(3),
     );
     if items.is_empty() {
-        return group.child(paragraph("Nenhum aviso desse tipo sinalizado pelo motor."));
+        return group.child(paragraph(
+            "The engine did not flag any warnings of this type.",
+        ));
     }
     for warning in items {
         group = group.child(
@@ -1730,7 +1725,7 @@ fn warning_group(title: &str, items: &[StrategyWarning], ink: &str, bg: &str) ->
                 .child(paragraph(&warning.description))
                 .child(
                     label(
-                        format!("Dado do motor: {}", warning.evidence),
+                        format!("Engine data: {}", warning.evidence),
                         12.0,
                         500.0,
                         INK,
@@ -1744,32 +1739,27 @@ fn warning_group(title: &str, items: &[StrategyWarning], ink: &str, bg: &str) ->
 }
 fn warnings_panel(rec: &Recommendation, narrow: bool) -> El {
     let mut view = panel().gap(18.0).w_full().child(
-        label("Riscos e lacunas desta estratégia", 22.0, 600.0, INK)
+        label("Risks and data gaps for this strategy", 22.0, 600.0, INK)
             .wrap()
             .w_full()
             .role("heading")
             .level(2),
     );
     let Some(warnings) = &rec.warnings else {
-        return view.child(paragraph("Avisos indisponíveis nesta resposta do motor."))
-            .child(paragraph("A resposta não trouxe a lista de avisos desta sequência. Isso não significa ausência de riscos ou de informações a conferir."));
+        return view.child(paragraph("Warnings are unavailable in this engine response."))
+            .child(paragraph("The response did not include this sequence's warning list. That does not mean there are no risks or information to check."));
     };
     view = view.child(paragraph(&warnings.summary));
     if !warnings.risks.is_empty() || !warnings.gaps.is_empty() {
         view = view.child(
             responsive_row(narrow)
                 .child(column_width(
-                    warning_group("Riscos para revisar", &warnings.risks, "#855535", "#f6f0e6"),
+                    warning_group("Risks to review", &warnings.risks, "#855535", "#f6f0e6"),
                     narrow,
                     1.0,
                 ))
                 .child(column_width(
-                    warning_group(
-                        "Lacunas de informação",
-                        &warnings.gaps,
-                        "#416773",
-                        "#edf3f4",
-                    ),
+                    warning_group("Information gaps", &warnings.gaps, "#416773", "#edf3f4"),
                     narrow,
                     1.0,
                 )),
@@ -1779,14 +1769,14 @@ fn warnings_panel(rec: &Recommendation, narrow: bool) -> El {
 }
 fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
     let mut view = panel().gap(16.0).w_full().child(
-        label("Solo entre as culturas", 22.0, 600.0, INK)
+        label("Soil between crops", 22.0, 600.0, INK)
             .role("heading")
             .level(2)
             .wrap()
             .w_full(),
     );
     let Some(exposure) = &rec.exposure else {
-        return view.child(paragraph("Os dados de dias sem cultura e de chuva sobre solo exposto não estão disponíveis nesta análise."));
+        return view.child(paragraph("Days without a standing crop and rainfall on exposed soil are unavailable in this analysis."));
     };
     view = view.child(paragraph(&exposure.period));
     for chunk in exposure.facts.chunks(2) {
@@ -1808,9 +1798,9 @@ fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
     }
     let mut legend = responsive_row(narrow);
     for (title, fill) in [
-        ("Com cultura em pé", "#6f8e50"),
-        ("Sem cultura · com palhada", "#c8a866"),
-        ("Exposto · sem palhada", "#b26a43"),
+        ("Standing crop", "#6f8e50"),
+        ("No crop · with residue", "#c8a866"),
+        ("Exposed · no residue", "#b26a43"),
     ] {
         legend = legend.child(
             row()
@@ -1863,13 +1853,13 @@ fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
                 .child(label(&month.label, 11.0, 600.0, INK).wrap().w_full())
                 .child(bar)
                 .child(
-                    label(format!("{} d sem cultura", month.days), 10.0, 400.0, MUTED)
+                    label(format!("{} d without crop", month.days), 10.0, 400.0, MUTED)
                         .wrap()
                         .w_full(),
                 )
                 .child(
                     label(
-                        format!("{} d expostos", month.exposed_days),
+                        format!("{} d exposed", month.exposed_days),
                         10.0,
                         600.0,
                         "#855535",
@@ -1879,7 +1869,7 @@ fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
                 )
                 .role("button")
                 .label(format!(
-                    "Solo em {}: {} dias sem cultura, {} dias expostos",
+                    "Soil in {}: {} days without crop, {} exposed days",
                     month.label, month.days, month.exposed_days
                 ))
                 .focusable(true)
@@ -1887,14 +1877,14 @@ fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
         );
     }
     view = view.child(legend)
-        .child(paragraph("Selecione um mês para conferir a chuva. Deslize o calendário para ver os 12 meses; as barras mostram proporções de dias, não a data exata de cada intervalo."))
+        .child(paragraph("Select a month to check rainfall. Swipe the calendar to see all 12 months; bars show proportions of days, not the exact dates of each interval."))
         .child(el().key("exposure-calendar").w_full().scroll_x().child(calendar));
     if let Some(month) = exposure.months.get(s.exposure_month) {
         view = view.child(col().key("exposure-month-detail").gap(10.0).padding(16.0)
             .radius(10.0).fill(color("#f6f0e6"))
-            .child(label(format!("Solo em {}", month.label), 18.0, 600.0, INK).role("heading").level(3).wrap().w_full())
-            .child(paragraph(format!("{} dias sem cultura em pé; desses, {} dias expostos sem palhada e {} dias com palhada estimada.", month.days, month.exposed_days, month.days - month.exposed_days)))
-            .child(paragraph(format!("Chuva nos dias sem cultura: {}. Chuva nos dias expostos: {}.", month.rain, month.exposed_rain)))
+            .child(label(format!("Soil in {}", month.label), 18.0, 600.0, INK).role("heading").level(3).wrap().w_full())
+            .child(paragraph(format!("{} days without a standing crop; of these, {} days exposed without residue and {} days with estimated residue cover.", month.days, month.exposed_days, month.days - month.exposed_days)))
+            .child(paragraph(format!("Rain on days without a crop: {}. Rain on exposed days: {}.", month.rain, month.exposed_rain)))
             .child(label(&exposure.caption, 11.0, 500.0, MUTED).wrap().w_full()));
     }
     view.child(paragraph(&exposure.erosion_note))
@@ -1905,17 +1895,17 @@ fn current_rotation_card(current: &CurrentRotation, k: &Kit, narrow: bool, demo:
         return recommendation_card(rec, SelectedStrategy::Current, k, narrow, demo);
     }
     let status = match current.status.as_str() {
-        "no_history" => "HISTÓRICO NÃO INFORMADO",
-        "discarded" => "FORA DO CALENDÁRIO",
-        _ => "COMPARAÇÃO INDISPONÍVEL",
+        "no_history" => "NO HISTORY PROVIDED",
+        "discarded" => "NOT FEASIBLE",
+        _ => "COMPARISON UNAVAILABLE",
     };
     column_width(
         panel()
             .padding(18.0)
             .gap(18.0)
             .key("card-current")
-            .child(pill("ROTAÇÃO ATUAL", "#f0ebe2", "#71624a"))
-            .child(label("Sua referência de comparação", 12.0, 400.0, MUTED))
+            .child(pill("CURRENT ROTATION", "#f0ebe2", "#71624a"))
+            .child(label("Your comparison reference", 12.0, 400.0, MUTED))
             .child(label(&current.title, 25.0, 600.0, INK).wrap().w_full())
             .child(label(status, 10.0, 600.0, "#71624a").wrap().w_full())
             .child(rule())
@@ -1923,7 +1913,7 @@ fn current_rotation_card(current: &CurrentRotation, k: &Kit, narrow: bool, demo:
             .child(button(
                 k,
                 "current-edit-history",
-                "Revisar histórico e opções",
+                "Review history and options",
                 false,
                 |s| s.page = Page::Setup,
             )),
@@ -1940,9 +1930,9 @@ fn analysis_banner(analysis: &Analysis) -> El {
         .child(
             label(
                 if analysis.demo {
-                    "EXEMPLO FIXO DO MOTOR"
+                    "FIXED ENGINE EXAMPLE"
                 } else {
-                    "ANÁLISE DO MOTOR"
+                    "ENGINE ANALYSIS"
                 },
                 10.0,
                 600.0,
@@ -1960,7 +1950,7 @@ fn analysis_banner(analysis: &Analysis) -> El {
                 .radius(8.0)
                 .fill(color("#fff3d7"))
                 .child(
-                    label("ORIGEM E LIMITES DO CLIMA", 10.0, 600.0, "#72531c")
+                    label("CLIMATE SOURCES AND LIMITS", 10.0, 600.0, "#72531c")
                         .wrap()
                         .w_full(),
                 )
@@ -1981,11 +1971,11 @@ fn farm_summary(s: &State) -> El {
         format!(
             "{}  /  {} ha  /  {}",
             farm.name,
-            format!("{:.2}", farm.area_ha).replace('.', ","),
+            format!("{:.2}", farm.area_ha).to_owned(),
             if s.history.is_empty() {
-                "sem histórico".into()
+                "no history".into()
             } else {
-                format!("{} safra(s) informada(s)", s.history.len())
+                format!("{} season(s) provided", s.history.len())
             }
         ),
         12.0,
@@ -1999,17 +1989,38 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
     if !s.chat.available || s.analysis.is_none() {
         return el();
     }
-    let mut view = panel().key("analysis-chat").gap(14.0).w_full()
-        .child(label("Converse sobre esta análise", 22.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("Tire dúvidas sobre os cards, os benefícios, os riscos e o calendário. A IA explica os resultados do motor."))
-        .child(button(k, "chat-toggle", if s.chat_open { "Fechar chat" } else { "Abrir chat com IA" }, false, |s| s.chat_open = !s.chat_open));
+    let mut view = panel()
+        .key("analysis-chat")
+        .gap(14.0)
+        .w_full()
+        .child(
+            label("Chat about this analysis", 22.0, 600.0, INK)
+                .wrap()
+                .w_full()
+                .role("heading")
+                .level(2),
+        )
+        .child(paragraph(
+            "Ask about the cards, benefits, risks and calendar. AI explains the engine's results.",
+        ))
+        .child(button(
+            k,
+            "chat-toggle",
+            if s.chat_open {
+                "Close chat"
+            } else {
+                "Open AI chat"
+            },
+            false,
+            |s| s.chat_open = !s.chat_open,
+        ));
     if !s.chat_open {
         return view;
     }
-    view = view.child(label("Ao enviar, sua pergunta, a conversa e os dados da análise — incluindo coordenadas e histórico de culturas — são enviados à Anthropic. A conversa fica aberta só nesta sessão e reinicia ao analisar novamente.", 12.0, 400.0, MUTED).wrap().w_full());
+    view = view.child(label("When you send a message, your question, conversation and analysis data — including coordinates and crop history — are sent to Anthropic. The conversation lasts only for this session and resets when you run a new analysis.", 12.0, 400.0, MUTED).wrap().w_full());
     let mut conversation = col().gap(12.0).w_full();
     if s.chat.messages.is_empty() && s.chat.pending.is_empty() {
-        conversation = conversation.child(paragraph("Você pode perguntar: “Por que estas estratégias foram sugeridas?” ou “Quais dados preciso conferir antes de decidir?”."));
+        conversation = conversation.child(paragraph("You can ask: “Why were these strategies suggested?” or “Which data should I check before deciding?”"));
     }
     for (i, message) in s.chat.messages.iter().enumerate() {
         let producer = message.papel == "produtor";
@@ -2021,7 +2032,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .w_full()
             .fill(color(if producer { "#edf3e7" } else { "#f3f5ef" }))
             .child(label(
-                if producer { "Você" } else { "Assistente IA" },
+                if producer { "You" } else { "AI assistant" },
                 12.0,
                 600.0,
                 INK,
@@ -2033,7 +2044,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
                     .w_full(),
             );
         if message.recusada {
-            bubble = bubble.child(label("A IA não respondeu a essa pergunta. Você pode perguntar sobre outro ponto desta análise.", 12.0, 400.0, MUTED).wrap().w_full());
+            bubble = bubble.child(label("The AI did not answer this question. You can ask about another aspect of this analysis.", 12.0, 400.0, MUTED).wrap().w_full());
         }
         conversation = conversation.child(bubble);
     }
@@ -2045,7 +2056,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 .radius(10.0)
                 .fill(color("#edf3e7"))
                 .w_full()
-                .child(label("Você", 12.0, 600.0, INK))
+                .child(label("You", 12.0, 600.0, INK))
                 .child(
                     label(&s.chat.pending, 14.0, 400.0, INK)
                         .wrap()
@@ -2074,10 +2085,10 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
             row()
                 .key("chat-latest")
                 .role("button")
-                .label("Ver última resposta")
+                .label("View latest answer")
                 .focusable(true)
                 .padding(10.0)
-                .child(label("Ver última resposta ↓", 12.0, 600.0, INK))
+                .child(label("View latest answer ↓", 12.0, 600.0, INK))
                 .on_press_tx(|_: &mut State, tx| tx.scroll_to_bottom("chat-conversation")),
         );
     }
@@ -2087,9 +2098,9 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 .key("chat-busy")
                 .w_full()
                 .role("status")
-                .label("A IA está preparando a resposta…")
+                .label("The AI is preparing an answer…")
                 .child(
-                    label("A IA está preparando a resposta…", 13.0, 500.0, INK)
+                    label("The AI is preparing an answer…", 13.0, 500.0, INK)
                         .wrap()
                         .w_full(),
                 ),
@@ -2120,8 +2131,8 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
     view = view
         .child(
             TextArea::new(&s.chat_question)
-                .label("Sua pergunta sobre a análise")
-                .placeholder("Escreva sua pergunta…")
+                .label("Your question about the analysis")
+                .placeholder("Type your question…")
                 .width(None)
                 .auto_grow(2, 5)
                 .wrap_anywhere()
@@ -2135,7 +2146,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
         )
         .child(
             label(
-                format!("{count}/1.000 caracteres · Ctrl+Enter para enviar"),
+                format!("{count}/1,000 characters · Ctrl+Enter to send"),
                 11.0,
                 400.0,
                 if count > 1000 { "#963e2b" } else { MUTED },
@@ -2144,7 +2155,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .w_full(),
         );
     let mut actions = responsive_row(narrow).child(
-        Button::new("Enviar pergunta")
+        Button::new("Send question")
             .variant(ButtonVariant::Contrast)
             .disabled(disabled || count == 0 || count > 1000)
             .on_press(|s: &mut State| s.ask_chat())
@@ -2153,12 +2164,12 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .h(44.0),
     );
     if s.chat.busy {
-        actions = actions.child(button(k, "chat-cancel", "Cancelar resposta", false, |_| {
+        actions = actions.child(button(k, "chat-cancel", "Cancel response", false, |_| {
             host(json!({"type":"chat_cancel"}))
         }));
     }
     actions = actions.child(
-        Button::new("Nova conversa")
+        Button::new("New conversation")
             .variant(ButtonVariant::Outline)
             .disabled(
                 s.chat.messages.is_empty()
@@ -2179,23 +2190,23 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
             .w_full()
             .child(heading(
                 if s.loading {
-                    "Atualizando suas estratégias…"
+                    "Updating your strategies…"
                 } else {
-                    "Vamos consultar suas estratégias?"
+                    "Ready to explore your strategies?"
                 },
-                "O motor recalcula os resultados com as prioridades e o cenário escolhidos.",
+                "The engine recalculates results using your selected priorities and scenario.",
                 narrow,
             ))
             .child(priorities_panel(s, k, narrow))
             .child(soil_panel(s, k, narrow))
             .child(scenario_panel(s, k, narrow))
             .child(if s.loading {
-                button(k, "cancel-priorities", "Cancelar análise", false, |s| {
+                button(k, "cancel-priorities", "Cancel analysis", false, |s| {
                     s.page = Page::Setup;
                     host(json!({"type":"cancel"}));
                 })
             } else {
-                Button::new("Aplicar cenário")
+                Button::new("Apply scenario")
                     .variant(ButtonVariant::Contrast)
                     .disabled(
                         !s.ready || s.farm.is_none() || s.adjustment_blocked() || s.soil_blocked(),
@@ -2208,7 +2219,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
             .child(button(
                 k,
                 "back-setup",
-                "← Editar fazenda e histórico",
+                "← Edit farm and history",
                 false,
                 |s| s.page = Page::Setup,
             ));
@@ -2246,8 +2257,8 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         }
     }
     let mut view = col().gap(24.0).w_full()
-        .child(button(k, "back-setup", "← Editar fazenda e histórico", false, |s| s.page = Page::Setup))
-        .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "As melhores pontuações de hoje." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Até três estratégias na ordem do motor, com as suas prioridades. Compare a posição e a pontuação de hoje e do futuro, junto da sua rotação atual." }, narrow))
+        .child(button(k, "back-setup", "← Edit farm and history", false, |s| s.page = Page::Setup))
+        .child(heading(if analysis.recommendations.is_empty() { "Let's review your planting options." } else { "Today's highest scores." }, if analysis.recommendations.is_empty() { "The engine checked planting windows and field restrictions. Review the reasons below and change your options to run another analysis." } else { "Up to three strategies in the engine's order, using your priorities. Compare today's and future positions and scores alongside your current rotation." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
         .child(priorities_panel(s, k, narrow))
         .child(soil_panel(s, k, narrow))
@@ -2260,18 +2271,18 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         .child(chat_panel(s, k, narrow))
         .child(cards);
     if analysis.recommendations.is_empty() {
-        view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
-            .child(paragraph("As épocas de plantio não couberam nas opções informadas. Revise o mês em que o talhão fica livre e a quantidade de culturas no planejamento.")));
+        view = view.child(panel().child(label("No feasible sequence", 22.0, 600.0, INK).wrap())
+            .child(paragraph("No sequence meets the selected planning options and applicable field restrictions. Review the discard reasons, the month when the field becomes available and the number of crops to plan.")));
     } else {
-        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Os cards seguem a pontuação de hoje; a posição no futuro pode mudar. A receita dos cards soma toda a sequência; a prioridade renda considera a receita por ano de ocupação. Receitas são brutas, sem custos. Os índices não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("Your current rotation is a reference and may also appear as a suggestion. Cards follow today's scores; future positions may change. Revenue on each card covers the whole sequence; the income priority uses revenue per year of occupancy. Revenue is gross, before costs. Indices are not probabilities.", 11.0, 400.0, MUTED).wrap().w_full());
     }
     if !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(
             k,
             "discarded-toggle",
             &format!(
-                "{} {} sequências descartadas",
-                if s.discarded_open { "Ocultar" } else { "Ver" },
+                "{} {} discarded sequences",
+                if s.discarded_open { "Hide" } else { "Show" },
                 analysis.discarded.len()
             ),
             false,
@@ -2343,7 +2354,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
                 )
                 .child(label("→", 18.0, 400.0, accent))
                 .role("button")
-                .label(format!("Etapa {}: {}", i + 1, item.title))
+                .label(format!("Stage {}: {}", i + 1, item.title))
                 .focusable(true)
                 .on_press(move |s: &mut State| s.stage = i),
         );
@@ -2357,13 +2368,13 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(
             col()
                 .gap(7.0)
-                .child(eyebrow("ÁGUA E CLIMA"))
+                .child(eyebrow("WATER AND CLIMATE"))
                 .child(paragraph(&stage.water)),
         )
         .child(
             col()
                 .gap(7.0)
-                .child(eyebrow("SOLO E MANEJO"))
+                .child(eyebrow("SOIL AND MANAGEMENT"))
                 .child(paragraph(&stage.soil)),
         )
         .child(
@@ -2372,7 +2383,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
                 .padding(14.0)
                 .fill(color("#f5f0e2"))
                 .radius(9.0)
-                .child(eyebrow("PONTO DE ATENÇÃO"))
+                .child(eyebrow("WATCH POINT"))
                 .child(paragraph(&stage.risk)),
         );
     let mut facts = col().gap(12.0).w_full();
@@ -2423,12 +2434,12 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     water_table = water_table
         .child(table_row(
             vec![
-                "Mês",
-                "Dias",
+                "Month",
+                "Days",
                 "Kc",
-                "Chuva (mm)",
-                "Demanda (mm)",
-                "Déficit (mm)",
+                "Rainfall (mm)",
+                "Demand (mm)",
+                "Deficit (mm)",
             ],
             true,
         ))
@@ -2446,7 +2457,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
             false,
         ));
     }
-    col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar estratégias", false, |s| s.page = Page::Results))
+    col().w_full().gap(22.0).child(button(k, "back-results", "← Compare strategies", false, |s| s.page = Page::Results))
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
@@ -2457,15 +2468,15 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(if rec.model_note.is_empty() { el() } else { paragraph(&rec.model_note) })
         .child(benefits_panel(rec))
         .child(warnings_panel(rec, narrow))
-        .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
-            .child(paragraph("Selecione uma cultura para ver os detalhes. Ano 1 é o ano inicial do planejamento; o calendário pode atravessar dezembro."))
+        .child(col().gap(13.0).child(label("Your crop cycle, step by step", 22.0, 600.0, INK).wrap())
+            .child(paragraph("Select a crop to see its details. Year 1 is the starting year of your plan; the calendar may extend beyond December."))
             .child(el().w_full().scroll_x().child(months.min_w(rec.month_labels.len() as f32 * 83.0))))
         .child(exposure_panel(s, rec, narrow))
         .child(responsive_row(narrow).child(column_width(stages, narrow, 0.8)).child(column_width(detail, narrow, 1.2)))
-        .child(panel().child(label("Água, mês a mês", 22.0, 600.0, INK))
+        .child(panel().child(label("Water, month by month", 22.0, 600.0, INK))
             .child(paragraph(&rec.water_caption))
             .child(el().w_full().scroll_x().child(water_table)))
-        .child(panel().gap(8.0).child(eyebrow("O QUE CONSIDERAR NESTA ESCOLHA")).child(paragraph(&rec.tradeoff)))
+        .child(panel().gap(8.0).child(eyebrow("WHAT TO CONSIDER IN THIS CHOICE")).child(paragraph(&rec.tradeoff)))
 }
 pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
     // Use browser conventions for every control: Tab, Enter and Space.
@@ -2500,7 +2511,7 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
     }
     if narrow {
         content = content.child(
-            Button::new("Recomeçar planejamento")
+            Button::new("Restart planning")
                 .variant(ButtonVariant::Ghost)
                 .on_press(|s: &mut State| s.clear_confirm = true)
                 .build(&kit)
@@ -2516,10 +2527,10 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
         .h_full()
         .child(header(s, narrow));
     if s.clear_confirm {
-        main = main.child(panel().gap(10.0).child(label("Apagar o rascunho deste navegador?", 18.0, 600.0, INK).wrap())
-            .child(paragraph("O contorno e os registros salvos serão removidos. Arquivos GeoJSON baixados continuam com você."))
-            .child(row().gap(10.0).child(button(&kit, "confirm-reset", "Apagar rascunho", true, |_| host(json!({"type":"clear"}))))
-                .child(button(&kit, "cancel-reset", "Manter", false, |s| s.clear_confirm = false))));
+        main = main.child(panel().gap(10.0).child(label("Delete this browser's draft?", 18.0, 600.0, INK).wrap())
+            .child(paragraph("Your saved boundary and history entries will be removed. Downloaded GeoJSON files stay with you."))
+            .child(row().gap(10.0).child(button(&kit, "confirm-reset", "Delete draft", true, |_| host(json!({"type":"clear"}))))
+                .child(button(&kit, "cancel-reset", "Keep draft", false, |s| s.clear_confirm = false))));
     }
     if !s.error.is_empty() {
         main = main.child(

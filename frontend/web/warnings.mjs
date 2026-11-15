@@ -1,8 +1,9 @@
-const number = (value, digits = 1) => value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
-const money = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const number = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
+const money = (value) => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
 const percent = (value) => `${number(value * 100)}%`;
-const SCENARIOS = { hoje: 'clima de hoje', futuro: 'clima futuro', seco: 'ano seco' };
-const FACTORS = { temperatura: 'temperatura', chuva: 'chuva', calor: 'calor', agua: 'atendimento hídrico' };
+const SCENARIOS = { hoje: 'today\'s climate', futuro: 'future climate', seco: 'dry year' };
+const SLOTS = { safra: 'Main season', safrinha: 'Second season' };
+const FACTORS = { temperatura: 'temperature', chuva: 'rainfall', calor: 'heat', agua: 'water demand met' };
 const TYPES = {
   fator_limitante: 'risco', queda_no_futuro: 'risco', queda_no_ano_ruim: 'risco',
   repete_a_cultura: 'risco', solo_exposto: 'risco', sem_historico: 'lacuna',
@@ -10,10 +11,10 @@ const TYPES = {
   sem_valor_de_mercado: 'lacuna', ky_padrao: 'lacuna', valor_a_conferir: 'lacuna',
   hospedeiro_comum: 'risco', fator_agua_diario: 'risco', rank_varia_entre_modelos: 'risco',
 };
-const FIELDS = { preco: 'Preço', temp_calor_c: 'Limiar de calor', produtividade: 'Produtividade da safra',
-  produtividade_safrinha: 'Produtividade da safrinha', ky: 'Resposta à falta de água (Ky)' };
-const STATUSES = { memoria: 'memória', 'sem fonte': 'sem fonte' };
-const invalid = (path) => { throw new Error(`Resposta incompatível com o contrato do motor: avisos.${path}.`); };
+const FIELDS = { preco: 'Price', temp_calor_c: 'Heat threshold', produtividade: 'Main-season yield',
+  produtividade_safrinha: 'Second-season yield', ky: 'Yield response to water shortage (Ky)' };
+const STATUSES = { memoria: 'from memory', 'sem fonte': 'no source', 'a conferir': 'needs verification', 'provisório': 'provisional' };
+const invalid = (path) => { throw new Error(`Response does not match the engine contract: avisos.${path}.`); };
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 function string(value, path, max = 2000) {
   if (typeof value !== 'string' || !value.trim() || value.length > max) invalid(path);
@@ -45,7 +46,7 @@ export function validateSequenceWarnings(seq, scenarios) {
     if (!object(warning.dados)) invalid(`${path}.dados`);
     jsonData(warning.dados, `${path}.dados`);
     const type = Object.hasOwn(TYPES, warning.codigo) ? TYPES[warning.codigo] : null;
-    if (!type) continue; // Future codes remain visible through their supplied text and data.
+    if (!type) continue; // Future codes remain flagged without guessing an English explanation.
     if (warning.tipo !== type) invalid(`${path}.tipo`);
     const d = warning.dados;
     const amount = (key, min = 0, max = Infinity) => finite(d[key], `${path}.dados.${key}`, min, max);
@@ -107,10 +108,10 @@ export function validateSequenceWarnings(seq, scenarios) {
 }
 
 function fieldLabel(field) {
-  return Object.hasOwn(FIELDS, field) ? FIELDS[field] : field.replaceAll('_', ' ');
+  return Object.hasOwn(FIELDS, field) ? FIELDS[field] : `Additional field (${field})`;
 }
 function fieldValue(field, value) {
-  if (value === null) return 'não informado';
+  if (value === null) return 'not provided';
   if (typeof value !== 'number') return readable(value);
   if (field === 'preco') return `${money(value)}/t`;
   if (field === 'temp_calor_c') return `${number(value)} °C`;
@@ -118,86 +119,94 @@ function fieldValue(field, value) {
   return number(value, 3);
 }
 function readable(value) {
-  if (value === null) return 'não informado';
+  if (value === null) return 'not provided';
   if (typeof value === 'number') return number(value, 3);
-  if (typeof value === 'boolean') return value ? 'sim' : 'não';
+  if (typeof value === 'boolean') return value ? 'yes' : 'no';
   if (Array.isArray(value)) return value.map(readable).join(', ');
   if (typeof value === 'object') return Object.entries(value).map(([key, entry]) => `${fieldLabel(key)}: ${readable(entry)}`).join('; ');
-  return value;
+  return 'Text value: English translation unavailable';
+}
+
+function pestLabel(value) {
+  const names = { 'mosca-branca': 'whitefly', 'mofo-branco': 'white mold' };
+  for (const [original, translated] of Object.entries(names)) {
+    if (value === original || value.startsWith(`${original} (`)) return translated + value.slice(original.length);
+  }
+  return 'Additional pest or disease: English name unavailable';
 }
 
 function present(warning, cropLabel) {
   const d = warning.dados;
   const crop = warning.cultura === null ? null : cropLabel(warning.cultura);
   const scenario = warning.cenario === null ? null : SCENARIOS[warning.cenario];
-  const context = [crop || 'Sequência inteira', typeof d.slot === 'string' ? d.slot : null, scenario,
-    warning.codigo === 'fator_agua_diario' ? 'modo diário · ano mediano' : null].filter(Boolean).join(' · ');
+  const context = [crop || 'Whole sequence', Object.hasOwn(SLOTS, d.slot) ? SLOTS[d.slot] : null, scenario,
+    warning.codigo === 'fator_agua_diario' ? 'daily mode · median year' : null].filter(Boolean).join(' · ');
   const item = (title, description, evidence, card_summary) => ({ title, context, description, evidence, card_summary });
   switch (warning.codigo) {
     case 'fator_limitante': {
       const factor = FACTORS[d.fator];
-      return item(`Limitação por ${factor}`,
-        `É o menor fator entre temperatura, chuva, calor e atendimento hídrico desta cultura. Este aviso usa a avaliação mensal.`,
-        `Fator de ${factor}: ${number(d.valor * 100)} / 100.`,
-        `${crop} · ${scenario}: ${factor} em ${number(d.valor * 100)} / 100.`);
+      return item(`Limitation: ${factor}`,
+        `This is the lowest of the temperature, rainfall, heat and water-supply factors for this crop. This warning uses the monthly assessment.`,
+        `${factor} factor: ${number(d.valor * 100)} / 100.`,
+        `${crop} · ${scenario}: ${factor} at ${number(d.valor * 100)} / 100.`);
     }
     case 'queda_no_futuro':
-      return item('Queda de receita no futuro', 'A receita bruta estimada para a sequência diminui do clima de hoje para o futuro. Custos de produção não entram na comparação.',
-        `Queda: ${percent(d.queda)}. Receita hoje: ${money(d.receita_hoje)}/ha; futuro: ${money(d.receita_futuro)}/ha.`,
-        `Receita no futuro ${percent(d.queda)} menor.`);
+      return item('Lower revenue in the future', 'Estimated gross revenue for this sequence falls from today\'s climate to the future. Production costs are excluded from this comparison.',
+        `Decline: ${percent(d.queda)}. Revenue today: ${money(d.receita_hoje)}/ha; future: ${money(d.receita_futuro)}/ha.`,
+        `Future revenue is ${percent(d.queda)} lower.`);
     case 'queda_no_ano_ruim':
-      return item('Queda de receita no ano ruim', 'Comparação do modo diário entre o ano mediano e o ano ruim informado pelo motor. Esse ano ruim não é o cenário fixo de ano seco.',
-        `Queda: ${percent(d.queda)}. Ano mediano: ${money(d.receita_mediano)}/ha; ano ruim: ${money(d.receita_ruim)}/ha.`,
-        `${scenario}: receita ${percent(d.queda)} menor no ano ruim.`);
+      return item('Lower revenue in a bad year', 'Daily-mode comparison between the median year and the bad year reported by the engine. This bad year is separate from the fixed dry-year scenario.',
+        `Decline: ${percent(d.queda)}. Median year: ${money(d.receita_mediano)}/ha; bad year: ${money(d.receita_ruim)}/ha.`,
+        `${scenario}: revenue is ${percent(d.queda)} lower in the bad year.`);
     case 'repete_a_cultura':
-      return item('Repetição de cultura', 'A cultura repete a anterior. O motor aplica uma penalidade provisória associada a pragas e doenças; a ocorrência local não foi medida.',
-        `Fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
-        `${crop} · ${d.slot}: repetição, fator ${number(d.fator_sequencia, 3)}×.`);
+      return item('Repeated crop', 'This crop repeats the previous crop. The engine applies a provisional pest and disease penalty; local occurrence has not been measured.',
+        `Applied sequence factor: ${number(d.fator_sequencia, 3)}×.`,
+        `${crop} · ${SLOTS[d.slot]}: repetition, factor ${number(d.fator_sequencia, 3)}×.`);
     case 'hospedeiro_comum':
-      return item('Praga ou doença em comum com a cultura anterior',
-        `Esta cultura e ${cropLabel(d.anterior)} são hospedeiras de pragas ou doenças em comum consideradas pelo motor. A penalidade é provisória; não indica uma ocorrência medida no talhão. O fator de sequência também pode incluir um bônus após adubo verde.`,
-        `Cultura anterior: ${cropLabel(d.anterior)}. Pragas ou doenças: ${d.pragas.join('; ')}. Fator por hospedeiro comum: ${number(d.penalidade, 3)}×; fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
-        `${crop} após ${cropLabel(d.anterior)}: praga ou doença em comum; fator ${number(d.penalidade, 3)}×.`);
+      return item('Shared pest or disease with the previous crop',
+        `This crop and ${cropLabel(d.anterior)} share pest or disease hosts considered by the engine. The penalty is provisional; it does not indicate a measured occurrence in the field. The sequence factor may also include a bonus after green manure.`,
+        `Previous crop: ${cropLabel(d.anterior)}. Pests or diseases: ${d.pragas.map(pestLabel).join('; ')}. Shared-host factor: ${number(d.penalidade, 3)}×; applied sequence factor: ${number(d.fator_sequencia, 3)}×.`,
+        `${crop} after ${cropLabel(d.anterior)}: shared pest or disease; factor ${number(d.penalidade, 3)}×.`);
     case 'fator_agua_diario':
-      return item('Limitação por água no modo diário',
-        'No ano mediano do modo diário, a falta de água reduz a produtividade pelo fator informado. O cálculo considera Ky, a sensibilidade da cultura à falta de água. Esta avaliação é diferente do balanço mensal.',
-        `Fator por falta de água: ${number(d.fator_agua * 100)} / 100. Atendimento hídrico: ${number(d.atendimento_hidrico * 100)} / 100. Ky: ${number(d.ky, 3)}.`,
-        `${crop} · ${scenario}, modo diário: fator por falta de água em ${number(d.fator_agua * 100)} / 100 no ano mediano.`);
+      return item('Water limitation in daily mode',
+        'In the median year of daily mode, water shortage reduces yield by the reported factor. The calculation uses Ky, the crop\'s sensitivity to water shortage. This assessment is separate from the monthly water balance.',
+        `Water-shortage factor: ${number(d.fator_agua * 100)} / 100. Water demand met: ${number(d.atendimento_hidrico * 100)} / 100. Ky: ${number(d.ky, 3)}.`,
+        `${crop} · ${scenario}, daily mode: water-shortage factor ${number(d.fator_agua * 100)} / 100 in the median year.`);
     case 'rank_varia_entre_modelos':
-      return item('Posição varia entre modelos climáticos',
-        'A posição desta sequência no futuro muda conforme o modelo climático. A faixa compara os modelos disponíveis; não é um intervalo de confiança nem uma probabilidade.',
-        `Posição no futuro: ${d.rank_min}ª a ${d.rank_max}ª. ${Object.entries(d.por_modelo).map(([model, rank]) => `${model}: ${rank}ª`).join('; ')}. Limite de variação usado no aviso: ${d.limite} posições.`,
-        `No futuro, posição de ${d.rank_min}ª a ${d.rank_max}ª entre modelos.`);
+      return item('Rank varies across climate models',
+        'This sequence\'s future rank changes across climate models. The range compares the available models; it is neither a confidence interval nor a probability.',
+        `Future rank: #${d.rank_min} to #${d.rank_max}. ${Object.entries(d.por_modelo).map(([model, rank]) => `${model}: #${rank}`).join('; ')}. Rank-spread threshold used for this warning: ${d.limite} positions.`,
+        `Future ranks range from #${d.rank_min} to #${d.rank_max} across models.`);
     case 'solo_exposto':
-      return item('Solo exposto', 'Dias sem cultura em pé e sem palhada nos primeiros 365 dias. A chuva corresponde ao clima de hoje.',
-        `${d.dias_expostos} dias expostos; ${number(d.chuva_exposta_mm)} mm de chuva sobre o solo exposto.`,
-        `${d.dias_expostos} dias expostos, com ${number(d.chuva_exposta_mm)} mm de chuva hoje.`);
+      return item('Exposed soil', 'Days without a standing crop or mulch within the first 365 days. Rainfall refers to today\'s climate.',
+        `${d.dias_expostos} exposed days; ${number(d.chuva_exposta_mm)} mm of rain on exposed soil.`,
+        `${d.dias_expostos} exposed days, with ${number(d.chuva_exposta_mm)} mm of rain today.`);
     case 'sem_historico':
-      return item('Histórico não informado', 'Sem histórico, a primeira cultura não recebe a penalidade por repetição, a de hospedeiro comum de pragas ou doenças, nem o bônus após adubo verde que fixa nitrogênio.',
-        'Histórico de plantio ausente nesta análise.', 'Histórico ausente: efeito da cultura anterior não avaliado.');
+      return item('Planting history not provided', 'Without planting history, the first crop receives no repeated-crop or shared-host penalty, and no bonus after nitrogen-fixing green manure.',
+        'No planting history was provided for this analysis.', 'No planting history: the previous crop\'s effect was not assessed.');
     case 'sem_limiar_de_calor':
-      return item('Limiar de calor ausente', 'O motor não desconta o efeito do calor desta cultura. A ausência de desconto não comprova tolerância ao calor.',
-        'Limiar de calor não informado na tabela de culturas.', `${crop}: calor sem limiar para avaliação.`);
+      return item('Missing heat threshold', 'The engine does not apply a heat penalty to this crop. The absence of a penalty does not demonstrate heat tolerance.',
+        'No heat threshold is provided in the crop table.', `${crop}: no heat threshold is available for assessment.`);
     case 'limiar_de_calor_pouco_confiavel':
-      return item('Limiar de calor pouco confiável', 'O motor sinaliza menor confiança na contagem de dias quentes acima deste limiar, devido à diferença entre POWER e NEX. O limite precisa de revisão local.',
-        `Limiar usado: ${number(d.temp_calor_c)} °C.`, `${crop}: limiar de ${number(d.temp_calor_c)} °C pouco confiável.`);
+      return item('Uncertain heat threshold', 'The engine flags lower confidence in hot-day counts above this threshold because POWER and NEX differ. The threshold needs local review.',
+        `Threshold used: ${number(d.temp_calor_c)} °C.`, `${crop}: the ${number(d.temp_calor_c)} °C threshold is uncertain.`);
     case 'sem_valor_de_mercado':
-      return item('Valor de mercado não contabilizado', 'Forragem, semente e benefício ao solo não entram na receita desta cultura. Isso não significa que a cultura não tenha valor para a fazenda.',
-        `Preço usado: ${money(0)}/t.`, `${crop}: preço zero no cálculo de receita.`);
+      return item('Market value not included', 'Forage, seed and soil benefits are excluded from this crop\'s revenue. This does not mean the crop has no value for the farm.',
+        `Price used: ${money(0)}/t.`, `${crop}: zero price in the revenue calculation.`);
     case 'ky_padrao':
-      return item('Resposta à falta de água sem valor específico', 'No modo diário, o motor usa um valor padrão de Ky (sensibilidade da produtividade à falta de água), pois não há valor específico desta cultura na tabela da FAO.',
-        `Ky usado: ${number(d.ky, 3)}.`, `${crop}: Ky padrão de ${number(d.ky, 3)}.`);
+      return item('No crop-specific water-response value', 'In daily mode, the engine uses a default Ky value (yield sensitivity to water shortage) because the FAO table has no crop-specific value.',
+        `Ky used: ${number(d.ky, 3)}.`, `${crop}: default Ky of ${number(d.ky, 3)}.`);
     case 'valor_a_conferir': {
       const field = fieldLabel(d.campo);
-      const status = Object.hasOwn(STATUSES, d.status) ? STATUSES[d.status] : d.status;
+      const status = Object.hasOwn(STATUSES, d.status) ? STATUSES[d.status] : 'untranslated source status';
       const value = fieldValue(d.campo, d.valor);
-      return item(`${field} a conferir`, 'O valor está marcado para conferência na tabela de culturas. Confira a fonte e a adequação às condições locais.',
-        `${field}: ${value}. Situação: ${status}.`, `${crop}: ${field.toLowerCase()} ${value} a conferir (${status}).`);
+      return item(`${field} needs verification`, 'This value is marked for verification in the crop table. Check its source and suitability for local conditions.',
+        `${field}: ${value}. Status: ${status}.`, `${crop}: ${field.toLowerCase()} ${value} needs verification (${status}).`);
     }
     default: {
-      const evidence = Object.entries(d).map(([key, value]) => `${fieldLabel(key)}: ${readable(value)}`).join('; ');
-      return item(warning.tipo === 'risco' ? 'Outro risco informado' : 'Outra lacuna informada', warning.texto,
-        evidence || 'Nenhum dado adicional informado.', `${context}: ${warning.texto}`);
+      const title = warning.tipo === 'risco' ? 'Additional engine risk' : 'Additional data gap';
+      return item(title, 'The engine reported this warning, but an English explanation is not yet available.',
+        `Engine code: ${warning.codigo}.`, `${context}: ${title.toLowerCase()}; English explanation unavailable.`);
     }
   }
 }
@@ -209,8 +218,8 @@ export function buildWarnings(seq, cropLabel) {
   return {
     risks, gaps,
     summary: seq.avisos.length
-      ? `${risks.length} ${risks.length === 1 ? 'risco sinalizado' : 'riscos sinalizados'} e ${gaps.length} ${gaps.length === 1 ? 'lacuna de informação' : 'lacunas de informação'}.`
-      : 'Nenhum aviso sinalizado pelo motor nesta sequência.',
-    note: 'Os avisos ajudam na revisão local e não alteram a pontuação nem a ordem das estratégias. A ausência de avisos não garante ausência de risco ou de lacunas nos dados.',
+      ? `${risks.length} ${risks.length === 1 ? 'flagged risk' : 'flagged risks'} and ${gaps.length} ${gaps.length === 1 ? 'data gap' : 'data gaps'}.`
+      : 'The engine flagged no warnings for this sequence.',
+    note: 'Warnings support local review and do not change strategy scores or order. No warnings does not guarantee freedom from risk or data gaps.',
   };
 }

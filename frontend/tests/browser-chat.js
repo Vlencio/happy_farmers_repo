@@ -5,7 +5,7 @@ async (originalPage) => {
   const context = await originalPage.context().browser().newContext({ viewport: { width: 1440, height: 1100 } });
   const page = await context.newPage();
   const checks = [], errors = [], posts = [], deferred = [];
-  let syntheticChecks = 0, reply = { resposta: 'Resposta simulada.', modelo: 'qa-simulado', recusada: false }, status = 200, hold = false;
+  let syntheticChecks = 0, reply = { resposta: 'Simulated response.', modelo: 'qa-simulated', recusada: false }, status = 200, hold = false;
   page.on('pageerror', error => errors.push(error.message));
   const check = (ok, name, synthetic = true) => {
     if (!ok) throw new Error(name);
@@ -18,12 +18,12 @@ async (originalPage) => {
     const content = root?.textContent + [...(root?.querySelectorAll('[role="alert"], [role="status"]') || [])].map(node => node.getAttribute('aria-label') || '').join(' ');
     return content.includes(value);
   }, value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const button = name => page.getByRole('button', { name, exact: true });
-  const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
-  const heading = () => page.getByRole('heading', { name: 'Converse sobre esta análise', exact: true });
-  const input = () => page.getByRole('textbox', { name: 'Sua pergunta sobre a análise', exact: true });
-  const counter = () => page.getByText(/^\d+\/1\.000 caracteres · Ctrl\+Enter para enviar$/);
+  const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const heading = () => page.getByRole('heading', { name: 'Chat about this analysis', exact: true });
+  const input = () => page.getByRole('textbox', { name: 'Your question about the analysis', exact: true });
+  const counter = () => page.getByText(/^\d+\/1,000 characters · Ctrl\+Enter to send$/);
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox();
@@ -70,14 +70,14 @@ async (originalPage) => {
     return page.evaluate(() => document.activeElement.value);
   };
   async function openChat() {
-    if (await button('Abrir chat com IA').count()) await click('Abrir chat com IA');
+    if (await button('Open AI chat').count()) await click('Open AI chat');
     await counter().waitFor();
   }
   async function send(question, keyboard = false) {
     await fill(question);
     if (keyboard) {
       await page.keyboard.press('ControlOrMeta+Enter');
-    } else await click('Enviar pergunta');
+    } else await click('Send question');
   }
   async function analyze(crops = ['soja', 'milho'], month = 10) {
     await page.goto(originalPage.url());
@@ -92,18 +92,18 @@ async (originalPage) => {
     await page.reload();
     await waitConnected();
     const response = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     const raw = await (await response).json();
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       return mapMotorAnalysis(raw, JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm);
     }, raw);
     return { raw, view };
   }
-  async function release(textValue = 'RESPOSTA ANTIGA SIMULADA') {
+  async function release(textValue = 'SIMULATED OLD RESPONSE') {
     for (const route of deferred.splice(0)) {
-      await route.fulfill({ status: 200, json: { resposta: textValue, modelo: 'qa-simulado', recusada: false } }).catch(() => {});
+      await route.fulfill({ status: 200, json: { resposta: textValue, modelo: 'qa-simulated', recusada: false } }).catch(() => {});
     }
     await page.waitForTimeout(250);
   }
@@ -122,12 +122,12 @@ async (originalPage) => {
     const real = await analyze();
     const metadata = await (await page.request.get(new URL('/api/metadata', originalPage.url()).href)).json();
     check(metadata.capabilities.chat === false, 'Real local service reports chat disabled without credentials', false);
-    check(await heading().count() === 0 && await button('Abrir chat com IA').count() === 0,
+    check(await heading().count() === 0 && await button('Open AI chat').count() === 0,
       'Real capability=false hides the chat while analysis remains available', false);
     check(real.raw.sequencias.every(sequence => Array.isArray(sequence.beneficios)) && await cards().count() === 4,
       'Real engine delivers benefits and retains current rotation plus three cards', false);
     await click(await cards().first().textContent());
-    await waitText('Benefícios considerados pelo motor');
+    await waitText('Benefits considered by the engine');
     const benefits = real.view.current_rotation.strategy.benefits.items;
     check(benefits.every(item => (item.title && item.evidence)) && (await text()).includes(benefits[0].title),
       'Real benefits are readable in the current-rotation detail without chat', false);
@@ -143,20 +143,20 @@ async (originalPage) => {
     check(await heading().count() === 1, 'SIMULATED capability=true exposes one chat panel');
     await openChat();
     check((await text()).includes('Anthropic'), 'SIMULATED chat explains where the question and analysis are sent');
-    const question1 = 'Por que essa rotação foi sugerida?';
-    const answer1 = 'SIMULAÇÃO: A soja fixa nitrogênio. <b>Este trecho é texto simples.</b>';
+    const question1 = 'Why was this rotation suggested?';
+    const answer1 = 'SIMULATED: Soybean fixes nitrogen. <b>This is plain text.</b>';
     reply = { resposta: answer1, modelo: 'qa-simulado', recusada: false };
     await send(question1, true);
     await waitText(answer1);
     check(posts.length === 1 && posts[0].pergunta === question1, 'SIMULATED keyboard Ctrl/Enter submits the question');
     check(JSON.stringify(posts[0].analise) === JSON.stringify(first.raw), 'SIMULATED request sends the full unmodified engine response');
     check(JSON.stringify(posts[0].foco) === JSON.stringify(expectedFocus(first.view)) && posts[0].foco.length === 3,
-      'SIMULATED focus uses objective cards and deduplicates the current rotation');
+      'SIMULATED focus uses ranked cards and deduplicates the current rotation');
     check(posts[0].historico.length === 0, 'SIMULATED first question has no fabricated conversation history');
-    check(await page.locator('[data-rune-a11y] b').count() === 0 && (await text()).includes('<b>Este trecho'),
+    check(await page.locator('[data-rune-a11y] b').count() === 0 && (await text()).includes('<b>This is plain text.</b>'),
       'SIMULATED model text is displayed literally instead of interpreted as HTML');
-    const question2 = 'E quais riscos precisam de revisão local?';
-    const answer2 = 'SIMULAÇÃO: Confira os avisos de atendimento hídrico no ano seco.';
+    const question2 = 'Which risks need local review?';
+    const answer2 = 'SIMULATED: Check water-supply warnings for the dry year.';
     reply = { resposta: answer2, modelo: 'qa-simulado', recusada: false };
     await send(question2);
     await waitText(answer2);
@@ -171,14 +171,14 @@ async (originalPage) => {
 
     await fill('   ');
     const beforeEmpty = posts.length;
-    await click('Enviar pergunta');
+    await click('Send question');
     await page.waitForTimeout(200);
     check(posts.length === beforeEmpty, 'SIMULATED blank input cannot create a network request');
     await fill('x'.repeat(1001));
-    check(await button('Enviar pergunta').isDisabled() && posts.length === beforeEmpty,
+    check(await button('Send question').isDisabled() && posts.length === beforeEmpty,
       'SIMULATED question over 1000 characters is blocked before submission');
-    status = 503; reply = { detail: 'Falha temporária simulada.' };
-    const retryQuestion = 'Explique a palhada desta sequência.';
+    status = 503; reply = { detail: 'Simulated temporary failure.' };
+    const retryQuestion = 'Explain the crop residue for this sequence.';
     await send(retryQuestion);
     await waitText('HTTP 503');
     check(await page.getByRole('alert', { name: /HTTP 503/ }).count() === 1,
@@ -186,98 +186,98 @@ async (originalPage) => {
     check(await currentInput() === retryQuestion, 'SIMULATED HTTP failure preserves the question for retry');
     const failedHistory = structuredClone(posts.at(-1).historico);
     status = 200; reply = { resposta: '', modelo: 'qa-simulado', recusada: false };
-    await click('Enviar pergunta');
-    await waitText('resposta incompatível');
+    await click('Send question');
+    await waitText('incompatible response');
     check(await currentInput() === retryQuestion && JSON.stringify(posts.at(-1).historico) === JSON.stringify(failedHistory),
       'SIMULATED empty model response is an error and never enters conversation history');
-    reply = { resposta: 'SIMULAÇÃO: Posso explicar apenas esta análise.', modelo: 'qa-simulado', recusada: true };
-    await click('Enviar pergunta');
+    reply = { resposta: 'SIMULATED: I can only explain this analysis.', modelo: 'qa-simulado', recusada: true };
+    await click('Send question');
     await waitText(reply.resposta);
-    check((await text()).includes(reply.resposta) && (await text()).includes('A IA não respondeu a essa pergunta.'),
+    check((await text()).includes(reply.resposta) && (await text()).includes('The AI did not answer this question.'),
       'SIMULATED refusal appears with its explanation instead of being treated as a normal answer');
 
     hold = true;
-    const cancelled = 'Pergunta simulada para cancelar.';
+    const cancelled = 'Simulated question to cancel.';
     await send(cancelled);
-    await button('Cancelar resposta').waitFor();
-    check(await page.getByRole('status', { name: /A IA está preparando a resposta/ }).count() === 1,
+    await button('Cancel response').waitFor();
+    check(await page.getByRole('status', { name: /The AI is preparing an answer/ }).count() === 1,
       'SIMULATED pending status exposes its text to assistive technology');
-    check(await button('Enviar pergunta').isDisabled(), 'SIMULATED pending request prevents duplicate submission');
-    await click('Cancelar resposta');
-    await waitText('Resposta cancelada');
-    check(await page.getByRole('status', { name: /Resposta cancelada/ }).count() === 1,
+    check(await button('Send question').isDisabled(), 'SIMULATED pending request prevents duplicate submission');
+    await click('Cancel response');
+    await waitText('Response canceled');
+    check(await page.getByRole('status', { name: /Response canceled/ }).count() === 1,
       'SIMULATED cancellation status exposes its text to assistive technology');
     check(await currentInput() === cancelled, 'SIMULATED cancel keeps the typed question');
     await release();
-    check(!(await text()).includes('RESPOSTA ANTIGA SIMULADA'), 'SIMULATED late cancelled response cannot reappear in the conversation');
+    check(!(await text()).includes('SIMULATED OLD RESPONSE'), 'SIMULATED late cancelled response cannot reappear in the conversation');
     hold = false;
-    await click('Nova conversa');
+    await click('New conversation');
     check(!(await text()).includes(answer1) && !(await text()).includes(answer2), 'SIMULATED new conversation clears previous messages');
-    reply = { resposta: 'SIMULAÇÃO: Conversa reiniciada.', modelo: 'qa-simulado', recusada: false };
-    await send('O que significa o índice de solo?');
+    reply = { resposta: 'SIMULATED: Conversation restarted.', modelo: 'qa-simulated', recusada: false };
+    await send('What does the soil index mean?');
     await waitText(reply.resposta);
     check(posts.at(-1).historico.length === 0, 'SIMULATED new conversation begins with an empty history');
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(300);
     await align(heading());
-    const boxes = await Promise.all([heading(), counter(), button('Enviar pergunta')].map(locator => locator.boundingBox()));
+    const boxes = await Promise.all([heading(), counter(), button('Send question')].map(locator => locator.boundingBox()));
     check(boxes.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'SIMULATED mobile chat and input fit the viewport');
     await page.screenshot({ path: 'output/playwright/chat-mobile.png' });
     await align(counter(), 600);
     await page.screenshot({ path: 'output/playwright/chat-mobile-input.png' });
-    reply = { resposta: 'SIMULAÇÃO: Resposta enviada pelo celular.', modelo: 'qa-simulado', recusada: false };
-    await send('E no ano seco?');
+    reply = { resposta: 'SIMULATED: Reply sent on mobile.', modelo: 'qa-simulated', recusada: false };
+    await send('What about the dry year?');
     await waitText(reply.resposta);
     check(posts.at(-1).historico.length === 2, 'SIMULATED mobile question preserves the current conversation');
 
     await page.setViewportSize({ width: 1440, height: 1100 });
     await page.waitForTimeout(300);
-    await click('Nova conversa');
-    const longAnswer = 'SIMULAÇÃO: ' + 'resposta longa '.repeat(290);
+    await click('New conversation');
+    const longAnswer = 'SIMULATED: ' + 'long simulated answer '.repeat(250);
     reply = { resposta: longAnswer, modelo: 'qa-simulado', recusada: false };
-    await send('Explique com mais detalhes.');
-    await waitText('A resposta excede o tamanho');
-    check((await text()).includes(longAnswer) && await button('Enviar pergunta').isDisabled(),
+    await send('Explain in more detail.');
+    await waitText('The response exceeds this interface’s conversation history limit');
+    check((await text()).includes(longAnswer) && await button('Send question').isDisabled(),
       'SIMULATED oversized reply remains whole and explains why a new conversation is required');
-    await click('Nova conversa');
+    await click('New conversation');
     for (let i = 1; i <= 10; i++) {
-      reply = { resposta: `SIMULAÇÃO: resposta curta ${i}.`, modelo: 'qa-simulado', recusada: false };
-      await send(`Pergunta de limite ${i}?`);
+      reply = { resposta: `SIMULATED: Short response ${i}.`, modelo: 'qa-simulated', recusada: false };
+      await send(`Limit question ${i}?`);
       await waitText(reply.resposta);
     }
-    check(posts.at(-1).historico.length === 18 && (await text()).includes('10 perguntas') && await button('Enviar pergunta').isDisabled(),
+    check(posts.at(-1).historico.length === 18 && (await text()).includes('10 questions') && await button('Send question').isDisabled(),
       'SIMULATED tenth complete pair reaches the limit without silently truncating history');
 
-    await click('Nova conversa');
+    await click('New conversation');
     hold = true;
-    await send('Pergunta pendente antes de analisar novamente.');
-    await button('Cancelar resposta').waitFor();
-    await click('← Editar fazenda e histórico');
+    await send('Question pending before reanalysis.');
+    await button('Cancel response').waitFor();
+    await click('← Edit farm and history');
     const nextAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     await nextAnalysis;
-    await waitText('ANÁLISE DO MOTOR');
-    await release('RESPOSTA DA ANÁLISE ANTERIOR');
+    await waitText('ENGINE ANALYSIS');
+    await release('RESPONSE FROM PREVIOUS ANALYSIS');
     hold = false;
-    check(await button('Abrir chat com IA').count() === 1, 'SIMULATED reanalysis on the same page resets and collapses the chat');
+    check(await button('Open AI chat').count() === 1, 'SIMULATED reanalysis on the same page resets and collapses the chat');
     await openChat();
-    check(!(await text()).includes('RESPOSTA DA ANÁLISE ANTERIOR') && !(await text()).includes('Pergunta pendente antes'),
+    check(!(await text()).includes('RESPONSE FROM PREVIOUS ANALYSIS') && !(await text()).includes('Question pending before'),
       'SIMULATED late reply from the previous analysis cannot contaminate the new conversation');
 
     const distinct = await analyze(['soja', 'feijao']);
     await openChat();
-    check(!(await text()).includes('SIMULAÇÃO: resposta curta'), 'SIMULATED new analysis clears the previous conversation');
-    reply = { resposta: 'SIMULAÇÃO: Nova análise recebida.', modelo: 'qa-simulado', recusada: false };
-    await send('Explique minha rotação atual.');
+    check(!(await text()).includes('SIMULATED: Short response'), 'SIMULATED new analysis clears the previous conversation');
+    reply = { resposta: 'SIMULATED: New analysis received.', modelo: 'qa-simulado', recusada: false };
+    await send('Explain my current rotation.');
     await waitText(reply.resposta);
     check(posts.at(-1).foco.length === 4 && posts.at(-1).foco.includes('soja>feijao') && posts.at(-1).historico.length === 0,
-      'SIMULATED distinct current rotation joins all three objective cards in focus');
+      'SIMULATED distinct current rotation joins all three ranked cards in focus');
     check(JSON.stringify(posts.at(-1).analise) === JSON.stringify(distinct.raw), 'SIMULATED new analysis replaces the raw context sent to chat');
     const discarded = await analyze(['soja', 'milho'], 2);
     await openChat();
-    reply = { resposta: 'SIMULAÇÃO: Referência fora do calendário.', modelo: 'qa-simulado', recusada: false };
-    await send('Quais estratégias estão disponíveis?');
+    reply = { resposta: 'SIMULATED: Reference outside the planting calendar.', modelo: 'qa-simulado', recusada: false };
+    await send('Which strategies are available?');
     await waitText(reply.resposta);
     check(discarded.view.current_rotation.status === 'discarded' && !posts.at(-1).foco.includes(discarded.raw.atual.id),
       'SIMULATED discarded current rotation is not sent as a viable focused sequence');

@@ -5,6 +5,15 @@ A interface principal é Rust/Rune com `rune-kit`. O adaptador em `../backend/` 
 Python/FastAPI para chamar o motor existente, seguindo `../docs/contrato_motor.md`.
 As regras agronômicas continuam em `../motor/`, sem alterações feitas por esta integração.
 
+## Idioma da apresentação
+
+A interface está em inglês (`en-US`), incluindo mapa, catálogo, glossário,
+avisos, erros e acessibilidade. Valores continuam em reais, apresentados como
+**BRL**, sem conversão; hectares, milímetros e graus Celsius são preservados.
+IDs e campos do contrato continuam iguais. Nomes e observações escritos pelo
+usuário não são traduzidos. O idioma das respostas livres da IA depende da
+instrução no backend; veja [a mensagem para Pedro](docs/ENGLISH_HANDOFF.md).
+
 ## Abrir neste computador
 
 O ambiente e o WebAssembly já foram preparados e compilados:

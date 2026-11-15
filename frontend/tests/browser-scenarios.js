@@ -12,20 +12,20 @@ async (originalPage) => {
   const checks = [], errors = [], analyzePosts = [], chatPosts = [], pendingAnalyses = [], pendingChats = [];
   let support = false, chatSupport = false, holdAnalysis = false, holdChat = false, echoMode = 'correct';
   let fixtureCases;
-  const reply = { resposta: 'SIMULAÇÃO: resposta sobre o cenário em foco.', modelo: 'qa-simulado', recusada: false };
+  const reply = { resposta: 'SIMULATED: answer about the current scenario.', modelo: 'qa-simulado', recusada: false };
   page.on('pageerror', error => errors.push(error.message));
   const check = (ok, name) => {
     if (!ok) throw new Error(name);
     checks.push(name);
   };
   const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-  const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 1 });
   const button = name => page.getByRole('button', { name, exact: true });
-  const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
-  const rankedCards = () => page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
-  const scenarioHeading = () => page.getByRole('heading', { name: 'Simule outro clima', exact: true });
-  const controlNames = ['Diminuir chuva em 5%', 'Aumentar chuva em 5%',
-    'Diminuir temperatura em 0,5 °C', 'Aumentar temperatura em 0,5 °C'];
+  const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const rankedCards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
+  const scenarioHeading = () => page.getByRole('heading', { name: 'Simulate another climate', exact: true });
+  const controlNames = ['Decrease rainfall by 5%', 'Increase rainfall by 5%',
+    'Decrease temperature by 0.5 °C', 'Increase temperature by 0.5 °C'];
   const text = () => page.locator('[data-rune-a11y]').evaluate(root => root.textContent
     + [...root.querySelectorAll('[role="alert"], [role="status"]')].map(node => node.getAttribute('aria-label') || '').join(' '));
   const waitText = value => page.waitForFunction(value => {
@@ -34,7 +34,7 @@ async (originalPage) => {
       .map(node => node.getAttribute('aria-label') || '').join(' ');
     return content.includes(value);
   }, value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox();
@@ -69,7 +69,7 @@ async (originalPage) => {
   async function result(response) {
     check(response.status() === 200, 'Analysis transport succeeds: ' + JSON.stringify(response.request().postDataJSON().ajuste ?? null));
     const raw = await response.json();
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     await page.waitForTimeout(200);
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
@@ -79,12 +79,12 @@ async (originalPage) => {
   }
   async function submit() {
     const pending = responseFor();
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     return result(await pending);
   }
   async function apply() {
     const pending = responseFor();
-    await click('Aplicar cenário');
+    await click('Apply scenario');
     return result(await pending);
   }
   async function changeRain(steps) {
@@ -121,34 +121,34 @@ async (originalPage) => {
     const names = await rankedCards().allTextContents();
     check(same(analysis.raw.sequencias.slice(0, 3).map(seq => seq.id), ids), name + ': real engine order');
     check(names.length === ids.length && analysis.view.recommendations.every((rec, i) => rec.sequence_id === ids[i]
-      && names[i].includes(`${i + 1}ª DE HOJE`) && names[i].includes(rec.crop)), name + ': visible card order');
+      && names[i].includes(`${['1ST', '2ND', '3RD'][i]} TODAY`) && names[i].includes(rec.crop)), name + ': visible card order');
     check(analysis.view.recommendations.every((rec, i) => {
       const seq = analysis.raw.sequencias.find(seq => seq.id === rec.sequence_id);
-      return [`Posição · hoje: #${seq.rank_hoje}`, `Score · hoje: ${number(seq.hoje.score)} / 100`,
-        `Posição · futuro: #${seq.rank_futuro}`, `Score · futuro: ${number(seq.futuro.score)} / 100`]
+      return [`Rank · today: #${seq.rank_hoje}`, `Score · today: ${number(seq.hoje.score)} / 100`,
+        `Rank · future: #${seq.rank_futuro}`, `Score · future: ${number(seq.futuro.score)} / 100`]
         .every(value => names[i].includes(value));
     }), name + ': actual ranks and scores, not client-side calculations');
     check(analysis.view.current_rotation.status === 'ready' && analysis.view.current_rotation.strategy.sequence_id === 'soja>milho'
       && await cards().count() === 4, name + ': current rotation remains separate');
   }
-  const counter = () => page.getByText(/^\d+\/1\.000 caracteres · Ctrl\+Enter para enviar$/);
+  const counter = () => page.getByText(/^\d+\/1,000 characters · Ctrl\+Enter to send$/);
   async function openChat() {
-    if (await button('Abrir chat com IA').count()) await click('Abrir chat com IA');
+    if (await button('Open AI chat').count()) await click('Open AI chat');
     await counter().waitFor();
   }
   async function send(question) {
     const box = await reveal(counter());
     await page.mouse.click(box.x + 45, box.y - 30);
     await page.waitForTimeout(100);
-    await page.getByRole('textbox', { name: 'Sua pergunta sobre a análise', exact: true }).waitFor();
+    await page.getByRole('textbox', { name: 'Your question about the analysis', exact: true }).waitFor();
     await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.insertText(question);
     await page.waitForTimeout(120);
-    await click('Enviar pergunta');
+    await click('Send question');
   }
   async function releaseChats() {
     for (const route of pendingChats.splice(0)) await route.fulfill({ status: 200,
-      json: { ...reply, resposta: 'RESPOSTA ANTIGA SIMULADA' } }).catch(() => {});
+      json: { ...reply, resposta: 'SIMULATED OLD ANSWER' } }).catch(() => {});
   }
   async function releaseAnalyses() {
     for (const { route, body } of pendingAnalyses.splice(0)) await route.fulfill({ status: 200, json: body }).catch(() => {});
@@ -185,7 +185,7 @@ async (originalPage) => {
     check(typeof realMetadata.capabilities?.ajuste === 'boolean', 'Actual API capability is read separately from simulated legacy support');
     await seed();
     check(await scenarioHeading().count() === 1, 'Scenario controls have an accessible heading');
-    check((await text()).includes('Os ajustes de cenário ainda não estão disponíveis neste servidor.'),
+    check((await text()).includes('Scenario adjustments are not yet available on this server.'),
       'SIMULATED legacy server: unavailable support has a clear explanation');
     check((await Promise.all(controlNames.map(name => button(name).isDisabled()))).every(Boolean),
       'Unsupported scenario controls are disabled');
@@ -195,9 +195,9 @@ async (originalPage) => {
     check(!baseline.view.adjustment_note, 'Baseline is not labeled as an adjusted scenario');
 
     await seed({ chuva_pct: -20, temp_c: 0 });
-    check(await button('Analisar fazenda →').isDisabled(), 'Saved nonzero adjustment blocks unsupported analysis rather than silently discarding it');
+    check(await button('Analyze farm →').isDisabled(), 'Saved nonzero adjustment blocks unsupported analysis rather than silently discarding it');
     const unsupportedCount = analyzePosts.length;
-    await click('Voltar ao clima sem ajuste');
+    await click('Reset climate adjustments');
     check(same((await draft()).settings.ajuste, { chuva_pct: 0, temp_c: 0 }) && analyzePosts.length === unsupportedCount,
       'Reset clears saved adjustment even without support and does not send a request');
     const resetUnsupported = await submit();
@@ -216,15 +216,15 @@ async (originalPage) => {
       < baseline.raw.sequencias.find(seq => seq.id === 'soja>milho').hoje.receita_ha,
       'Real engine rainfall fixture reduces soybean-corn income');
     check(rain.view.adjustment_note && (await text()).includes(rain.view.adjustment_note), 'Adjusted result has a visible scenario note');
-    check(/não.*previsão/i.test(rain.view.adjustment_note) && /hoje|todos/i.test(rain.view.adjustment_note),
+    check(/not.*forecast/i.test(rain.view.adjustment_note) && /today|all/i.test(rain.view.adjustment_note),
       'Scenario note identifies the what-if and its scope');
     await align(scenarioHeading());
     await page.screenshot({ path: 'output/playwright/scenarios-desktop.png' });
-    await click(await rankedCards().first().textContent()); await waitText('Seu ciclo, etapa por etapa');
+    await click(await rankedCards().first().textContent()); await waitText('Your crop cycle, step by step');
     check((await text()).includes(rain.view.adjustment_note), 'Scenario warning remains visible in the detail view');
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
 
-    const resultTrack = await reveal(page.getByRole('group', { name: /^Chuva do cenário:/ }));
+    const resultTrack = await reveal(page.getByRole('group', { name: /^Scenario Rainfall:/ }));
     await page.mouse.click(resultTrack.x + 11 + (resultTrack.width - 22) * 30 / 80, resultTrack.y + resultTrack.height / 2);
     const beforeKeyboard = analyzePosts.length;
     await page.keyboard.press('ArrowRight'); await page.waitForTimeout(150);
@@ -254,8 +254,8 @@ async (originalPage) => {
     check(same(combined.raw, fixtureCases.combined.result),
       'Combined scenario displays the actual engine response');
     check(/estimad|aproxima|interpol/i.test(combined.view.adjustment_note), 'Temperature what-if explains estimated heat-day counts');
-    check(!combined.view.scenario_note.includes('Ano seco: observações de 2020/21'), 'Adjusted dry year is not mislabeled as unchanged observed weather');
-    await click('Voltar ao clima sem ajuste');
+    check(!combined.view.scenario_note.includes('Dry year: observations from 2020/21'), 'Adjusted dry year is not mislabeled as unchanged observed weather');
+    await click('Reset climate adjustments');
     check(await cards().count() === 0, 'Reset invalidates adjusted cards before the next analysis');
     const reset = await apply();
     check(!Object.hasOwn(reset.request, 'ajuste') && !reset.view.adjustment_note, 'Reset returns to unadjusted data and clears scenario labeling');
@@ -270,7 +270,7 @@ async (originalPage) => {
     check(same(reloaded.request.ajuste, { chuva_pct: 0, temp_c: 2 }), 'Scenario survives reload through the existing local draft');
 
     await seed();
-    const rainTrack = page.getByRole('group', { name: /^Chuva do cenário:/ });
+    const rainTrack = page.getByRole('group', { name: /^Scenario Rainfall:/ });
     const rainBox = await reveal(rainTrack), rainY = rainBox.y + rainBox.height / 2;
     const pointForRain = value => rainBox.x + 11 + (rainBox.width - 22) * ((value + 50) / 80);
     const preDragCount = analyzePosts.length;
@@ -287,7 +287,7 @@ async (originalPage) => {
     await page.keyboard.press('Home'); await page.waitForTimeout(120);
     check((await draft()).settings.ajuste.chuva_pct === -50 && await button(controlNames[0]).isDisabled(),
       'Rain slider keyboard Home selects the lower bound and disables decrement');
-    const tempBox = await reveal(page.getByRole('group', { name: /^Temperatura do cenário:/ }));
+    const tempBox = await reveal(page.getByRole('group', { name: /^Scenario Temperature:/ }));
     await page.mouse.click(tempBox.x + tempBox.width / 2, tempBox.y + tempBox.height / 2);
     await page.keyboard.press('End'); await page.waitForTimeout(120);
     check((await draft()).settings.ajuste.temp_c === 4 && await button(controlNames[3]).isDisabled(),
@@ -299,15 +299,15 @@ async (originalPage) => {
     for (const mode of ['missing', 'mismatch']) {
       echoMode = mode;
       await seed({ chuva_pct: -20, temp_c: 0 });
-      const pending = responseFor(); await click('Analisar fazenda →'); await pending;
-      await waitText('Falha ao consultar o motor.');
-      check(await cards().count() === 0 && (await text()).includes('Falha ao consultar o motor.'),
+      const pending = responseFor(); await click('Analyze farm →'); await pending;
+      await waitText('Unable to request an analysis.');
+      check(await cards().count() === 0 && (await text()).includes('Unable to request an analysis.'),
         `SIMULATED incompatible API: ${mode} adjustment echo is rejected before displaying cards`);
     }
     echoMode = 'correct';
     await seed(); const beforeRace = await submit();
     await changeRain(-4); holdAnalysis = true;
-    await click('Aplicar cenário');
+    await click('Apply scenario');
     check(pendingAnalyses.length === 1 && await cards().count() === 0, 'Pending scenario analysis does not leave old cards visible');
     await changeTemperature(4); holdAnalysis = false;
     const latest = await apply();
@@ -318,19 +318,19 @@ async (originalPage) => {
 
     chatSupport = true;
     await seed(); const chatBase = await submit();
-    await openChat(); await send('Explique o cenário original.'); await waitText(reply.resposta);
+    await openChat(); await send('Explain the original scenario.'); await waitText(reply.resposta);
     check(same(chatPosts.at(-1).analise, chatBase.raw) && same(chatPosts.at(-1).foco, expectedFocus(chatBase)),
       'SIMULATED chat sends the exact baseline and visible-card focus');
     holdChat = true;
-    await send('Pergunta antes de mudar o clima.'); await button('Cancelar resposta').waitFor();
+    await send('Question before changing the climate.'); await button('Cancel response').waitFor();
     await changeRain(-4);
-    check(!(await text()).includes('Explique o cenário original.') && await cards().count() === 0,
+    check(!(await text()).includes('Explain the original scenario.') && await cards().count() === 0,
       'Changing scenario immediately clears the previous chat and analysis');
     const chatRain = await apply();
     await releaseChats(); holdChat = false;
     await openChat();
-    check(!(await text()).includes('RESPOSTA ANTIGA SIMULADA'), 'Late chat reply cannot leak into another scenario');
-    await send('Explique o cenário com menos chuva.'); await waitText(reply.resposta);
+    check(!(await text()).includes('SIMULATED OLD ANSWER'), 'Late chat reply cannot leak into another scenario');
+    await send('Explain the scenario with less rain.'); await waitText(reply.resposta);
     check(same(chatPosts.at(-1).analise, chatRain.raw) && same(chatPosts.at(-1).analise.entrada.ajuste, { chuva_pct: -20, temp_c: 0 })
       && chatPosts.at(-1).historico.length === 0 && same(chatPosts.at(-1).foco, expectedFocus(chatRain)),
       'New chat sends adjusted raw analysis, new focus, and an empty history');

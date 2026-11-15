@@ -26,7 +26,7 @@ test('the normal request stays compatible with a server that has no scenario sup
 test('only an explicit true capability enables a nonzero scenario request', () => {
   for (const metadata of [undefined, null, {}, { capabilities: { ajuste: false } }, { capabilities: { ajuste: 'true' } }, { capabilities: { ajuste: 1 } }]) {
     assert.equal(supportsAdjustment(metadata), false);
-    assert.throws(() => buildRequest(farm, [], settings({ chuva_pct: -20, temp_c: 0 }), [], metadata), /ainda não estão disponíveis.*sem ajuste/);
+    assert.throws(() => buildRequest(farm, [], settings({ chuva_pct: -20, temp_c: 0 }), [], metadata), /not available.*original climate/);
   }
   assert.equal(supportsAdjustment(supported), true);
 });
@@ -45,7 +45,7 @@ test('invalid adjustments are rejected before sending or displaying a result', (
     { chuva_pct: 0, temp_c: -1 }, { chuva_pct: 0, temp_c: 4.01 }, { chuva_pct: NaN, temp_c: 0 },
     { chuva_pct: 0, temp_c: Infinity }, { chuva_pct: '-20', temp_c: 2 }, { chuva_pct: false, temp_c: 0 },
     { chuva_pct: 0, temp_c: 0, unknown: 1 }]) {
-    assert.throws(() => validateSettings(settings(ajuste)), /ajuste/);
+    assert.throws(() => validateSettings(settings(ajuste)), /adjustment/);
     assert.throws(() => validateMotorOutput(withAdjustment(ajuste)), /entrada.ajuste/);
   }
   assert.throws(() => validateMotorOutput(withAdjustment(undefined)), /entrada.ajuste/);
@@ -55,21 +55,21 @@ test('a requested adjustment requires the same effective values in the engine re
   const request = { ajuste: { chuva_pct: -20, temp_c: 2 } };
   assert.doesNotThrow(() => assertAdjustmentApplied(withAdjustment({ chuva_pct: -20, temp_c: 2 }), request));
   for (const raw of [baseline, withAdjustment({ chuva_pct: -20, temp_c: 0 }), withAdjustment({ chuva_pct: 0, temp_c: 2 })]) {
-    assert.throws(() => assertAdjustmentApplied(raw, request), /não confirmou o ajuste/);
+    assert.throws(() => assertAdjustmentApplied(raw, request), /did not confirm the requested scenario adjustment/);
   }
   assert.doesNotThrow(() => assertAdjustmentApplied(baseline, {}));
   assert.doesNotThrow(() => assertAdjustmentApplied(withAdjustment({ chuva_pct: 0, temp_c: 0 }), {}));
-  assert.throws(() => assertAdjustmentApplied(withAdjustment({ chuva_pct: -20, temp_c: 0 }), {}), /não confirmou o ajuste/);
+  assert.throws(() => assertAdjustmentApplied(withAdjustment({ chuva_pct: -20, temp_c: 0 }), {}), /did not confirm the requested scenario adjustment/);
 });
 
 test('adjusted results explicitly label the what-if and the adjusted dry-year base', () => {
   const raw = withAdjustment({ chuva_pct: -20, temp_c: 2 });
   const before = structuredClone(raw);
   const result = mapMotorAnalysis(raw, farm);
-  assert.match(result.adjustment_note, /Cenário “e se”: 20% menos chuva; temperatura \+2 °C/);
-  assert.match(result.adjustment_note, /não uma previsão.*todos os meses e cenários.*ano seco/);
-  assert.match(result.adjustment_note, /dias quentes.*limiares disponíveis.*interpolação.*Extrapolação só.*fora da faixa/);
-  assert.match(result.scenario_note, /base de 2020\/21.*ajustados.*não são as observações originais/);
+  assert.match(result.adjustment_note, /What-if scenario: 20% less rainfall; temperature \+2 °C/);
+  assert.match(result.adjustment_note, /not a forecast.*all displayed months and scenarios.*dry year/);
+  assert.match(result.adjustment_note, /Hot-day.*available thresholds.*interpolation.*Extrapolation is only.*outside the range/);
+  assert.match(result.scenario_note, /2020\/21 baseline.*adjusted.*not the original observations/);
   assert.deepEqual(raw, before);
   assert.deepEqual(result.recommendations, mapMotorAnalysis(baseline, farm).recommendations);
   assert.deepEqual(result.current_rotation, mapMotorAnalysis(baseline, farm).current_rotation);
@@ -77,10 +77,10 @@ test('adjusted results explicitly label the what-if and the adjusted dry-year ba
 
 test('unadjusted and rain-only analyses do not claim a new heat adjustment', () => {
   assert.equal(mapMotorAnalysis(baseline, farm).adjustment_note, '');
-  assert.match(mapMotorAnalysis(baseline, farm).scenario_note, /observações de 2020\/21/);
+  assert.match(mapMotorAnalysis(baseline, farm).scenario_note, /observations from 2020\/21/);
   const rain = mapMotorAnalysis(withAdjustment({ chuva_pct: 30, temp_c: 0 }), farm);
-  assert.match(rain.adjustment_note, /30% mais chuva; temperatura sem alteração/);
-  assert.doesNotMatch(rain.adjustment_note, /dias quentes/);
+  assert.match(rain.adjustment_note, /30% more rainfall; temperature unchanged/);
+  assert.doesNotMatch(rain.adjustment_note, /Hot-day/);
   const heat = mapMotorAnalysis(withAdjustment({ chuva_pct: 0, temp_c: 0.5 }), farm);
-  assert.match(heat.adjustment_note, /chuva sem alteração; temperatura \+0,5 °C/);
+  assert.match(heat.adjustment_note, /rainfall unchanged; temperature \+0\.5 °C/);
 });

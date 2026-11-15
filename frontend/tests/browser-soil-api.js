@@ -8,12 +8,12 @@ async (originalPage) => {
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const button = name => page.getByRole('button', { name, exact: true });
-  const cards = () => page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
+  const cards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
-  const labels = { arenoso: 'Arenoso · 30 mm', medio: 'Médio · 45 mm', argiloso: 'Argiloso · 60 mm' };
-  const reset = 'Usar referência padrão · 60 mm';
+  const labels = { arenoso: 'Sandy · 30 mm', medio: 'Medium · 45 mm', argiloso: 'Clay · 60 mm' };
+  const reset = 'Use default reference · 60 mm';
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
     const url = new URL(request.url());
@@ -48,7 +48,7 @@ async (originalPage) => {
     check(request.solo_textura === texture && raw.entrada.solo_textura === texture, `${texture ?? 'default'}: request and engine echo agree`);
     check(texture ? raw.entrada.cad_mm === { arenoso: 30, medio: 45, argiloso: 60 }[texture]
       : !Object.hasOwn(raw.entrada, 'cad_mm'), `${texture ?? 'default'}: supplied soil capacity matches the chosen reference`);
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
     await waitText(view.soil_note);
@@ -56,7 +56,7 @@ async (originalPage) => {
     const names = await cards().allTextContents();
     check(names.length === 3 && view.recommendations.every((rec, i) => rec.sequence_id === raw.sequencias[i].id
       && names[i].includes(rec.crop) && names[i].includes(rec.model_note)), `${texture ?? 'default'}: cards preserve real ranking and model ranges`);
-    check(view.recommendations.every(rec => rec.model_note && !rec.model_note.includes('Chuva por aproximação.')),
+    check(view.recommendations.every(rec => rec.model_note && !rec.model_note.includes('Rainfall is approximated.')),
       `${texture ?? 'default'}: exact model ratios do not show an approximation notice`);
     return raw;
   }
@@ -72,31 +72,31 @@ async (originalPage) => {
         settings: { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } } }));
     });
     await page.reload(); await waitConnected();
-    await waitText('Sugestão regional: argiloso');
+    await waitText('Regional suggestion: clay');
     check((await draft()).settings.solo_textura === 'argiloso' && suggestions.length > 0, 'Real point suggestion selects clay and is saved locally');
     check((await text()).includes('GLDAS') && (await text()).includes('NASA'), 'Regional soil source is visible');
-    const clay = await analyze('argiloso', 'Analisar fazenda →');
+    const clay = await analyze('argiloso', 'Analyze farm →');
     check(clay.sequencias.slice(0, 3).map(seq => seq.id).join('|') === 'soja>crotalaria|soja>milho|soja>sorgo', 'New October ranking is delivered through the real API');
-    const current = page.getByRole('button', { name: /^ROTAÇÃO ATUAL:.*Abrir linha do tempo$/ });
-    check(await current.count() === 1 && (await current.textContent()).includes('Soja → Milho')
-      && (await cards().nth(1).textContent()).includes('Soja → Milho'), 'Reference remains separate when it also ranks second');
+    const current = page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ });
+    check(await current.count() === 1 && (await current.textContent()).includes('Soybean → Corn')
+      && (await cards().nth(1).textContent()).includes('Soybean → Corn'), 'Reference remains separate when it also ranks second');
     const sand = await analyze('arenoso', labels.arenoso);
     check(JSON.stringify(sand.sequencias) !== JSON.stringify(clay.sequencias), 'Changing soil reruns the real engine and changes its result');
     await page.reload(); await waitConnected();
-    check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selecionado`).count() === 1,
+    check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selected`).count() === 1,
       'Manual sand choice survives reload and takes precedence over the regional suggestion');
-    await analyze('arenoso', 'Analisar fazenda →');
+    await analyze('arenoso', 'Analyze farm →');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(300);
     const boxes = await Promise.all(Object.values(labels).map(label => page.getByRole('button', { name: new RegExp(`^${label}`) }).boundingBox()));
     check(boxes.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'All real soil choices fit the mobile viewport');
-    await reveal(page.getByRole('heading', { name: 'Textura do solo', exact: true }));
+    await reveal(page.getByRole('heading', { name: 'Soil texture', exact: true }));
     await page.screenshot({ path: 'output/playwright/soil-api-mobile.png' });
     await analyze('medio', labels.medio);
     await analyze(undefined, reset);
     await page.reload(); await waitConnected();
     check((await draft()).settings.solo_padrao === true && (await draft()).settings.solo_textura === undefined,
       'Explicit default survives reload without a regional suggestion overriding it');
-    await analyze(undefined, 'Analisar fazenda →');
+    await analyze(undefined, 'Analyze farm →');
     check(analyses.length === 6 && chats.length === 0 && errors.length === 0, 'Six real analyses finish without a provider call or JavaScript error');
     return { passed: checks.length, analyses: analyses.length, transport_simulated: false, checks };
   } catch (error) {

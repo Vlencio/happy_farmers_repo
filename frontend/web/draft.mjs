@@ -14,14 +14,20 @@ export function validSeason(value) {
 export function restoreDraft(text) {
   if (!text) return null;
   const draft = JSON.parse(text);
-  if (!draft || ![1, 2].includes(draft.version)) throw new Error('Versão de rascunho não reconhecida.');
+  if (!draft || ![1, 2].includes(draft.version)) throw new Error('Unrecognized draft version.');
   let farm = null, settings = validateSettings(DEFAULT_SETTINGS), repaired = false;
   if (draft.farm) {
     try {
       farm = normalizeFarm(draft.farm.geojson, {
-        name: typeof draft.farm.name === 'string' ? draft.farm.name : 'Minha fazenda',
+        name: typeof draft.farm.name === 'string' ? draft.farm.name : 'My farm',
         source: ['draw', 'sample', 'import'].includes(draft.farm.source) ? draft.farm.source : 'import',
       });
+      // Older sample drafts kept the generated Portuguese label in the GeoJSON.
+      // Only migrate that default; imported and customized names belong to the user.
+      if (farm.source === 'sample' && ['Talhão de demonstração', 'Talhao de demonstracao'].includes(farm.name)) {
+        farm.name = 'Demonstration field';
+        farm.geojson.properties.name = farm.name;
+      }
     } catch { repaired = true; }
   }
   const items = Array.isArray(draft.history) ? draft.history : [];

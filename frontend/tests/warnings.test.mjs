@@ -9,7 +9,7 @@ const fixtures = ['motor', 'motor-fevereiro', 'motor-seco'].map(name =>
 const find = (id, fixture = fixtures[0]) => fixture.sequencias.find(seq => seq.id === id);
 const show = seq => buildWarnings(seq, cropLabel);
 const warning = (codigo, tipo, dados = {}, cultura = null, cenario = null) =>
-  ({ codigo, tipo, dados, cultura, cenario, texto: 'Texto de teste entregue pelo motor.' });
+  ({ codigo, tipo, dados, cultura, cenario, texto: 'Texto de teste entregue by the engine.' });
 const withWarnings = (...avisos) => ({ culturas: ['soja', 'feijao'], avisos });
 
 test('all actual fixture warnings validate without changing supplied evidence', () => {
@@ -30,23 +30,23 @@ test('all actual fixture warnings validate without changing supplied evidence', 
 test('actual soybean-corn and soybean-bean strategies show different risks and their evidence', () => {
   const corn = show(find('soja>milho'));
   assert.equal(corn.risks.length, 2);
-  assert.deepEqual(corn.risks.map(risk => risk.context), ['Milho · safrinha · clima de hoje', 'Milho · safrinha · clima futuro']);
-  assert.deepEqual(corn.risks.map(risk => risk.evidence), ['Fator de atendimento hídrico: 72,4 / 100.', 'Fator de atendimento hídrico: 72,1 / 100.']);
+  assert.deepEqual(corn.risks.map(risk => risk.context), ['Corn · Second season · today\'s climate', 'Corn · Second season · future climate']);
+  assert.deepEqual(corn.risks.map(risk => risk.evidence), ['water demand met factor: 72.4 / 100.', 'water demand met factor: 72.1 / 100.']);
   assert.deepEqual(corn.gaps, []);
-  assert.equal(corn.summary, '2 riscos sinalizados e 0 lacunas de informação.');
-  assert.match(corn.note, /não garante ausência de risco/);
+  assert.equal(corn.summary, '2 flagged risks and 0 data gaps.');
+  assert.match(corn.note, /does not guarantee freedom from risk/);
 
   const bean = show(find('soja>feijao'));
   assert.equal(bean.risks.length, 4);
   assert.equal(bean.gaps.length, 2); // 32 °C threshold and the bean price marked "memoria" in culturas.csv
-  assert.equal(bean.risks[0].context, 'Feijão · safrinha · clima de hoje');
-  assert.equal(bean.risks[1].context, 'Feijão · safrinha · clima futuro');
-  assert.equal(bean.risks[0].evidence, 'Fator de calor: 77,6 / 100.');
-  assert.equal(bean.risks[1].evidence, 'Fator de calor: 46,1 / 100.');
-  assert.equal(bean.risks[2].title, 'Praga ou doença em comum com a cultura anterior');
-  assert.match(bean.risks[2].evidence, /Cultura anterior: Soja.*mosca-branca.*Fator por hospedeiro comum: 0,75×; fator de sequência aplicado: 0,75×/);
-  assert.equal(bean.risks[3].evidence, '160 dias expostos; 190,1 mm de chuva sobre o solo exposto.');
-  assert.equal(bean.gaps[0].evidence, 'Limiar usado: 32 °C.');
+  assert.equal(bean.risks[0].context, 'Common bean · Second season · today\'s climate');
+  assert.equal(bean.risks[1].context, 'Common bean · Second season · future climate');
+  assert.equal(bean.risks[0].evidence, 'heat factor: 77.6 / 100.');
+  assert.equal(bean.risks[1].evidence, 'heat factor: 46.1 / 100.');
+  assert.equal(bean.risks[2].title, 'Shared pest or disease with the previous crop');
+  assert.match(bean.risks[2].evidence, /Previous crop: Soybean.*whitefly.*Shared-host factor: 0.75×; applied sequence factor: 0.75×/);
+  assert.equal(bean.risks[3].evidence, '160 exposed days; 190.1 mm of rain on exposed soil.');
+  assert.equal(bean.gaps[0].evidence, 'Threshold used: 32 °C.');
   assert.ok(!JSON.stringify(bean).includes('feijao'));
 });
 
@@ -63,10 +63,10 @@ test('adapter preserves engine ranking and gives current rotation the same seque
   assert.equal(corn.gaps.length, 0);
   assert.equal(cover.risks.length, 2);
   assert.equal(cover.gaps.length, 2);
-  const dryRisks = corn.risks.filter(risk => risk.context.includes('ano seco'));
+  const dryRisks = corn.risks.filter(risk => risk.context.includes('dry year'));
   assert.equal(dryRisks.length, 2);
-  assert.match(dryRisks[0].evidence, /77,8/);
-  assert.match(dryRisks[1].evidence, /44,7/);
+  assert.match(dryRisks[0].evidence, /77.8/);
+  assert.match(dryRisks[1].evidence, /44.7/);
 
   for (const seq of raw.sequencias) delete seq.avisos;
   const legacy = mapMotorAnalysis(raw, { area_ha: 2 });
@@ -81,10 +81,10 @@ test('actual cover crop gaps do not misrepresent absent heat penalties or zero p
   const view = show(find('soja>crotalaria'));
   assert.equal(view.risks.length, 0);
   assert.equal(view.gaps.length, 2);
-  assert.equal(view.gaps[0].context, 'Crotalária');
-  assert.match(view.gaps[0].description, /não comprova tolerância/);
-  assert.match(view.gaps[1].description, /não significa que a cultura não tenha valor/);
-  assert.match(view.gaps[1].evidence, /R\$\s*0\/t/);
+  assert.equal(view.gaps[0].context, 'Sunn hemp');
+  assert.match(view.gaps[0].description, /does not demonstrate heat tolerance/);
+  assert.match(view.gaps[1].description, /does not mean the crop has no value/);
+  assert.match(view.gaps[1].evidence, /BRL\s*0\/t/);
   assert.ok(!view.gaps[0].card_summary.includes('crotalaria'));
 });
 
@@ -110,10 +110,10 @@ test('all fourteen supported warning codes have specific labels, evidence and co
   assert.equal(view.risks.length, 8);
   assert.equal(view.gaps.length, 6);
   assert.equal(new Set([...view.risks, ...view.gaps].map(item => item.title)).size, 14);
-  assert.match(view.risks[0].evidence, /atendimento hídrico: 42 \/ 100/);
-  assert.equal(view.risks[3].evidence, 'Fator de sequência aplicado: 0,85×.');
-  assert.match(view.gaps[4].evidence, /1,05/);
-  assert.match(view.gaps[5].evidence, /Preço: R\$\s*3\.400\/t. Situação: memória/);
+  assert.match(view.risks[0].evidence, /water demand met factor: 42 \/ 100/);
+  assert.equal(view.risks[3].evidence, 'Applied sequence factor: 0.85×.');
+  assert.match(view.gaps[4].evidence, /1.05/);
+  assert.match(view.gaps[5].evidence, /Price: BRL\s*3,400\/t. Status: from memory/);
   assert.ok(!JSON.stringify(view).includes('Texto de teste'));
 });
 
@@ -124,11 +124,11 @@ test('common hosts retain previous-crop evidence and distinguish pest penalty fr
   }, 'feijao'));
   const before = structuredClone(original);
   const item = show(original).risks[0];
-  assert.equal(item.context, 'Feijão · safra');
-  assert.match(item.description, /Crotalária.*provisória.*não indica uma ocorrência medida/);
-  assert.match(item.evidence, /Cultura anterior: Crotalária.*mofo-branco.*0,92×.*1,012×/);
-  assert.match(item.card_summary, /Feijão após Crotalária/);
-  assert.doesNotMatch(JSON.stringify(item), /feijao|crotalaria|Outro risco informado/);
+  assert.equal(item.context, 'Common bean · Main season');
+  assert.match(item.description, /Sunn hemp.*provisional.*does not indicate a measured occurrence/);
+  assert.match(item.evidence, /Previous crop: Sunn hemp.*white mold.*0.92×.*1.012×/);
+  assert.match(item.card_summary, /Common bean after Sunn hemp/);
+  assert.doesNotMatch(JSON.stringify(item), /feijao|crotalaria|Additional engine risk/);
   assert.deepEqual(original, before);
 });
 
@@ -138,12 +138,12 @@ test('daily water warns with the median-year factor, raw water attendance and Ky
     warning('fator_agua_diario', 'risco', { fator_agua: 0.696, atendimento_hidrico: 0.757, ky: 1.25, slot: 'safrinha' }, 'feijao', 'hoje'),
   );
   const [monthly, daily] = show(seq).risks;
-  assert.equal(daily.title, 'Limitação por água no modo diário');
-  assert.equal(daily.context, 'Feijão · safrinha · clima de hoje · modo diário · ano mediano');
-  assert.equal(daily.evidence, 'Fator por falta de água: 69,6 / 100. Atendimento hídrico: 75,7 / 100. Ky: 1,25.');
-  assert.match(monthly.description, /avaliação mensal/);
-  assert.match(daily.description, /ano mediano.*Ky.*diferente do balanço mensal/);
-  assert.doesNotMatch(daily.card_summary, /75,7|probabilidade/);
+  assert.equal(daily.title, 'Water limitation in daily mode');
+  assert.equal(daily.context, 'Common bean · Second season · today\'s climate · daily mode · median year');
+  assert.equal(daily.evidence, 'Water-shortage factor: 69.6 / 100. Water demand met: 75.7 / 100. Ky: 1.25.');
+  assert.match(monthly.description, /monthly assessment/);
+  assert.match(daily.description, /median year.*Ky.*separate from the monthly water balance/);
+  assert.doesNotMatch(daily.card_summary, /75.7|probability/);
 });
 
 test('model rank warnings show source positions and model names without treating the range as probability', () => {
@@ -152,10 +152,10 @@ test('model rank warnings show source positions and model names without treating
   }, null, 'futuro'));
   const before = structuredClone(seq);
   const item = show(seq).risks[0];
-  assert.equal(item.context, 'Sequência inteira · clima futuro');
-  assert.equal(item.card_summary, 'No futuro, posição de 1ª a 12ª entre modelos.');
-  assert.match(item.evidence, /1ª a 12ª.*MIROC6: 1ª; ACCESS-CM2: 12ª; MRI-ESM2-0: 4ª.*5 posições/);
-  assert.match(item.description, /não é um intervalo de confiança nem uma probabilidade/);
+  assert.equal(item.context, 'Whole sequence · future climate');
+  assert.equal(item.card_summary, 'Future ranks range from #1 to #12 across models.');
+  assert.match(item.evidence, /#1 to #12.*MIROC6: #1; ACCESS-CM2: #12; MRI-ESM2-0: #4.*5 positions/);
+  assert.match(item.description, /neither a confidence interval nor a probability/);
   assert.deepEqual(seq, before);
 });
 
@@ -180,7 +180,7 @@ test('new warning contracts reject malformed evidence and scope but do not repea
   ];
   for (const [original, mutate] of cases) {
     const item = structuredClone(original); mutate(item);
-    assert.throws(() => show(withWarnings(item)), /contrato do motor: avisos/);
+    assert.throws(() => show(withWarnings(item)), /engine contract: avisos/);
   }
   daily.dados.fator_agua = 1;
   models.dados.rank_max = 1;
@@ -195,11 +195,11 @@ test('dry-year warning context remains distinct from daily bad-year comparison',
   );
   seq.seco = {};
   const view = show(seq);
-  assert.equal(view.risks[0].context, 'Soja · safra · ano seco');
-  assert.equal(view.risks[1].context, 'Sequência inteira · clima futuro');
-  assert.match(view.risks[1].description, /modo diário/);
-  assert.match(view.risks[1].description, /não é o cenário fixo de ano seco/);
-  assert.doesNotMatch(JSON.stringify(view), /1 em 5|probabilidade/);
+  assert.equal(view.risks[0].context, 'Soybean · Main season · dry year');
+  assert.equal(view.risks[1].context, 'Whole sequence · future climate');
+  assert.match(view.risks[1].description, /Daily-mode/);
+  assert.match(view.risks[1].description, /separate from the fixed dry-year scenario/);
+  assert.doesNotMatch(JSON.stringify(view), /1 em 5|probability/);
 });
 
 test('legacy omission is unavailable, while an empty list is a valid evaluated result', () => {
@@ -210,20 +210,23 @@ test('legacy omission is unavailable, while an empty list is a valid evaluated r
   assert.equal(validateSequenceWarnings(seq, ['hoje', 'futuro']), true);
   assert.equal(show(seq).risks.length, 0);
   seq.avisos = null;
-  assert.throws(() => show(seq), /contrato do motor: avisos.lista/);
+  assert.throws(() => show(seq), /engine contract: avisos.lista/);
 });
 
-test('unknown future codes preserve classification, supplied text and JSON evidence', () => {
+test('unknown future codes preserve classification and raw input without leaking untranslated prose', () => {
   const seq = withWarnings(warning('nova_regra', 'risco', {
     intensidade: 12.35, observada: false, meses: [1, 2], detalhe: { origem: 'estação' }, fonte: null,
   }, 'feijao', 'hoje'));
   seq.avisos[0].texto = 'Aviso novo recebido do motor.';
+  const original = structuredClone(seq);
   const view = show(seq);
   assert.equal(view.risks.length, 1);
   assert.equal(view.gaps.length, 0);
-  assert.equal(view.risks[0].description, 'Aviso novo recebido do motor.');
-  assert.equal(view.risks[0].context, 'Feijão · clima de hoje');
-  assert.match(view.risks[0].evidence, /intensidade: 12,35.*observada: não.*meses: 1, 2.*origem: estação.*fonte: não informado/);
+  assert.match(view.risks[0].description, /English explanation is not yet available/);
+  assert.equal(view.risks[0].context, 'Common bean · today\'s climate');
+  assert.equal(view.risks[0].evidence, 'Engine code: nova_regra.');
+  assert.doesNotMatch(JSON.stringify(view), /Aviso novo|intensidade|estação/);
+  assert.deepEqual(seq, original);
   seq.avisos[0].tipo = 'lacuna';
   assert.equal(show(seq).gaps.length, 1);
 });
@@ -231,11 +234,11 @@ test('unknown future codes preserve classification, supplied text and JSON evide
 test('data-status evidence includes temperature units and preserves absent or new field values', () => {
   const check = dados => show(withWarnings(warning('valor_a_conferir', 'lacuna', dados, 'feijao'))).gaps[0];
   assert.equal(check({ campo: 'temp_calor_c', status: 'sem fonte', valor: 32 }).evidence,
-    'Limiar de calor: 32 °C. Situação: sem fonte.');
-  assert.match(check({ campo: 'preco', status: 'memoria', valor: null }).evidence, /Preço: não informado/);
-  assert.match(check({ campo: 'produtividade_safrinha', status: 'a conferir', valor: 1.7 }).evidence, /1,7 t\/ha/);
+    'Heat threshold: 32 °C. Status: no source.');
+  assert.match(check({ campo: 'preco', status: 'memoria', valor: null }).evidence, /Price: not provided/);
+  assert.match(check({ campo: 'produtividade_safrinha', status: 'a conferir', valor: 1.7 }).evidence, /1.7 t\/ha/);
   assert.equal(check({ campo: 'nova_fonte', status: 'provisório', valor: 'observação local' }).evidence,
-    'nova fonte: observação local. Situação: provisório.');
+    'Additional field (nova_fonte): Text value: English translation unavailable. Status: provisional.');
 });
 
 test('malformed envelopes, nonfinite evidence and incompatible scopes are rejected', () => {
@@ -251,7 +254,7 @@ test('malformed envelopes, nonfinite evidence and incompatible scopes are reject
   ];
   for (const mutate of mutations) {
     const item = structuredClone(original); mutate(item);
-    assert.throws(() => show(withWarnings(item)), /Resposta incompatível com o contrato do motor: avisos/);
+    assert.throws(() => show(withWarnings(item)), /Response does not match the engine contract: avisos/);
   }
   assert.throws(() => show(withWarnings(null)), /avisos/);
   assert.throws(() => show({ culturas: ['soja'], avisos: {} }), /avisos/);

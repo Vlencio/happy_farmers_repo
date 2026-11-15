@@ -2,6 +2,7 @@ import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings, supportsAdjustment, assertAdjustmentApplied } from './api.mjs';
+import { englishApiError } from './external-text.mjs';
 import { buildFieldContext, getAnalysisSlope } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
@@ -33,7 +34,7 @@ async function updateSoil() {
     });
     if (id !== soilId) return;
     soilContext = { loading: false, suggestion: result?.textura_sugerida ?? null,
-      source: result?.fonte ?? '', notice: result?.textura_sugerida ? '' : 'Sem sugestão disponível para este ponto. Informe a textura se souber.' };
+      source: result?.fonte ?? '', notice: result?.textura_sugerida ? '' : 'No suggestion is available for this point. Enter the texture if you know it.' };
     if (!settings.solo_textura && !settings.solo_padrao && result?.textura_sugerida) {
       invalidate();
       settings = { ...settings, solo_textura: result.textura_sugerida };
@@ -41,7 +42,7 @@ async function updateSoil() {
     }
   } catch (error) {
     if (id !== soilId) return;
-    soilContext = { loading: false, suggestion: null, source: '', notice: 'Não foi possível obter a sugestão do ponto. Você pode informar a textura ou usar a referência padrão.' };
+    soilContext = { loading: false, suggestion: null, source: '', notice: 'Unable to get a soil suggestion for this point. Choose a texture or use the default reference.' };
   }
   if (id === soilId) sendSoil();
 }
@@ -55,8 +56,8 @@ window.addEventListener('online', () => farmPreview.refresh());
 function saveDraft() {
   try {
     localStorage.setItem(storageKey, JSON.stringify({ version: 2, farm, history, settings }));
-    send({ type: 'notice', message: 'Rascunho salvo neste navegador.' });
-  } catch { send({ type: 'notice', message: 'Não foi possível salvar neste navegador. Baixe seu GeoJSON para guardar o contorno.' }); }
+    send({ type: 'notice', message: 'Draft saved in this browser.' });
+  } catch { send({ type: 'notice', message: 'Unable to save in this browser. Download your GeoJSON to keep the boundary.' }); }
 }
 function invalidate() { requestId++; controller?.abort(); chat.invalidate(); }
 function updateFieldContext() {
@@ -81,7 +82,7 @@ async function connect() {
     chat.configure(null);
     send({ type: 'field_context', context: null });
     send({ type: 'config', ready: false, cultures: [], data_notice: '', scenario_available: false });
-    send({ type: 'error', message: `Não foi possível conectar ao motor. Inicie a API e clique em Reconectar. ${error.message}` });
+    send({ type: 'error', message: `Unable to connect to the analysis service. Try Reconnect. ${englishApiError(error.message)}` });
   }
 }
 const farmMap = createFarmMap((value) => {
@@ -96,7 +97,7 @@ document.getElementById('geojson-file').onchange = async (event) => {
   const file = event.target.files?.[0]; event.target.value = '';
   if (!file) return;
   try {
-    if (file.size > MAX_FILE_BYTES) throw new Error('O arquivo excede 2 MB. Simplifique o contorno antes de importar.');
+    if (file.size > MAX_FILE_BYTES) throw new Error('The file exceeds 2 MB. Simplify the boundary before importing.');
     farmMap.open(parseGeoJSON(await file.text(), { name: file.name.replace(/\.(json|geojson)$/i, ''), source: 'import' }));
   } catch (error) { send({ type: 'error', message: error.message }); }
 };
@@ -104,7 +105,7 @@ document.getElementById('geojson-file').onchange = async (event) => {
 window.happyFarmersHost = {
   action(raw) {
     // Rune event handlers stay synchronous. All browser/network work lives here.
-    void dispatch(JSON.parse(raw)).catch((error) => send({ type: 'error', message: error.message || 'Não foi possível concluir a ação.' }));
+    void dispatch(JSON.parse(raw)).catch((error) => send({ type: 'error', message: error.message || 'Unable to complete this action.' }));
   },
 };
 async function dispatch(action) {
@@ -114,9 +115,9 @@ async function dispatch(action) {
     case 'import': document.getElementById('geojson-file').click(); break;
     case 'sample': {
       const response = await fetch('/demo-farm.geojson');
-      if (!response.ok) throw new Error('Não foi possível abrir a área de exemplo.');
+      if (!response.ok) throw new Error('Unable to open the example field.');
       const sample = normalizeFarm(await response.json(), { source: 'sample' });
-      sample.name = 'Talhão de demonstração';
+      sample.name = 'Demonstration field';
       farmMap.open(sample); break;
     }
     case 'download': if (farm) downloadGeoJSON(farm); break;
@@ -144,13 +145,13 @@ async function dispatch(action) {
       let stored = true;
       try { localStorage.removeItem(storageKey); } catch { stored = false; }
       send({ type: 'cleared' });
-      if (!stored) send({ type: 'notice', message: 'Planejamento limpo. O navegador não permitiu acessar o rascunho salvo.' });
+      if (!stored) send({ type: 'notice', message: 'Plan cleared. The browser did not allow access to the saved draft.' });
       break;
     }
     case 'cancel': invalidate(); send({ type: 'cancelled' }); break;
     case 'analyze': {
-      if (!farm) throw new Error('Defina o limite da fazenda antes de analisar.');
-      if (!metadata) throw new Error('Conecte ao motor antes de analisar.');
+      if (!farm) throw new Error('Define your farm boundary before analyzing.');
+      if (!metadata) throw new Error('Connect to the analysis service first.');
       cancelSoil(); sendSoil();
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
       const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
@@ -167,8 +168,8 @@ async function dispatch(action) {
         chat.setAnalysis(raw, result);
       } catch (error) {
         if (id === requestId) send({ type: 'error', message: error.name === 'AbortError'
-          ? 'A consulta ao clima excedeu 6 minutos. Tente novamente; o POWER pode estar lento ou indisponível.'
-          : `Falha ao consultar o motor. ${error.message}` });
+          ? 'The climate request exceeded 6 minutes. Try again; POWER may be slow or unavailable.'
+          : `Unable to request an analysis. ${error.message}` });
       } finally { clearTimeout(timer); }
       break;
     }
@@ -186,14 +187,14 @@ async function boot() {
         ({ farm, history, settings } = draft);
         send({ type: 'restore', farm, history, settings });
         farmPreview.setFarm(farm);
-        if (draft.repaired) send({ type: 'notice', message: 'Recuperamos as partes válidas do seu rascunho. Confira a área, o histórico e as opções antes de analisar.' });
+        if (draft.repaired) send({ type: 'notice', message: 'We recovered the valid parts of your draft. Check the area, history and settings before analyzing.' });
       }
-    } catch { send({ type: 'notice', message: 'O rascunho anterior não pôde ser restaurado. Você pode iniciar uma nova área.' }); }
+    } catch { send({ type: 'notice', message: 'Your previous draft could not be restored. You can start a new field.' }); }
     document.getElementById('boot').hidden = true;
     await connect();
   } catch (error) {
     console.error(error);
-    document.getElementById('boot-error').textContent = 'Não foi possível abrir o planejamento. Confira sua conexão e tente recarregar a página.';
+    document.getElementById('boot-error').textContent = 'Unable to open your plan. Check your connection and try reloading the page.';
     document.getElementById('boot-retry').hidden = false;
   }
 }
