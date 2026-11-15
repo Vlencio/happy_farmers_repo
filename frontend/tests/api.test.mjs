@@ -62,6 +62,80 @@ test('current rotation outside the calendar explains the actual discard without 
   assert.doesNotMatch(current.description, /R\$/);
   assert.equal(view.recommendations.length, 3);
 });
+
+// Presentation-only altitude case: remove a viable sequence and compact the
+// supplied ranks, without pretending to recompute its agricultural scores.
+function altitudeDiscard() {
+  const data = copy(), id = 'soja>trigo';
+  const seq = data.sequencias.find(seq => seq.id === id);
+  assert.ok(seq, 'The fixture must contain the calendar-feasible wheat sequence');
+  data.sequencias = data.sequencias.filter(seq => seq.id !== id);
+  for (const scenario of ['hoje', 'futuro']) {
+    [...data.sequencias].sort((a, b) => a[`rank_${scenario}`] - b[`rank_${scenario}`])
+      .forEach((seq, i) => { seq[`rank_${scenario}`] = i + 1; });
+  }
+  const motivo = { cultura: 'trigo', posicao: 2, slot: 'safrinha', mes_livre: 2,
+    mes_plantio: 3, altitude_min_m: 800, altitude_m: 484.41 };
+  data.entrada.altitude_m = 484.41;
+  data.entrada.rotacao_atual = [...seq.culturas];
+  data.descartadas.push({ id, culturas: [...seq.culturas], atual: true, motivo });
+  data.atual = { id, culturas: [...seq.culturas], viavel: false, motivo: structuredClone(motivo) };
+  for (const item of [...data.sequencias, ...data.descartadas]) item.atual = item.id === id;
+  return data;
+}
+
+test('altitude discards explain the minimum and field elevation in both reference formats', () => {
+  const data = altitudeDiscard();
+  for (const legacy of [false, true]) {
+    const raw = structuredClone(data);
+    if (legacy) delete raw.atual;
+    const view = mapMotorAnalysis(raw, farm);
+    const reason = view.discarded.find(reason => reason.startsWith('Soja → Trigo:'));
+    assert.match(reason, /Trigo.*altitude mínima de 800 m.*talhão tem 484,41 m/);
+    assert.doesNotMatch(reason, /só fica livre|não tem plantio/);
+    assert.equal(view.current_rotation.status, 'discarded');
+    assert.equal(view.current_rotation.strategy, null);
+    assert.match(view.current_rotation.description, /descartada por altitude.*800 m.*484,41 m/);
+    assert.doesNotMatch(view.current_rotation.description, /calendário|R\$/);
+    assert.match(view.summary, /descartadas pelo motor/);
+    assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
+  }
+  // The dedicated reference is sufficient even if no full discarded list is sent.
+  data.descartadas = [];
+  assert.match(mapMotorAnalysis(data, farm).current_rotation.description, /descartada por altitude/);
+});
+
+test('legacy calendar reasons keep their explanation even when the API echoes altitude', () => {
+  const old = mapMotorAnalysis(february, farm);
+  const raw = structuredClone(february); raw.entrada.altitude_m = 484.41;
+  const view = mapMotorAnalysis(raw, farm);
+  assert.deepEqual(view.current_rotation, old.current_rotation);
+  assert.deepEqual(view.discarded, old.discarded);
+  assert.match(view.current_rotation.description, /não cabe no calendário.*não tem plantio previsto/);
+});
+
+test('altitude discard evidence must be complete, finite, below the minimum and agree with the input', () => {
+  const changes = [
+    r => { delete r.altitude_min_m; }, r => { delete r.altitude_m; },
+    r => { r.altitude_min_m = null; }, r => { r.altitude_m = null; },
+    r => { r.altitude_min_m = '800'; }, r => { r.altitude_m = '484.41'; },
+    r => { r.altitude_min_m = Infinity; }, r => { r.altitude_m = NaN; },
+    r => { r.altitude_m = -101; }, r => { r.altitude_m = 6001; },
+    r => { r.altitude_m = 500; }, r => { r.altitude_min_m = 484.41; },
+    r => { r.altitude_min_m = 400; }, r => { r.mes_plantio = null; },
+  ];
+  for (const reference of [false, true]) for (const change of changes) {
+    const raw = altitudeDiscard();
+    change(reference ? raw.atual.motivo : raw.descartadas.find(seq => seq.id === 'soja>trigo').motivo);
+    assert.throws(() => validateMotorOutput(raw), /motivo.altitude/);
+  }
+  for (const altitude of [null, '484.41', NaN, Infinity, -101, 6001]) {
+    const raw = altitudeDiscard(); raw.entrada.altitude_m = altitude;
+    assert.throws(() => validateMotorOutput(raw), /entrada.altitude_m/);
+  }
+  const missing = altitudeDiscard(); delete missing.entrada.altitude_m;
+  assert.throws(() => validateMotorOutput(missing), /motivo.altitude/);
+});
 // Derived cases below exercise presentation states, not fresh engine calculations.
 test('missing history and a missing current marker have distinct states without replacing the winners', () => {
   const data = copy();

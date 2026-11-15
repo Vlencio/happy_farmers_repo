@@ -187,7 +187,7 @@ async (originalPage) => {
 
     await setPriority('agua', 0);
     const income = await setPriority('solo', 0);
-    await verifyRanking(income, ['soja>milho', 'soja>trigo', 'soja>sorgo'], 'Only income in October');
+    await verifyRanking(income, ['soja>milho', 'soja>sorgo', 'soja>girassol'], 'Only income in October');
     check(same(income.request.prioridades, { agua: 0, solo: 0, renda: 1 }) && income.view.current_rotation.strategy.sequence_id === 'soja>milho',
       'Priority clicks rerun the API automatically and preserve the current rotation');
     await setPriority('solo', 1);
@@ -205,7 +205,7 @@ async (originalPage) => {
     const reloaded = await submit();
     check(same(reloaded.request, zeros.request), 'Reload preserves selected priorities and the full farm analysis request');
     const strong = await setPriority('renda', 3);
-    await verifyRanking(strong, ['soja>milho', 'soja>trigo', 'soja>sorgo'], 'Priority level three');
+    await verifyRanking(strong, ['soja>milho', 'soja>sorgo', 'soja>girassol'], 'Priority level three');
     check(same(strong.request.prioridades, { agua: 0, solo: 0, renda: 3 }), 'The maximum priority value is sent without frontend normalization');
 
     const february = await analyze(2);
@@ -213,8 +213,8 @@ async (originalPage) => {
       'Real February winner is crotalaria-soybean with February planting');
     check(february.raw.sequencias[1].id === 'sorgo>soja' && february.raw.sequencias[1].rank_futuro === 2,
       'Real February runner-up is sorghum-soybean in both climates');
-    check(february.raw.sequencias[2].id === 'feijao>soja' && february.raw.sequencias[2].rank_futuro === 10,
-      'Real February third sequence moves to tenth in the future');
+    check(february.raw.sequencias[2].id === 'feijao>soja' && february.raw.sequencias[2].rank_futuro === 9,
+      'Real February third sequence moves to ninth in the future after the altitude filter');
     await verifyRanking(february, february.raw.sequencias.slice(0, 3).map(seq => seq.id), 'February future comparison');
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-desktop.png' });
@@ -266,7 +266,7 @@ async (originalPage) => {
     reply = { resposta: 'SIMULAÇÃO: agora as prioridades favorecem a renda.', modelo: 'qa-simulado', recusada: false };
     await send('O que mudou com a renda?'); await waitText(reply.resposta);
     check(same(posts.at(-1).foco, expectedFocus(chatIncome)) && !posts.at(-1).foco.includes('soja>crotalaria')
-      && posts.at(-1).foco.includes('soja>trigo') && posts.at(-1).historico.length === 0,
+      && posts.at(-1).foco.includes('soja>girassol') && !posts.at(-1).foco.includes('soja>trigo') && posts.at(-1).historico.length === 0,
       'SIMULATED next question uses only newly visible cards and starts a clean history', true);
     holdChat = true;
     const pendingQuestion = 'Pergunta pendente antes de mudar a prioridade.';

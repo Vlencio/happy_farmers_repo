@@ -17,6 +17,8 @@ for (const horizonte of [1, 2]) {
     const request = buildRequest(farm, history, { horizonte, mes_plantio }, metadata.cultures);
     const raw = await requestAnalysis(baseUrl, request);
     assert.equal(raw.origem.hoje, 'tabela_demo');
+    assert.equal(raw.entrada.altitude_m, 484.41, 'A API usa a altitude SRTM do talhão de demonstração.');
+    assert.ok(raw.sequencias.every(seq => !seq.culturas.includes('trigo')), 'Trigo abaixo da altitude mínima não entra nas opções viáveis.');
     assert.equal(raw.clima.seco.length, 12);
     assert.deepEqual(raw.entrada.rotacao_atual, ['crotalaria']);
     assert.equal(raw.entrada.horizonte, horizonte);
@@ -27,7 +29,7 @@ for (const horizonte of [1, 2]) {
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id));
     assert.equal(view.recommendations.length, Math.min(3, raw.sequencias.length));
     if (horizonte === 1 && [3, 4, 5, 12].includes(mes_plantio)) {
-      const expected = { 3: ['trigo'], 4: [], 5: ['soja', 'milho'], 12: ['algodao'] };
+      const expected = { 3: [], 4: [], 5: ['soja', 'milho'], 12: ['algodao'] };
       assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), expected[mes_plantio]);
     }
     if (!raw.sequencias.length) empty++;
@@ -69,9 +71,10 @@ const currentCases = [
   { crops: ['algodao', 'soja', 'milho'], month: 2, horizon: 2, id: 'soja>milho', status: 'discarded' },
   { crops: ['soja', 'milho', 'soja'], month: 2, horizon: 2, id: 'milho>soja', status: 'ready' },
   { crops: ['milho'], month: 10, horizon: 2, id: 'milho>milho', status: 'ready' },
+  { crops: ['soja', 'trigo'], month: 10, horizon: 2, id: 'soja>trigo', status: 'discarded', altitude: true },
   { crops: [], month: 10, horizon: 2, id: null, status: 'no_history' },
 ];
-for (const { crops, month, horizon, id, status } of currentCases) {
+for (const { crops, month, horizon, id, status, altitude } of currentCases) {
   const history = crops.map((crop, i) => ({ crop, season: String(2020 + i), notes: '' }));
   const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, { mes_plantio: month, horizonte: horizon }, metadata.cultures));
   assert.ok(Object.hasOwn(raw, 'atual'), 'Reinicie a API local para carregar o motor atualizado.');
@@ -86,10 +89,15 @@ for (const { crops, month, horizon, id, status } of currentCases) {
     assert.equal(view.current_rotation.strategy.comparison_facts[0].value, source.hoje.receita_ha.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }));
   } else {
     assert.equal(view.current_rotation.strategy, null);
-    if (status === 'discarded') assert.match(view.current_rotation.description, /não tem plantio previsto na safrinha/);
+    if (status === 'discarded' && altitude) {
+      assert.equal(raw.atual.motivo.altitude_min_m, 800);
+      assert.equal(raw.atual.motivo.altitude_m, 484.41);
+      assert.match(view.current_rotation.description, /altitude.*800.*484,41/i);
+      assert.doesNotMatch(view.current_rotation.description, /não cabe no calendário/);
+    } else if (status === 'discarded') assert.match(view.current_rotation.description, /não tem plantio previsto na safrinha/);
   }
 }
-console.log(`${currentCases.length} casos de rotação atual passaram na API real, incluindo histórico longo, slot equivalente, descarte e ausência de histórico.`);
+console.log(`${currentCases.length} casos de rotação atual passaram na API real, incluindo histórico longo, slot equivalente, descartes por calendário/altitude e ausência de histórico.`);
 
 // Ranking comes from a new engine analysis for each set of priorities.
 // Keep the demo field and soybean/corn history used in the engine's examples:
@@ -97,7 +105,7 @@ console.log(`${currentCases.length} casos de rotação atual passaram na API rea
 const weightedHistory = ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' }));
 const weightedCases = [
   { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>crotalaria', 'soja>milho', 'soja>sorgo'] },
-  { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>trigo', 'soja>sorgo'] },
+  { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>sorgo', 'soja>girassol'] },
   { name: 'só solo', prioridades: { agua: 0, solo: 3, renda: 0 }, ids: ['soja>crotalaria', 'feijao>crotalaria', 'milho>crotalaria'] },
   { name: 'só água e desempate do motor', prioridades: { agua: 3, solo: 0, renda: 0 }, ids: ['soja>crotalaria', 'soja>feijao', 'soja>milheto'] },
   { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>crotalaria', 'soja>milho', 'soja>sorgo'] },
@@ -129,9 +137,9 @@ assert.equal(futureShift.sequencias[1].id, 'sorgo>soja');
 assert.equal(futureShift.sequencias[1].rank_futuro, 2);
 assert.equal(februaryView.recommendations[1].rank_facts[2].value, '#2');
 assert.equal(futureShift.sequencias[2].id, 'feijao>soja');
-assert.equal(futureShift.sequencias[2].rank_futuro, 10);
-assert.equal(februaryView.recommendations[2].rank_facts[2].value, '#10');
-console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro tem crotalaria>soja e sorgo>soja nas duas primeiras posições, e feijao>soja muda de 3º hoje para 10º no futuro.`);
+assert.equal(futureShift.sequencias[2].rank_futuro, 9);
+assert.equal(februaryView.recommendations[2].rank_facts[2].value, '#9');
+console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro tem crotalaria>soja e sorgo>soja nas duas primeiras posições, e feijao>soja muda de 3º hoje para 9º no futuro.`);
 
 // The actual API now owns what-if calculations. Exercise the browser request
 // builder, effective echo and presentation, without reproducing climate formulas.

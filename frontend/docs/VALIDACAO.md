@@ -43,7 +43,33 @@ Para reproduzir a integração nova, executar via Playwright CLI
 `frontend/tests/browser-soil-api.js` com API em 8000 e web em 4173.
 Nenhuma chamada ao LLM ou download POWER foi feito. Docker, deploy, CI remoto,
 celular físico e leitor de tela não foram verificados nesta rodada.
-O descarte do trigo por altitude ainda aguarda a entrega do motor/API.
+O descarte do trigo por altitude ainda aguardava a entrega do motor/API nesta
+etapa; a integração recebida antes do push está registrada abaixo.
+
+### Atualização remota recebida antes do push
+
+A branch remota avançou para `490201e`, incluindo `407aed4` (altitude) e a
+exportação das fixtures. Merge preservou o trabalho de Pedro, com conflito
+somente no status das pendências. Os arquivos canônicos exportados por ele
+eram iguais aos desta rodada; a regeneração após o merge não produz diff.
+O motor/API continuam sendo os entregues por Pedro.
+
+O front passou a distinguir o motivo de altitude do calendário e a validar
+seus campos. API sem `lon` ou com clima de demonstração inclui a altitude SRTM;
+fixtures diretas do motor continuam sem ela. Assim, renda apenas passa a
+soja→milho, soja→sorgo, soja→girassol; março fica sem sequência, e feijão→soja
+passa ao 9º lugar no futuro em fevereiro. Testes HTTP e de navegador afetados
+acompanham essas diferenças sem mudar a seleção de cards no front.
+
+Após a integração: **146 testes JS**, **216 Python** (177 motor/dados + 39
+backend), build web e `git diff --check` passaram. A formatação e o teste Rust
+da etapa anterior permanecem válidos; o Rust não mudou nesta integração.
+**45 análises HTTP válidas + rejeição 422** passaram, incluindo referência
+soja→trigo descartada com texto de altitude. Reexecutadas **181 verificações
+de navegador**: 98 prioridades (oito de chat simulado), 37 renda anual e 46
+solo/modelos com API real. Sem erros JavaScript; sem LLM ou download POWER.
+Logs locais: `frontend/.cache/altitude-*.log` e
+`output/playwright/altitude-{priorities,annual,soil}.log`.
 
 ## Revisão integrada da main `7d8c1fe` · 15/11/2026
 

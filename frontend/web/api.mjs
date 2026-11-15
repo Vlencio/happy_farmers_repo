@@ -30,12 +30,19 @@ function string(value, path) {
 function list(value, path, min = 0, max = 2000) {
   if (!Array.isArray(value) || value.length < min || value.length > max) invalid(path);
 }
-function validateDiscardReason(reason, horizon) {
+function validateDiscardReason(reason, horizon, altitude) {
   string(reason?.cultura, 'motivo.cultura');
   integer(reason.posicao, 'motivo.posicao', 1, horizon);
   if (!['safra', 'safrinha'].includes(reason.slot)) invalid('motivo.slot');
   integer(reason.mes_livre, 'motivo.mes_livre', 1, 12);
   if (reason.mes_plantio !== null) integer(reason.mes_plantio, 'motivo.mes_plantio', 1, 12);
+  if (Object.hasOwn(reason, 'altitude_min_m') || Object.hasOwn(reason, 'altitude_m')) {
+    finite(reason.altitude_min_m, 'motivo.altitude_min_m');
+    finite(reason.altitude_m, 'motivo.altitude_m', -100, 6000);
+    if (reason.altitude_m !== altitude || reason.altitude_min_m <= reason.altitude_m || reason.mes_plantio === null) {
+      invalid('motivo.altitude: incompatível com a entrada ou com o descarte');
+    }
+  }
 }
 function validateRotationFactors(crop) {
   for (const key of ['repete', 'bonus_n']) {
@@ -159,6 +166,7 @@ export function validateMotorOutput(value) {
   }
   integer(value?.entrada?.mes_plantio, 'entrada.mes_plantio', 1, 12);
   integer(value?.entrada?.horizonte, 'entrada.horizonte', 1, 2);
+  if (Object.hasOwn(value.entrada, 'altitude_m')) finite(value.entrada.altitude_m, 'entrada.altitude_m', -100, 6000);
   validateOutputAdjustment(value.entrada);
   for (const key of ['agua', 'solo', 'renda']) finite(value.entrada.prioridades?.[key], `entrada.prioridades.${key}`, 0, 1);
   if (Object.values(value.entrada.prioridades).every(weight => weight === 0)) invalid('entrada.prioridades: pesos não normalizados');
@@ -236,7 +244,7 @@ export function validateMotorOutput(value) {
     validateSequenceBenefits(seq, scenarios);
   }
   for (const seq of value.descartadas) {
-    validateDiscardReason(seq.motivo, value.entrada.horizonte);
+    validateDiscardReason(seq.motivo, value.entrada.horizonte, value.entrada.altitude_m);
   }
   validateModelRanges(value);
   // The dedicated reference owns identity and availability; metrics stay in sequencias.
@@ -255,7 +263,7 @@ export function validateMotorOutput(value) {
       if (current.viavel) {
         if (current.motivo !== null || !value.sequencias.some((seq) => seq.id === current.id)) invalid('atual: sequência viável');
       } else {
-        validateDiscardReason(current.motivo, value.entrada.horizonte);
+        validateDiscardReason(current.motivo, value.entrada.horizonte, value.entrada.altitude_m);
       }
     }
   }
@@ -352,6 +360,9 @@ function closeLeaders(sequences) {
 
 function discardedReason(seq) {
   const r = seq.motivo;
+  if (Object.hasOwn(r, 'altitude_min_m')) {
+    return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) pede altitude mínima de ${number(r.altitude_min_m, 2)} m; o talhão tem ${number(r.altitude_m, 2)} m. Descartada pelo motor por altitude.`;
+  }
   return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
 }
 
@@ -411,7 +422,7 @@ function currentRotation(value, farm, priorityNote, tied) {
   const discarded = hasReference
     ? value.atual?.viavel === false && value.atual
     : value.descartadas.find((item) => item.atual);
-  if (discarded) return state('discarded', `A rotação de referência não cabe no calendário escolhido. ${discardedReason(discarded)}${repetition}`);
+  if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'A rotação de referência foi descartada por altitude.' : 'A rotação de referência não cabe no calendário escolhido.'} ${discardedReason(discarded)}${repetition}`);
   return state('unavailable', 'Não foi possível identificar a rotação atual neste resultado. As alternativas disponíveis continuam abaixo.');
 }
 
@@ -432,7 +443,7 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
     metric_label: 'score ponderado · clima de hoje',
     reason: `${seq.rank_hoje}ª posição entre as sequências viáveis no clima de hoje. ${priority_note} A posição no futuro usa os mesmos pesos e pode mudar.`,
   }, priority_note, current_rotation.strategy?.sequence_id === seq.id, tied, value.modelos));
-  return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
+  return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas pelo motor. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
     source_warning: value.origem?.aviso || '', ranking_note, soil_note: soilNote(value),
     scenario_note: value.clima.seco
       ? adjustment_note

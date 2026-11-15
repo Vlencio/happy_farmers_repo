@@ -73,6 +73,25 @@ anteriores. Não vai para `motor.recomendar`: a API usa latitude e longitude par
 chamar a função entregue em `scripts/clima_ponto.py`. Sem longitude, mantém as
 tabelas de demonstração, incluindo o ano seco opcional, sem consulta externa.
 
+### Descarte por altitude
+
+Desde `407aed4`, a API acrescenta `altitude_m: 484.41` ao pedido do motor
+somente quando usa o clima de demonstração, a partir do resumo SRTM entregue.
+O front não envia nem estima esse campo. Fora da demonstração, a API o omite.
+
+Um motivo com `altitude_min_m` e `altitude_m` identifica descarte por altitude,
+mesmo que o calendário seja viável. O front exige os dois valores finitos,
+altitude do talhão igual ao eco de `entrada.altitude_m`, mínima maior que a
+altitude do talhão e mês de plantio preenchido. Apresenta a mínima exigida e
+a altitude informada, inclusive na referência atual, sem atribuir o descarte
+ao calendário. Motivos antigos sem esses campos mantêm o texto de época.
+
+No clima de demonstração, o trigo deixa de ser viável abaixo de 800 m; segue
+no catálogo para histórico e para pontos onde a API não informou altitude.
+As fixtures canônicas de `backend.export_fixture` continuam sendo chamadas
+diretas ao motor **sem altitude**. Os testes HTTP cobrem separadamente a API
+com altitude e seus ranks de futuro, que podem diferir dessas fixtures.
+
 ## Prioridades e três melhores pontuações — Parte 5
 
 `web/api.mjs` valida `entrada`, `slots`, `clima`, `sequencias` e `descartadas`, então
