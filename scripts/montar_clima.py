@@ -12,8 +12,10 @@ Requer: pip install pandas numpy
                     Ano real, mesmo formato das outras; mostra o que a media esconde.
 - clima_correcoes.csv: os offsets da A520 e os deltas do NEX, para conferencia.
                     scripts/clima_ponto.py le os deltas daqui para outros pontos.
-- clima_modelos.csv: os mesmos deltas do NEX antes da media, um por modelo e mes.
-                    Mostra a faixa entre os modelos (backend/field_context.py).
+- clima_modelos.csv: os mesmos deltas do NEX antes da media, um por modelo e mes, com a
+                    razao_chuva do modelo e os dias_acima_NN do futuro daquele modelo.
+                    Mostra a faixa entre os modelos (backend/field_context.py) e alimenta
+                    o futuro por modelo do motor (carregar_clima_modelos).
 
 ET0 por Hargreaves (FAO-56 eq. 52), igual nos dois lados, calculado com as
 temperaturas do POWER SEM a correcao da A520 (+ deltas do NEX no futuro). Motivo:
@@ -110,6 +112,33 @@ def razao_chuva_nex():
     n = pd.read_csv(NEX)
     m = n.groupby(["modelo", "cenario", "mes"])["chuva_mm"].mean().groupby(["cenario", "mes"]).mean()
     return (m["ssp245"] / m["historical"]).rename("razao_chuva")
+
+
+def razao_chuva_por_modelo():
+    """Chuva do ssp245 / chuva do historical, por modelo e mes (a razao_chuva_nex de um modelo so)."""
+    m = pd.read_csv(NEX).groupby(["modelo", "cenario", "mes"])["chuva_mm"].mean().unstack("cenario")
+    return (m["ssp245"] / m["historical"]).rename("razao_chuva")
+
+
+def clima_por_modelo(off_tmax, limiares):
+    """clima_modelos.csv: por modelo e mes, os deltas do NEX, a razao de chuva do modelo e os
+    dias_acima_NN do futuro daquele modelo.
+
+    dias_acima_NN e contado como em clima_futuro: os dias do POWER com a Tmax somada a correcao
+    da A520 e ao delta_tmax_c do modelo naquele mes. Sem isso o motor interpola entre limiares
+    (dias_acima_deslocado), que conta de 0,3 a 1,3 dia por ano a mais.
+    """
+    t = deltas_por_modelo().join(razao_chuva_por_modelo())
+    diario = pd.read_csv(POWER_DIARIO, parse_dates=["data"])
+    partes = []
+    for modelo, g in t.groupby(level="modelo"):
+        delta = g.droplevel("modelo")["delta_tmax_c"]
+        cont = contar_dias_quentes(diario, off_tmax + delta, limiares)
+        calor = pd.DataFrame({f"dias_acima_{lim}": cont[lim] for lim in limiares})
+        partes.append(g.droplevel("modelo").join(calor).assign(modelo=modelo))
+    out = pd.concat(partes).reset_index().set_index(["modelo", "mes"])
+    casas = {c: 4 if c == "razao_chuva" else 2 for c in out.columns}
+    return out.round(casas).reset_index()
 
 
 def limiares_de_calor():
@@ -232,8 +261,8 @@ def main():
         df.index.name = "mes"
         casas = {c: 4 if c == "razao_chuva" else 2 for c in df.columns}  # 2 casas na razao mudariam ate 1 mm
         df.round(casas).to_csv(DADOS / f"{nome}.csv")
-    por_modelo = deltas_por_modelo()
-    por_modelo.round(2).reset_index().to_csv(DADOS / "clima_modelos.csv", index=False)
+    por_modelo = clima_por_modelo(off["off_tmax"], limiares)
+    por_modelo.to_csv(DADOS / "clima_modelos.csv", index=False)
 
     print("Hoje:\n", hoje.round(1).to_string())
     print("\nFuturo:\n", fut.round(1).to_string())

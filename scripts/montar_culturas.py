@@ -54,7 +54,7 @@ MANUAL = {
     "sorgo":      (110,  0.30,  1.05,  0.55,  0,     1,    11,   2,       870,   3.53, 3.53, 36),
     "milheto":    (90,   0.30,  1.00,  0.30,  0,     1,    None, 2,       0,     0,    0, None),
     "braquiaria": (120,  0.40,  0.95,  0.85,  0,     1,    None, 2,       0,     0,    0, None),
-    "crotalaria": (100,  0.40,  0.90,  0.85,  1,     1,    None, 3,       0,     0,    0, None),
+    "crotalaria": (100,  0.40,  0.90,  0.85,  1,     1,    None, 2,       0,     0,    0, None),  # fev: Embrapa CT 44 (2018)
     "feijao":     (90,   0.40,  1.15,  0.35,  1,     0,    11,   2,       3500,  1.17, 0.98, 32),
     "girassol":   (110,  0.35,  1.00,  0.35,  0,     0,    None, 2,       2000,  1.57, 1.57, 35),
     "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.89, None, 32),
@@ -70,6 +70,10 @@ STATUS = {
     "preco": {"feijao": "memoria", "girassol": "memoria", "algodao": "memoria"},
     "temp_calor_c": {"girassol": "sem fonte", "trigo": "memoria"},
 }
+# Altitude minima (m) recomendada para a cultura no sistema do motor (sequeiro). Vazio = sem limite.
+# Trigo tropical de sequeiro no Cerrado: acima de 800 m (Embrapa; BRS 404 para DF, GO e MG).
+# O motor nao le a coluna ainda; o talhao de demonstracao esta a 484 m (data/talhao/declividade.csv).
+ALTITUDE_MIN_M = {"trigo": 800}
 COLS_MANUAL = ["ciclo_dias", "kc_ini", "kc_med", "kc_fim", "fixa_n", "cobre_solo",
                "mes_plantio_safra", "mes_plantio_safrinha", "preco", "produtividade",
                "produtividade_safrinha", "temp_calor_c"]
@@ -97,7 +101,7 @@ def faixas_ecocrop(eco, especie):
 
 def salvar(df, arquivo):
     df = df.copy()
-    for c in ["mes_plantio_safra", "mes_plantio_safrinha", "temp_calor_c"]:
+    for c in ["mes_plantio_safra", "mes_plantio_safrinha", "temp_calor_c", "altitude_min_m"]:
         df[c] = df[c].astype("Int64")
     df.to_csv(arquivo, index=False)
     return df
@@ -109,6 +113,7 @@ def main():
         {"cultura": cultura, **faixas_ecocrop(eco, especie), **dict(zip(COLS_MANUAL, MANUAL[cultura]))}
         for cultura, especie in ESPECIE.items()
     ])
+    df["altitude_min_m"] = df["cultura"].map(ALTITUDE_MIN_M)
     for campo, por_cultura in STATUS.items():
         df[f"{campo}_status"] = df["cultura"].map(por_cultura)
     candidata = df["cultura"].isin(CANDIDATAS)

@@ -83,6 +83,7 @@ Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha
 | `preco` | R$/t (0 = cobertura) |
 | `produtividade`, `produtividade_safrinha` | t/ha, Conab 2024/25 (média Brasil) |
 | `temp_calor_c` | Máxima diária (°C) que prejudica o florescimento (Luo 2011). Vazio = cobertura, regra de calor não se aplica |
+| `altitude_min_m` | Altitude mínima recomendada (m) no sistema de sequeiro; vazio = sem limite. Só o trigo (800 m, Embrapa). O motor ainda não lê |
 | `preco_status`, `temp_calor_c_status` | Valor ainda sem fonte conferida (`memoria` ou `sem fonte`); vazio = conferido. O motor gera o aviso `valor_a_conferir` |
 
 ## 6. Tabelas de clima do motor
@@ -95,7 +96,7 @@ Script: `scripts/montar_clima.py` · 12 linhas cada, uma por mês
 | `data/clima_futuro.csv` | temperaturas: hoje + (NEX `ssp245` − `historical`), média dos 3 modelos. Chuva: hoje × (`ssp245` ÷ `historical`). Dias quentes: ver abaixo |
 | `data/clima_seco.csv` | o ano agrícola (jul–jun) com menos chuva no POWER 2005–2024: a safra **2020/21** |
 | `data/clima_correcoes.csv` | offsets da A520, deltas do NEX por mês e `razao_chuva` (4 casas). `scripts/clima_ponto.py` lê daqui `delta_tmin_c`, `delta_tmax_c` e `razao_chuva`. As colunas `delta_dias_quentes` e `delta_dias_acima_NN` são o delta de contagem do NEX, só para conferência: não entram mais no futuro |
-| `data/clima_modelos.csv` | delta do NEX por modelo e mês, antes da média (`modelo`, `mes`, `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c`); só o talhão de demonstração. A média dos três é o delta de `clima_futuro` |
+| `data/clima_modelos.csv` | delta do NEX por modelo e mês, antes da média (`modelo`, `mes`, `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c`); só o talhão de demonstração. A média dos três é o delta de `clima_futuro`. Desde 15/11 também `razao_chuva` do modelo (ssp245 ÷ historical, 4 casas) e uma `dias_acima_NN` por limiar (26 a 40 °C): os dias do POWER com a Tmax deslocada pelo `delta_tmax_c` do modelo, contagem do futuro daquele modelo. A média das três chuvas (hoje × razão de cada modelo) não é exatamente a de `clima_futuro`, que usa a razão das médias: até 2 mm num mês (maio), 3,4 mm no ano |
 
 **Ano seco.** É um ano real, não uma média, no mesmo formato das outras tabelas, então o motor roda nele sem mudança. O script escolhe sozinho o ano agrícola completo com menos chuva.
 

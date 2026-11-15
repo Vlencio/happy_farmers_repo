@@ -1577,9 +1577,11 @@ class TestDadosReais(unittest.TestCase):
             saida = recomendar({**ENTRADA, "mes_plantio": mes}, *dados, clima_modelos=modelos)
             json.dumps(saida)
             self.assertTrue(saida["modelos"]["et0_sem_correcao"])  # off_* de clima_correcoes.csv
-            # a media dos tres futuros fica perto do futuro medio (clima_futuro.csv)
+            # a media dos tres futuros fica perto do futuro medio (clima_futuro.csv). Chuva: cada
+            # modelo usa a sua razao_chuva e clima_futuro a razao das medias; a media das razoes
+            # fica ate 2 mm longe (maio), entao a tolerancia e 2,5 mm
             clima, futuro = saida["modelos"]["clima"], saida["clima"]["futuro"]
-            for col, tol in (("chuva_mm", 0.2), ("tmin_c", 0.02), ("tmax_c", 0.02), ("et0_mm", 0.2), ("dias_acima_35", 1.0)):
+            for col, tol in (("chuva_mm", 2.5), ("tmin_c", 0.02), ("tmax_c", 0.02), ("et0_mm", 0.2), ("dias_acima_35", 1.0)):
                 for i in range(12):
                     media = sum(c[i][col] for c in clima.values()) / 3
                     self.assertAlmostEqual(media, futuro[i][col], delta=tol, msg=(col, i + 1))

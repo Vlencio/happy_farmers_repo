@@ -44,7 +44,7 @@ prática no Cerrado.
 | sorgo | 110 | nov | fev | uso principal é safrinha |
 | milheto | 90 | — | fev | cobertura |
 | braquiária | 120 | — | fev | solteira ou em consórcio com o milho safrinha; ciclo até a dessecação |
-| crotalária | 100 | — | mar | cobertura após a soja |
+| crotalária | 100 | — | fev | cobertura logo após a soja (Embrapa Agropecuária Oeste, Circular Técnica 44, 2018) |
 | feijão | 90 | nov | fev | feijão das águas e da seca |
 | girassol | 110 | — | fev | |
 | algodão | 170 | dez | — | ciclo longo: não sobra safrinha depois dele |
@@ -52,7 +52,9 @@ prática no Cerrado.
 
 Status:
 - Ciclo da soja: **conferido**. O ZARC da soja em MG 2025/26 simula cultivares de 100, 115 e 130 dias.
-- Meses de plantio e demais ciclos: **memória** (práticas típicas no Triângulo Mineiro).
+- Meses de plantio e demais ciclos: **memória** (práticas típicas no Triângulo Mineiro), exceto a crotalária.
+- Crotalária em fevereiro (era março): **conferido**, com ressalva de local. Garcia e Staut, *Como inserir crotalária em sistemas de produção de grãos*, Embrapa Agropecuária Oeste, Circular Técnica 44, dez. 2018. Em Dourados (MS), após a soja, fevereiro é "o período mais favorável": a juncea fez 8,4 t/ha de matéria seca semeada em 22/2/2017 e 3,6 t/ha em 5/4/2017. Crotalária é planta de dia curto; quanto mais tarde, menos biomassa. O ensaio é de MS, não de MG.
+- Trigo de sequeiro: a Embrapa recomenda acima de 800 m no Cerrado (cultivar BRS 404 para DF, GO e MG; uma nota técnica mais recente admite 700 m em solo com mais de 35% de argila). O talhão de demonstração está a 484 m (`data/talhao/declividade.csv`). Vai na coluna `altitude_min_m` = 800; o trigo continua na tabela, e tirar ou avisar fica com o motor.
 
 A portaria do ZARC traz só as regras gerais. Os decêndios de cada município
 ficam no Painel de Indicação de Riscos do MAPA, consultado à mão. O ECOCROP

@@ -14,6 +14,7 @@ import montar_clima as mc  # noqa: E402
 
 ARQ = RAIZ / "data" / "clima_modelos.csv"
 COLUNAS = ["modelo", "mes", "delta_chuva_mm", "delta_tmin_c", "delta_tmax_c"]
+CALOR = [f"dias_acima_{g}" for g in mc.limiares_de_calor()]
 
 
 class TestClimaModelos(unittest.TestCase):
@@ -22,7 +23,7 @@ class TestClimaModelos(unittest.TestCase):
         cls.m = pd.read_csv(ARQ)
 
     def test_formato(self):
-        self.assertEqual(list(self.m.columns), COLUNAS)
+        self.assertEqual(list(self.m.columns), COLUNAS + ["razao_chuva"] + CALOR)
         self.assertEqual(sorted(self.m["modelo"].unique()), ["ACCESS-CM2", "MIROC6", "MRI-ESM2-0"])
         for _, g in self.m.groupby("modelo"):
             self.assertEqual(sorted(g["mes"]), list(range(1, 13)))
@@ -43,7 +44,24 @@ class TestClimaModelos(unittest.TestCase):
 
     def test_igual_ao_calculo_do_script(self):
         d = mc.deltas_por_modelo().round(2).reset_index()
-        pd.testing.assert_frame_equal(d, self.m, check_dtype=False)
+        pd.testing.assert_frame_equal(d, self.m[COLUNAS], check_dtype=False)
+
+    def test_razao_chuva_da_media_e_a_do_futuro(self):
+        # a razao media do futuro e das medias; a de cada modelo e a do modelo sozinho
+        nex = pd.read_csv(mc.NEX).groupby(["modelo", "cenario", "mes"])["chuva_mm"].mean().unstack("cenario")
+        esperado = (nex["ssp245"] / nex["historical"]).round(4).reset_index(drop=True)
+        self.assertTrue((self.m.sort_values(["modelo", "mes"])["razao_chuva"].reset_index(drop=True) - esperado).abs().max() < 1e-9)
+        self.assertTrue((self.m["razao_chuva"] > 0).all())
+
+    def test_dias_quentes_por_modelo(self):
+        for _, g in self.m.groupby("modelo"):
+            # mais quente que hoje e decrescente no limiar
+            hoje = pd.read_csv(RAIZ / "data" / "clima_hoje.csv")
+            self.assertGreater(g["dias_acima_35"].sum(), hoje["dias_acima_35"].sum())
+            self.assertTrue((g[CALOR].diff(axis=1).iloc[:, 1:] <= 0).all().all())
+        anual = self.m.groupby("modelo")["dias_acima_35"].sum()
+        for modelo, dias in [("ACCESS-CM2", 84.1), ("MIROC6", 61.8), ("MRI-ESM2-0", 68.2)]:
+            self.assertAlmostEqual(anual[modelo], dias, delta=0.1)
 
     def test_backend_le_o_arquivo(self):
         try:
