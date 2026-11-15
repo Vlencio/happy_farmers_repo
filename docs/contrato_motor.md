@@ -436,7 +436,7 @@ Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os 
 
 ## O que o ano seco mostra (tabelas de 14/11)
 
-No clima médio, a parte de `agua` do score quase não separa as sequências. No ano seco ela separa:
+No clima médio, a parte de `agua` do score quase não separa as sequências. Não é porque a água não importa: o modo mensal calcula o balanço no clima médio, e a média apaga os anos e os dias secos (o balde de 100 mm transborda nos meses chuvosos). Na média das sequências, `agua` mensal fica 0,07 a 0,08 acima da média dos anos do modo diário. No ano seco ela separa:
 
 | Talhão livre em | `agua` hoje | `agua` no ano seco |
 |---|---|---|
@@ -481,7 +481,7 @@ Receita em R$/ha, sem histórico:
 | `crotalaria>algodao` (fevereiro) | 13.930 | 15.223 | 9.197 | 5.074 (2020) | 7.928 | 4.123 |
 | `sorgo>soja` (fevereiro) | 11.262 | 10.822 | 10.262 | 9.253 (2020) | 10.800 | 10.021 |
 
-- **Outubro:** no ano mediano, `soja>sorgo` passa `soja>milho` no score; no ano ruim, `soja>milho` volta ao primeiro lugar. O milho safrinha atende 76% da demanda de água no ano mediano e, com Ky de 1,25, fica com `fator_agua` de 0,70 (0,53 no ano ruim).
+- **Outubro:** no ano mediano, `soja>sorgo` fica 0,7 ponto à frente de `soja>milho` no score, um empate (bootstrap dos anos: 49% e 44% de vitórias); no ano ruim, `soja>milho` volta ao primeiro lugar. O milho safrinha atende 76% da demanda de água no ano mediano e, com Ky de 1,25, fica com `fator_agua` de 0,70 (0,53 no ano ruim).
 - **Fevereiro:** no ano mediano de hoje ganha `crotalaria>algodao`; no ano ruim ela cai para 9º e ganha `sorgo>soja`. No futuro ganha `crotalaria>soja`, no ano mediano e no ruim. As sequências com algodão são as de maior receita no ano mediano e as que mais caem: `milho>algodao` perde 31% no ano ruim e 37% no futuro.
 - **O pior ano** em receita não é sempre o mais seco. Com o talhão livre em outubro, é 2023 em 18 das 26 sequências e 2020 em 4; em fevereiro, 2020 em 13 das 36 e 2023 em 12. A safra 2020/21 é a de `clima_seco.csv`, escolhida só pela chuva.
 - **Conferência com as tabelas:** a série diária dá a mesma chuva anual de `clima_hoje.csv` (1.242 mm) e 1.625 mm de ET0 contra 1.634 mm. Os dias acima de cada limiar de calor, hoje, são os mesmos das colunas `dias_acima_NN`.

@@ -47,7 +47,7 @@ O NDVI começa em dezembro de 2014: são 10 safras, de 2014/15 a 2023/24.
 | Chuva out–mar | NDVI dez–mar | 0,14 | 0,70 | 0,01 | 1,00 |
 | `agua_soja` | Chuva out–mar | 0,50 | 0,14 | 0,61 | 0,07 |
 
-**Não andam juntos.** Nenhum par com o NDVI passa de 0,25 em módulo, e o par principal tem até o sinal trocado. Com esta série, o NDVI não serve de evidência observada para o índice de água do motor. A chuva da estação também não explica o NDVI, então o problema não é só do motor.
+**Não detectamos associação.** Nenhum par com o NDVI passa de 0,25 em módulo, e o par principal tem até o sinal trocado. Isso não prova que não andam juntos: o intervalo de 95% de r = −0,13 vai de −0,70 a +0,54, e com 10 anos o teste só detectaria uma associação forte (poder de 0,32 para ρ = 0,5 e de 0,68 para ρ = 0,7). Com esta série, o NDVI não serve de evidência observada para o índice de água do motor. A chuva da estação também não explica o NDVI, então o problema não é só do motor.
 
 O único ano em que os dois concordam é 2020/21, o ano seco: o menor `agua_soja` (0,767) e o segundo menor NDVI de dezembro a março. Um ano não é evidência.
 

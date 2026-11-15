@@ -265,7 +265,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 **Falta:**
 
 - [x] Sem dado novo: comparar, ano a ano, o índice de água do modo diário com o NDVI do talhão (`data/talhao/ndvi_mensal.csv`, 2014 a 2024). Se andam juntos, o NDVI vira evidência observada do que o motor calcula.
-  Feito em 15/11 (`scripts/comparar_ndvi_agua.py`, `docs/ndvi_vs_agua.md`): **não andam juntos.** Em 10 safras (2014/15 a 2023/24), o atendimento hídrico da soja tem correlação −0,13 (Spearman −0,25, p = 0,49) com o NDVI de dezembro a março; nenhum par com o NDVI passa de 0,25. O NDVI segue a data de plantio e colheita, e o motor planta sempre em 1º de outubro. Não usar o NDVI como confirmação do balanço.
+  Feito em 15/11 (`scripts/comparar_ndvi_agua.py`, `docs/ndvi_vs_agua.md`): **não detectamos associação** (com 10 anos, o teste só pegaria uma associação forte). Em 10 safras (2014/15 a 2023/24), o atendimento hídrico da soja tem correlação −0,13 (Spearman −0,25, p = 0,49) com o NDVI de dezembro a março; nenhum par com o NDVI passa de 0,25. O NDVI segue a data de plantio e colheita, e o motor planta sempre em 1º de outubro. Não usar o NDVI como confirmação do balanço.
 - [ ] Time: reabrir SMAP (está em "Out of scope").
 - [ ] Dados: série de umidade do solo do SMAP para o talhão, para conferir o balde e mostrar anomalias.
 
@@ -288,7 +288,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "compare different SI or statistical approaches for identifying patterns in historical climate and soil conditions".
 
-**Hoje:** o motor é por regras, por decisão do time. `docs/comparacao_abordagens.md` compara o modo mensal com o modo diário no talhão de demonstração (outubro e fevereiro, histórico soja, milho): as duas ordenam as sequências quase igual (Spearman 0,97 a 0,98 contra o ano mediano), mas o vencedor de outubro troca (`soja>milho` no mensal, `soja>sorgo` no ano mediano) e o ano ruim derruba as sequências com algodão.
+**Hoje:** o motor é por regras, por decisão do time. `docs/comparacao_abordagens.md` compara o modo mensal com o modo diário no talhão de demonstração (outubro e fevereiro, histórico soja, milho): no top-3 dos cards, mensal e ano mediano têm as mesmas sequências em outubro e duas de três em fevereiro; no ano mediano de outubro, `soja>sorgo` e `soja>milho` empatam (no bootstrap dos anos, cada uma vence em cerca de metade das reamostragens) e o ano ruim derruba as sequências com algodão.
 
 **Falta:**
 

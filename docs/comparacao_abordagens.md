@@ -29,7 +29,7 @@ As duas usam as mesmas regras (`docs/contrato_motor.md`): o que muda é o clima 
 | `soja>trigo` | 4 | 76,8 | 0,917 | 12.113 | 5 | 5 | 72,9 | 0,827 | 10.988 | 5 | 0,753 | 10.187 | 8.097 (2023) | 6 / 6 |
 | `soja>feijao` | 5 | 76,5 | 1,000 | 10.877 | 8 | 4 | 74,7 | 0,920 | 10.211 | 3 | 0,867 | 9.593 | 7.014 (2020) | 7 / 8 |
 
-- **Os três cards têm as mesmas sequências no mensal e no ano mediano**, em outra ordem: no mediano `soja>sorgo` passa `soja>milho`. No ano ruim, `soja>milho` volta ao primeiro lugar e `soja>feijao` entra no terceiro, no lugar de `soja>crotalaria`.
+- **Os três cards têm as mesmas sequências no mensal e no ano mediano**, em outra ordem: no mediano `soja>sorgo` fica 0,7 ponto à frente de `soja>milho`, o que é empate (reamostrando os 19 anos com bootstrap, `soja>milho` vence em 49% e `soja>sorgo` em 44%). No ano ruim, `soja>milho` volta ao primeiro lugar e `soja>feijao` entra no terceiro, no lugar de `soja>crotalaria`.
 - **O que muda a ordem é o milho safrinha.** No mensal ele atende 81,9% da demanda de água; no diário, 75,7% no ano mediano e 62,3% no ano ruim. Com Ky de 1,25, o `fator_agua` fica em 0,696 e 0,529. O sorgo, com Ky de 0,90, perde menos.
 - **No futuro**, o mensal mantém `soja>milho` em primeiro; o diário dá `soja>sorgo` no ano mediano e `soja>milho` no ano ruim, como hoje.
 - Sem histórico, as cinco primeiras e todos os ranks de hoje (mensal e diário) são os mesmos; só os ranks do futuro de `soja>trigo` e `soja>feijao` caem (no mensal, 6º e 10º).
@@ -69,7 +69,7 @@ As duas usam as mesmas regras (`docs/contrato_motor.md`): o que muda é o clima 
 
 O Spearman foi calculado como a correlação de Pearson entre os ranks (sem empates); o ambiente não tem `scipy`.
 
-Leitura: no geral as duas ordenam as sequências quase do mesmo jeito (Spearman acima de 0,97 contra o ano mediano). As trocas ficam entre sequências com score próximo, e o ano ruim é o que mais separa (0,887 em fevereiro, puxado pelo algodão).
+Leitura: o Spearman global é alto, mas é puxado pela parte de baixo do ranking. O que importa para os cards é o top-3: mensal e ano mediano têm as mesmas três sequências em outubro e duas de três em fevereiro; mensal e ano ruim, duas de três nos dois meses. Só na metade de cima de fevereiro, o Spearman entre mensal e ano ruim é 0,43. As trocas ficam entre sequências com score próximo.
 
 ## O que cada abordagem capta e o que perde
 
@@ -117,7 +117,7 @@ O que essa escolha perde:
 - **Só vê o que está nas regras.** Pragas, doenças, tipo de solo e manejo não entram. Um modelo treinado com dados de campo poderia captar efeitos que ninguém escreveu.
 - **Algumas constantes não têm fonte**: água guardada no solo (100 mm), desconto por repetir cultura (15%), bônus depois de leguminosa (10%), perda por calor. O resultado depende delas.
 - **Ainda não foi conferido contra colheitas reais.** A comparação com a PAM de vários anos está pendente.
-- **A resposta depende da forma de olhar o clima.** No talhão de demonstração, com a média mensal ganha soja e milho; olhando ano a ano, no ano mediano ganha soja e sorgo. As duas formas concordam na ordem geral (correlação de postos de 0,97 a 0,98) e na troca de vencedor entre hoje e o futuro em fevereiro.
+- **A resposta depende da forma de olhar o clima.** No talhão de demonstração, com a média mensal ganha soja e milho; olhando ano a ano, no ano mediano soja e sorgo empatam com soja e milho. As duas formas põem quase as mesmas sequências entre as três primeiras, mas a ordem entre elas não é firme: as diferenças são de poucos pontos.
 
 ## Como reproduzir
 
