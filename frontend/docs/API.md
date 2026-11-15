@@ -432,14 +432,30 @@ sem longitude ou quando `origem.hoje == "tabela_demo"`. Para outros pontos e par
 fallback do POWER, passa `None`: não associa o ano seco de demonstração a outra
 fazenda. `clima_seco.csv` entra no Docker. Há fixture e teste com a saída real de P1.
 
-D2 ainda deve fornecer `data/clima_modelos.csv` com `modelo,mes,delta_chuva_mm,
-delta_tmin_c,delta_tmax_c`. O leitor opcional exige 12 meses únicos e valores finitos
+D2 foi entregue por Breno em `dados-calor`, commit `5deed52` (15/11/2026), com
+`data/clima_modelos.csv`: `modelo,mes,delta_chuva_mm,delta_tmin_c,delta_tmax_c`.
+Essa entrega ainda não está integrada à `main` nem à `front-dev3`.
+O leitor opcional exige 12 meses únicos e valores finitos
 por modelo. Soma os deltas mensais de chuva e tira a média aritmética dos 12 deltas
 de temperatura máxima; não pondera pelo número de dias. `/metadata.model_spread`
 contém esses agregados, fonte, método e `scope: talhao_demo_2`. A tela calcula a faixa
 entre modelos e avisa quando a chuva cruza zero. Sem o arquivo, informa que a faixa
-ainda não está disponível. Não apresenta os números sugeridos no plano como dados
-calculados pela aplicação. A faixa só é exibida para o contorno de demonstração.
+ainda não está disponível. A faixa só é exibida para o contorno de demonstração,
+com até duas casas decimais para temperatura e uma para chuva. Os extremos vêm da
+resposta da API, sem valores fixados no front. Na entrega D2, a faixa é de
+**+1,34 a +2,31 °C** e **−79,6 a +32,7 mm/ano**, com discordância no sinal da chuva.
+É uma faixa entre modelos, não um intervalo de confiança.
+
+Para validar antes do merge, `tests/fixtures/metadata-d2.json` registra a exportação
+do checkout D2 isolado. A fixture canônica `tests/fixtures/metadata.json` permanece
+compatível com os dados desta branch: o CI a regenera com `backend.export_fixture`
+e exige igualdade. Após integrar o CSV, reiniciar a API e regenerar as fixtures
+com `python -m backend.export_fixture` na raiz do projeto.
+
+Essa faixa descreve o clima do talhão. O motor ainda calcula o futuro com a média
+dos três modelos; a Parte 7 continua dependendo de Pedro para calcular e expor
+faixas de receita e de rank por estratégia. Fora da demonstração, também faltam
+deltas regionais separados por modelo.
 
 ## Clima por ponto (G5)
 

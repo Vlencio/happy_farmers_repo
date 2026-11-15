@@ -10,7 +10,7 @@ responsáveis foram preservados; Gabriel implementou o transporte e a apresenta�
 | G1 | Card climático filtra sequências com receita positiva em cada cultura futura; fallback e desempate documentados e testados | Concluído |
 | G2 | Painel “Seu talhão”, NDVI mensal, cobertura/palhada, declividade, A520; metadados e arquivos no pacote Docker | Concluído |
 | G3 | Glossário, resolução das fontes e avisos sobre preços, calor e constantes provisórias | Concluído |
-| G4 | Ano seco real da demonstração ligado à API e à tela; leitor da faixa dos modelos preparado | Ano seco concluído; faixa aguarda D2 |
+| G4 | Ano seco real da demonstração ligado à API e à tela; apresentação da faixa climática dos modelos | Ano seco concluído; D2 entregue em `dados-calor` (`5deed52`), pendente de merge |
 | G5 | POWER por ponto + delta regional; origem, avisos e cache; deploy e espera ampliada | Concluído e testado em três pontos de Minas |
 | G6 | Teste do botão por teclado e árvore de acessibilidade; Enter no foco Rune corrigido | Fluxo verificado; leitura com NVDA/Narrador ainda não auditada |
 
@@ -37,10 +37,18 @@ responsáveis foram preservados; Gabriel implementou o transporte e a apresenta�
 argumento de `recomendar` para a demonstração; outros pontos não recebem essa
 série local. A grade regional entregue é selecionada pela API e usada por D1.
 
-**D2 — Dev 1:** fornecer `data/clima_modelos.csv` com os deltas mensais por modelo.
-O leitor já calcula chuva anual e média dos 12 deltas de máxima, e a interface
-deriva os extremos e a discordância do sinal da chuva. Não foram gerados dados
-nem fixadas na tela as faixas citadas no plano. Reiniciar a API após a entrega.
+**D2 — Breno: recebido em `dados-calor`, commit `5deed52` (15/11/2026).**
+`data/clima_modelos.csv` contém os deltas mensais dos três modelos para o talhão
+de demonstração. Ainda falta integrar essa entrega à `main` e à `front-dev3`.
+O leitor calcula chuva anual e média dos 12 deltas de máxima; a interface deriva
+os extremos e a discordância do sinal da chuva. A faixa entregue é de +1,34 a
++2,31 °C e −79,6 a +32,7 mm/ano, sem valores fixados na tela. Reiniciar a API e
+regenerar as fixtures após o merge. Até lá, `metadata-d2.json` cobre a entrega
+isolada e `metadata.json` continua refletindo os dados desta branch.
+
+**Parte 7 — Pedro:** a faixa climática do talhão não conclui as faixas por
+estratégia. Ainda faltam o cálculo por modelo e o contrato da API para receita e
+rank; o motor atual usa somente a média dos três modelos.
 
 **D1 — recebido e integrado.** A função de `dados-calor` aceita deltas por parâmetro.
 A API seleciona a célula regional, envia as tabelas ao motor e retorna `origem`;
@@ -50,7 +58,8 @@ cobertura. A identificação de Minas usa a malha simplificada do IBGE e apenas 
 ponto do talhão; não é validação cadastral do contorno.
 
 **Limites dos dados:** calendário ainda do Triângulo Mineiro; ano seco, NDVI e
-relevo ainda da demonstração. D2 (faixa dos modelos), D3 (geada) e a revisão de
+relevo ainda da demonstração. D2 também vale só para esse contorno: a grade
+regional ainda contém apenas a média dos modelos. D3 (geada) e a revisão de
 preços/limiares continuam com seus responsáveis. O aviso sobre a chuva extrema
 no norte da grade está na tela; os valores fornecidos não foram alterados.
 

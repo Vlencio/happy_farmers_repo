@@ -202,12 +202,14 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −80 mm, ACCESS-CM2 +8 mm, MRI-ESM2-0 +33 mm por ano). O leitor da faixa já existe na API, mas `data/clima_modelos.csv` não foi entregue e a tela mostra "ainda não foi disponibilizada". O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). Breno entregou `data/clima_modelos.csv` em `dados-calor`, commit `5deed52` (15/11/2026), ainda fora da `main` e da `front-dev3`. O leitor da API e o painel do front aceitam essa entrega para o contorno de demonstração; sem o CSV no servidor, a tela continua informando que a faixa não está disponível. Isso descreve a faixa climática do talhão, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 
-- [ ] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Os números já estão em `data/nexgddp/`.
+- [x] Dados: gerar `data/clima_modelos.csv` (D2), entregue em `dados-calor`, commit `5deed52`.
+- [ ] Integração: trazer D2 para a `main`, reiniciar a API e regenerar a fixture canônica do front. A validação antecipada usa `metadata-d2.json` exportada do checkout isolado.
 - [ ] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank.
+- [ ] API e tela: definir o contrato e apresentar as faixas de receita e rank de cada estratégia quando o motor as entregar.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 
 **Feito quando:** cada estratégia mostra a faixa entre os três modelos, e não só a média.

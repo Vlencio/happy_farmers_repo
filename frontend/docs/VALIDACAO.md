@@ -1,5 +1,35 @@
 # Verificação da integração · 14/11/2026
 
+## D2 — faixa climática entre modelos · 15/11/2026
+
+Front na `front-dev3` (`a7bf90e` como base), com a entrega de Breno `5deed52`
+verificada em checkout isolado de `dados-calor` (`67d1c3f`). A API real desse
+checkout foi iniciada em 8001, e o front atual em 4174; não houve merge nem
+alteração dos arquivos de dados, backend ou motor da `front-dev3`.
+
+- 114 testes JS passaram; os 10 testes de contexto do talhão foram conferidos
+  novamente após tornar a verificação de ausência de D2 independente da fixture.
+- Os 5 testes originais de D2 e os 3 testes do leitor de contexto passaram.
+  Nenhum script de download foi executado.
+- Build Vite passou; não houve mudança Rust/WASM nesta entrega.
+- `tests/browser-model-spread.js`: 20 verificações no Chromium, usando respostas
+  reais de `/metadata` e `/analyze`, sem simular os números. Conferiu o texto
+  +1,34 a +2,31 °C e −79,6 a +32,7 mm, os avisos de discordância da chuva e de
+  faixa entre modelos (não intervalo de confiança), além dos cards existentes.
+- Contorno importado equivalente, com anel invertido, mantém a faixa; mover um
+  vértice a oculta. A única análise foi da demonstração, com
+  `origem.hoje=tabela_demo`: nenhuma consulta externa ao POWER e nenhuma chamada
+  ao chat. Sem erros de JavaScript.
+- Capturas `output/playwright/d2-desktop.png` (1440 px) e `d2-mobile.png`
+  (390 px) inspecionadas, com texto completo e sem corte na faixa climática.
+- `metadata-d2.json` foi produzida por `backend.export_fixture` no checkout D2.
+  A regeneração das quatro fixtures canônicas na `front-dev3` não produziu diff,
+  preservando a verificação do CI enquanto o CSV ainda não foi integrado.
+
+Isso valida o resumo climático de D2. Faixas de receita/rank por estratégia,
+dados por modelo fora da demonstração, deploy e celular físico não foram
+validados. A Parte 7 completa ainda depende das entregas do motor/API.
+
 ## Parte 6 — cenário de chuva e temperatura · 15/11/2026
 
 Base: Main `d6d7a73` na `front-dev3`. O motor já calcula `ajuste`; o front agora

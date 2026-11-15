@@ -79,7 +79,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
 - Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
 - Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
-- Ano seco real (2020/21) ligado para a demonstração; faixa entre modelos ainda aguarda D2.
+- Ano seco real (2020/21) ligado para a demonstração. D2 foi entregue em `dados-calor` (`5deed52`), ainda pendente de merge: o painel consome a faixa climática dos modelos para o contorno de demonstração. Faixas de receita e rank por estratégia continuam dependendo do motor/API da Parte 7.
 - POWER por ponto com delta regional de Minas, cache diário e avisos de origem/fallback/cobertura; veja o [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API
