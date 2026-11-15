@@ -27,7 +27,7 @@ saida = recomendar(entrada, culturas, clima_hoje, clima_futuro, diario=diario)
 Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diario`, descritos em "Modo diário". Os campos que já existiam continuam idênticos.
 
 - Demo: `python -m motor` (tabela, com o resumo do modo diário) ou `python -m motor --json` (JSON completo). `--mes 2` troca o mês em que o talhão fica livre.
-- Tamanho do JSON sem indentação, com as 10 culturas e outubro: ~105 KB só com hoje e futuro; ~217 KB com o modo diário (fevereiro: ~137 KB e ~292 KB).
+- Tamanho do JSON sem indentação, com as 10 culturas, histórico soja, milho e outubro (medido em 15/11): ~199 KB só com hoje e futuro; ~405 KB com o modo diário (fevereiro: ~257 KB e ~543 KB). O `descoberto` de cada ano soma ~70 KB em outubro e ~95 KB em fevereiro.
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
 - Rodar sempre da raiz do repo.
 
@@ -312,7 +312,7 @@ Um DataFrame com uma linha por dia, sem dias faltando.
 
 ### Regras do modo diário
 
-1. **Anos:** o talhão fica livre no dia 1 de `mes_plantio` de cada ano da série. Entram os anos em que a sequência mais longa cabe inteira. Com a série de 2005 a 2024: 19 anos, de 2005 a 2023. O `ano` é o do dia em que o talhão fica livre (outubro de 2020 = safra 2020/21).
+1. **Anos:** o talhão fica livre no dia 1 de `mes_plantio` de cada ano da série. Entram os anos em que cabem inteiros a sequência mais longa e os 365 dias do solo descoberto (regra 11). Com a série de 2005 a 2024: 19 anos, de 2005 a 2023, na maioria dos meses; janeiro com uma cultura: 20 (até 2024, que é bissexto); dezembro com duas culturas: 18 (até 2022). Fevereiro e março com uma cultura perderam 2024 quando entrou o solo descoberto (antes eram 20 anos). O `ano` é o do dia em que o talhão fica livre (outubro de 2020 = safra 2020/21).
 2. **Calendário:** o mesmo do modo mensal, em dias contados a partir do talhão livre. As sequências viáveis e as descartadas não mudam.
 3. **Balanço hídrico:** as regras 5 e 6, com a chuva e o ET0 de cada dia.
 4. **Encaixe de temperatura e de chuva:** as regras 7 e 8, com a temperatura média de cada dia e a chuva do ciclo naquele ano.
@@ -322,6 +322,7 @@ Um DataFrame com uma linha por dia, sem dias faltando.
 8. **Resumo:** para cada sequência e clima, a mediana e o valor do ano ruim de `agua`, `solo` e `receita_ha` entre os anos. O ano ruim é o valor na posição 20% da lista ordenada: com 19 anos, o 4º pior. Cada parte tem o seu ano ruim; não é um único ano.
 9. **Renda, score e rank:** `renda` = receita ÷ a maior receita do ano mediano entre as sequências, hoje e no futuro. O `score` usa os mesmos pesos da entrada. Há um rank para o ano mediano e outro para o ano ruim, em cada clima.
 10. **Geada e chuva extrema (Parte 4):** em cada ano, o motor conta os dias do ciclo de cada cultura com `tmin_c` de 3 °C ou menos (geada) e com chuva acima do limiar de chuva extrema. Geada com mínima no abrigo de até 3 °C é o critério usual no Brasil (Grodzki et al., 1996; Embrapa Trigo): o ar no abrigo fica de 3 a 6 °C mais quente que a superfície das plantas. Chuva extrema é o dia acima do percentil 95 dos dias com pelo menos 1 mm na série de hoje (índice R95p do ETCCDI); o mesmo limiar vale no futuro, para a contagem mostrar a mudança. As contagens não mudam produtividade, score nem rank. Geada em algum ano vira o aviso `geada`; chuva extrema não vira aviso, porque por definição acontece todo ano no período chuvoso, e fica só como número.
+11. **Solo descoberto (regras 15 e 16, Parte 2):** os dias sem cultura e os dias expostos são os do modo mensal: o mesmo calendário, contado a partir do talhão livre, igual em todo ano e nos dois climas. Muda a chuva: em cada ano, a soma da chuva de cada dia da série nesses dias (no futuro, a série da regra 7). Com `declividade_pct`, `indice_erosao` = `chuva_exposta_mm` × fator S, como na regra 16. O resumo traz a mediana e o ano ruim de cada número. Aqui o ano ruim é o de **mais** chuva, porque mais chuva sobre solo sem cultura é mais risco de erosão: o valor na posição 20% da lista ordenada do mais chuvoso para o menos (com 19 anos, o 4º mais chuvoso), a mesma posição de `QUANTIL_RUIM` das outras partes, do outro lado. Cada número tem o seu ano ruim. Não muda score, rank nem avisos.
 
 Ky por cultura (FAO-56, tabela 24, que repete o FAO Irrigation and Drainage Paper 33), em `KY` no topo de `motor/motor.py`:
 
@@ -367,7 +368,13 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
         },
         { "...": "soja, na safra" }
       ],
-      "anos": [{"ano": 2005, "agua": 0.855, "solo": 0.423, "receita_ha": 11771.385}, "... um por ano"]
+      "anos": [{"ano": 2005, "agua": 0.855, "solo": 0.423, "receita_ha": 11771.385}, "... um por ano"],
+      "descoberto": {
+        "dias": 115, "dias_expostos": 8,
+        "mediano": {"chuva_mm": 130.26, "chuva_exposta_mm": 53.31, "indice_erosao": 24.898},
+        "ruim":    {"chuva_mm": 196.41, "chuva_exposta_mm": 103.76, "indice_erosao": 48.46},
+        "anos": [{"ano": 2005, "chuva_mm": 196.41, "chuva_exposta_mm": 73.13, "indice_erosao": 34.155}, "... um por ano"]
+      }
     },
     "futuro": { "...": "mesma estrutura" }
   }
@@ -382,6 +389,7 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
 | `culturas[].eventos` | Por cultura, `geada` e `chuva_extrema` no ciclo (regra 10 do modo diário): `anos` com pelo menos um dia, `dias_total` somando os anos e `max_no_ano`. Os números da `eventos` acima são ilustrativos |
 | `limiar_geada_c`, `limiar_chuva_extrema_mm` | No topo de `diario`: os limiares usados. O de chuva sai da série de hoje (24,67 mm no talhão de demonstração) |
 | `anos[]` | `agua`, `solo` e `receita_ha` de cada ano. Serve para um gráfico |
+| `descoberto` | Solo sem cultura (regra 11 do modo diário). `dias` e `dias_expostos`: os do `descoberto` mensal. `mediano` e `ruim`: `chuva_mm` e `chuva_exposta_mm` (e `indice_erosao`, só com `declividade_pct`); o ruim é o lado mais chuvoso. `anos[]`: os mesmos números de cada ano. Os números do exemplo saem do talhão de demonstração, com `declividade_pct` = 4,05 |
 
 Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (2020).
 
@@ -496,7 +504,7 @@ Receita em R$/ha, sem histórico:
 13. **Rotação atual supõe uma cultura por slot.** O motor só recebe a ordem das culturas, sem a safra de cada uma. Quem planta uma cultura por ano e deixa a safrinha sem nada (pousio) não consegue informar isso: o histórico soja, soja vira `soja>soja`, que é descartada porque a soja não tem plantio de safrinha. Faltam o pousio como opção de slot e o slot de cada cultura do histórico.
 14. **Palhada dura até o próximo plantio.** O motor supõe que a palhada de uma cultura com `cobre_solo` = 1 cobre o solo até a cultura seguinte entrar, por mais tempo que leve, e que as outras não deixam nada. Não há taxa de decomposição nem quantidade de palhada por cultura. `cobre_solo` foi preenchido à mão.
 15. **Índice de erosão não é perda de solo.** Usa o total de chuva, não a erosividade (fator R), e deixa de fora o tipo de solo (K), o comprimento da rampa (L) e o manejo (C, P). O fator S linear subestima em declives fortes, além dos dados de origem (até 18%). A declividade é a média do talhão.
-16. **Solo descoberto no modo diário e na API.** O modo diário não devolve a chuva exposta de cada ano. A API aceita `declividade_pct` opcional (0 a 100, finito) e anuncia `capabilities.declividade_pct` em `/metadata`; o front só envia a declividade no contorno do talhão de demonstração.
+16. **Solo descoberto no modo diário e na API.** Desde 15/11 o modo diário devolve a chuva sobre solo sem cultura e exposto de cada ano, com mediana e ano ruim (o mais chuvoso) e o `indice_erosao` quando há `declividade_pct` (regra 11 do modo diário). Falta chegar à tela: a API ainda chama o motor sem `diario` (item 11). O índice continua usando o total de chuva, não a erosividade (item 15). A API aceita `declividade_pct` opcional (0 a 100, finito) e anuncia `capabilities.declividade_pct` em `/metadata`; o front só envia a declividade no contorno do talhão de demonstração.
 17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Desde 15 nov `culturas.csv` traz `preco_status` (feijão, girassol e algodão: `memoria`) e `temp_calor_c_status` (girassol: `sem fonte`; trigo: `memoria`), preenchidas em `STATUS` de `scripts/montar_culturas.py` conforme `docs/culturas_fontes.md`. Ao conferir um valor, apague a entrada em `STATUS` e rode o script de novo.
 18. ~~**`fator_limitante` olha o modo mensal.**~~ Resolvido em 15/11 com um código à parte, `fator_agua_diario` (regra 17), em vez de mudar `fator_limitante`: sem o modo diário a saída não muda, e o texto da tela para `fator_limitante` ("usa a avaliação mensal") continua certo. Com `diario=`, o milho safrinha de `soja>milho` (outubro, histórico soja, milho) atende 82% no mensal (sem aviso) e ganha o aviso com `fator_agua` 0,696 hoje e 0,693 no futuro (atendimento 0,757 e 0,755, Ky 1,25); `clima_favoravel` sai dessa sequência. No talhão de demonstração, em outubro: 14 avisos em 7 das 26 sequências, 10 deles sem aviso de água no mensal (milho safrinha de `soja>milho`, trigo safrinha), e `clima_favoravel` passa de 11 para 10 sequências. Em fevereiro: 20 avisos em 10 das 36 (milho safrinha 0,72, trigo safrinha 0,73), nenhum com aviso de água no mensal, e `clima_favoravel` passa de 18 para 15. Fica em aberto: o aviso olha só a água do ano mediano; o ano ruim e o calor do diário não viram aviso por cultura (o ano ruim já entra em `queda_no_ano_ruim`).
 19. **Dias quentes no ajuste de temperatura são estimados.** Entre 32 e 35 °C a tabela não tem coluna, e a contagem cai rápido (janeiro: 9,6 dias acima de 32, 1,85 acima de 35); a reta entre os dois é uma aproximação. Abaixo de 32 °C (feijão, algodão e trigo com qualquer `temp_c` acima de 0) o motor estende a reta, sem dado. Uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py` tornaria exato todo ajuste inteiro, sem mudar o motor. O ajuste também não chega à API nem à tela: falta `backend/app.py` aceitar e validar `ajuste` e anunciar em `/metadata`.
