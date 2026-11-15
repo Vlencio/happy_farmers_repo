@@ -311,7 +311,7 @@ Um DataFrame com uma linha por dia, sem dias faltando.
 
 ### Regras do modo diário
 
-1. **Anos:** o talhão fica livre no dia 1 de `mes_plantio` de cada ano da série. Entram os anos em que cabem inteiros a sequência mais longa e os 365 dias do solo descoberto (regra 11). Com a série de 2005 a 2024: 19 anos, de 2005 a 2023, em todo mês (dezembro com duas culturas: 18, até 2022). O `ano` é o do dia em que o talhão fica livre (outubro de 2020 = safra 2020/21).
+1. **Anos:** o talhão fica livre no dia 1 de `mes_plantio` de cada ano da série. Entram os anos em que cabem inteiros a sequência mais longa e os 365 dias do solo descoberto (regra 11). Com a série de 2005 a 2024: 19 anos, de 2005 a 2023, na maioria dos meses; janeiro com uma cultura: 20 (até 2024, que é bissexto); dezembro com duas culturas: 18 (até 2022). Fevereiro e março com uma cultura perderam 2024 quando entrou o solo descoberto (antes eram 20 anos). O `ano` é o do dia em que o talhão fica livre (outubro de 2020 = safra 2020/21).
 2. **Calendário:** o mesmo do modo mensal, em dias contados a partir do talhão livre. As sequências viáveis e as descartadas não mudam.
 3. **Balanço hídrico:** as regras 5 e 6, com a chuva e o ET0 de cada dia.
 4. **Encaixe de temperatura e de chuva:** as regras 7 e 8, com a temperatura média de cada dia e a chuva do ciclo naquele ano.
