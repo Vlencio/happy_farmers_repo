@@ -1,6 +1,8 @@
 use crate::{
     State, host,
-    model::{Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy},
+    model::{
+        Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy, StrategyWarning,
+    },
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
 use rune_kit::{
@@ -897,6 +899,20 @@ fn recommendation_card(
         .map(|fact| format!("{}: {}", fact.label, fact.value))
         .collect::<Vec<_>>()
         .join("; ");
+    let warnings_label = rec.warnings.as_ref().map_or_else(
+        || "Avisos indisponíveis nesta resposta do motor.".to_owned(),
+        |warnings| {
+            let first = warnings
+                .risks
+                .first()
+                .into_iter()
+                .chain(warnings.gaps.first())
+                .map(|warning| warning.card_summary.as_str())
+                .collect::<Vec<_>>()
+                .join(" ");
+            format!("{} {}", warnings.summary, first)
+        },
+    );
     let marker = match selection {
         SelectedStrategy::Current => "REF.".to_owned(),
         SelectedStrategy::Objective(i) => format!("0{}", i + 1),
@@ -967,6 +983,7 @@ fn recommendation_card(
         .child(exposure_summary)
         .child(rule())
         .child(paragraph(&rec.reason))
+        .child(warnings_card(rec))
         .child(label(
             if demo {
                 "EXEMPLO ILUSTRATIVO"
@@ -997,14 +1014,152 @@ fn recommendation_card(
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. Abrir linha do tempo",
-                name, rec.crop, comparison_label
+                "{}: {}. {}. {} Abrir linha do tempo",
+                name, rec.crop, comparison_label, warnings_label
             ))
             .focusable(true)
             .on_press(move |s: &mut State| s.select(selection)),
         narrow,
         1.0,
     )
+}
+fn warnings_card(rec: &Recommendation) -> El {
+    let mut view = col().gap(12.0).w_full();
+    let Some(warnings) = &rec.warnings else {
+        return view.child(
+            label(
+                "Avisos indisponíveis nesta resposta do motor.",
+                12.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+    };
+    if warnings.risks.is_empty() && warnings.gaps.is_empty() {
+        return view
+            .child(label(&warnings.summary, 12.0, 500.0, MUTED).wrap().w_full())
+            .child(
+                label("Isso não garante ausência de risco.", 11.0, 400.0, MUTED)
+                    .wrap()
+                    .w_full(),
+            );
+    }
+    for (title, items, ink, bg) in [
+        ("Riscos", &warnings.risks, "#855535", "#f6f0e6"),
+        ("Lacunas", &warnings.gaps, "#416773", "#edf3f4"),
+    ] {
+        let mut group = col()
+            .gap(6.0)
+            .padding(12.0)
+            .radius(9.0)
+            .w_full()
+            .fill(color(bg))
+            .child(
+                label(format!("{title} · {}", items.len()), 12.0, 600.0, ink)
+                    .wrap()
+                    .w_full(),
+            );
+        group = group.child(
+            label(
+                items
+                    .first()
+                    .map_or("Nenhum aviso sinalizado.", |warning| &warning.card_summary),
+                12.0,
+                400.0,
+                INK,
+            )
+            .wrap()
+            .w_full(),
+        );
+        if items.len() > 1 {
+            group = group.child(
+                label(format!("+{} no detalhe", items.len() - 1), 11.0, 500.0, ink)
+                    .wrap()
+                    .w_full(),
+            );
+        }
+        view = view.child(group);
+    }
+    view
+}
+fn warning_group(title: &str, items: &[StrategyWarning], ink: &str, bg: &str) -> El {
+    let mut group = col().gap(14.0).w_full().child(
+        label(format!("{title} · {}", items.len()), 18.0, 600.0, ink)
+            .wrap()
+            .w_full()
+            .role("heading")
+            .level(3),
+    );
+    if items.is_empty() {
+        return group.child(paragraph("Nenhum aviso desse tipo sinalizado pelo motor."));
+    }
+    for warning in items {
+        group = group.child(
+            col()
+                .gap(8.0)
+                .padding(16.0)
+                .radius(10.0)
+                .fill(color(bg))
+                .w_full()
+                .child(
+                    label(&warning.title, 16.0, 600.0, INK)
+                        .wrap()
+                        .w_full()
+                        .role("heading")
+                        .level(4),
+                )
+                .child(label(&warning.context, 12.0, 600.0, ink).wrap().w_full())
+                .child(paragraph(&warning.description))
+                .child(
+                    label(
+                        format!("Dado do motor: {}", warning.evidence),
+                        12.0,
+                        500.0,
+                        INK,
+                    )
+                    .wrap()
+                    .w_full(),
+                ),
+        );
+    }
+    group
+}
+fn warnings_panel(rec: &Recommendation, narrow: bool) -> El {
+    let mut view = panel().gap(18.0).w_full().child(
+        label("Riscos e lacunas desta estratégia", 22.0, 600.0, INK)
+            .wrap()
+            .w_full()
+            .role("heading")
+            .level(2),
+    );
+    let Some(warnings) = &rec.warnings else {
+        return view.child(paragraph("Avisos indisponíveis nesta resposta do motor."))
+            .child(paragraph("A resposta não trouxe a lista de avisos desta sequência. Isso não significa ausência de riscos ou de informações a conferir."));
+    };
+    view = view.child(paragraph(&warnings.summary));
+    if !warnings.risks.is_empty() || !warnings.gaps.is_empty() {
+        view = view.child(
+            responsive_row(narrow)
+                .child(column_width(
+                    warning_group("Riscos para revisar", &warnings.risks, "#855535", "#f6f0e6"),
+                    narrow,
+                    1.0,
+                ))
+                .child(column_width(
+                    warning_group(
+                        "Lacunas de informação",
+                        &warnings.gaps,
+                        "#416773",
+                        "#edf3f4",
+                    ),
+                    narrow,
+                    1.0,
+                )),
+        );
+    }
+    view.child(label(&warnings.note, 12.0, 400.0, MUTED).wrap().w_full())
 }
 fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
     let mut view = panel().gap(16.0).w_full().child(
@@ -1456,6 +1611,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
+        .child(warnings_panel(rec, narrow))
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
             .child(paragraph("Selecione uma cultura para ver os detalhes. Ano 1 é o ano inicial do planejamento; o calendário pode atravessar dezembro."))
             .child(el().w_full().scroll_x().child(months.min_w(rec.month_labels.len() as f32 * 83.0))))

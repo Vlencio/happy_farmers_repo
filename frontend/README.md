@@ -67,7 +67,8 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
 - Três cards calculados a partir da resposta real: renda bruta de hoje, índice de solo de hoje e encaixe climático futuro entre sequências com receita positiva em todas as culturas (fallback para todas se nenhuma passar).
 - Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
-- Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; o envio da declividade está preparado e depende do suporte da API (Parte 2 em `docs/API.md`).
+- Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; a API aceita a declividade enviada para o contorno exato da demonstração (Parte 2 em `docs/API.md`).
+- Riscos e lacunas por estratégia, inclusive na rotação atual: resumo separado nos cards e todos os avisos com cultura, cenário e dados do motor no detalhe. Lista vazia e resposta antiga sem avisos têm mensagens diferentes (Parte 3 em `docs/API.md`).
 - Linha do tempo com as culturas, espera, plantio/colheita e tabela mensal de água, comparando hoje/futuro.
 - Calendários que atravessam dezembro e podem exceder 12 meses; tratamento de resultado vazio e motivos de descarte.
 - Rascunho local, recuperação ao recarregar, estados de erro e cancelamento de chamadas ao motor.
@@ -136,6 +137,7 @@ Principais arquivos:
 | `web/farm-preview.mjs`, `web/preview-layout.mjs`, `web/imagery.mjs` | Imagem de satélite do resumo, projeção compartilhada de contorno/tiles e fonte do mapa |
 | `web/main.mjs` | Arquivos, rascunho e coordenação assíncrona |
 | `web/api.mjs` | Contrato e cliente HTTP para FastAPI |
+| `web/warnings.mjs` | Validação e apresentação dos riscos e lacunas de cada sequência |
 | `web/field.mjs` | Correspondência do contorno e apresentação dos dados do talhão |
 | `../backend/app.py` | Transporte HTTP para o motor, catálogo e validação de entrada |
 | `../backend/field_context.py` | Leitura dos CSVs de contexto e deltas opcionais por modelo |

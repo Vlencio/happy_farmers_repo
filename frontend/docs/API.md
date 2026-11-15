@@ -160,33 +160,25 @@ de chuva aceitam 0,01 mm de diferença pelo arredondamento do motor. Uma respost
 legada sem `descoberto` mantém os cards/calendários, com aviso de indisponibilidade.
 Os limites da hipótese de palhada aparecem no próprio painel.
 
-### Declividade: ponte preparada, API pendente
+### Declividade integrada
 
-A API consultada ainda rejeita `declividade_pct`. Por isso o front **omite** o
-campo com os metadados atuais. `getAnalysisSlope` só habilita o envio quando a API
-anuncia explicitamente a capability proposta abaixo, e o contorno coincide com
-o talhão de demonstração:
+A API integrada na Main `1519963` aceita `declividade_pct` opcional, finita entre
+0 e 100, e repassa o campo ao motor. `getAnalysisSlope` habilita o envio quando
+os metadados anunciam a capability abaixo e o contorno coincide com o talhão de
+demonstração:
 
 ```json
 {"capabilities": {"declividade_pct": true}}
 ```
 
-Esse sinal é uma proposta de integração, ainda não um campo entregue pelo backend.
-Quando estiver presente, o front envia `demo_field.terrain.decl_media_pct` validado
+Com esse sinal, o front envia `demo_field.terrain.decl_media_pct` validado
 entre 0 e 100, preservando zero. Nome, proximidade, centro e área aproximada não
 autorizam reutilizar a declividade. Para outros talhões, o campo continua omitido.
 O front não calcula o índice de erosão nem consulta uma fonte de relevo nova.
 
-**Mensagem para Pedro:**
-
-> Pedro, o front da Parte 2 já mostra dias sem cultura, dias expostos e chuva por
-> sequência e mês, usando `descoberto`. Falta a API aceitar `declividade_pct`
-> opcional, finita entre 0 e 100, e repassá-la ao motor; hoje ela rejeita o campo
-> com 422. Preparei o envio quando `/metadata` anunciar
-> `capabilities: {"declividade_pct": true}`. Ative esse sinal junto com o suporte
-> da entrada. O front enviará `demo_field.terrain.decl_media_pct` somente para o
-> contorno exato da demonstração e omitirá nos demais. O `indice_erosao` retornado
-> já tem apresentação pronta. Não foi necessário mudar o motor nesta etapa.
+Conferência real após essa integração: a tela enviou 4,05% e exibiu, para
+Soja → Milho, os índices 34,7 / 34,2 / 24 (hoje / futuro / ano seco), recebidos
+como 34,681 / 34,164 / 23,968 da API. Não houve simulação nesse teste.
 
 Validação local em 14/11/2026: 61 testes JS, 1 teste Rust, build WASM/web e as
 30 análises HTTP existentes passaram, com conferência dos totais mensais de
@@ -195,7 +187,62 @@ e 4 com suporte futuro explicitamente simulado) e cobre valores diferentes entre
 os 12 meses, seleção de mês, desktop/celular simulado e ausência do campo de
 declividade no POST para a API atual. A simulação confirma o envio de 4,05% no
 contorno exato, sua omissão em outro contorno e a exibição do índice com números
-sintéticos identificados; a API real ainda não fornece o cálculo com declividade.
+sintéticos identificados. Esse registro é anterior à integração da declividade;
+as expectativas antigas de ausência do índice em `browser-exposure.js` precisam
+ser atualizadas antes de reutilizar esse roteiro com a API nova.
+
+## Riscos e lacunas por estratégia — Parte 3
+
+O endpoint já repassa `sequencias[].avisos` (regra 17 do contrato). O adaptador
+`web/warnings.mjs` valida a lista e transforma os dados para `Recommendation.warnings`,
+com grupos `risks` e `gaps`. Não gera avisos por conta própria, altera índices ou
+interfere na escolha dos três objetivos. A referência atual recebe o mesmo tratamento.
+
+- Os cards mostram as contagens separadas, um aviso de cada tipo com contexto e
+  o número de avisos restantes no detalhe. O nome acessível inclui esse resumo.
+- O painel “Riscos e lacunas desta estratégia” mostra a lista inteira, separada
+  por tipo. Cada item identifica cultura/cenário/slot quando aplicável, explica o
+  ponto de atenção e apresenta os dados que o motor usou.
+- Os 11 códigos têm texto em português, com acentos e unidades. Valores monetários
+  são receita bruta por hectare; os fatores são índices, não probabilidades.
+- `avisos: []` significa apenas que as regras não sinalizaram avisos. Campo ausente
+  em uma resposta legada significa indisponibilidade, sem presumir lista vazia.
+- Código novo mantém o texto e os dados fornecidos, dentro do grupo indicado pelo
+  motor. Formato inválido causa erro de contrato, em vez de omitir um aviso.
+
+O ano seco observado (2020/21) é distinto do “ano ruim” do modo diário. O front
+não ativa o modo diário nesta etapa. `fator_limitante` permanece baseado no cálculo
+mensal; a limitação é explicada junto aos avisos. Benefícios específicos não são
+deduzidos pelo front: continua visível o critério de sugestão de cada card.
+
+### Pendências para Pedro e dados
+
+Não falta campo de transporte para mostrar os avisos existentes. As colunas
+`preco_status` e `temp_calor_c_status` ainda não existem em `culturas.csv`, embora
+o motor já leia `<campo>_status`. Sem elas, os valores marcados como “memória” ou
+“sem fonte” na documentação não geram `valor_a_conferir` nos resultados reais.
+A lista estruturada de benefícios por sequência também continua ausente.
+
+Validação local em 14/11/2026: 72 testes JS (11 de avisos), 1 teste Rust, build
+WASM/web e 30 análises HTTP passaram. `tests/browser-warnings.js` passou 35
+verificações: 31 sem simulação e 4 com respostas explicitamente simuladas para
+campo ausente/lista vazia. O roteiro compara avisos da API real, rotação atual,
+histórico ausente, acentos, dados, teclado (Tab/Enter) e largura móvel de 390 px.
+As capturas `output/playwright/warnings-*.png`, relativas à raiz do repositório,
+foram inspecionadas em desktop e celular simulado. Sem erros de JavaScript;
+celular físico, leitor de tela e deploy não foram verificados nesta rodada.
+
+**Mensagem para Pedro:**
+
+> Pedro, o front da parte 3 mostra riscos e lacunas separados nos cards e no
+> detalhe, com os dados de cada aviso e os nomes acentuados. A API já repassa tudo
+> necessário. Falta alinhar com o Brenno as colunas `preco_status` para feijão,
+> girassol e algodão, e `temp_calor_c_status` para girassol e trigo, no gerador e
+> no CSV. O motor já lê esses status, mas hoje não recebe as marcações de memória
+> ou sem fonte; depois da alteração, regenerem as fixtures. A lista de benefícios
+> por sequência também segue pendente no motor: por enquanto mostramos o critério
+> do card. O `fator_limitante` continua mensal; deixei isso explicado na tela,
+> sem antecipar a integração do modo diário da parte 8.
 
 ## Contexto do talhão (G2)
 

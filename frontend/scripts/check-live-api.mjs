@@ -31,7 +31,14 @@ for (const horizonte of [1, 2]) {
     if (!raw.sequencias.length) empty++;
     for (const rec of [...view.recommendations, ...(view.current_rotation.strategy ? [view.current_rotation.strategy] : [])]) {
       assert.equal(rec.timeline.length, horizonte);
-      const exposure = raw.sequencias.find(seq => seq.id === rec.sequence_id).hoje.descoberto;
+      const source = raw.sequencias.find(seq => seq.id === rec.sequence_id);
+      assert.ok(Array.isArray(source.avisos), 'A API deve repassar os avisos do motor atualizado.');
+      assert.equal(rec.warnings.risks.length, source.avisos.filter(warning => warning.tipo === 'risco').length);
+      assert.equal(rec.warnings.gaps.length, source.avisos.filter(warning => warning.tipo === 'lacuna').length);
+      for (const warning of [...rec.warnings.risks, ...rec.warnings.gaps]) {
+        assert.ok(warning.context && warning.description && warning.evidence && warning.card_summary);
+      }
+      const exposure = source.hoje.descoberto;
       assert.equal(rec.exposure.months.length, 12);
       assert.equal(rec.exposure.months.reduce((total, month) => total + month.days, 0), exposure.dias);
       assert.equal(rec.exposure.months.reduce((total, month) => total + month.exposed_days, 0), exposure.dias_expostos);
