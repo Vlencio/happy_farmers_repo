@@ -1397,8 +1397,10 @@ class TestModelos(unittest.TestCase):
 
     def test_aviso_quando_o_rank_varia(self):
         self.assertFalse(any(a["codigo"] == "rank_varia_entre_modelos" for s in self.sem["sequencias"] for a in s["avisos"]))
-        with mock.patch.object(motor, "AVISO_FAIXA_RANK", 0):  # em fevereiro os ranks dos modelos diferem
-            saida = recomendar({**ENTRADA, "mes_plantio": 2}, *self.dados, clima_modelos=self.modelos)
+        # modelos bem diferentes, para os ranks de fevereiro variarem nas tabelas de teste
+        distantes = deltas_modelos({"A": (-60.0, 0.0, 0.0), "B": (0.0, 2.0, 2.0), "C": (40.0, 4.0, 4.0)})
+        with mock.patch.object(motor, "AVISO_FAIXA_RANK", 0):
+            saida = recomendar({**ENTRADA, "mes_plantio": 2}, *self.dados, clima_modelos=distantes)
         varia = [s for s in saida["sequencias"] if s["modelos"]["rank_max"] > s["modelos"]["rank_min"]]
         self.assertTrue(varia)
         for s in saida["sequencias"]:
