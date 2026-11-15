@@ -286,12 +286,46 @@ class TestRecomendar(unittest.TestCase):
     def test_regras_de_sequencia(self):
         # repetir a cultura anterior
         self.assertEqual(cultura_de(self.saida, "milho>milho", "hoje", 1)["fator_sequencia"], motor.PENALIDADE_REPETICAO)
-        # nao fixadora depois de fixadora
-        self.assertEqual(cultura_de(self.saida, "soja>milho", "hoje", 1)["fator_sequencia"], motor.BONUS_APOS_FIXADORA)
+        # soja fixa N mas exporta o N no grao: milho depois dela nao ganha bonus (regra 10)
+        self.assertEqual(cultura_de(self.saida, "soja>milho", "hoje", 1)["fator_sequencia"], 1.0)
         # o historico conta: a rotacao atual termina em milho, entao milho na 1a posicao repete
         self.assertEqual(cultura_de(self.saida, "milho>crotalaria", "hoje", 0)["fator_sequencia"], motor.PENALIDADE_REPETICAO)
         # fixadora depois de fixadora nao ganha bonus
         self.assertEqual(cultura_de(self.saida, "soja>crotalaria", "hoje", 1)["fator_sequencia"], 1.0)
+
+    def test_bonus_so_depois_de_adubo_verde(self):
+        tabela = motor._tabela_culturas(self.dados[0])
+        self.assertEqual(sorted(n for n, c in tabela.items() if motor.adubo_verde(c)), ["crotalaria"])
+        # crotalaria no historico, talhao livre em outubro: milho entra no dia 1, 10 dias depois do
+        # fim do ciclo suposto da crotalaria (DIAS_COLHEITA antes do talhao livre)
+        saida = recomendar({**ENTRADA, "rotacao_atual": ["crotalaria"]}, *self.dados)
+        milho = cultura_de(saida, "milho>crotalaria", "hoje", 0)
+        self.assertEqual((milho["fator_sequencia"], milho["dias_apos_anterior"]), (motor.BONUS_APOS_FIXADORA, 10))
+        # talhao livre em julho: o milho espera ate outubro, 102 dias depois do fim do ciclo
+        julho = recomendar({**ENTRADA, "rotacao_atual": ["crotalaria"], "mes_plantio": 7}, *self.dados)
+        milho = cultura_de(julho, "milho>crotalaria", "hoje", 0)
+        self.assertEqual((milho["fator_sequencia"], milho["dias_apos_anterior"]), (1.0, 102))
+        # sem historico nao ha cultura anterior nem dias
+        sem = recomendar({**ENTRADA, "rotacao_atual": []}, *self.dados)
+        self.assertIsNone(cultura_de(sem, "milho>crotalaria", "hoje", 0)["dias_apos_anterior"])
+
+    def test_bonus_com_prazo_dentro_da_sequencia(self):
+        fev = {**ENTRADA, "mes_plantio": 2}
+        # crotalaria de marco (100 dias) acaba em 8/jun; o milho de outubro entra 114 dias depois
+        milho = cultura_de(recomendar(fev, *self.dados), "crotalaria>milho", "hoje", 1)
+        self.assertEqual((milho["fator_sequencia"], milho["dias_apos_anterior"]), (1.0, 114))
+        # com ciclo de 200 dias a crotalaria acaba em 16/set: o milho entra 14 dias depois e ganha o bonus
+        culturas = self.dados[0].copy()
+        culturas.loc[culturas["cultura"] == "crotalaria", "ciclo_dias"] = 200
+        saida = recomendar(fev, culturas, *self.dados[1:])
+        milho = cultura_de(saida, "crotalaria>milho", "hoje", 1)
+        self.assertEqual((milho["fator_sequencia"], milho["dias_apos_anterior"]), (motor.BONUS_APOS_FIXADORA, 14))
+        (b,) = [b for b in next(s for s in saida["sequencias"] if s["id"] == "crotalaria>milho")["beneficios"]
+                if b["codigo"] == "bonus_apos_fixadora"]  # fmt: skip
+        self.assertEqual((b["cultura"], b["dados"]["dias_apos_anterior"]), ("milho", 14))
+        # fixadora colhida (soja com produtividade zero vira adubo verde) segue a mesma regra
+        culturas.loc[culturas["cultura"] == "soja", ["produtividade", "preco"]] = 0
+        self.assertTrue(motor.adubo_verde(motor._tabela_culturas(culturas)["soja"]))
 
     def test_balanco_hidrico(self):
         for s in self.saida["sequencias"]:
@@ -660,6 +694,18 @@ class TestDiario(unittest.TestCase):
             if s["id"] in agua_baixa:
                 s["beneficios"] = [b for b in s["beneficios"] if b["codigo"] != "clima_favoravel"]
         self.assertEqual(com, sem)
+
+    def test_bonus_de_n_igual_ao_mensal(self):
+        # milho logo depois da crotalaria do historico ganha o bonus tambem no diario; com o talhao
+        # livre em julho (102 dias de espera), nao. Algodao no historico: sem bonus nem repeticao
+        for mes, esperado in ((10, motor.BONUS_APOS_FIXADORA), (7, 1.0)):
+            fator = {}
+            for anterior in ("crotalaria", "algodao"):
+                saida = recomendar({**ENTRADA, "rotacao_atual": [anterior], "mes_plantio": mes}, *self.dados, diario=self.serie)
+                fator[anterior] = self.bloco("milho>crotalaria", saida=saida)["culturas"][0]["mediano"]["fator"]
+                mensal = cultura_de(saida, "milho>crotalaria", "hoje", 0)["fator_sequencia"]
+                self.assertEqual(mensal, esperado if anterior == "crotalaria" else 1.0)
+            self.assertAlmostEqual(fator["crotalaria"] / fator["algodao"], esperado, delta=0.002, msg=mes)
 
     def test_serializa_e_resume_os_anos(self):
         json.dumps(self.saida)
@@ -1186,9 +1232,14 @@ class TestBeneficios(unittest.TestCase):
             [c for c in self.codigos("soja>crotalaria", cultura=True) if c[1]],
             [("fixa_nitrogenio", "soja"), ("fixa_nitrogenio", "crotalaria"), ("deixa_palhada", "crotalaria")],
         )
-        (b,) = [b for b in self.seq("soja>milho")["beneficios"] if b["codigo"] == "bonus_apos_fixadora"]
-        self.assertEqual((b["cultura"], b["dados"]["fator_sequencia"]), ("milho", motor.BONUS_APOS_FIXADORA))
-        self.assertEqual(cultura_de(self.saida, "soja>milho", "hoje", 1)["fator_sequencia"], motor.BONUS_APOS_FIXADORA)
+        # soja exporta o N no grao: sem bonus para o milho depois dela (regra 10)
+        self.assertNotIn("bonus_apos_fixadora", self.codigos("soja>milho"))
+        saida = recomendar({**ENTRADA, "rotacao_atual": ["crotalaria"]}, *self.dados)
+        (b,) = [b for b in self.seq("milho>crotalaria", saida)["beneficios"] if b["codigo"] == "bonus_apos_fixadora"]
+        self.assertEqual(
+            (b["cultura"], b["dados"]["fator_sequencia"], b["dados"]["dias_apos_anterior"]),
+            ("milho", motor.BONUS_APOS_FIXADORA, 10),
+        )
 
     def test_cultura_repetida_conta_uma_vez(self):
         culturas = self.dados[0].copy()

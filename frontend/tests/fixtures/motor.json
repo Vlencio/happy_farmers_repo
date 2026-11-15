@@ -571,7 +571,7 @@
       ],
       "atual": false,
       "rank_hoje": 1,
-      "rank_futuro": 6,
+      "rank_futuro": 4,
       "hoje": {
         "score": 75.228,
         "agua": 1.0,
@@ -689,6 +689,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -745,6 +746,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -871,6 +873,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -927,6 +930,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -1034,14 +1038,14 @@
       "rank_hoje": 2,
       "rank_futuro": 1,
       "hoje": {
-        "score": 74.535,
+        "score": 73.911,
         "agua": 0.911,
         "atendimento_hidrico": 0.964,
         "solo": 0.569,
-        "renda": 0.756,
-        "receita_ha": 11291.58,
+        "renda": 0.737,
+        "receita_ha": 11012.063,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11291.58,
+        "receita_ano_ha": 11012.063,
         "encaixe": 0.986,
         "descoberto": {
           "dias": 140,
@@ -1150,6 +1154,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -1206,24 +1211,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 1.001,
-            "receita_ha": 3074.682,
+            "fator_sequencia": 1.0,
+            "fator": 0.91,
+            "receita_ha": 2795.165,
             "solo": 0.546
           }
         ]
       },
       "futuro": {
-        "score": 73.547,
+        "score": 72.929,
         "agua": 0.904,
         "atendimento_hidrico": 0.961,
         "solo": 0.56,
-        "renda": 0.742,
-        "receita_ha": 11090.144,
+        "renda": 0.724,
+        "receita_ha": 10813.131,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11090.144,
+        "receita_ano_ha": 10813.131,
         "encaixe": 0.966,
         "descoberto": {
           "dias": 140,
@@ -1332,6 +1338,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -1388,11 +1395,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.992,
-            "receita_ha": 3047.143,
+            "fator_sequencia": 1.0,
+            "fator": 0.902,
+            "receita_ha": 2770.13,
             "solo": 0.541
           }
         ]
@@ -1405,16 +1413,6 @@
           "cenario": null,
           "dados": {},
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "sorgo",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "sorgo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         },
         {
           "codigo": "deixa_palhada",
@@ -1439,8 +1437,8 @@
           "cenario": "futuro",
           "dados": {
             "queda": 0.018,
-            "receita_hoje": 11291.58,
-            "receita_futuro": 11090.144
+            "receita_hoje": 11012.063,
+            "receita_futuro": 10813.131
           },
           "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
@@ -1574,6 +1572,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -1630,6 +1629,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "dias_apos_anterior": 36,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -1749,6 +1749,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -1805,6 +1806,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "dias_apos_anterior": 36,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -2012,6 +2014,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -2068,10 +2071,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 1.062,
+            "fator_sequencia": 1.0,
+            "fator": 0.966,
             "receita_ha": 0.0,
             "solo": 0.579
           }
@@ -2194,6 +2198,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -2250,10 +2255,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 1.093,
+            "fator_sequencia": 1.0,
+            "fator": 0.994,
             "receita_ha": 0.0,
             "solo": 0.596
           }
@@ -2284,16 +2290,6 @@
           "cenario": null,
           "dados": {},
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "milheto",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "milheto na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         },
         {
           "codigo": "deixa_palhada",
@@ -2342,16 +2338,16 @@
       ],
       "atual": false,
       "rank_hoje": 5,
-      "rank_futuro": 4,
+      "rank_futuro": 5,
       "hoje": {
-        "score": 70.582,
+        "score": 69.913,
         "agua": 0.955,
         "atendimento_hidrico": 0.982,
         "solo": 0.391,
-        "renda": 0.771,
-        "receita_ha": 11511.988,
+        "renda": 0.751,
+        "receita_ha": 11212.434,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11511.988,
+        "receita_ano_ha": 11212.434,
         "encaixe": 0.979,
         "descoberto": {
           "dias": 140,
@@ -2460,6 +2456,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -2516,24 +2513,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.049,
-            "receita_ha": 3295.089,
+            "fator_sequencia": 1.0,
+            "fator": 0.954,
+            "receita_ha": 2995.536,
             "solo": 0.191
           }
         ]
       },
       "futuro": {
-        "score": 69.585,
+        "score": 68.925,
         "agua": 0.947,
         "atendimento_hidrico": 0.979,
         "solo": 0.384,
-        "renda": 0.757,
-        "receita_ha": 11299.818,
+        "renda": 0.737,
+        "receita_ha": 11003.744,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11299.818,
+        "receita_ano_ha": 11003.744,
         "encaixe": 0.943,
         "descoberto": {
           "dias": 140,
@@ -2642,6 +2640,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -2698,11 +2697,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.037,
-            "receita_ha": 3256.817,
+            "fator_sequencia": 1.0,
+            "fator": 0.943,
+            "receita_ha": 2960.743,
             "solo": 0.189
           }
         ]
@@ -2753,23 +2753,13 @@
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
         },
         {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "girassol",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
           "codigo": "estavel_no_futuro",
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.018,
-            "receita_hoje": 11511.988,
-            "receita_futuro": 11299.818
+            "queda": 0.019,
+            "receita_hoje": 11212.434,
+            "receita_futuro": 11003.744
           },
           "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
@@ -2792,16 +2782,16 @@
       ],
       "atual": true,
       "rank_hoje": 6,
-      "rank_futuro": 5,
+      "rank_futuro": 6,
       "hoje": {
-        "score": 70.096,
+        "score": 69.028,
         "agua": 0.687,
         "atendimento_hidrico": 0.875,
         "solo": 0.513,
-        "renda": 0.903,
-        "receita_ha": 13481.124,
+        "renda": 0.871,
+        "receita_ha": 13002.558,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 13481.124,
+        "receita_ano_ha": 13002.558,
         "encaixe": 0.986,
         "descoberto": {
           "dias": 115,
@@ -2903,6 +2893,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -2967,24 +2958,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.797,
-            "receita_ha": 5264.226,
+            "fator_sequencia": 1.0,
+            "fator": 0.724,
+            "receita_ha": 4785.66,
             "solo": 0.435
           }
         ]
       },
       "futuro": {
-        "score": 69.374,
+        "score": 68.311,
         "agua": 0.686,
         "atendimento_hidrico": 0.874,
         "solo": 0.506,
-        "renda": 0.889,
-        "receita_ha": 13284.29,
+        "renda": 0.857,
+        "receita_ha": 12807.81,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 13284.29,
+        "receita_ano_ha": 12807.81,
         "encaixe": 0.96,
         "descoberto": {
           "dias": 115,
@@ -3086,6 +3078,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -3150,11 +3143,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.793,
-            "receita_ha": 5241.289,
+            "fator_sequencia": 1.0,
+            "fator": 0.721,
+            "receita_ha": 4764.808,
             "solo": 0.433
           }
         ]
@@ -3194,16 +3188,6 @@
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
         },
         {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "milho",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "milho na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
           "codigo": "deixa_palhada",
           "cultura": "milho",
           "cenario": null,
@@ -3226,8 +3210,8 @@
           "cenario": "futuro",
           "dados": {
             "queda": 0.015,
-            "receita_hoje": 13481.124,
-            "receita_futuro": 13284.29
+            "receita_hoje": 13002.558,
+            "receita_futuro": 12807.81
           },
           "texto": "A receita cai só 1% do clima de hoje para o futuro (por volta de 2060)."
         }
@@ -3352,6 +3336,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -3416,10 +3401,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.948,
+            "fator_sequencia": 1.0,
+            "fator": 0.862,
             "receita_ha": 0.0,
             "solo": 0.517
           }
@@ -3535,6 +3521,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -3599,10 +3586,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.951,
+            "fator_sequencia": 1.0,
+            "fator": 0.864,
             "receita_ha": 0.0,
             "solo": 0.519
           }
@@ -3633,16 +3621,6 @@
           "cenario": null,
           "dados": {},
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "braquiaria",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "braquiaria na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         },
         {
           "codigo": "deixa_palhada",
@@ -3693,14 +3671,14 @@
       "rank_hoje": 8,
       "rank_futuro": 8,
       "hoje": {
-        "score": 64.853,
+        "score": 64.174,
         "agua": 0.674,
         "atendimento_hidrico": 0.869,
         "solo": 0.498,
-        "renda": 0.774,
-        "receita_ha": 11562.743,
+        "renda": 0.754,
+        "receita_ha": 11258.575,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11562.743,
+        "receita_ano_ha": 11258.575,
         "encaixe": 0.784,
         "descoberto": {
           "dias": 130,
@@ -3802,6 +3780,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -3858,24 +3837,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "dias_apos_anterior": 36,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.74,
-            "receita_ha": 3345.845,
+            "fator_sequencia": 1.0,
+            "fator": 0.673,
+            "receita_ha": 3041.677,
             "solo": 0.404
           }
         ]
       },
       "futuro": {
-        "score": 62.496,
+        "score": 61.901,
         "agua": 0.673,
         "atendimento_hidrico": 0.869,
         "solo": 0.467,
-        "renda": 0.735,
-        "receita_ha": 10978.331,
+        "renda": 0.717,
+        "receita_ha": 10711.483,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 10978.331,
+        "receita_ano_ha": 10711.483,
         "encaixe": 0.59,
         "descoberto": {
           "dias": 130,
@@ -3977,6 +3957,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -4033,11 +4014,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "dias_apos_anterior": 36,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.65,
-            "receita_ha": 2935.329,
+            "fator_sequencia": 1.0,
+            "fator": 0.59,
+            "receita_ha": 2668.481,
             "solo": 0.354
           }
         ]
@@ -4099,16 +4081,6 @@
           "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
         },
         {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "trigo",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "trigo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
           "codigo": "deixa_palhada",
           "cultura": "trigo",
           "cenario": null,
@@ -4130,9 +4102,9 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.051,
-            "receita_hoje": 11562.743,
-            "receita_futuro": 10978.331
+            "queda": 0.049,
+            "receita_hoje": 11258.575,
+            "receita_futuro": 10711.483
           },
           "texto": "A receita cai só 5% do clima de hoje para o futuro (por volta de 2060)."
         }
@@ -4265,6 +4237,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -4321,6 +4294,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -4448,6 +4422,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -4504,6 +4479,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -4720,6 +4696,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -4776,6 +4753,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "dias_apos_anterior": 16,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -4896,6 +4874,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -4952,6 +4931,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "dias_apos_anterior": 16,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5171,6 +5151,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -5227,6 +5208,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5354,6 +5336,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -5410,6 +5393,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5614,6 +5598,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5670,6 +5655,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5789,6 +5775,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -5845,6 +5832,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -6046,6 +6034,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -6110,6 +6099,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -6230,6 +6220,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -6294,6 +6285,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -6379,481 +6371,13 @@
       ]
     },
     {
-      "id": "feijao>sorgo",
-      "culturas": [
-        "feijao",
-        "sorgo"
-      ],
-      "atual": false,
-      "rank_hoje": 14,
-      "rank_futuro": 17,
-      "hoje": {
-        "score": 56.044,
-        "agua": 0.845,
-        "atendimento_hidrico": 0.938,
-        "solo": 0.459,
-        "renda": 0.378,
-        "receita_ha": 5643.453,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 5643.453,
-        "encaixe": 0.664,
-        "descoberto": {
-          "dias": 165,
-          "dias_expostos": 10,
-          "chuva_mm": 256.308,
-          "chuva_exposta_mm": 65.597,
-          "meses": [
-            {
-              "mes": 10,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 106.51,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 1,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 15.428,
-              "chuva_exposta_mm": 15.428
-            },
-            {
-              "mes": 2,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 50.169,
-              "chuva_exposta_mm": 50.169
-            },
-            {
-              "mes": 5,
-              "dias": 2,
-              "dias_expostos": 0,
-              "chuva_mm": 2.431,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 6,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 19.27,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 10.14,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 9.49,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 42.87,
-              "chuva_exposta_mm": 0.0
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "feijao",
-            "mes_plantio": 11,
-            "mes_colheita": 1,
-            "ciclo_dias": 90,
-            "encaixe_temp": 0.909,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.664,
-            "dias_calor": 10.406,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 596.282,
-            "etc_mm": 379.202,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.473,
-                "chuva_mm": 156.71,
-                "etc_mm": 77.409,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.085,
-                "chuva_mm": 215.86,
-                "etc_mm": 171.313,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 29,
-                "kc": 0.916,
-                "chuva_mm": 223.712,
-                "etc_mm": 130.48,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 31,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.664,
-            "receita_ha": 2720.341,
-            "solo": 0.399
-          },
-          {
-            "cultura": "sorgo",
-            "mes_plantio": 2,
-            "mes_colheita": 5,
-            "ciclo_dias": 110,
-            "encaixe_temp": 0.988,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.996,
-            "dias_calor": 0.134,
-            "atendimento_hidrico": 0.865,
-            "chuva_mm": 389.62,
-            "etc_mm": 324.79,
-            "deficit_mm": 43.754,
-            "meses": [
-              {
-                "mes": 2,
-                "dias": 20,
-                "kc": 0.3,
-                "chuva_mm": 125.421,
-                "etc_mm": 28.791,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.657,
-                "chuva_mm": 159.86,
-                "etc_mm": 87.905,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 1.05,
-                "chuva_mm": 69.09,
-                "etc_mm": 123.113,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 29,
-                "kc": 0.869,
-                "chuva_mm": 35.249,
-                "etc_mm": 84.981,
-                "deficit_mm": 43.754
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 0,
-            "fixa_n": false,
-            "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.952,
-            "receita_ha": 2923.112,
-            "solo": 0.519
-          }
-        ]
-      },
-      "futuro": {
-        "score": 50.828,
-        "agua": 0.837,
-        "atendimento_hidrico": 0.935,
-        "solo": 0.381,
-        "renda": 0.307,
-        "receita_ha": 4582.324,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 4582.324,
-        "encaixe": 0.411,
-        "descoberto": {
-          "dias": 165,
-          "dias_expostos": 10,
-          "chuva_mm": 245.384,
-          "chuva_exposta_mm": 66.108,
-          "meses": [
-            {
-              "mes": 10,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 95.66,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 1,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 15.137,
-              "chuva_exposta_mm": 15.137
-            },
-            {
-              "mes": 2,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 50.971,
-              "chuva_exposta_mm": 50.971
-            },
-            {
-              "mes": 5,
-              "dias": 2,
-              "dias_expostos": 0,
-              "chuva_mm": 2.636,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 6,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 20.61,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 10.71,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 7.01,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 42.65,
-              "chuva_exposta_mm": 0.0
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "feijao",
-            "mes_plantio": 11,
-            "mes_colheita": 1,
-            "ciclo_dias": 90,
-            "encaixe_temp": 0.677,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.411,
-            "dias_calor": 18.268,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 598.623,
-            "etc_mm": 394.955,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.473,
-                "chuva_mm": 153.98,
-                "etc_mm": 82.1,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.085,
-                "chuva_mm": 225.16,
-                "etc_mm": 176.26,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 29,
-                "kc": 0.916,
-                "chuva_mm": 219.483,
-                "etc_mm": 136.595,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 31,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.411,
-            "receita_ha": 1681.89,
-            "solo": 0.246
-          },
-          {
-            "cultura": "sorgo",
-            "mes_plantio": 2,
-            "mes_colheita": 5,
-            "ciclo_dias": 110,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.982,
-            "dias_calor": 0.69,
-            "atendimento_hidrico": 0.859,
-            "chuva_mm": 389.922,
-            "etc_mm": 336.812,
-            "deficit_mm": 47.635,
-            "meses": [
-              {
-                "mes": 2,
-                "dias": 20,
-                "kc": 0.3,
-                "chuva_mm": 127.429,
-                "etc_mm": 30.174,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.657,
-                "chuva_mm": 155.94,
-                "etc_mm": 92.45,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 1.05,
-                "chuva_mm": 68.33,
-                "etc_mm": 127.103,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 29,
-                "kc": 0.869,
-                "chuva_mm": 38.224,
-                "etc_mm": 87.086,
-                "deficit_mm": 47.635
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 0,
-            "fixa_n": false,
-            "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.944,
-            "receita_ha": 2900.434,
-            "solo": 0.515
-          }
-        ]
-      },
-      "avisos": [
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "feijao",
-          "cenario": "hoje",
-          "dados": {
-            "fator": "calor",
-            "valor": 0.664,
-            "slot": "safra"
-          },
-          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "feijao",
-          "cenario": "futuro",
-          "dados": {
-            "fator": "calor",
-            "valor": 0.411,
-            "slot": "safra"
-          },
-          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 41%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "queda_no_futuro",
-          "cultura": null,
-          "cenario": "futuro",
-          "dados": {
-            "queda": 0.188,
-            "receita_hoje": 5643.453,
-            "receita_futuro": 4582.324
-          },
-          "texto": "A receita cai 19% do clima de hoje para o futuro (por volta de 2060)."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "limiar_de_calor_pouco_confiavel",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {
-            "temp_calor_c": 32
-          },
-          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "valor_a_conferir",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {
-            "campo": "preco",
-            "status": "memoria",
-            "valor": 3500.0
-          },
-          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
-        }
-      ],
-      "beneficios": [
-        {
-          "codigo": "fixa_nitrogenio",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {},
-          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "sorgo",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "sorgo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
-          "codigo": "deixa_palhada",
-          "cultura": "sorgo",
-          "cenario": null,
-          "dados": {},
-          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
-        },
-        {
-          "codigo": "pouco_solo_exposto",
-          "cultura": null,
-          "cenario": null,
-          "dados": {
-            "dias_expostos": 10,
-            "chuva_exposta_mm": 65.597
-          },
-          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
-        }
-      ]
-    },
-    {
       "id": "feijao>feijao",
       "culturas": [
         "feijao",
         "feijao"
       ],
       "atual": false,
-      "rank_hoje": 15,
+      "rank_hoje": 14,
       "rank_futuro": 23,
       "hoje": {
         "score": 55.732,
@@ -6971,6 +6495,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -7027,6 +6552,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
@@ -7152,6 +6678,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -7208,6 +6735,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
@@ -7340,7 +6868,7 @@
         "trigo"
       ],
       "atual": false,
-      "rank_hoje": 16,
+      "rank_hoje": 15,
       "rank_futuro": 15,
       "hoje": {
         "score": 55.698,
@@ -7453,6 +6981,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -7509,6 +7038,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "dias_apos_anterior": 16,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -7629,6 +7159,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -7685,6 +7216,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "dias_apos_anterior": 16,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -7798,7 +7330,7 @@
         "milheto"
       ],
       "atual": false,
-      "rank_hoje": 17,
+      "rank_hoje": 16,
       "rank_futuro": 16,
       "hoje": {
         "score": 55.517,
@@ -7916,6 +7448,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -7972,10 +7505,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 1.042,
+            "fator_sequencia": 1.0,
+            "fator": 0.947,
             "receita_ha": 0.0,
             "solo": 0.568
           }
@@ -8097,6 +7631,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -8153,10 +7688,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 1.079,
+            "fator_sequencia": 1.0,
+            "fator": 0.981,
             "receita_ha": 0.0,
             "solo": 0.589
           }
@@ -8247,21 +7783,473 @@
           "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
         },
         {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "milheto",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "milheto na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
           "codigo": "deixa_palhada",
           "cultura": "milheto",
           "cenario": null,
           "dados": {},
           "texto": "milheto deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 65.597
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        }
+      ]
+    },
+    {
+      "id": "feijao>sorgo",
+      "culturas": [
+        "feijao",
+        "sorgo"
+      ],
+      "atual": false,
+      "rank_hoje": 17,
+      "rank_futuro": 17,
+      "hoje": {
+        "score": 55.451,
+        "agua": 0.845,
+        "atendimento_hidrico": 0.938,
+        "solo": 0.459,
+        "renda": 0.36,
+        "receita_ha": 5377.716,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 5377.716,
+        "encaixe": 0.664,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 10,
+          "chuva_mm": 256.308,
+          "chuva_exposta_mm": 65.597,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.169,
+              "chuva_exposta_mm": 50.169
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 2.431,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "feijao",
+            "mes_plantio": 11,
+            "mes_colheita": 1,
+            "ciclo_dias": 90,
+            "encaixe_temp": 0.909,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.664,
+            "dias_calor": 10.406,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 596.282,
+            "etc_mm": 379.202,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.473,
+                "chuva_mm": 156.71,
+                "etc_mm": 77.409,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.085,
+                "chuva_mm": 215.86,
+                "etc_mm": 171.313,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 29,
+                "kc": 0.916,
+                "chuva_mm": 223.712,
+                "etc_mm": 130.48,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 31,
+            "dias_apos_anterior": 41,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "fator": 0.664,
+            "receita_ha": 2720.341,
+            "solo": 0.399
+          },
+          {
+            "cultura": "sorgo",
+            "mes_plantio": 2,
+            "mes_colheita": 5,
+            "ciclo_dias": 110,
+            "encaixe_temp": 0.988,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.996,
+            "dias_calor": 0.134,
+            "atendimento_hidrico": 0.865,
+            "chuva_mm": 389.62,
+            "etc_mm": 324.79,
+            "deficit_mm": 43.754,
+            "meses": [
+              {
+                "mes": 2,
+                "dias": 20,
+                "kc": 0.3,
+                "chuva_mm": 125.421,
+                "etc_mm": 28.791,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.657,
+                "chuva_mm": 159.86,
+                "etc_mm": 87.905,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 1.05,
+                "chuva_mm": 69.09,
+                "etc_mm": 123.113,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 29,
+                "kc": 0.869,
+                "chuva_mm": 35.249,
+                "etc_mm": 84.981,
+                "deficit_mm": 43.754
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 0,
+            "dias_apos_anterior": 10,
+            "fixa_n": false,
+            "cobre_solo": true,
+            "fator_sequencia": 1.0,
+            "fator": 0.865,
+            "receita_ha": 2657.374,
+            "solo": 0.519
+          }
+        ]
+      },
+      "futuro": {
+        "score": 50.239,
+        "agua": 0.837,
+        "atendimento_hidrico": 0.935,
+        "solo": 0.381,
+        "renda": 0.289,
+        "receita_ha": 4318.648,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 4318.648,
+        "encaixe": 0.411,
+        "descoberto": {
+          "dias": 165,
+          "dias_expostos": 10,
+          "chuva_mm": 245.384,
+          "chuva_exposta_mm": 66.108,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 95.66,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.137,
+              "chuva_exposta_mm": 15.137
+            },
+            {
+              "mes": 2,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 50.971,
+              "chuva_exposta_mm": 50.971
+            },
+            {
+              "mes": 5,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 2.636,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 20.61,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.71,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 7.01,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.65,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "feijao",
+            "mes_plantio": 11,
+            "mes_colheita": 1,
+            "ciclo_dias": 90,
+            "encaixe_temp": 0.677,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.411,
+            "dias_calor": 18.268,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 598.623,
+            "etc_mm": 394.955,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.473,
+                "chuva_mm": 153.98,
+                "etc_mm": 82.1,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.085,
+                "chuva_mm": 225.16,
+                "etc_mm": 176.26,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 29,
+                "kc": 0.916,
+                "chuva_mm": 219.483,
+                "etc_mm": 136.595,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 31,
+            "dias_apos_anterior": 41,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "fator": 0.411,
+            "receita_ha": 1681.89,
+            "solo": 0.246
+          },
+          {
+            "cultura": "sorgo",
+            "mes_plantio": 2,
+            "mes_colheita": 5,
+            "ciclo_dias": 110,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.982,
+            "dias_calor": 0.69,
+            "atendimento_hidrico": 0.859,
+            "chuva_mm": 389.922,
+            "etc_mm": 336.812,
+            "deficit_mm": 47.635,
+            "meses": [
+              {
+                "mes": 2,
+                "dias": 20,
+                "kc": 0.3,
+                "chuva_mm": 127.429,
+                "etc_mm": 30.174,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.657,
+                "chuva_mm": 155.94,
+                "etc_mm": 92.45,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 1.05,
+                "chuva_mm": 68.33,
+                "etc_mm": 127.103,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 29,
+                "kc": 0.869,
+                "chuva_mm": 38.224,
+                "etc_mm": 87.086,
+                "deficit_mm": 47.635
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 0,
+            "dias_apos_anterior": 10,
+            "fixa_n": false,
+            "cobre_solo": true,
+            "fator_sequencia": 1.0,
+            "fator": 0.859,
+            "receita_ha": 2636.758,
+            "solo": 0.515
+          }
+        ]
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.411,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 41%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.197,
+            "receita_hoje": 5377.716,
+            "receita_futuro": 4318.648
+          },
+          "texto": "A receita cai 20% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
         },
         {
           "codigo": "pouco_solo_exposto",
@@ -8395,6 +8383,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -8459,6 +8448,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -8579,6 +8569,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -8643,6 +8634,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -8848,6 +8840,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -8904,6 +8897,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "dias_apos_anterior": 30,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -9022,6 +9016,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -9078,6 +9073,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "dias_apos_anterior": 30,
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -9207,14 +9203,14 @@
       "rank_hoje": 20,
       "rank_futuro": 22,
       "hoje": {
-        "score": 52.785,
+        "score": 52.146,
         "agua": 0.9,
         "atendimento_hidrico": 0.96,
         "solo": 0.29,
-        "renda": 0.393,
-        "receita_ha": 5869.598,
+        "renda": 0.374,
+        "receita_ha": 5583.302,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 5869.598,
+        "receita_ano_ha": 5583.302,
         "encaixe": 0.664,
         "descoberto": {
           "dias": 165,
@@ -9322,6 +9318,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -9378,24 +9375,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.003,
-            "receita_ha": 3149.257,
+            "fator_sequencia": 1.0,
+            "fator": 0.912,
+            "receita_ha": 2862.961,
             "solo": 0.182
           }
         ]
       },
       "futuro": {
-        "score": 47.579,
+        "score": 46.946,
         "agua": 0.892,
         "atendimento_hidrico": 0.957,
         "solo": 0.214,
-        "renda": 0.322,
-        "receita_ha": 4805.685,
+        "renda": 0.303,
+        "receita_ha": 4521.703,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 4805.685,
+        "receita_ano_ha": 4521.703,
         "encaixe": 0.411,
         "descoberto": {
           "dias": 165,
@@ -9503,6 +9501,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -9559,11 +9558,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 0.995,
-            "receita_ha": 3123.795,
+            "fator_sequencia": 1.0,
+            "fator": 0.904,
+            "receita_ha": 2839.813,
             "solo": 0.181
           }
         ]
@@ -9599,11 +9599,11 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.181,
-            "receita_hoje": 5869.598,
-            "receita_futuro": 4805.685
+            "queda": 0.19,
+            "receita_hoje": 5583.302,
+            "receita_futuro": 4521.703
           },
-          "texto": "A receita cai 18% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 19% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "risco",
@@ -9670,16 +9670,6 @@
           "cenario": null,
           "dados": {},
           "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "girassol",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         }
       ]
     },
@@ -9803,6 +9793,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -9867,6 +9858,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -9987,6 +9979,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -10051,6 +10044,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -10264,6 +10258,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -10336,6 +10331,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -10449,6 +10445,7 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -10521,6 +10518,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
@@ -10728,6 +10726,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -10784,6 +10783,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -10903,6 +10903,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -10959,6 +10960,7 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
@@ -11064,14 +11066,14 @@
       "rank_hoje": 24,
       "rank_futuro": 24,
       "hoje": {
-        "score": 50.249,
+        "score": 49.24,
         "agua": 0.588,
         "atendimento_hidrico": 0.835,
         "solo": 0.404,
-        "renda": 0.515,
-        "receita_ha": 7690.205,
+        "renda": 0.485,
+        "receita_ha": 7238.399,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 7690.205,
+        "receita_ano_ha": 7238.399,
         "encaixe": 0.664,
         "descoberto": {
           "dias": 140,
@@ -11172,6 +11174,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -11236,24 +11239,25 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.752,
-            "receita_ha": 4969.863,
+            "fator_sequencia": 1.0,
+            "fator": 0.684,
+            "receita_ha": 4518.057,
             "solo": 0.41
           }
         ]
       },
       "futuro": {
-        "score": 45.215,
+        "score": 44.211,
         "agua": 0.585,
         "atendimento_hidrico": 0.834,
         "solo": 0.327,
-        "renda": 0.444,
-        "receita_ha": 6628.6,
+        "renda": 0.414,
+        "receita_ha": 6178.9,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 6628.6,
+        "receita_ano_ha": 6178.9,
         "encaixe": 0.411,
         "descoberto": {
           "dias": 140,
@@ -11354,6 +11358,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -11418,11 +11423,12 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.749,
-            "receita_ha": 4946.71,
+            "fator_sequencia": 1.0,
+            "fator": 0.681,
+            "receita_ha": 4497.009,
             "solo": 0.408
           }
         ]
@@ -11482,11 +11488,11 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.138,
-            "receita_hoje": 7690.205,
-            "receita_futuro": 6628.6
+            "queda": 0.146,
+            "receita_hoje": 7238.399,
+            "receita_futuro": 6178.9
           },
-          "texto": "A receita cai 14% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 15% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -11518,16 +11524,6 @@
           "cenario": null,
           "dados": {},
           "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "milho",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "milho na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         },
         {
           "codigo": "deixa_palhada",
@@ -11549,513 +11545,13 @@
       ]
     },
     {
-      "id": "feijao>trigo",
-      "culturas": [
-        "feijao",
-        "trigo"
-      ],
-      "atual": false,
-      "rank_hoje": 25,
-      "rank_futuro": 26,
-      "hoje": {
-        "score": 47.429,
-        "agua": 0.616,
-        "atendimento_hidrico": 0.846,
-        "solo": 0.401,
-        "renda": 0.406,
-        "receita_ha": 6066.186,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 6066.186,
-        "encaixe": 0.664,
-        "descoberto": {
-          "dias": 155,
-          "dias_expostos": 30,
-          "chuva_mm": 361.313,
-          "chuva_exposta_mm": 191.018,
-          "meses": [
-            {
-              "mes": 10,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 106.51,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 1,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 15.428,
-              "chuva_exposta_mm": 15.428
-            },
-            {
-              "mes": 2,
-              "dias": 28,
-              "dias_expostos": 28,
-              "chuva_mm": 175.59,
-              "chuva_exposta_mm": 175.59
-            },
-            {
-              "mes": 6,
-              "dias": 2,
-              "dias_expostos": 0,
-              "chuva_mm": 1.285,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 10.14,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 9.49,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 42.87,
-              "chuva_exposta_mm": 0.0
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "feijao",
-            "mes_plantio": 11,
-            "mes_colheita": 1,
-            "ciclo_dias": 90,
-            "encaixe_temp": 0.909,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.664,
-            "dias_calor": 10.406,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 596.282,
-            "etc_mm": 379.202,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.473,
-                "chuva_mm": 156.71,
-                "etc_mm": 77.409,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.085,
-                "chuva_mm": 215.86,
-                "etc_mm": 171.313,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 29,
-                "kc": 0.916,
-                "chuva_mm": 223.712,
-                "etc_mm": 130.48,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 31,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.664,
-            "receita_ha": 2720.341,
-            "solo": 0.399
-          },
-          {
-            "cultura": "trigo",
-            "mes_plantio": 3,
-            "mes_colheita": 6,
-            "ciclo_dias": 120,
-            "encaixe_temp": 0.784,
-            "encaixe_chuva": 0.949,
-            "encaixe_calor": 0.915,
-            "dias_calor": 3.59,
-            "atendimento_hidrico": 0.673,
-            "chuva_mm": 284.615,
-            "etc_mm": 336.842,
-            "deficit_mm": 110.119,
-            "meses": [
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.319,
-                "chuva_mm": 159.86,
-                "etc_mm": 42.724,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 0.889,
-                "chuva_mm": 69.09,
-                "etc_mm": 104.274,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 31,
-                "kc": 1.15,
-                "chuva_mm": 37.68,
-                "etc_mm": 120.221,
-                "deficit_mm": 58.482
-              },
-              {
-                "mes": 6,
-                "dias": 28,
-                "kc": 0.801,
-                "chuva_mm": 17.985,
-                "etc_mm": 69.622,
-                "deficit_mm": 51.637
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 20,
-            "fixa_n": false,
-            "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.74,
-            "receita_ha": 3345.845,
-            "solo": 0.404
-          }
-        ]
-      },
-      "futuro": {
-        "score": 40.742,
-        "agua": 0.613,
-        "atendimento_hidrico": 0.845,
-        "solo": 0.3,
-        "renda": 0.309,
-        "receita_ha": 4617.22,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 4617.22,
-        "encaixe": 0.411,
-        "descoberto": {
-          "dias": 155,
-          "dias_expostos": 30,
-          "chuva_mm": 350.941,
-          "chuva_exposta_mm": 193.537,
-          "meses": [
-            {
-              "mes": 10,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 95.66,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 1,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 15.137,
-              "chuva_exposta_mm": 15.137
-            },
-            {
-              "mes": 2,
-              "dias": 28,
-              "dias_expostos": 28,
-              "chuva_mm": 178.4,
-              "chuva_exposta_mm": 178.4
-            },
-            {
-              "mes": 6,
-              "dias": 2,
-              "dias_expostos": 0,
-              "chuva_mm": 1.374,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 10.71,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 0,
-              "chuva_mm": 7.01,
-              "chuva_exposta_mm": 0.0
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 0,
-              "chuva_mm": 42.65,
-              "chuva_exposta_mm": 0.0
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "feijao",
-            "mes_plantio": 11,
-            "mes_colheita": 1,
-            "ciclo_dias": 90,
-            "encaixe_temp": 0.677,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.411,
-            "dias_calor": 18.268,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 598.623,
-            "etc_mm": 394.955,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.473,
-                "chuva_mm": 153.98,
-                "etc_mm": 82.1,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.085,
-                "chuva_mm": 225.16,
-                "etc_mm": 176.26,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 29,
-                "kc": 0.916,
-                "chuva_mm": 219.483,
-                "etc_mm": 136.595,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 31,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.411,
-            "receita_ha": 1681.89,
-            "solo": 0.246
-          },
-          {
-            "cultura": "trigo",
-            "mes_plantio": 3,
-            "mes_colheita": 6,
-            "ciclo_dias": 120,
-            "encaixe_temp": 0.59,
-            "encaixe_chuva": 0.948,
-            "encaixe_calor": 0.801,
-            "dias_calor": 8.377,
-            "atendimento_hidrico": 0.669,
-            "chuva_mm": 284.366,
-            "etc_mm": 347.972,
-            "deficit_mm": 115.071,
-            "meses": [
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.319,
-                "chuva_mm": 155.94,
-                "etc_mm": 44.933,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 0.889,
-                "chuva_mm": 68.33,
-                "etc_mm": 107.654,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 31,
-                "kc": 1.15,
-                "chuva_mm": 40.86,
-                "etc_mm": 123.2,
-                "deficit_mm": 62.121
-              },
-              {
-                "mes": 6,
-                "dias": 28,
-                "kc": 0.801,
-                "chuva_mm": 19.236,
-                "etc_mm": 72.186,
-                "deficit_mm": 52.95
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 20,
-            "fixa_n": false,
-            "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.65,
-            "receita_ha": 2935.329,
-            "solo": 0.354
-          }
-        ]
-      },
-      "avisos": [
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "feijao",
-          "cenario": "hoje",
-          "dados": {
-            "fator": "calor",
-            "valor": 0.664,
-            "slot": "safra"
-          },
-          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "trigo",
-          "cenario": "hoje",
-          "dados": {
-            "fator": "agua",
-            "valor": 0.673,
-            "slot": "safrinha"
-          },
-          "texto": "trigo na safrinha, clima hoje: a falta de água limita a produtividade a 67%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "feijao",
-          "cenario": "futuro",
-          "dados": {
-            "fator": "calor",
-            "valor": 0.411,
-            "slot": "safra"
-          },
-          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 41%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "trigo",
-          "cenario": "futuro",
-          "dados": {
-            "fator": "temperatura",
-            "valor": 0.59,
-            "slot": "safrinha"
-          },
-          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "queda_no_futuro",
-          "cultura": null,
-          "cenario": "futuro",
-          "dados": {
-            "queda": 0.239,
-            "receita_hoje": 6066.186,
-            "receita_futuro": 4617.22
-          },
-          "texto": "A receita cai 24% do clima de hoje para o futuro (por volta de 2060)."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "limiar_de_calor_pouco_confiavel",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {
-            "temp_calor_c": 32
-          },
-          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "valor_a_conferir",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {
-            "campo": "preco",
-            "status": "memoria",
-            "valor": 3500.0
-          },
-          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "limiar_de_calor_pouco_confiavel",
-          "cultura": "trigo",
-          "cenario": null,
-          "dados": {
-            "temp_calor_c": 32
-          },
-          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "valor_a_conferir",
-          "cultura": "trigo",
-          "cenario": null,
-          "dados": {
-            "campo": "temp_calor_c",
-            "status": "memoria",
-            "valor": 32
-          },
-          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
-        }
-      ],
-      "beneficios": [
-        {
-          "codigo": "fixa_nitrogenio",
-          "cultura": "feijao",
-          "cenario": null,
-          "dados": {},
-          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "trigo",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "trigo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
-          "codigo": "deixa_palhada",
-          "cultura": "trigo",
-          "cenario": null,
-          "dados": {},
-          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
-        },
-        {
-          "codigo": "pouco_solo_exposto",
-          "cultura": null,
-          "cenario": null,
-          "dados": {
-            "dias_expostos": 30,
-            "chuva_exposta_mm": 191.018
-          },
-          "texto": "O solo fica só 30 dias no ano sem cultura e sem palhada."
-        }
-      ]
-    },
-    {
       "id": "feijao>braquiaria",
       "culturas": [
         "feijao",
         "braquiaria"
       ],
       "atual": false,
-      "rank_hoje": 26,
+      "rank_hoje": 25,
       "rank_futuro": 25,
       "hoje": {
         "score": 47.333,
@@ -12166,6 +11662,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -12230,10 +11727,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.874,
+            "fator_sequencia": 1.0,
+            "fator": 0.794,
             "receita_ha": 0.0,
             "solo": 0.477
           }
@@ -12348,6 +11846,7 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "dias_apos_anterior": 41,
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
@@ -12412,10 +11911,11 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": true,
-            "fator_sequencia": 1.1,
-            "fator": 0.876,
+            "fator_sequencia": 1.0,
+            "fator": 0.796,
             "receita_ha": 0.0,
             "solo": 0.478
           }
@@ -12530,16 +12030,6 @@
           "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
         },
         {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "braquiaria",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "braquiaria na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
           "codigo": "deixa_palhada",
           "cultura": "braquiaria",
           "cenario": null,
@@ -12555,6 +12045,500 @@
             "chuva_exposta_mm": 65.597
           },
           "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        }
+      ]
+    },
+    {
+      "id": "feijao>trigo",
+      "culturas": [
+        "feijao",
+        "trigo"
+      ],
+      "atual": false,
+      "rank_hoje": 26,
+      "rank_futuro": 26,
+      "hoje": {
+        "score": 46.75,
+        "agua": 0.616,
+        "atendimento_hidrico": 0.846,
+        "solo": 0.401,
+        "renda": 0.386,
+        "receita_ha": 5762.018,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 5762.018,
+        "encaixe": 0.664,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 30,
+          "chuva_mm": 361.313,
+          "chuva_exposta_mm": 191.018,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 106.51,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.428,
+              "chuva_exposta_mm": 15.428
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 175.59,
+              "chuva_exposta_mm": 175.59
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.285,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "feijao",
+            "mes_plantio": 11,
+            "mes_colheita": 1,
+            "ciclo_dias": 90,
+            "encaixe_temp": 0.909,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.664,
+            "dias_calor": 10.406,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 596.282,
+            "etc_mm": 379.202,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.473,
+                "chuva_mm": 156.71,
+                "etc_mm": 77.409,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.085,
+                "chuva_mm": 215.86,
+                "etc_mm": 171.313,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 29,
+                "kc": 0.916,
+                "chuva_mm": 223.712,
+                "etc_mm": 130.48,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 31,
+            "dias_apos_anterior": 41,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "fator": 0.664,
+            "receita_ha": 2720.341,
+            "solo": 0.399
+          },
+          {
+            "cultura": "trigo",
+            "mes_plantio": 3,
+            "mes_colheita": 6,
+            "ciclo_dias": 120,
+            "encaixe_temp": 0.784,
+            "encaixe_chuva": 0.949,
+            "encaixe_calor": 0.915,
+            "dias_calor": 3.59,
+            "atendimento_hidrico": 0.673,
+            "chuva_mm": 284.615,
+            "etc_mm": 336.842,
+            "deficit_mm": 110.119,
+            "meses": [
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.319,
+                "chuva_mm": 159.86,
+                "etc_mm": 42.724,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 0.889,
+                "chuva_mm": 69.09,
+                "etc_mm": 104.274,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 31,
+                "kc": 1.15,
+                "chuva_mm": 37.68,
+                "etc_mm": 120.221,
+                "deficit_mm": 58.482
+              },
+              {
+                "mes": 6,
+                "dias": 28,
+                "kc": 0.801,
+                "chuva_mm": 17.985,
+                "etc_mm": 69.622,
+                "deficit_mm": 51.637
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 20,
+            "dias_apos_anterior": 30,
+            "fixa_n": false,
+            "cobre_solo": true,
+            "fator_sequencia": 1.0,
+            "fator": 0.673,
+            "receita_ha": 3041.677,
+            "solo": 0.404
+          }
+        ]
+      },
+      "futuro": {
+        "score": 40.147,
+        "agua": 0.613,
+        "atendimento_hidrico": 0.845,
+        "solo": 0.3,
+        "renda": 0.291,
+        "receita_ha": 4350.372,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 4350.372,
+        "encaixe": 0.411,
+        "descoberto": {
+          "dias": 155,
+          "dias_expostos": 30,
+          "chuva_mm": 350.941,
+          "chuva_exposta_mm": 193.537,
+          "meses": [
+            {
+              "mes": 10,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 95.66,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 1,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 15.137,
+              "chuva_exposta_mm": 15.137
+            },
+            {
+              "mes": 2,
+              "dias": 28,
+              "dias_expostos": 28,
+              "chuva_mm": 178.4,
+              "chuva_exposta_mm": 178.4
+            },
+            {
+              "mes": 6,
+              "dias": 2,
+              "dias_expostos": 0,
+              "chuva_mm": 1.374,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 10.71,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 0,
+              "chuva_mm": 7.01,
+              "chuva_exposta_mm": 0.0
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 0,
+              "chuva_mm": 42.65,
+              "chuva_exposta_mm": 0.0
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "feijao",
+            "mes_plantio": 11,
+            "mes_colheita": 1,
+            "ciclo_dias": 90,
+            "encaixe_temp": 0.677,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.411,
+            "dias_calor": 18.268,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 598.623,
+            "etc_mm": 394.955,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.473,
+                "chuva_mm": 153.98,
+                "etc_mm": 82.1,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.085,
+                "chuva_mm": 225.16,
+                "etc_mm": 176.26,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 29,
+                "kc": 0.916,
+                "chuva_mm": 219.483,
+                "etc_mm": 136.595,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 31,
+            "dias_apos_anterior": 41,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "fator": 0.411,
+            "receita_ha": 1681.89,
+            "solo": 0.246
+          },
+          {
+            "cultura": "trigo",
+            "mes_plantio": 3,
+            "mes_colheita": 6,
+            "ciclo_dias": 120,
+            "encaixe_temp": 0.59,
+            "encaixe_chuva": 0.948,
+            "encaixe_calor": 0.801,
+            "dias_calor": 8.377,
+            "atendimento_hidrico": 0.669,
+            "chuva_mm": 284.366,
+            "etc_mm": 347.972,
+            "deficit_mm": 115.071,
+            "meses": [
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.319,
+                "chuva_mm": 155.94,
+                "etc_mm": 44.933,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 0.889,
+                "chuva_mm": 68.33,
+                "etc_mm": 107.654,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 31,
+                "kc": 1.15,
+                "chuva_mm": 40.86,
+                "etc_mm": 123.2,
+                "deficit_mm": 62.121
+              },
+              {
+                "mes": 6,
+                "dias": 28,
+                "kc": 0.801,
+                "chuva_mm": 19.236,
+                "etc_mm": 72.186,
+                "deficit_mm": 52.95
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 20,
+            "dias_apos_anterior": 30,
+            "fixa_n": false,
+            "cobre_solo": true,
+            "fator_sequencia": 1.0,
+            "fator": 0.59,
+            "receita_ha": 2668.481,
+            "solo": 0.354
+          }
+        ]
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.673,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima hoje: a falta de água limita a produtividade a 67%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.411,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 41%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.59,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.245,
+            "receita_hoje": 5762.018,
+            "receita_futuro": 4350.372
+          },
+          "texto": "A receita cai 24% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "memoria",
+            "valor": 32
+          },
+          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {},
+          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 30,
+            "chuva_exposta_mm": 191.018
+          },
+          "texto": "O solo fica só 30 dias no ano sem cultura e sem palhada."
         }
       ]
     }

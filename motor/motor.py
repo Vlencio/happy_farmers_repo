@@ -41,7 +41,11 @@ SISTEMA_REFERENCIA = (("soja", "produtividade"), ("milho", "produtividade_safrin
 
 # Valores provisorios, sem fonte: ajustar com um agronomo.
 PENALIDADE_REPETICAO = 0.85  # fator na produtividade ao repetir a cultura anterior
-BONUS_APOS_FIXADORA = 1.10  # fator na produtividade de uma nao fixadora apos uma fixadora de N
+BONUS_APOS_FIXADORA = 1.10  # fator na produtividade de uma nao fixadora apos um adubo verde (regra 10)
+# O bonus so vale se a cultura seguinte e plantada ate esse numero de dias depois do fim do ciclo
+# do adubo verde: a palhada de leguminosa se decompoe em semanas no Cerrado. Sugestao da revisao
+# agronomica de 15/11 (~60 dias), sem fonte conferida.
+JANELA_BONUS_N_DIAS = 60
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
@@ -385,15 +389,39 @@ def simular_cultura(c, dia_inicio, clima, et0, agua, cad=None):
     return resultado, agua
 
 
-def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos):
-    """Regras de sequencia, receita e parte de solo de uma cultura. Preenche r."""
+def adubo_verde(c):
+    """Fixadora de N que nao exporta grao: fixa_n e produtividade zero nos dois slots da tabela.
+
+    Soja e feijao levam quase todo o N fixado embora nos graos; so o que nao e colhido deixa
+    credito de N no solo. Usa a produtividade da tabela, nao o preco (que pode ser editado).
+    """
+    return bool(c["fixa_n"]) and c["produtividade"] == 0 and c["produtividade_safrinha"] == 0
+
+
+def tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior):
+    """Regra 10: nao fixadora plantada ate JANELA_BONUS_N_DIAS depois do fim do ciclo de um adubo verde."""
+    return (
+        anterior in culturas
+        and adubo_verde(culturas[anterior])
+        and not c["fixa_n"]
+        and dias_apos_anterior is not None
+        and dias_apos_anterior <= JANELA_BONUS_N_DIAS
+    )
+
+
+def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_anterior=None):
+    """Regras de sequencia, receita e parte de solo de uma cultura. Preenche r.
+
+    dias_apos_anterior: dias do fim do ciclo da cultura anterior ate o plantio desta (regra 10).
+    """
     nome = c["cultura"]
     if nome == anterior:
         fator_sequencia = PENALIDADE_REPETICAO
-    elif anterior in culturas and culturas[anterior]["fixa_n"] and not c["fixa_n"]:
+    elif tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior):
         fator_sequencia = BONUS_APOS_FIXADORA
     else:
         fator_sequencia = 1.0
+    r["dias_apos_anterior"] = dias_apos_anterior if anterior in culturas else None
     produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
     r["fixa_n"] = c["fixa_n"]  # atributos da tabela que entram na parte de solo, para explicar o numero
     r["cobre_solo"] = c["cobre_solo"]
@@ -417,6 +445,9 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
     sem_cultura = dia  # desde quando o solo esta sem cultura
     agua = 0.0  # o solo comeca vazio
     palhada_inicial = anterior in culturas and bool(culturas[anterior]["cobre_solo"])
+    # fim do ciclo da cultura anterior. Para a do historico nao ha data: supoe que acabou
+    # DIAS_COLHEITA antes do talhao livre, como as da sequencia (regra 10)
+    fim_anterior = dia_livre - DIAS_COLHEITA
     ciclos = []  # (dia do plantio, dia do fim do ciclo, a cultura deixa palhada?)
     resultados = []
     for nome, slot in zip(nomes, slots):
@@ -445,9 +476,10 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
 
         # fator mais limitante
         cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"], r["atendimento_hidrico"])
-        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos)
+        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, plantio - fim_anterior)
         resultados.append(r)
         anterior = nome
+        fim_anterior = sem_cultura
 
     receita = sum(r["receita_ha"] for r in resultados)
     anos = anos_ocupados(dia - dia_livre)
@@ -600,6 +632,7 @@ def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, 
     """
     cad = CAD_MM if cad is None else cad
     dia = sem_cultura = inicio
+    fim_anterior = inicio - DIAS_COLHEITA  # cultura do historico: como no modo mensal (regra 10)
     agua = 0.0  # o solo comeca vazio
     resultados = []
     for nome, slot, espera in zip(nomes, slots, esperas):
@@ -616,9 +649,10 @@ def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, 
         dia = sem_cultura + DIAS_COLHEITA
         # fator mais limitante; a agua entra pela resposta de produtividade (Ky)
         cresce = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"], r["fator_agua"])
-        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos)
+        _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, plantio - fim_anterior)
         resultados.append(r)
         anterior = nome
+        fim_anterior = sem_cultura
     atendimento = atendimento_da_sequencia(resultados)
     return {
         "agua": parte_agua(atendimento),
@@ -961,9 +995,10 @@ def beneficios_da_sequencia(s, aval, bloco_diario=None):
         if r["fator_sequencia"] == BONUS_APOS_FIXADORA:
             beneficio(
                 "bonus_apos_fixadora",
-                f"{nome} na {r['slot']} vem depois de uma fixadora de nitrogênio: o motor soma "
-                f"{(BONUS_APOS_FIXADORA - 1) * 100:.0f}% à produtividade. O valor é provisório.",
-                nome, fator_sequencia=r["fator_sequencia"], slot=r["slot"],
+                f"{nome} na {r['slot']} é plantado {r['dias_apos_anterior']} dias depois do fim do ciclo de um "
+                f"adubo verde que fixa nitrogênio: o motor soma {(BONUS_APOS_FIXADORA - 1) * 100:.0f}% à produtividade. "
+                "O valor e o prazo são provisórios.",
+                nome, fator_sequencia=r["fator_sequencia"], slot=r["slot"], dias_apos_anterior=r["dias_apos_anterior"],
             )  # fmt: skip
         if nome in vistas:
             continue
