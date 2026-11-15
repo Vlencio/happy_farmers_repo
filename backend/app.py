@@ -30,6 +30,8 @@ class EntradaMotor(BaseModel):
     horizonte: Literal[1, 2] = 2
     mes_plantio: Annotated[int, Field(ge=1, le=12)] = 10
     precos: dict[str, NonNegative] = Field(default_factory=dict)
+    # Optional mean slope of the field (%); the engine then adds indice_erosao to descoberto.
+    declividade_pct: Annotated[float | None, Field(ge=0, le=100, allow_inf_nan=False)] = None
 
 
 @asynccontextmanager
@@ -75,6 +77,7 @@ def metadata():
         "demo_field": app.state.demo_field,
         "model_spread": app.state.model_spread,
         "point_climate_available": True,
+        "capabilities": {"declividade_pct": True},
     }
 
 

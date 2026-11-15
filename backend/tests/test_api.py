@@ -29,6 +29,7 @@ class TestApi(unittest.TestCase):
         self.assertEqual(metadata["demo_field"]["terrain"]["decl_media_pct"], 4.05)
         self.assertEqual(metadata["demo_field"]["boundary"]["type"], "FeatureCollection")
         self.assertTrue(metadata["point_climate_available"])
+        self.assertEqual(metadata["capabilities"], {"declividade_pct": True})
 
     def test_validation_and_unknown_culture(self):
         for request in [
@@ -36,6 +37,8 @@ class TestApi(unittest.TestCase):
             {"lat": 0, "rotacao_atual": ["cafe"]}, {"lat": 0, "precos": {"soja": -1}},
             {"lat": 0, "prioridades": {"agua": -1}}, {"farm": {}},
             {"lat": 0, "lon": 181}, {"lat": 0, "lon": -181}, {"lat": 0, "lon": "NaN"},
+            {"lat": 0, "declividade_pct": -1}, {"lat": 0, "declividade_pct": 101},
+            {"lat": 0, "declividade_pct": "NaN"}, {"lat": 0, "declividade_pct": "Infinity"},
         ]:
             self.assertEqual(self.client.post("/analyze", json=request).status_code, 422, request)
 
@@ -44,6 +47,18 @@ class TestApi(unittest.TestCase):
         self.assertEqual(result["slots"], ["safrinha"])
         self.assertEqual(result["entrada"]["rotacao_atual"], [])
         self.assertEqual(len(result["sequencias"]) + len(result["descartadas"]), 10)
+
+    def test_slope_reaches_engine_and_adds_erosion_index(self):
+        request = {"lat": -20.032, "rotacao_atual": ["soja", "milho"], "horizonte": 2, "declividade_pct": 4.05}
+        response = self.client.post("/analyze", json=request)
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(result["entrada"]["declividade_pct"], 4.05)
+        self.assertIn("indice_erosao", result["sequencias"][0]["hoje"]["descoberto"])
+        without = self.client.post("/analyze", json={k: v for k, v in request.items() if k != "declividade_pct"}).json()
+        self.assertIsNone(without["entrada"]["declividade_pct"])
+        self.assertNotIn("indice_erosao", without["sequencias"][0]["hoje"]["descoberto"])
 
     def test_cors_for_local_frontend(self):
         response = self.client.options("/analyze", headers={"Origin": "http://127.0.0.1:4173", "Access-Control-Request-Method": "POST"})
