@@ -127,10 +127,20 @@ function readable(value) {
   return 'Text value: English translation unavailable';
 }
 
+// Full texts emitted by motor/motor.py (HOSPEDEIRO_COMUM), translated whole.
+const PESTS = {
+  'mofo-branco (Sclerotinia sclerotiorum)': 'white mold (Sclerotinia sclerotiorum)',
+  'mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro':
+    'whitefly (Bemisia tabaci), vector of bean golden mosaic virus',
+};
+const PEST_NAMES = { 'mosca-branca': 'whitefly', 'mofo-branco': 'white mold' };
+
 function pestLabel(value) {
-  const names = { 'mosca-branca': 'whitefly', 'mofo-branco': 'white mold' };
-  for (const [original, translated] of Object.entries(names)) {
-    if (value === original || value.startsWith(`${original} (`)) return translated + value.slice(original.length);
+  if (Object.hasOwn(PESTS, value)) return PESTS[value];
+  // Bare name, or name plus only a scientific name; any other trailing text is untranslated Portuguese.
+  for (const [original, translated] of Object.entries(PEST_NAMES)) {
+    const rest = value.startsWith(original) ? value.slice(original.length) : null;
+    if (rest === '' || /^ \([A-Z][a-z]+ [a-z]+\)$/.test(rest ?? '')) return translated + rest;
   }
   return 'Additional pest or disease: English name unavailable';
 }

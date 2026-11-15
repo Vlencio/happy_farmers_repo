@@ -50,11 +50,18 @@ export function sequenceRevenueNote(seq, cropLabel) {
     ? 'No gross revenue is estimated in one or more scenarios. Review the climate risks and price data; a zero estimate alone does not identify a soil-building crop.' : '');
 }
 
+const brl = (amount, digits = 0) => amount.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: digits });
+
 export function revenueAmount(value, zeroLabel = 'No revenue estimated') {
   if (value === 0) return zeroLabel;
   // Small positive values must not round to an apparent zero or become a soil note.
-  const money = amount => amount.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: value < 1 ? 2 : 0 });
-  return value > 0 && value < .01 ? `< ${money(.01)}` : money(value);
+  return value > 0 && value < .01 ? `< ${brl(.01, 2)}` : brl(value, value < 1 ? 2 : 0);
+}
+
+// Min-max range: the zero label only when both ends are zero; otherwise a zero end is an amount (BRL 0).
+export function revenueRange(seq, min, max) {
+  if (min === 0 && max === 0) return sequenceRevenueAmount(seq, 0);
+  return `${revenueAmount(min, brl(0))} to ${revenueAmount(max, brl(0))}`;
 }
 
 export function sequenceRevenueAmount(seq, value) {

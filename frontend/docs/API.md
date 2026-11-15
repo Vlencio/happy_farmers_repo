@@ -578,7 +578,8 @@ e avisos foram conferidas contra as saídas atuais; a exigência de acentos foi
 restaurada para `hospedeiro_comum`, que agora tem apresentação própria.
 
 - `hospedeiro_comum`: cultura anterior, pragas/doenças, penalidade e fator final
-  aplicado. O bônus de adubo verde pode coexistir com o desconto.
+  aplicado. Os textos de praga de `HOSPEDEIRO_COMUM` em `motor/motor.py` são traduzidos inteiros
+  (`PESTS` em `web/warnings.mjs`); texto novo do motor cai no aviso genérico até ser incluído lá. O bônus de adubo verde pode coexistir com o desconto.
 - `fator_agua_diario`: fator de água, atendimento e Ky do ano mediano, sem
   confundir esse resumo com a avaliação mensal.
 - `rank_varia_entre_modelos`: faixa de posições, ranks de cada modelo e limite
@@ -605,7 +606,8 @@ apresentação solicitada pelo time, não um teste estatístico. Não modifica
 
 Com `modelos` no topo e em todas as sequências viáveis, a tela valida nomes,
 cenários, posições e extremos e apresenta `rank_min`–`rank_max` nos cards.
-Os detalhes incluem `receita_ano_ha_min`–`receita_ano_ha_max`. A faixa considera
+Os detalhes incluem `receita_ano_ha_min`–`receita_ano_ha_max`; um extremo zero
+aparece como `BRL 0` e **No revenue estimated** só vale quando os dois são zero. A faixa considera
 somente os modelos; `rank_futuro` da média continua separado. Sem o bloco não há
 faixa inventada. Com os dados `88afbb8`, `modelos.chuva: "razao"` usa a razão
 entregue por modelo; respostas antigas com `"aproximada"` mantêm a ressalva na tela.

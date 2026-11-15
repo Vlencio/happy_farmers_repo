@@ -4,7 +4,7 @@ import { supportsSoil, validateSoilTexture, validateOutputSoil, soilNote } from 
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
 import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
-import { cropRevenueContext, isSoilOnlyPlan, soilPlanRole, sequenceRevenueNote, revenueAmount, sequenceRevenueAmount } from './revenue.mjs';
+import { cropRevenueContext, isSoilOnlyPlan, soilPlanRole, sequenceRevenueNote, revenueAmount, revenueRange, sequenceRevenueAmount } from './revenue.mjs';
 import { DEFAULT_ADJUSTMENT, validateAdjustment, validateOutputAdjustment, supportsAdjustment, hasAdjustment, adjustmentNote } from './scenario.mjs';
 export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
@@ -345,9 +345,7 @@ function modelFacts(seq) {
   if (!seq.modelos) return [];
   return [
     { label: 'Rank · future across models', value: `#${seq.modelos.rank_min}–#${seq.modelos.rank_max}` },
-    ...(isSoilOnlyPlan(seq) ? [] : [{ label: 'Gross revenue / ha / year · future across models', value: seq.modelos.receita_ano_ha_max === 0
-      ? sequenceRevenueAmount(seq, 0)
-      : `${revenueAmount(seq.modelos.receita_ano_ha_min)} to ${revenueAmount(seq.modelos.receita_ano_ha_max)}` }]),
+    ...(isSoilOnlyPlan(seq) ? [] : [{ label: 'Gross revenue / ha / year · future across models', value: revenueRange(seq, seq.modelos.receita_ano_ha_min, seq.modelos.receita_ano_ha_max) }]),
   ];
 }
 
