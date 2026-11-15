@@ -49,6 +49,9 @@ BONUS_APOS_FIXADORA = 1.10  # fator na produtividade de uma nao fixadora apos um
 # do adubo verde: a palhada de leguminosa se decompoe em semanas no Cerrado. Sugestao da revisao
 # agronomica de 15/11 (~60 dias), sem fonte conferida.
 JANELA_BONUS_N_DIAS = 60
+# fator na produtividade de uma cultura que divide praga ou doenca com a anterior (HOSPEDEIRO_COMUM).
+# Menor que a repeticao e nao soma com ela; multiplica o bonus apos adubo verde (1,10 x 0,92 = 1,012).
+PENALIDADE_HOSPEDEIRO = 0.92
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
@@ -61,6 +64,27 @@ PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase se
 # renda ~54%). 0,6 e por volta do pior atendimento que o motor da no talhao de demonstracao: ano
 # seco 0,56-0,86, ano ruim do modo diario 0,66-0,89. Faixa fixa: nao depende das outras sequencias.
 AGUA_REF_MIN = 0.6
+
+# Hospedeiro comum (regra 10): culturas diferentes que dividem praga ou doenca relevante no Cerrado.
+# Cada item: (culturas anteriores, culturas seguintes, praga, fonte). Vale para toda cultura seguinte
+# diferente da anterior; a mesma cultura cai na repeticao. Conferido em 15/11/2026. Ficaram de fora:
+# Pratylenchus brachyurus e Macrophomina phaseolina (atacam quase toda a tabela e nao diferenciam
+# sequencias) e crotalaria como hospedeira de mofo-branco (sem fonte conferida).
+_MOFO_BRANCO = ("soja", "feijao", "girassol", "algodao")
+HOSPEDEIRO_COMUM = (
+    (
+        _MOFO_BRANCO, _MOFO_BRANCO, "mofo-branco (Sclerotinia sclerotiorum)",
+        # hospedeiras citadas no comunicado: feijao, soja, girassol (...) e algodao
+        "Embrapa Algodao, Comunicado Tecnico 336 (2007), "
+        "https://www.infoteca.cnptia.embrapa.br/bitstream/doc/276699/1/COMTEC336.pdf",
+    ),
+    (
+        ("soja",), ("feijao",), "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro",
+        # soja e hospedeira da mosca-branca; "evitar a semeadura escalonada do feijao apos feijao ou apos a soja"
+        "Embrapa Arroz e Feijao, Circular Tecnica 91, "
+        "https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1130832/1/CNPAF-circ-tec-91.pdf",
+    ),
+)  # fmt: skip
 
 # Modo diario. Ky = queda relativa da produtividade por queda relativa da evapotranspiracao
 # (FAO-56, eq. 90). Valores da FAO-56, tabela 24, que repete o FAO Irrigation and Drainage
@@ -488,23 +512,34 @@ def tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior):
     )
 
 
+def pragas_em_comum(anterior, nome):
+    """Pragas e doencas de HOSPEDEIRO_COMUM que passam de `anterior` para `nome` (lista vazia se nenhuma).
+
+    A mesma cultura nao conta aqui: repetir cai em PENALIDADE_REPETICAO.
+    """
+    if anterior is None or anterior == nome:
+        return []
+    return [praga for anteriores, seguintes, praga, _ in HOSPEDEIRO_COMUM if anterior in anteriores and nome in seguintes]
+
+
 def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_anterior=None):
     """Regras de sequencia, receita e parte de solo de uma cultura. Preenche r.
 
     dias_apos_anterior: dias do fim do ciclo da cultura anterior ate o plantio desta (regra 10).
     """
     nome = c["cultura"]
+    pragas = pragas_em_comum(anterior, nome)
     if nome == anterior:
         fator_sequencia = PENALIDADE_REPETICAO
-    elif tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior):
-        fator_sequencia = BONUS_APOS_FIXADORA
     else:
-        fator_sequencia = 1.0
+        bonus = BONUS_APOS_FIXADORA if tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior) else 1.0
+        fator_sequencia = bonus * (PENALIDADE_HOSPEDEIRO if pragas else 1.0)
     r["dias_apos_anterior"] = dias_apos_anterior if anterior in culturas else None
     produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
     r["fixa_n"] = c["fixa_n"]  # atributos da tabela que entram na parte de solo, para explicar o numero
     r["cobre_solo"] = c["cobre_solo"]
     r["fator_sequencia"] = fator_sequencia
+    r["hospedeiro_comum"] = {"anterior": anterior, "pragas": pragas} if pragas else None
     r["fator"] = cresce * fator_sequencia
     r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
     r["solo"] = cresce * (
@@ -942,6 +977,16 @@ def _agua_diaria_baixa(bloco_diario):
     ]
 
 
+def _teve_bonus(r):
+    """A cultura recebeu o bonus apos fixadora (com ou sem o desconto de hospedeiro comum)?"""
+    return r["fator_sequencia"] == BONUS_APOS_FIXADORA * (PENALIDADE_HOSPEDEIRO if r["hospedeiro_comum"] else 1.0)
+
+
+def _virgula(x, casas=3):
+    """Numero com virgula decimal, para os textos."""
+    return f"{x:.{casas}f}".replace(".", ",")
+
+
 def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bloco_modelos=None):
     """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
 
@@ -1016,6 +1061,20 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
                 "(pragas e doenças). O valor é provisório.",
                 r["cultura"], fator_sequencia=r["fator_sequencia"], slot=r["slot"],
             )  # fmt: skip
+        hosp = r["hospedeiro_comum"]
+        if hosp:
+            com_bonus = (
+                f" Com o bônus após fixadora de nitrogênio, o fator aplicado fica {_virgula(r['fator_sequencia'])}."
+                if _teve_bonus(r) else ""
+            )  # fmt: skip
+            aviso(
+                "risco", "hospedeiro_comum",
+                f"{r['cultura']} na {r['slot']} vem depois de {hosp['anterior']}, que divide com ela "
+                f"{' e '.join(hosp['pragas'])}: o motor tira {(1 - PENALIDADE_HOSPEDEIRO) * 100:.0f}% da produtividade."
+                f"{com_bonus} O valor é provisório.",
+                r["cultura"], fator_sequencia=r["fator_sequencia"], penalidade=PENALIDADE_HOSPEDEIRO,
+                anterior=hosp["anterior"], pragas=list(hosp["pragas"]), slot=r["slot"],
+            )  # fmt: skip
     expostos = hoje["descoberto"]["dias_expostos"]
     if expostos >= AVISO_DIAS_EXPOSTOS:
         aviso(
@@ -1027,7 +1086,8 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
     if not tem_historico:
         aviso(
             "lacuna", "sem_historico",
-            "Sem histórico de plantio: a primeira cultura não recebe a penalidade de repetição nem o bônus após fixadora de nitrogênio.",
+            "Sem histórico de plantio: a primeira cultura não recebe a penalidade de repetição, a de hospedeiro comum "
+            "de pragas nem o bônus após fixadora de nitrogênio.",
         )  # fmt: skip
     for nome in dict.fromkeys(s):
         c = tabela[nome]
@@ -1080,12 +1140,16 @@ def beneficios_da_sequencia(s, aval, bloco_diario=None):
     vistas = set()
     for r in hoje["culturas"]:
         nome = r["cultura"]
-        if r["fator_sequencia"] == BONUS_APOS_FIXADORA:
+        if _teve_bonus(r):
+            desconto = (
+                f" Com o desconto por hospedeiro comum de pragas, o fator aplicado fica {_virgula(r['fator_sequencia'])}."
+                if r["hospedeiro_comum"] else ""
+            )  # fmt: skip
             beneficio(
                 "bonus_apos_fixadora",
                 f"{nome} na {r['slot']} é plantado {r['dias_apos_anterior']} dias depois do fim do ciclo de um "
-                f"adubo verde que fixa nitrogênio: o motor soma {(BONUS_APOS_FIXADORA - 1) * 100:.0f}% à produtividade. "
-                "O valor e o prazo são provisórios.",
+                f"adubo verde que fixa nitrogênio: o motor soma {(BONUS_APOS_FIXADORA - 1) * 100:.0f}% à produtividade."
+                f"{desconto} O valor e o prazo são provisórios.",
                 nome, fator_sequencia=r["fator_sequencia"], slot=r["slot"], dias_apos_anterior=r["dias_apos_anterior"],
             )  # fmt: skip
         if nome in vistas:

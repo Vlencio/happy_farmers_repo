@@ -603,6 +603,87 @@ class TestSolo(unittest.TestCase):
                 self.com(textura)
 
 
+class TestHospedeiroComum(unittest.TestCase):
+    """Regra 10: culturas diferentes que dividem praga ou doenca (HOSPEDEIRO_COMUM)."""
+
+    MOFO = "mofo-branco (Sclerotinia sclerotiorum)"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+
+    def uma(self, historico, nome, **extra):
+        """Sequencia de uma cultura, com o historico dado: a saida e o item da sequencia."""
+        saida = recomendar({**ENTRADA, "rotacao_atual": historico, "horizonte": 1}, *self.dados, **extra)
+        return saida, next(s for s in saida["sequencias"] if s["id"] == nome)
+
+    def test_tabela_de_pares(self):
+        self.assertEqual(motor.pragas_em_comum("feijao", "soja"), [self.MOFO])
+        self.assertEqual(motor.pragas_em_comum("algodao", "girassol"), [self.MOFO])
+        soja_feijao = motor.pragas_em_comum("soja", "feijao")
+        self.assertEqual(len(soja_feijao), 2)  # mofo-branco e mosca-branca
+        self.assertTrue(any("Bemisia tabaci" in p for p in soja_feijao))
+        for anterior, nome in (("soja", "soja"), ("milho", "soja"), (None, "soja"), ("soja", "milho"), ("soja", "crotalaria")):
+            self.assertEqual(motor.pragas_em_comum(anterior, nome), [], (anterior, nome))
+        for anteriores, seguintes, praga, fonte in motor.HOSPEDEIRO_COMUM:
+            self.assertTrue(praga and fonte.count("https://") == 1, praga)
+        self.assertTrue(motor.PENALIDADE_REPETICAO < motor.PENALIDADE_HOSPEDEIRO < 1)
+
+    def test_penalidade_e_aviso(self):
+        # soja depois de algodao (o historico conta): mofo-branco, sem bonus (soja e fixadora)
+        _, seq = self.uma(["milho", "algodao"], "soja")
+        r = seq["hoje"]["culturas"][0]
+        self.assertEqual(r["fator_sequencia"], motor.PENALIDADE_HOSPEDEIRO)
+        self.assertEqual(r["hospedeiro_comum"], {"anterior": "algodao", "pragas": [self.MOFO]})
+        self.assertEqual(seq["futuro"]["culturas"][0]["fator_sequencia"], motor.PENALIDADE_HOSPEDEIRO)
+        (a,) = [a for a in seq["avisos"] if a["codigo"] == "hospedeiro_comum"]
+        self.assertEqual((a["tipo"], a["cultura"], a["cenario"]), ("risco", "soja", None))
+        self.assertEqual(a["dados"], {"fator_sequencia": motor.PENALIDADE_HOSPEDEIRO, "penalidade": motor.PENALIDADE_HOSPEDEIRO,
+                                      "anterior": "algodao", "pragas": [self.MOFO], "slot": "safra"})  # fmt: skip
+        self.assertIn("mofo-branco", a["texto"])
+        self.assertFalse(any(b["codigo"] == "bonus_apos_fixadora" for b in seq["beneficios"]))
+        # sem par, nada muda
+        _, seq = self.uma(["algodao", "milho"], "soja")
+        self.assertIsNone(seq["hoje"]["culturas"][0]["hospedeiro_comum"])
+        self.assertEqual(seq["hoje"]["culturas"][0]["fator_sequencia"], 1.0)
+        self.assertFalse(any(a["codigo"] == "hospedeiro_comum" for a in seq["avisos"]))
+
+    def test_multiplica_o_bonus_apos_fixadora(self):
+        # soja nao e adubo verde: algodao depois de soja leva so o desconto, sem bonus
+        _, seq = self.uma(["milho", "soja"], "algodao")
+        r = seq["hoje"]["culturas"][0]
+        self.assertAlmostEqual(r["fator_sequencia"], motor.PENALIDADE_HOSPEDEIRO, places=3)
+        self.assertNotIn("bonus_apos_fixadora", [b["codigo"] for b in seq["beneficios"]])
+        # com um par de teste crotalaria -> milho (adubo verde 10 dias antes), os dois fatores multiplicam
+        par = ((("crotalaria",), ("milho",), "praga de teste", "https://exemplo"),)
+        with mock.patch.object(motor, "HOSPEDEIRO_COMUM", tuple(motor.HOSPEDEIRO_COMUM) + par):
+            _, seq = self.uma(["soja", "crotalaria"], "milho")
+        r = seq["hoje"]["culturas"][0]
+        self.assertAlmostEqual(r["fator_sequencia"], motor.BONUS_APOS_FIXADORA * motor.PENALIDADE_HOSPEDEIRO, places=3)
+        (b,) = [b for b in seq["beneficios"] if b["codigo"] == "bonus_apos_fixadora"]
+        self.assertIn("hospedeiro comum", b["texto"])
+        (a,) = [a for a in seq["avisos"] if a["codigo"] == "hospedeiro_comum"]
+        self.assertIn("bônus", a["texto"])
+
+    def test_nao_soma_com_a_repeticao(self):
+        _, seq = self.uma(["milho", "soja"], "soja")
+        r = seq["hoje"]["culturas"][0]
+        self.assertEqual(r["fator_sequencia"], motor.PENALIDADE_REPETICAO)
+        self.assertIsNone(r["hospedeiro_comum"])
+        self.assertEqual([a["codigo"] for a in seq["avisos"] if a["codigo"] in ("repete_a_cultura", "hospedeiro_comum")],
+                         ["repete_a_cultura"])  # fmt: skip
+
+    def test_modo_diario(self):
+        serie = serie_das_medias(self.dados[1], 2001, 2010)
+        _, com = self.uma(["milho", "algodao"], "soja", diario=serie)
+        with mock.patch.object(motor, "PENALIDADE_HOSPEDEIRO", 1.0):
+            _, sem = self.uma(["milho", "algodao"], "soja", diario=serie)
+        for cen in ("hoje", "futuro"):
+            self.assertAlmostEqual(com["diario"][cen]["mediano"]["receita_ha"] / sem["diario"][cen]["mediano"]["receita_ha"],
+                                   motor.PENALIDADE_HOSPEDEIRO, places=3)  # fmt: skip
+
+
+
 class TestPecas(unittest.TestCase):
     C = {"temp_min": 10, "temp_otima_min": 20, "temp_otima_max": 30, "temp_max": 40, "chuva_min": 400, "chuva_max": 1000}
 

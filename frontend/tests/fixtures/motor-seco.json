@@ -840,14 +840,14 @@
       "rank_futuro": 4,
       "rank_seco": 9,
       "hoje": {
-        "score": 75.228,
+        "score": 74.753,
         "agua": 1.0,
         "atendimento_hidrico": 1.0,
         "solo": 0.529,
-        "renda": 0.728,
-        "receita_ha": 10877.379,
+        "renda": 0.714,
+        "receita_ha": 10664.541,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 10877.379,
+        "receita_ano_ha": 10664.541,
         "encaixe": 0.776,
         "descoberto": {
           "dias": 160,
@@ -960,6 +960,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -1016,22 +1017,29 @@
             "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.776,
-            "receita_ha": 2660.481,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.714,
+            "receita_ha": 2447.642,
             "solo": 0.465
           }
         ]
       },
       "futuro": {
-        "score": 69.067,
+        "score": 68.785,
         "agua": 1.0,
         "atendimento_hidrico": 1.0,
         "solo": 0.428,
-        "renda": 0.644,
-        "receita_ha": 9622.55,
+        "renda": 0.636,
+        "receita_ha": 9496.186,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 9622.55,
+        "receita_ano_ha": 9496.186,
         "encaixe": 0.461,
         "descoberto": {
           "dias": 160,
@@ -1144,6 +1152,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -1200,22 +1209,29 @@
             "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.461,
-            "receita_ha": 1579.549,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.424,
+            "receita_ha": 1453.185,
             "solo": 0.276
           }
         ]
       },
       "seco": {
-        "score": 37.268,
+        "score": 37.048,
         "agua": 0.26,
         "atendimento_hidrico": 0.704,
         "solo": 0.341,
-        "renda": 0.517,
-        "receita_ha": 7716.346,
+        "renda": 0.51,
+        "receita_ha": 7617.693,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 7716.346,
+        "receita_ano_ha": 7617.693,
         "encaixe": 0.36,
         "descoberto": {
           "dias": 160,
@@ -1328,6 +1344,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -1384,9 +1401,16 @@
             "dias_apos_anterior": 10,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.36,
-            "receita_ha": 1233.158,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.331,
+            "receita_ha": 1134.506,
             "solo": 0.216
           }
         ]
@@ -1446,11 +1470,28 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.115,
-            "receita_hoje": 10877.379,
-            "receita_futuro": 9622.55
+            "queda": 0.11,
+            "receita_hoje": 10664.541,
+            "receita_futuro": 9496.186
           },
-          "texto": "A receita cai 12% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 11% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.92,
+            "penalidade": 0.92,
+            "anterior": "soja",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)",
+              "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha vem depois de soja, que divide com ela mofo-branco (Sclerotinia sclerotiorum) e mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro: o motor tira 8% da produtividade. O valor é provisório."
         },
         {
           "tipo": "risco",
@@ -1634,6 +1675,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -1691,6 +1733,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.91,
             "receita_ha": 2795.165,
             "solo": 0.546
@@ -1818,6 +1861,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -1875,6 +1919,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.902,
             "receita_ha": 2770.13,
             "solo": 0.541
@@ -2002,6 +2047,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -2059,6 +2105,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.534,
             "receita_ha": 1640.932,
             "solo": 0.321
@@ -2262,6 +2309,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -2319,6 +2367,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -2439,6 +2488,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -2496,6 +2546,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -2616,6 +2667,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -2673,6 +2725,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -2906,6 +2959,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -2963,6 +3017,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 0.0,
             "solo": 0.579
@@ -3090,6 +3145,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -3147,6 +3203,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.994,
             "receita_ha": 0.0,
             "solo": 0.596
@@ -3274,6 +3331,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -3331,6 +3389,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.649,
             "receita_ha": 0.0,
             "solo": 0.389
@@ -3437,14 +3496,14 @@
       "rank_futuro": 5,
       "rank_seco": 13,
       "hoje": {
-        "score": 69.913,
+        "score": 69.379,
         "agua": 0.955,
         "atendimento_hidrico": 0.982,
         "solo": 0.391,
-        "renda": 0.751,
-        "receita_ha": 11212.434,
+        "renda": 0.735,
+        "receita_ha": 10972.791,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11212.434,
+        "receita_ano_ha": 10972.791,
         "encaixe": 0.979,
         "descoberto": {
           "dias": 140,
@@ -3557,6 +3616,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -3613,22 +3673,28 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.954,
-            "receita_ha": 2995.536,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.878,
+            "receita_ha": 2755.893,
             "solo": 0.191
           }
         ]
       },
       "futuro": {
-        "score": 68.925,
+        "score": 68.396,
         "agua": 0.947,
         "atendimento_hidrico": 0.979,
         "solo": 0.384,
-        "renda": 0.737,
-        "receita_ha": 11003.744,
+        "renda": 0.721,
+        "receita_ha": 10766.885,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 11003.744,
+        "receita_ano_ha": 10766.885,
         "encaixe": 0.943,
         "descoberto": {
           "dias": 140,
@@ -3741,6 +3807,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -3797,22 +3864,28 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.943,
-            "receita_ha": 2960.743,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.867,
+            "receita_ha": 2723.883,
             "solo": 0.189
           }
         ]
       },
       "seco": {
-        "score": 36.131,
+        "score": 35.81,
         "agua": 0.239,
         "atendimento_hidrico": 0.696,
         "solo": 0.291,
-        "renda": 0.554,
-        "receita_ha": 8277.667,
+        "renda": 0.545,
+        "receita_ha": 8134.108,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 8277.667,
+        "receita_ano_ha": 8134.108,
         "encaixe": 0.778,
         "descoberto": {
           "dias": 140,
@@ -3925,6 +3998,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -3981,9 +4055,15 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.571,
-            "receita_ha": 1794.479,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.526,
+            "receita_ha": 1650.921,
             "solo": 0.114
           }
         ]
@@ -4012,6 +4092,22 @@
             "slot": "safrinha"
           },
           "texto": "girassol na safrinha, clima seco: a falta de água limita a produtividade a 57%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.92,
+            "penalidade": 0.92,
+            "anterior": "soja",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de soja, que divide com ela mofo-branco (Sclerotinia sclerotiorum): o motor tira 8% da produtividade. O valor é provisório."
         },
         {
           "tipo": "risco",
@@ -4063,8 +4159,8 @@
           "cenario": "futuro",
           "dados": {
             "queda": 0.019,
-            "receita_hoje": 11212.434,
-            "receita_futuro": 11003.744
+            "receita_hoje": 10972.791,
+            "receita_futuro": 10766.885
           },
           "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
@@ -4203,6 +4299,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -4268,6 +4365,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.724,
             "receita_ha": 4785.66,
             "solo": 0.435
@@ -4388,6 +4486,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -4453,6 +4552,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.721,
             "receita_ha": 4764.808,
             "solo": 0.433
@@ -4573,6 +4673,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -4638,6 +4739,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.447,
             "receita_ha": 2954.807,
             "solo": 0.268
@@ -4856,6 +4958,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -4921,6 +5024,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.862,
             "receita_ha": 0.0,
             "solo": 0.517
@@ -5041,6 +5145,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -5106,6 +5211,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.864,
             "receita_ha": 0.0,
             "solo": 0.519
@@ -5226,6 +5332,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -5291,6 +5398,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.476,
             "receita_ha": 0.0,
             "solo": 0.285
@@ -5510,6 +5618,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -5567,6 +5676,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -5687,6 +5797,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -5744,6 +5855,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -5864,6 +5976,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -5921,6 +6034,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
@@ -6169,6 +6283,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -6226,6 +6341,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.832,
             "receita_ha": 2854.633,
             "solo": 0.499
@@ -6354,6 +6470,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -6411,6 +6528,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.62,
             "receita_ha": 2128.289,
             "solo": 0.372
@@ -6539,6 +6657,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -6596,6 +6715,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.439,
             "receita_ha": 1504.879,
             "solo": 0.263
@@ -6826,6 +6946,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -6883,6 +7004,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -7004,6 +7126,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -7061,6 +7184,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -7182,6 +7306,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -7239,6 +7364,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -7472,6 +7598,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -7529,6 +7656,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.904,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -7657,6 +7785,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -7714,6 +7843,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.919,
             "receita_ha": 0.0,
             "solo": 0.552
@@ -7842,6 +7972,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -7899,6 +8030,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.601,
             "receita_ha": 0.0,
             "solo": 0.36
@@ -8117,6 +8249,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.956,
             "receita_ha": 2936.707,
             "solo": 0.574
@@ -8174,6 +8307,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -8294,6 +8428,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.916,
             "receita_ha": 2813.002,
             "solo": 0.55
@@ -8351,6 +8486,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -8471,6 +8607,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.935,
             "receita_ha": 2872.965,
             "solo": 0.561
@@ -8528,6 +8665,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -8743,6 +8881,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -8808,6 +8947,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.766,
             "receita_ha": 2352.786,
             "solo": 0.46
@@ -8929,6 +9069,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -8994,6 +9135,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.76,
             "receita_ha": 2334.471,
             "solo": 0.456
@@ -9115,6 +9257,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -9180,6 +9323,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.47,
             "receita_ha": 1443.072,
             "solo": 0.282
@@ -9403,6 +9547,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -9460,6 +9605,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.671,
             "receita_ha": 2302.608,
             "solo": 0.316
@@ -9586,6 +9732,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -9643,6 +9790,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.428,
             "receita_ha": 1469.612,
             "solo": 0.202
@@ -9769,6 +9917,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -9826,6 +9975,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.329,
             "receita_ha": 1128.884,
             "solo": 0.155
@@ -10097,6 +10247,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -10154,6 +10305,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -10275,6 +10427,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -10332,6 +10485,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -10453,6 +10607,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -10510,6 +10665,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
@@ -10755,6 +10911,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -10812,6 +10969,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.947,
             "receita_ha": 0.0,
             "solo": 0.568
@@ -10938,6 +11096,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -10995,6 +11154,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.981,
             "receita_ha": 0.0,
             "solo": 0.589
@@ -11121,6 +11281,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -11178,6 +11339,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.624,
             "receita_ha": 0.0,
             "solo": 0.374
@@ -11441,6 +11603,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -11498,6 +11661,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.865,
             "receita_ha": 2657.374,
             "solo": 0.519
@@ -11624,6 +11788,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -11681,6 +11846,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.859,
             "receita_ha": 2636.758,
             "solo": 0.515
@@ -11807,6 +11973,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -11864,6 +12031,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.524,
             "receita_ha": 1610.705,
             "solo": 0.315
@@ -12106,6 +12274,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -12171,6 +12340,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.814,
             "receita_ha": 2556.884,
             "solo": 0.163
@@ -12292,6 +12462,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -12357,6 +12528,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.808,
             "receita_ha": 2537.344,
             "solo": 0.162
@@ -12478,6 +12650,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -12543,6 +12716,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.47,
             "receita_ha": 1475.447,
             "solo": 0.094
@@ -12762,6 +12936,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -12819,6 +12994,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -12938,6 +13114,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -12995,6 +13172,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -13114,6 +13292,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -13171,6 +13350,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -13322,14 +13502,14 @@
       "rank_futuro": 22,
       "rank_seco": 22,
       "hoje": {
-        "score": 52.146,
+        "score": 51.635,
         "agua": 0.9,
         "atendimento_hidrico": 0.96,
         "solo": 0.29,
-        "renda": 0.374,
-        "receita_ha": 5583.302,
+        "renda": 0.358,
+        "receita_ha": 5354.265,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 5583.302,
+        "receita_ano_ha": 5354.265,
         "encaixe": 0.664,
         "descoberto": {
           "dias": 165,
@@ -13441,6 +13621,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -13497,22 +13678,28 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.912,
-            "receita_ha": 2862.961,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.839,
+            "receita_ha": 2633.924,
             "solo": 0.182
           }
         ]
       },
       "futuro": {
-        "score": 46.946,
+        "score": 46.439,
         "agua": 0.892,
         "atendimento_hidrico": 0.957,
         "solo": 0.214,
-        "renda": 0.303,
-        "receita_ha": 4521.703,
+        "renda": 0.288,
+        "receita_ha": 4294.518,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 4521.703,
+        "receita_ano_ha": 4294.518,
         "encaixe": 0.411,
         "descoberto": {
           "dias": 165,
@@ -13624,6 +13811,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -13680,22 +13868,28 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.904,
-            "receita_ha": 2839.813,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.832,
+            "receita_ha": 2612.628,
             "solo": 0.181
           }
         ]
       },
       "seco": {
-        "score": 30.697,
+        "score": 30.384,
         "agua": 0.486,
         "atendimento_hidrico": 0.794,
         "solo": 0.193,
-        "renda": 0.243,
-        "receita_ha": 3622.689,
+        "renda": 0.233,
+        "receita_ha": 3482.527,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 3622.689,
+        "receita_ano_ha": 3482.527,
         "encaixe": 0.457,
         "descoberto": {
           "dias": 165,
@@ -13807,6 +14001,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -13863,9 +14058,15 @@
             "dias_apos_anterior": 10,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.558,
-            "receita_ha": 1752.028,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.513,
+            "receita_ha": 1611.866,
             "solo": 0.112
           }
         ]
@@ -13925,11 +14126,27 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.19,
-            "receita_hoje": 5583.302,
-            "receita_futuro": 4521.703
+            "queda": 0.198,
+            "receita_hoje": 5354.265,
+            "receita_futuro": 4294.518
           },
-          "texto": "A receita cai 19% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 20% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.92,
+            "penalidade": 0.92,
+            "anterior": "feijao",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de feijao, que divide com ela mofo-branco (Sclerotinia sclerotiorum): o motor tira 8% da produtividade. O valor é provisório."
         },
         {
           "tipo": "risco",
@@ -14124,6 +14341,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -14189,6 +14407,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.637,
             "receita_ha": 0.0,
             "solo": 0.382
@@ -14310,6 +14529,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -14375,6 +14595,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.637,
             "receita_ha": 0.0,
             "solo": 0.382
@@ -14496,6 +14717,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -14561,6 +14783,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.292,
             "receita_ha": 0.0,
             "solo": 0.175
@@ -14788,6 +15011,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -14861,6 +15085,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.523,
             "receita_ha": 3451.897,
             "solo": 0.246
@@ -14975,6 +15200,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -15048,6 +15274,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.52,
             "receita_ha": 3432.985,
             "solo": 0.245
@@ -15162,6 +15389,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -15235,6 +15463,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.319,
             "receita_ha": 2109.142,
             "solo": 0.15
@@ -15456,6 +15685,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.956,
             "receita_ha": 2936.707,
             "solo": 0.574
@@ -15513,6 +15743,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -15633,6 +15864,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.916,
             "receita_ha": 2813.002,
             "solo": 0.55
@@ -15690,6 +15922,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -15810,6 +16043,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.935,
             "receita_ha": 2872.965,
             "solo": 0.561
@@ -15867,6 +16101,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
@@ -16094,6 +16329,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -16159,6 +16395,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.684,
             "receita_ha": 4518.057,
             "solo": 0.41
@@ -16278,6 +16515,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -16343,6 +16581,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.681,
             "receita_ha": 4497.009,
             "solo": 0.408
@@ -16462,6 +16701,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -16527,6 +16767,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.444,
             "receita_ha": 2931.036,
             "solo": 0.266
@@ -16791,6 +17032,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -16856,6 +17098,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.794,
             "receita_ha": 0.0,
             "solo": 0.477
@@ -16975,6 +17218,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -17040,6 +17284,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 0.0,
             "solo": 0.478
@@ -17159,6 +17404,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -17224,6 +17470,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.421,
             "receita_ha": 0.0,
             "solo": 0.252
@@ -17504,6 +17751,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -17561,6 +17809,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -17680,6 +17929,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -17737,6 +17987,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -17856,6 +18107,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -17913,6 +18165,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
