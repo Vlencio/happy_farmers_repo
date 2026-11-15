@@ -79,9 +79,7 @@ limites e tela móvel simulada foram conferidos. A API local sem credencial anun
 ## O que falta
 
 - Testar uma resposta da Anthropic real: os testes do provedor usam um cliente simulado.
-- Alinhar o tamanho da resposta ao limite de 4.000 caracteres por mensagem no
-  histórico. Hoje uma resposta maior é aceita e provoca 422 ao ser reenviada na
-  pergunta seguinte. O front conserva a resposta inteira e pede nova conversa.
-- Rejeitar resposta vazia do modelo no servidor. O front já a trata como falha,
-  sem acrescentar uma rodada inválida ao histórico.
+- Front (Gabriel): subir `MAX_CHAT_MESSAGE` em `web/chat.mjs` de 4.000 para 16.000.
+  O servidor já aceita mensagens de até 16.000 caracteres no histórico e responde 502
+  quando o modelo não devolve texto.
 - Perguntas do tipo "e se eu plantar X?" ficam fora: exigiriam o motor como ferramenta do LLM.
