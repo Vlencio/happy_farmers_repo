@@ -6,7 +6,8 @@ use crate::{
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, Select, SelectAppearance, TextInput,
+    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, Select, SelectAppearance, TextArea,
+    TextInput,
 };
 use serde_json::json;
 
@@ -913,6 +914,16 @@ fn recommendation_card(
             format!("{} {}", warnings.summary, first)
         },
     );
+    let benefits_label = rec.benefits.as_ref().map_or_else(
+        || "Benefícios indisponíveis nesta resposta do motor.".to_owned(),
+        |benefits| {
+            format!(
+                "{} {}",
+                benefits.summary,
+                benefits.items.first().map_or("", |item| &item.card_summary)
+            )
+        },
+    );
     let marker = match selection {
         SelectedStrategy::Current => "REF.".to_owned(),
         SelectedStrategy::Objective(i) => format!("0{}", i + 1),
@@ -983,6 +994,7 @@ fn recommendation_card(
         .child(exposure_summary)
         .child(rule())
         .child(paragraph(&rec.reason))
+        .child(benefits_card(rec))
         .child(warnings_card(rec))
         .child(label(
             if demo {
@@ -1014,8 +1026,8 @@ fn recommendation_card(
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. {} Abrir linha do tempo",
-                name, rec.crop, comparison_label, warnings_label
+                "{}: {}. {}. {} {} Abrir linha do tempo",
+                name, rec.crop, comparison_label, benefits_label, warnings_label
             ))
             .focusable(true)
             .on_press(move |s: &mut State| s.select(selection)),
@@ -1083,6 +1095,108 @@ fn warnings_card(rec: &Recommendation) -> El {
         view = view.child(group);
     }
     view
+}
+fn benefits_card(rec: &Recommendation) -> El {
+    let mut view = col()
+        .gap(6.0)
+        .w_full()
+        .padding(12.0)
+        .radius(9.0)
+        .fill(color("#eef3e7"));
+    let Some(benefits) = &rec.benefits else {
+        return view.child(
+            label(
+                "Benefícios indisponíveis nesta resposta do motor.",
+                12.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+    };
+    view = view
+        .child(
+            label(
+                format!("Benefícios · {}", benefits.items.len()),
+                12.0,
+                600.0,
+                "#496b35",
+            )
+            .wrap()
+            .w_full(),
+        )
+        .child(
+            label(
+                benefits
+                    .items
+                    .first()
+                    .map_or(benefits.summary.as_str(), |item| &item.card_summary),
+                12.0,
+                400.0,
+                INK,
+            )
+            .wrap()
+            .w_full(),
+        );
+    if benefits.items.len() > 1 {
+        view = view.child(
+            label(
+                format!("+{} no detalhe", benefits.items.len() - 1),
+                11.0,
+                500.0,
+                "#496b35",
+            )
+            .wrap()
+            .w_full(),
+        );
+    }
+    view
+}
+fn benefits_panel(rec: &Recommendation) -> El {
+    let mut view = panel().gap(16.0).w_full().child(
+        label("Benefícios considerados pelo motor", 22.0, 600.0, INK)
+            .wrap()
+            .w_full()
+            .role("heading")
+            .level(2),
+    );
+    let Some(benefits) = &rec.benefits else {
+        return view.child(paragraph(
+            "Benefícios indisponíveis nesta resposta do motor.",
+        ));
+    };
+    view = view.child(paragraph(&benefits.summary));
+    for item in &benefits.items {
+        view = view.child(
+            col()
+                .gap(6.0)
+                .padding(14.0)
+                .radius(10.0)
+                .w_full()
+                .fill(color("#eef3e7"))
+                .child(
+                    label(&item.title, 16.0, 600.0, INK)
+                        .wrap()
+                        .w_full()
+                        .role("heading")
+                        .level(3),
+                )
+                .child(label(&item.context, 12.0, 600.0, "#496b35").wrap().w_full())
+                .child(paragraph(&item.description))
+                .child(
+                    label(
+                        format!("Dado do motor: {}", item.evidence),
+                        12.0,
+                        500.0,
+                        INK,
+                    )
+                    .wrap()
+                    .w_full(),
+                ),
+        );
+    }
+    view.child(label(&benefits.note, 12.0, 400.0, MUTED).wrap().w_full())
 }
 fn warning_group(title: &str, items: &[StrategyWarning], ink: &str, bg: &str) -> El {
     let mut group = col().gap(14.0).w_full().child(
@@ -1379,6 +1493,183 @@ fn farm_summary(s: &State) -> El {
     .wrap()
     .w_full()
 }
+fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
+    if !s.chat.available || s.analysis.is_none() {
+        return el();
+    }
+    let mut view = panel().key("analysis-chat").gap(14.0).w_full()
+        .child(label("Converse sobre esta análise", 22.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("Tire dúvidas sobre os cards, os benefícios, os riscos e o calendário. A IA explica os resultados do motor."))
+        .child(button(k, "chat-toggle", if s.chat_open { "Fechar chat" } else { "Abrir chat com IA" }, false, |s| s.chat_open = !s.chat_open));
+    if !s.chat_open {
+        return view;
+    }
+    view = view.child(label("Ao enviar, sua pergunta, a conversa e os dados da análise — incluindo coordenadas e histórico de culturas — são enviados à Anthropic. A conversa fica aberta só nesta sessão e reinicia ao analisar novamente.", 12.0, 400.0, MUTED).wrap().w_full());
+    let mut conversation = col().gap(12.0).w_full();
+    if s.chat.messages.is_empty() && s.chat.pending.is_empty() {
+        conversation = conversation.child(paragraph("Você pode perguntar: “Por que estas estratégias foram sugeridas?” ou “Quais dados preciso conferir antes de decidir?”."));
+    }
+    for (i, message) in s.chat.messages.iter().enumerate() {
+        let producer = message.papel == "produtor";
+        let mut bubble = col()
+            .key(format!("chat-message-{i}"))
+            .gap(7.0)
+            .padding(14.0)
+            .radius(10.0)
+            .w_full()
+            .fill(color(if producer { "#edf3e7" } else { "#f3f5ef" }))
+            .child(label(
+                if producer { "Você" } else { "Assistente IA" },
+                12.0,
+                600.0,
+                INK,
+            ))
+            .child(
+                label(&message.texto, 14.0, 400.0, INK)
+                    .wrap()
+                    .wrap_anywhere()
+                    .w_full(),
+            );
+        if message.recusada {
+            bubble = bubble.child(label("A IA não respondeu a essa pergunta. Você pode perguntar sobre outro ponto desta análise.", 12.0, 400.0, MUTED).wrap().w_full());
+        }
+        conversation = conversation.child(bubble);
+    }
+    if !s.chat.pending.is_empty() {
+        conversation = conversation.child(
+            col()
+                .gap(7.0)
+                .padding(14.0)
+                .radius(10.0)
+                .fill(color("#edf3e7"))
+                .w_full()
+                .child(label("Você", 12.0, 600.0, INK))
+                .child(
+                    label(&s.chat.pending, 14.0, 400.0, INK)
+                        .wrap()
+                        .wrap_anywhere()
+                        .w_full(),
+                ),
+        );
+    }
+    view = view.child(
+        col()
+            .key("chat-conversation")
+            .w_full()
+            .h(if s.chat.messages.is_empty() && s.chat.pending.is_empty() {
+                if narrow { 100.0 } else { 56.0 }
+            } else if narrow {
+                280.0
+            } else {
+                320.0
+            })
+            .scroll(ScrollSpec { stick_bottom: true })
+            .on_at_bottom(|s: &mut State, at_bottom| s.chat_at_bottom = at_bottom)
+            .child(conversation),
+    );
+    if !s.chat_at_bottom {
+        view = view.child(
+            row()
+                .key("chat-latest")
+                .role("button")
+                .label("Ver última resposta")
+                .focusable(true)
+                .padding(10.0)
+                .child(label("Ver última resposta ↓", 12.0, 600.0, INK))
+                .on_press_tx(|_: &mut State, tx| tx.scroll_to_bottom("chat-conversation")),
+        );
+    }
+    if s.chat.busy {
+        view = view.child(
+            col()
+                .key("chat-busy")
+                .w_full()
+                .role("status")
+                .label("A IA está preparando a resposta…")
+                .child(
+                    label("A IA está preparando a resposta…", 13.0, 500.0, INK)
+                        .wrap()
+                        .w_full(),
+                ),
+        );
+    }
+    if !s.chat.error.is_empty() {
+        view = view.child(
+            col()
+                .key("chat-error")
+                .w_full()
+                .role("alert")
+                .label(&s.chat.error)
+                .child(label(&s.chat.error, 13.0, 500.0, "#963e2b").wrap().w_full()),
+        );
+    }
+    if !s.chat.notice.is_empty() {
+        view = view.child(
+            col()
+                .key("chat-notice")
+                .w_full()
+                .role("status")
+                .label(&s.chat.notice)
+                .child(label(&s.chat.notice, 12.0, 500.0, MUTED).wrap().w_full()),
+        );
+    }
+    let count = s.chat_question.text.trim().chars().count();
+    let disabled = s.chat.busy || s.chat.blocked;
+    view = view
+        .child(
+            TextArea::new(&s.chat_question)
+                .label("Sua pergunta sobre a análise")
+                .placeholder("Escreva sua pergunta…")
+                .width(None)
+                .auto_grow(2, 5)
+                .wrap_anywhere()
+                .disabled(disabled)
+                .invalid(count > 1000)
+                .on_edit(|s: &mut State| &mut s.chat_question)
+                .on_submit(|s: &mut State, _| s.ask_chat())
+                .build(k)
+                .key("chat-question")
+                .w_full(),
+        )
+        .child(
+            label(
+                format!("{count}/1.000 caracteres · Ctrl+Enter para enviar"),
+                11.0,
+                400.0,
+                if count > 1000 { "#963e2b" } else { MUTED },
+            )
+            .wrap()
+            .w_full(),
+        );
+    let mut actions = responsive_row(narrow).child(
+        Button::new("Enviar pergunta")
+            .variant(ButtonVariant::Contrast)
+            .disabled(disabled || count == 0 || count > 1000)
+            .on_press(|s: &mut State| s.ask_chat())
+            .build(k)
+            .key("chat-send")
+            .h(44.0),
+    );
+    if s.chat.busy {
+        actions = actions.child(button(k, "chat-cancel", "Cancelar resposta", false, |_| {
+            host(json!({"type":"chat_cancel"}))
+        }));
+    }
+    actions = actions.child(
+        Button::new("Nova conversa")
+            .variant(ButtonVariant::Outline)
+            .disabled(
+                s.chat.messages.is_empty()
+                    && s.chat.pending.is_empty()
+                    && s.chat_question.text.is_empty(),
+            )
+            .on_press(|_: &mut State| host(json!({"type":"chat_clear"})))
+            .build(k)
+            .key("chat-clear")
+            .h(44.0),
+    );
+    view.child(actions)
+}
 fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     let Some(analysis) = &s.analysis else {
         return el();
@@ -1420,6 +1711,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "Três caminhos. A sua escolha." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Compare sua rotação atual com três caminhos. Os mesmos indicadores em cada card ajudam a entender o que muda. Abra uma estratégia para explorar o calendário." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
         .child(paragraph(&analysis.scenario_note))
+        .child(chat_panel(s, k, narrow))
         .child(cards);
     if analysis.recommendations.is_empty() {
         view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
@@ -1611,6 +1903,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
+        .child(chat_panel(s, k, narrow))
+        .child(benefits_panel(rec))
         .child(warnings_panel(rec, narrow))
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
             .child(paragraph("Selecione uma cultura para ver os detalhes. Ano 1 é o ano inicial do planejamento; o calendário pode atravessar dezembro."))

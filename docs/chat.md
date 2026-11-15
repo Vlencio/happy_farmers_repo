@@ -56,8 +56,32 @@ O servidor tira das sequências as séries mês a mês (`meses`) antes de mandar
 
 Cada pergunta manda à API da Anthropic a pergunta, o histórico e a parte da análise em foco: coordenadas, histórico de culturas, clima mensal e os números das sequências. O README deve dizer isso.
 
+## Integração da tela
+
+O painel está implementado no front em `web/chat.mjs`, `web/main.mjs` e na UI Rune.
+Aparece nos resultados e no detalhe somente com a capability booleana `true`.
+Envia a análise original, os IDs únicos dos três cards por objetivo e da referência
+atual viável, sem substituir pelos primeiros do ranking. Sem estratégia viável,
+o envio fica indisponível.
+
+A conversa fica só em memória e é reenviada inteira a cada pergunta. Nova análise,
+mudança de área, histórico ou opções limpa a conversa e cancela a resposta pendente.
+Trocar entre os detalhes dos cards mantém a conversa da mesma análise. Falha,
+cancelamento ou resposta inválida preserva a pergunta para nova tentativa.
+O painel permite no máximo dez pares de pergunta/resposta e oferece “Nova conversa”;
+não corta o histórico silenciosamente. Texto é exibido sem interpretar HTML ou Markdown.
+
+Validação do front: 13 testes de cliente/sessão e 38 verificações no navegador,
+sendo 33 com respostas de chat simuladas. Foco, histórico, cancelamento, erros,
+limites e tela móvel simulada foram conferidos. A API local sem credencial anuncia
+`chat: false`; nenhuma resposta real da Anthropic foi validada nessa rodada.
+
 ## O que falta
 
-- Tela (Gabriel): painel de chat ligado a `capabilities.chat`, mandando `foco` com os cards visíveis.
-- Testar com a API real: os testes usam um cliente simulado.
+- Testar uma resposta da Anthropic real: os testes do provedor usam um cliente simulado.
+- Alinhar o tamanho da resposta ao limite de 4.000 caracteres por mensagem no
+  histórico. Hoje uma resposta maior é aceita e provoca 422 ao ser reenviada na
+  pergunta seguinte. O front conserva a resposta inteira e pede nova conversa.
+- Rejeitar resposta vazia do modelo no servidor. O front já a trata como falha,
+  sem acrescentar uma rodada inválida ao histórico.
 - Perguntas do tipo "e se eu plantar X?" ficam fora: exigiriam o motor como ferramenta do LLM.

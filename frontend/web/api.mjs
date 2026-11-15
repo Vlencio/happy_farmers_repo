@@ -1,6 +1,7 @@
 import { bbox } from '@turf/turf';
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
+import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
 
 export const CATEGORIES = ['income', 'soil', 'climate'];
 export const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -127,6 +128,7 @@ export function validateMotorOutput(value) {
     }
     validateSequenceExposure(seq, scenarios, value.entrada.mes_plantio);
     validateSequenceWarnings(seq, scenarios);
+    validateSequenceBenefits(seq, scenarios);
   }
   for (const seq of value.descartadas) {
     validateDiscardReason(seq.motivo, value.entrada.horizonte);
@@ -201,6 +203,7 @@ function strategy(seq, farm, firstMonth, presentation, isCurrent = false) {
     comparison_facts: comparisonFacts(seq),
     exposure: buildExposure(seq, firstMonth),
     warnings: buildWarnings(seq, cropLabel),
+    benefits: buildBenefits(seq, cropLabel),
     tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. O ranking combina água, solo e renda com pesos iguais; cada card usa seu próprio objetivo. ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
     facts: [
       { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },

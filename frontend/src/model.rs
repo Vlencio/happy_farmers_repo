@@ -74,6 +74,29 @@ pub struct Recommendation {
     pub water_caption: String,
     pub exposure: Option<Exposure>,
     pub warnings: Option<StrategyWarnings>,
+    pub benefits: Option<StrategyBenefits>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct StrategyBenefits {
+    pub summary: String,
+    pub note: String,
+    pub items: Vec<StrategyWarning>,
+}
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct ChatState {
+    pub available: bool,
+    pub busy: bool,
+    pub blocked: bool,
+    pub messages: Vec<ChatMessage>,
+    pub pending: String,
+    pub error: String,
+    pub notice: String,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct ChatMessage {
+    pub papel: String,
+    pub texto: String,
+    pub recusada: bool,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct StrategyWarnings {

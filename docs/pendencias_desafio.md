@@ -20,7 +20,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 |---|---|---|---|---|---|
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
-| 3 | Lacunas e riscos por estratégia | Avisos na tela; faltam status de origem e benefícios estruturados | Brenno, Pedro | Não | Não |
+| 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
@@ -101,7 +101,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "For each strategy, you may explain why it was suggested, what evidence supports it, what benefits it may offer, where information gaps exist, and any risks that would need local review".
 
-**Hoje (14/11, front integrado à Main `1519963`):** o motor e a apresentação dos avisos estão prontos; faltam as marcações de origem dos dados e a lista estruturada de benefícios.
+**Hoje (14/11, front integrado à `motor-diario` em `589b16b`):** avisos e benefícios do motor têm apresentação na tela; faltam as marcações de origem dos dados.
 
 - Cada sequência viável devolve `avisos`: uma lista de riscos e lacunas, cada um com `tipo`, `codigo`, `cultura`, `cenario`, `dados` (os números que geraram o aviso) e `texto`. Regra 17 do contrato, com a tabela dos 11 códigos.
 - Riscos: fator que mais limita cada cultura em cada clima, queda de receita no futuro, queda no ano ruim (modo diário), repetição de cultura, solo exposto.
@@ -117,14 +117,14 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [x] Tela (Gabriel): resumo separado de riscos e lacunas nos cards; lista completa com contexto e evidências no detalhe de cada estratégia, inclusive a rotação atual. Ausência do campo não é tratada como lista vazia.
 - [x] Texto: os 11 códigos têm apresentação em português com os rótulos acentuados das culturas, números e unidades de `dados`. Código novo preserva texto e dados do motor.
 - [x] Motor: lista `beneficios` por sequência (regra 18): fixa nitrogênio, bônus após fixadora, deixa palhada, pouco solo exposto, estável no futuro, clima favorável. Só com o que entra na conta. `culturas[]` traz `fixa_n` e `cobre_solo`.
+- [x] Tela (Gabriel): benefícios junto dos avisos, com resumo nos cards e contexto e evidências no detalhe da estratégia e da rotação atual.
 
 **Falta:**
 
 - [ ] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
 - [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
-- [ ] Tela (Gabriel): mostrar `beneficios` ao lado de `avisos`.
 
-**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front; status dos dados e benefícios continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`, seção Parte 3.
+**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front, incluindo benefícios; status dos dados e limitação mensal continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`.
 
 ## Parte 4 — Geada e chuva extrema
 
@@ -295,7 +295,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [ ] Glossário: anomalia de umidade do solo, risco de geada, ano ruim, Ky.
 - [ ] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca.
 - [x] API: `POST /chat` responde dúvidas do produtor sobre a análise na tela, só com os números do motor (`docs/chat.md`).
-- [ ] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat`.
+- [x] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat: true`, com foco dos cards e histórico reenviado. Credencial e teste com a Anthropic real continuam pendentes; ver `docs/chat.md`.
 
 **Feito quando:** todo termo técnico que aparece na tela tem explicação na própria tela.
 

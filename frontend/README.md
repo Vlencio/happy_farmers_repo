@@ -69,6 +69,8 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
 - Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; a API aceita a declividade enviada para o contorno exato da demonstração (Parte 2 em `docs/API.md`).
 - Riscos e lacunas por estratégia, inclusive na rotação atual: resumo separado nos cards e todos os avisos com cultura, cenário e dados do motor no detalhe. Lista vazia e resposta antiga sem avisos têm mensagens diferentes (Parte 3 em `docs/API.md`).
+- Benefícios recebidos do motor: resumo nos cards e lista com contexto e evidências no detalhe, junto dos riscos e lacunas.
+- Chat opcional sobre a análise, exibido apenas com `capabilities.chat: true`. Envia os IDs dos cards e da referência viável, a resposta original da análise e o histórico da conversa a cada pergunta. Oferece cancelamento, nova conversa e tratamento de falhas sem perder os resultados.
 - Linha do tempo com as culturas, espera, plantio/colheita e tabela mensal de água, comparando hoje/futuro.
 - Calendários que atravessam dezembro e podem exceder 12 meses; tratamento de resultado vazio e motivos de descarte.
 - Rascunho local, recuperação ao recarregar, estados de erro e cancelamento de chamadas ao motor.
@@ -109,6 +111,12 @@ Para iniciar apenas a API, da raiz:
 ```
 
 O rascunho fica no `localStorage` deste navegador e não é uma conta ou backup remoto.
+O chat não entra no rascunho: fica só em memória e reinicia ao mudar o planejamento
+ou analisar novamente. Ao enviar uma pergunta, a API repassa à **Anthropic** a
+pergunta, a conversa e os dados da análise em foco, incluindo coordenadas,
+histórico de culturas, clima mensal e números das estratégias. Essa informação
+também aparece no painel antes do envio. As credenciais são configuradas somente
+no servidor, conforme [o contrato do chat](../docs/chat.md).
 O botão de localização só pede acesso ao dispositivo quando acionado. O mapa usa
 Esri World Imagery com atribuição visível e requer internet, inclusive na prévia
 do talhão salvo. A imagem não é salva no rascunho. Se o satélite falhar, o contorno
@@ -138,6 +146,8 @@ Principais arquivos:
 | `web/main.mjs` | Arquivos, rascunho e coordenação assíncrona |
 | `web/api.mjs` | Contrato e cliente HTTP para FastAPI |
 | `web/warnings.mjs` | Validação e apresentação dos riscos e lacunas de cada sequência |
+| `web/benefits.mjs` | Validação e apresentação dos benefícios entregues pelo motor |
+| `web/chat.mjs` | Cliente HTTP e conversa em memória vinculada à análise atual |
 | `web/field.mjs` | Correspondência do contorno e apresentação dos dados do talhão |
 | `../backend/app.py` | Transporte HTTP para o motor, catálogo e validação de entrada |
 | `../backend/field_context.py` | Leitura dos CSVs de contexto e deltas opcionais por modelo |

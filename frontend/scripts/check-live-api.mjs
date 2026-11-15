@@ -35,6 +35,8 @@ for (const horizonte of [1, 2]) {
       assert.ok(Array.isArray(source.avisos), 'A API deve repassar os avisos do motor atualizado.');
       assert.equal(rec.warnings.risks.length, source.avisos.filter(warning => warning.tipo === 'risco').length);
       assert.equal(rec.warnings.gaps.length, source.avisos.filter(warning => warning.tipo === 'lacuna').length);
+      assert.ok(Array.isArray(source.beneficios), 'A API deve repassar os benefícios do motor atualizado.');
+      assert.equal(rec.benefits.items.length, source.beneficios.length);
       for (const warning of [...rec.warnings.risks, ...rec.warnings.gaps]) {
         assert.ok(warning.context && warning.description && warning.evidence && warning.card_summary);
       }

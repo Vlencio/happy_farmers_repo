@@ -213,7 +213,15 @@ interfere na escolha dos três objetivos. A referência atual recebe o mesmo tra
 O ano seco observado (2020/21) é distinto do “ano ruim” do modo diário. O front
 não ativa o modo diário nesta etapa. `fator_limitante` permanece baseado no cálculo
 mensal; a limitação é explicada junto aos avisos. Benefícios específicos não são
-deduzidos pelo front: continua visível o critério de sugestão de cada card.
+deduzidos pelo front: além do critério do card, a tela usa a lista `beneficios`
+entregue em `motor-diario` (`317f29a`), conforme a regra 18.
+
+`web/benefits.mjs` valida os seis códigos e produz `Recommendation.benefits`.
+Nos cards aparecem a contagem e o primeiro benefício; no detalhe, todos os itens
+com cultura, cenário e dados. Fixação e palhada são atributos/hipóteses do motor,
+não medições no talhão. Queda negativa de receita é apresentada como alta.
+`clima_favoravel` refere-se apenas a hoje/futuro, sem incluir o ano seco. Código
+novo preserva texto e evidências; lista ausente não é convertida em lista vazia.
 
 ### Pendências para Pedro e dados
 
@@ -221,9 +229,9 @@ Não falta campo de transporte para mostrar os avisos existentes. As colunas
 `preco_status` e `temp_calor_c_status` ainda não existem em `culturas.csv`, embora
 o motor já leia `<campo>_status`. Sem elas, os valores marcados como “memória” ou
 “sem fonte” na documentação não geram `valor_a_conferir` nos resultados reais.
-A lista estruturada de benefícios por sequência também continua ausente.
+A lista estruturada de benefícios já foi entregue e está integrada à tela.
 
-Validação local em 14/11/2026: 72 testes JS (11 de avisos), 1 teste Rust, build
+Validação da entrega inicial em 14/11/2026: 72 testes JS (11 de avisos), 1 teste Rust, build
 WASM/web e 30 análises HTTP passaram. `tests/browser-warnings.js` passou 35
 verificações: 31 sem simulação e 4 com respostas explicitamente simuladas para
 campo ausente/lista vazia. O roteiro compara avisos da API real, rotação atual,
@@ -234,15 +242,63 @@ celular físico, leitor de tela e deploy não foram verificados nesta rodada.
 
 **Mensagem para Pedro:**
 
-> Pedro, o front da parte 3 mostra riscos e lacunas separados nos cards e no
-> detalhe, com os dados de cada aviso e os nomes acentuados. A API já repassa tudo
-> necessário. Falta alinhar com o Brenno as colunas `preco_status` para feijão,
-> girassol e algodão, e `temp_calor_c_status` para girassol e trigo, no gerador e
-> no CSV. O motor já lê esses status, mas hoje não recebe as marcações de memória
-> ou sem fonte; depois da alteração, regenerem as fixtures. A lista de benefícios
-> por sequência também segue pendente no motor: por enquanto mostramos o critério
-> do card. O `fator_limitante` continua mensal; deixei isso explicado na tela,
-> sem antecipar a integração do modo diário da parte 8.
+> Pedro, integrei a `motor-diario`: os benefícios agora aparecem junto dos avisos,
+> e o chat está ligado à capability, com foco nos cards e histórico reenviado a
+> cada pergunta. Ainda faltam os status de origem com o Brenno: `preco_status`
+> para feijão, girassol e algodão; `temp_calor_c_status` para girassol e trigo.
+> No chat, precisamos alinhar a resposta ao limite de 4.000 caracteres por
+> mensagem do histórico: hoje uma resposta maior provoca 422 na pergunta seguinte.
+> Também vale rejeitar resposta vazia. O front já protege esses dois casos sem
+> perder a pergunta ou truncar a resposta. Falta testar uma resposta real da
+> Anthropic com credencial no servidor; localmente a capability está false.
+
+## Chat sobre a análise
+
+Contrato do endpoint entregue pelo Pedro: [docs/chat.md](../../docs/chat.md).
+O front não chama o provedor diretamente nem recebe chaves. `web/chat.mjs` envia
+`POST /chat` pelo mesmo endereço-base/proxy da análise. O painel Rune só é exibido
+quando `/metadata.capabilities.chat === true` e existe um resultado de análise.
+
+- `analise`: resposta original e completa do `/analyze`, preservada em memória.
+- `foco`: IDs únicos das três sugestões por objetivo e da rotação atual viável.
+  Referência descartada não é incluída. Não usa top 3 do ranking nem foco vazio;
+  se não há estratégias viáveis, o envio fica bloqueado com explicação.
+- `historico`: todos os pares de perguntas/respostas aceitos nessa conversa,
+  na ordem, com `papel` e `texto`. A pergunta nova vai separada em `pergunta`.
+- A pergunta aceita até 1.000 caracteres Unicode, após remover espaços nas pontas.
+  Envio pelo botão ou Ctrl+Enter; durante a consulta o campo fica desabilitado.
+- Cancelamento e timeout de cinco minutos preservam a pergunta e descartam a
+  resposta tardia. 422, 502, 503, JSON inválido e resposta vazia viram erro local
+  do chat, mantendo os cards e o histórico válido. `recusada: true` aparece com
+  a mensagem recebida e uma indicação de que a pergunta não foi respondida.
+- Sem armazenamento persistente do chat. Troca de área, histórico de culturas,
+  opções ou nova análise cancela a consulta e limpa a conversa. Navegar entre
+  cards/detalhes conserva a conversa da mesma análise; “Nova conversa” a reinicia.
+- Até dez pares completos (20 mensagens). Se uma resposta ultrapassa os 4.000
+  caracteres que o backend aceita no histórico, ela continua visível inteira,
+  mas uma nova pergunta exige “Nova conversa”. Não há truncamento silencioso.
+
+O painel informa antes do envio que pergunta, conversa e dados da análise em foco
+(incluindo coordenadas e histórico de culturas) vão à Anthropic. Texto é renderizado
+diretamente como texto simples pelo Rune, sem interpretar HTML ou Markdown.
+
+Verificação após integrar `589b16b`: 122 testes Python (91 raiz + 31 backend),
+97 JS (incluindo 12 de benefícios e 13 de chat), 1 Rust, 30 análises HTTP e build
+WASM/web passaram. As três fixtures do motor conferem com a saída real. O SDK
+declarado no backend foi instalado na `.venv`; nenhuma credencial foi configurada.
+O servidor local anuncia `chat: false`; a geração real com Anthropic continua
+sem validação. Testes do chat usam respostas de provedor simuladas.
+`tests/browser-benefits.js` passou 36 verificações com a API real, sem simulação:
+quatro cards, seis códigos, dados e escopo de cada benefício, referências distintas
+e tela móvel de 390 px. Capturas desktop/mobile foram inspecionadas; sem erros de
+JavaScript. Não foi necessário modificar o motor ou a API entregues pelo Pedro.
+`tests/browser-chat.js` passou 38 verificações: 33 explicitamente simuladas (22
+POSTs de chat interceptados) e 5 sem simulação, incluindo capability desligada,
+benefícios reais e ausência de erros. Conferiu foco, análise e histórico exatos,
+Ctrl+Enter, recusa, erros, limites, cancelamento, respostas antigas e nova análise.
+Alertas e estados de espera/cancelamento expõem nome e texto acessíveis. As capturas
+`output/playwright/chat-*.png` foram inspecionadas em desktop e 390 px. Nenhuma
+chamada foi feita à Anthropic; celular físico e leitor de tela não foram testados.
 
 ## Contexto do talhão (G2)
 

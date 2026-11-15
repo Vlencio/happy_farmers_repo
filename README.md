@@ -37,6 +37,14 @@ provider and regional NEX-GDDP deltas, preserving the engine's calculations. Wit
 25 km of the demo, it uses ready-made tables (including the optional dry year).
 Other covered points use NASA POWER with explicit source, scope and fallback notices.
 
+An optional AI chat explains the current analysis when the server advertises
+`capabilities.chat: true`. Sending a question shares the question, conversation
+history and the analysis in focus (including coordinates, crop history, monthly
+climate and strategy figures) with **Anthropic**. Credentials stay on the server.
+The front end keeps the conversation only in memory, resets it on a new analysis
+and resends its history with each question; the server stores no conversation.
+See the [chat contract](docs/chat.md) for configuration and limits.
+
 ## Layout
 
 ```
