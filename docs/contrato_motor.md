@@ -52,7 +52,8 @@ Sem `clima_modelos` (ou com `None`), nada muda. Com ele, cada sequência viável
   "precos": {"soja": 2300},
   "declividade_pct": 4.05,
   "ajuste": {"chuva_pct": -20, "temp_c": 2},
-  "solo_textura": "argiloso"
+  "solo_textura": "argiloso",
+  "altitude_m": 484.41
 }
 ```
 
@@ -67,6 +68,7 @@ Sem `clima_modelos` (ou com `None`), nada muda. Com ele, cada sequência viável
 | `declividade_pct` | não | Declividade média do talhão, em %. Se vier, cada sequência ganha `descoberto.indice_erosao`. Não muda score nem rank. Para o talhão de demonstração: 4,05 (`data/talhao/declividade.csv`) |
 | `ajuste` | não | Cenário "e se" (regra 19): `chuva_pct` de −50 a +30 (% sobre a chuva de cada mês) e `temp_c` de 0 a +4 (°C somados à mínima e à máxima). Campo ausente vale 0. Vale para todos os climas e para a série diária. Sem `ajuste`, a saída não muda; com ele, `entrada.ajuste` volta na saída e `clima` traz as tabelas já ajustadas |
 | `solo_textura` | não | `arenoso`, `medio` ou `argiloso` (sem acento). Define a água que o solo guarda (`CAD_POR_TEXTURA`: 30, 45 e 60 mm). Vale para todos os climas e para o modo diário. Sem o campo, 60 mm (`CAD_MM`), igual a `argiloso`. Com ele, `entrada.solo_textura` e `entrada.cad_mm` voltam na saída. Outro valor gera `ValueError` |
+| `altitude_m` | não | Altitude do talhão, em metros (−100 a 6000, `ALTITUDE_M`). Com ela, sequência com cultura cuja `altitude_min_m` passa dessa altitude vai para `descartadas` (regra 21). Sem o campo, a saída não muda. Com ele, `entrada.altitude_m` volta na saída. Não número, não finito ou fora da faixa gera `ValueError`. A API passa a média do SRTM do talhão de demonstração (484,41 m, `alt_media` de `data/talhao/declividade.csv`) só quando usa as tabelas da demonstração; o cliente não envia o campo |
 
 Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje sem acento (`feijao`, `crotalaria`). Nome fora da tabela gera `ValueError`.
 
@@ -119,6 +121,7 @@ De `scripts/montar_culturas.py`. Detalhes em `docs/colunas_dados.md`, seção 5,
 | `preco` | R$/t |
 | `produtividade`, `produtividade_safrinha` | t/ha em cada slot. Safrinha vazia = usa a da safra |
 | `temp_calor_c` | Opcional. Máxima diária (°C) que prejudica o florescimento. Vazio = a regra de calor não se aplica à cultura |
+| `altitude_min_m` | Opcional. Altitude mínima (m) recomendada para a cultura (regra 21). Só vale com `entrada.altitude_m`. Vazio, ou tabela sem a coluna = sem restrição. `culturas.csv` traz 800 para o trigo de sequeiro (Embrapa, `docs/culturas_fontes.md`) e vazio para as outras |
 | `<campo>_status` | Opcional, uma coluna por campo (por exemplo `preco_status`, `temp_calor_c_status`). Texto livre, como `memoria` ou `sem fonte`. Se estiver preenchida, a sequência com aquela cultura ganha o aviso `valor_a_conferir`. Vazio = valor conferido. `culturas.csv` traz `preco_status` e `temp_calor_c_status` |
 
 As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não são lidas.
@@ -197,6 +200,13 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
       "culturas": ["algodao", "milho"],
       "atual": false,
       "motivo": {"cultura": "milho", "posicao": 2, "slot": "safrinha", "mes_livre": 5, "mes_plantio": 2}
+    },
+    {
+      "id": "soja>trigo",
+      "culturas": ["soja", "trigo"],
+      "atual": false,
+      "motivo": {"cultura": "trigo", "posicao": 2, "slot": "safrinha", "mes_livre": 2, "mes_plantio": 3,
+                 "altitude_min_m": 800.0, "altitude_m": 484.41}
     }
   ]
 }
@@ -248,7 +258,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
 | `dias_apos_anterior` | Dias do fim do ciclo da cultura anterior até o plantio desta (regra 10). Para a 1ª cultura, conta a partir do fim suposto da última do histórico (10 dias antes do talhão livre); `null` sem histórico |
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
-| `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
+| `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. Sem `altitude_min_m` (fora da época): `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês. Com `altitude_min_m` e `altitude_m` (fora da altitude, regra 21): a sequência cabe no calendário, mas a cultura pede altitude maior que a do talhão; `mes_plantio` e `mes_livre` são os do calendário, sem conflito entre eles. A presença de `altitude_min_m` é o que distingue os dois casos |
 
 ### Futuro por modelo (só com `clima_modelos`)
 
@@ -372,6 +382,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
     - Renda com o mesmo teto (regra 12), score com os mesmos pesos, ranking com a mesma ordem (`_chave_rank`) entre as sequências viáveis. Nada disso entra no score, no rank nem nos avisos do futuro médio.
     - `ajuste` (regra 19) vale também para os futuros por modelo, depois de montados.
     - Média dos três futuros por modelo contra `clima_futuro.csv` (talhão de demonstração): chuva +0,08 mm/ano (no máximo 0,08 mm num mês, onde a chuva de um modelo chega a zero), Tmin e Tmax até 0,01 °C (arredondamento), ET0 −0,1 mm/ano, dias acima de 35 °C +2,6 por ano (69,5 no futuro médio). Os dias quentes não são lineares no delta: a média das contagens exatas por modelo já dá +1,6 dia/ano; a interpolação soma o resto.
+21. **Altitude mínima** (só com `entrada.altitude_m`, desde 15/11): uma sequência que cabe no calendário mas tem cultura com `altitude_min_m` maior que `altitude_m` vai para `descartadas`. Altitude igual à mínima não descarta. O motivo leva os campos de época (`cultura`, `posicao`, `slot`, `mes_livre`, `mes_plantio`) mais `altitude_min_m` e `altitude_m`; vale a primeira cultura da sequência abaixo da mínima. O calendário vem antes: sequência que já não cabia na época continua com o motivo de época, então as descartadas novas são só as que saem do ranking. Se nenhuma sequência sobra na ordem do semestre (por época ou altitude), o motor tenta o outro slot, como na regra 2. A altitude não depende do clima: as descartadas são as mesmas em hoje, futuro, ano seco, modo diário e futuros por modelo. Hoje só o trigo tem mínima (800 m, sequeiro no Cerrado, Embrapa); o talhão de demonstração está a 484 m. Talhão de demonstração, histórico soja, milho, pesos iguais, com o ano seco e os modelos: **outubro** — 25 viáveis sem altitude, 21 com 484,41 m (saem `soja>trigo`, `milho>trigo`, `sorgo>trigo` e `feijao>trigo`, que cabiam no calendário); top 5 de hoje sem altitude `soja>crotalaria` 78,2, `soja>milho` 77,9, `soja>sorgo` 76,5, `soja>feijao` 73,7, `soja>trigo` 71,8; com altitude, o trigo sai e `soja>milheto` (71,2) entra em 5º. **Fevereiro** — 35 viáveis sem altitude, 30 com (saem `trigo>soja`, `trigo>milho`, `trigo>sorgo`, `trigo>feijao` e `trigo>algodao`); o top 5 de hoje não muda (`crotalaria>soja` 78,1, `sorgo>soja` 76,7, `feijao>soja` 73,6, `crotalaria>milho` 73,5, `milho>soja` 73,3), só ranks do futuro (por exemplo, `feijao>soja` 10º → 9º).
 
 ## Modo diário (opcional)
 
@@ -508,6 +519,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `AVISO_DIAS_EXPOSTOS` | 60 | Dias sem cultura e sem palhada que viram aviso |
 | `AJUSTE_CHUVA_PCT` | −50 a +30 | Faixa aceita de `ajuste.chuva_pct` |
 | `AJUSTE_TEMP_C` | 0 a +4 | Faixa aceita de `ajuste.temp_c` |
+| `ALTITUDE_M` | −100 a 6000 | Faixa aceita de `altitude_m` (regra 21). Só barra erro de digitação ou de unidade |
 | `AVISO_FAIXA_RANK` | 5 | Variação do rank do futuro entre os modelos (máx − mín) acima da qual sai o aviso `rank_varia_entre_modelos` |
 
 Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.

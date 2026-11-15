@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from motor import carregar_clima_modelos, carregar_clima_seco, carregar_dados, recomendar
 from backend.chat import MAX_FOCO, MAX_MENSAGEM, Chat, RespostaVazia
-from backend.field_context import load_demo_field, load_model_spread
+from backend.field_context import DATA, load_demo_field, load_model_spread, numeric_rows
 from backend.point_climate import PointClimate
 from backend.soil import SoilSuggestion
 
@@ -68,6 +68,20 @@ class EntradaChat(BaseModel):
         return self
 
 
+def load_demo_altitude(folder=DATA):
+    """Mean SRTM elevation of the demo field (m), from the same declividade.csv as the terrain summary.
+
+    None without the file. Only the demo has elevation: there is no SRTM per point.
+    """
+    path = folder / "talhao/declividade.csv"
+    if not path.exists():
+        return None
+    rows = numeric_rows(path, ["alt_media"])
+    if len(rows) != 1:
+        raise ValueError("Resumo de altitude inválido")
+    return rows[0]["alt_media"]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load delivered tables once. POWER is requested only when analyzing another point.
@@ -77,6 +91,7 @@ async def lifespan(app: FastAPI):
     app.state.soil = SoilSuggestion()
     app.state.point_climate = PointClimate()
     app.state.demo_field = load_demo_field()
+    app.state.demo_altitude = load_demo_altitude()  # crop minimum altitude (engine rule 21): demo field only
     app.state.model_spread = load_model_spread()
     app.state.chat = Chat.from_env()  # None without Claude credentials: the screen hides the chat
     yield
@@ -140,15 +155,20 @@ def analyze(entrada: EntradaMotor):
             raise ValueError(f"Culturas fora da tabela: {unknown}.")
         dry = app.state.dry_climate
         models = app.state.model_climates
+        altitude = app.state.demo_altitude
         origin = None
         if entrada.lon is not None:
             climate = app.state.point_climate.get(entrada.lat, entrada.lon)
             today, future, origin = climate["clima_hoje"], climate["clima_futuro"], climate["origem"]
             # P1's delivered dry year is local to the demo, not a dry year for other farms.
-            # The same goes for the per-model deltas: the regional grid only has the model average.
+            # The same goes for the per-model deltas: the regional grid only has the model average,
+            # and for the elevation: there is SRTM for the demo field only.
             if origin["hoje"] != "tabela_demo":
                 dry = None
                 models = None
+                altitude = None
+        if altitude is not None:
+            request["altitude_m"] = altitude
         result = recomendar(request, cultures, today, future, dry, clima_modelos=models)
         if origin is not None:
             result["origem"] = origin
