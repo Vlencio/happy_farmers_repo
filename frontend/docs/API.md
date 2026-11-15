@@ -59,6 +59,23 @@ valor pela área em hectares. **Gross revenue / ha / year** apresenta
 renda. Todos são receita bruta antes dos custos. A UI não converte moeda,
 anualiza valores ausentes nem muda o ranking.
 
+Receita zero recebe contexto em `web/revenue.mjs`, sem mudar a saída bruta:
+`crotalaria`, `milheto` e `braquiaria` só ganham a explicação de cobertura quando
+há aviso `sem_valor_de_mercado`, receita zero em todos os climas recebidos e
+atributos de solo compatíveis (`cobre_solo`; também `fixa_n` na crotalária).
+Em planos inteiramente desse tipo, o destaque financeiro vira **Primary role**
+e valores monetários zerados repetidos dão lugar a **Revenue treatment**.
+Em rotações mistas, a receita positiva total permanece e a etapa de cobertura
+tem sua explicação própria. Os benefícios de solo não são convertidos em dinheiro.
+
+Preço zero em uma cultura comercial recebe **Market revenue not included**;
+outros zeros, **No revenue estimated**, com orientação para consultar riscos
+e preços. Zero isolado não prova finalidade de cobertura. Valores positivos
+muito pequenos não são arredondados para um aparente zero; valores ausentes
+ou inválidos continuam sendo rejeitados. Zeros de score, água ou dias expostos
+permanecem numéricos. `revenue_note` na recomendação e `revenue_title`/
+`revenue_note` na etapa são campos apenas da apresentação JS/Rune.
+
 O resumo apresentado informa apenas quantidade de rotações viáveis, mês de
 disponibilidade e número de culturas planejadas. `data_sources` reúne a nota
 de dados e a origem normal (tabelas da demonstração ou POWER/NEX regional).

@@ -4,6 +4,7 @@ import { supportsSoil, validateSoilTexture, validateOutputSoil, soilNote } from 
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
 import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
+import { cropRevenueContext, isSoilOnlyPlan, soilPlanRole, sequenceRevenueNote, revenueAmount, sequenceRevenueAmount } from './revenue.mjs';
 import { DEFAULT_ADJUSTMENT, validateAdjustment, validateOutputAdjustment, supportsAdjustment, hasAdjustment, adjustmentNote } from './scenario.mjs';
 export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
@@ -17,7 +18,6 @@ const cropLabels = { soja: 'Soybean', milho: 'Corn', sorgo: 'Sorghum', feijao: '
 export const cropLabel = (id) => cropLabels[id] || id.charAt(0).toUpperCase() + id.slice(1);
 const seasonLabel = slot => slot === 'safrinha' ? 'Second season' : 'Main season';
 const number = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
-const money = (value) => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
 const index = (value) => `${number(value * 100)} / 100`;
 const normalize = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const invalid = (path) => { throw new Error(`Response does not match the engine contract: ${path}.`); };
@@ -280,6 +280,7 @@ function timeline(seq, firstMonth) {
   const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · year ${Math.floor(absolute / 12) + 1}`;
   const stages = seq.hoje.culturas.map((crop, i) => {
     const crops = scenarios.map((key) => seq[key].culturas[i]);
+    const revenue = cropRevenueContext(seq, crop.cultura, cropLabel(crop.cultura));
     const compare = (key, format = number) => crops.map((c) => format(c[key])).join(' / ');
     let start = crop.mes_plantio - 1;
     while (start < last) start += 12;
@@ -293,7 +294,8 @@ function timeline(seq, firstMonth) {
     last = end;
     return { title: `${cropLabel(crop.cultura)} · ${seasonLabel(crop.slot)}`, period: `${monthLabel(start)} → ${monthLabel(end)}`,
       start_month: start - firstMonth + 2, end_month: end - firstMonth + 2,
-      description: `${crop.ciclo_dias} days in the crop cycle; ${crop.espera_dias} days waiting for planting. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} days between the end of the previous crop and this planting${i === 0 ? ' (for the first crop, the end of the crop history is an assumption in the calculation)' : ''}. ` : ''}Gross revenue per hectare for this crop cycle (${order}): ${compare('receita_ha', money)}.`,
+      description: `${crop.ciclo_dias} days in the crop cycle; ${crop.espera_dias} days waiting for planting. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} days between the end of the previous crop and this planting${i === 0 ? ' (for the first crop, the end of the crop history is an assumption in the calculation)' : ''}. ` : ''}${revenue.kind === 'soil' ? '' : `Gross revenue per hectare for this crop cycle (${order}): ${compare('receita_ha', value => revenueAmount(value, revenue.kind === 'market' ? 'Market revenue not included' : 'No revenue estimated'))}.`}`.trim(),
+      revenue_title: revenue.title, revenue_note: revenue.note,
       water: `Water demand met (${order}): ${compare('atendimento_hidrico', (v) => number(v * 100))} out of 100. Deficit over the crop cycle: ${compare('deficit_mm')} mm.`,
       soil: `Soil index (${order}): ${compare('solo', (v) => number(v * 100))} out of 100. Sequence factor: ${number(crop.fator_sequencia, 3)}×. ${rotationFactors(crop)}The index combines nitrogen fixation, cover and diversity, adjusted for climate suitability; it is not a soil measurement.`,
       risk: `Temperature suitability: ${compare('encaixe_temp', (v) => number(v * 100))} out of 100. Rainfall suitability: ${compare('encaixe_chuva', (v) => number(v * 100))} out of 100. ${crops.every((c) => c.encaixe_calor != null) ? `Heat suitability: ${compare('encaixe_calor', (v) => number(v * 100))} out of 100; hot days during the sensitive growth stage: ${compare('dias_calor')}. ` : ''}Order: ${order}. Check heat thresholds with your agronomist; no penalty does not prove tolerance.`, monthly };
@@ -311,7 +313,9 @@ function rotationFactors(crop) {
 
 function comparisonFacts(seq) {
   return [
-    { label: 'Gross revenue / ha · full rotation · today', value: money(seq.hoje.receita_ha) },
+    isSoilOnlyPlan(seq)
+      ? { label: 'Primary role', value: soilPlanRole(seq) }
+      : { label: 'Gross revenue / ha · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha) },
     { label: 'Soil · today', value: index(seq.hoje.solo) },
     { label: 'Suitability · future', value: index(seq.futuro.encaixe) },
   ];
@@ -322,7 +326,7 @@ function annualIncomeFacts(seq) {
     const result = seq[key];
     if (!result || result.receita_ano_ha === undefined) return [];
     return [
-      { label: `Gross revenue / ha / year · ${label}`, value: money(result.receita_ano_ha) },
+      ...(isSoilOnlyPlan(seq) ? [] : [{ label: `Gross revenue / ha / year · ${label}`, value: sequenceRevenueAmount(seq, result.receita_ano_ha) }]),
       { label: `Years accounted for · ${label}`, value: `${number(result.anos_ocupados, 2)} ${result.anos_ocupados === 1 ? 'year' : 'years'}` },
     ];
   });
@@ -341,7 +345,9 @@ function modelFacts(seq) {
   if (!seq.modelos) return [];
   return [
     { label: 'Rank · future across models', value: `#${seq.modelos.rank_min}–#${seq.modelos.rank_max}` },
-    { label: 'Gross revenue / ha / year · future across models', value: `${money(seq.modelos.receita_ano_ha_min)} to ${money(seq.modelos.receita_ano_ha_max)}` },
+    ...(isSoilOnlyPlan(seq) ? [] : [{ label: 'Gross revenue / ha / year · future across models', value: seq.modelos.receita_ano_ha_max === 0
+      ? sequenceRevenueAmount(seq, 0)
+      : `${revenueAmount(seq.modelos.receita_ano_ha_min)} to ${revenueAmount(seq.modelos.receita_ano_ha_max)}` }]),
   ];
 }
 
@@ -370,10 +376,12 @@ function discardedReason(seq) {
 }
 
 function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false, tied = new Set(), models = null) {
+  const soilOnly = isSoilOnlyPlan(seq);
   return {
     ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
     tie_note: tied.has(seq.id) ? 'Technical tie · today' : '',
     model_note: modelNote(seq, models),
+    revenue_note: sequenceRevenueNote(seq, cropLabel),
     comparison_facts: comparisonFacts(seq),
     rank_facts: [
       { label: 'Rank · today', value: `#${seq.rank_hoje}` },
@@ -386,15 +394,21 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
     benefits: buildBenefits(seq, cropLabel),
     tradeoff: `Overall rank: #${seq.rank_hoje} today and #${seq.rank_futuro} in the future${seq.seco ? `; #${seq.rank_seco} in the dry year` : ''}. ${priorityNote} ${isCurrent ? 'This sequence is the reference from your crop history. ' : ''}All amounts are in Brazilian reais (BRL). Gross revenue is before costs, not profit. Values labeled "full rotation" cover the entire sequence; field totals also account for your field's area in hectares. ${seq.hoje.receita_ano_ha !== undefined ? 'Values labeled "/ year" are per year of field occupancy. The income priority uses revenue per year of field occupancy, compared with the engine reference system. Occupancy runs from field availability to the end of the final harvest, with a minimum of one year; a shorter sequence is not multiplied to simulate additional seasons. ' : 'This response does not include annual revenue or years of occupancy. '}Check prices, heat thresholds and provisional engine constants with your agronomist. Historical prices are not a sales forecast.`,
     facts: [
-      { label: 'Gross revenue / ha · full rotation · today', value: money(seq.hoje.receita_ha) },
-      { label: 'Gross revenue / ha · full rotation · future', value: money(seq.futuro.receita_ha) },
+      ...(soilOnly ? [{ label: 'Revenue treatment', value: 'Soil benefits are not monetized' }] : [
+        { label: 'Gross revenue / ha · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha) },
+        { label: 'Gross revenue / ha · full rotation · future', value: sequenceRevenueAmount(seq, seq.futuro.receita_ha) },
+      ]),
       { label: 'Rank · today / future', value: `#${seq.rank_hoje} / #${seq.rank_futuro}` },
-      { label: 'Gross field revenue · full rotation · today', value: money(seq.hoje.receita_ha * farm.area_ha) },
-      { label: 'Gross field revenue · full rotation · future', value: money(seq.futuro.receita_ha * farm.area_ha) },
+      ...(soilOnly ? [] : [
+        { label: 'Gross field revenue · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha * farm.area_ha) },
+        { label: 'Gross field revenue · full rotation · future', value: sequenceRevenueAmount(seq, seq.futuro.receita_ha * farm.area_ha) },
+      ]),
       { label: 'Overall score · today / future', value: `${number(seq.hoje.score)} / ${number(seq.futuro.score)}` },
       ...(seq.seco ? [
-        { label: 'Gross revenue / ha · full rotation · dry year', value: money(seq.seco.receita_ha) },
-        { label: 'Gross field revenue · full rotation · dry year', value: money(seq.seco.receita_ha * farm.area_ha) },
+        ...(soilOnly ? [] : [
+          { label: 'Gross revenue / ha · full rotation · dry year', value: sequenceRevenueAmount(seq, seq.seco.receita_ha) },
+          { label: 'Gross field revenue · full rotation · dry year', value: sequenceRevenueAmount(seq, seq.seco.receita_ha * farm.area_ha) },
+        ]),
         { label: 'Rank / score · dry year', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
       ] : []),
       ...annualIncomeFacts(seq),
@@ -419,7 +433,7 @@ function currentRotation(value, farm, priorityNote, tied) {
   if (seq) {
     const description = `Reference identified from your crop history, using the same indicators as the alternatives.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
-      category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'gross revenue / ha · full rotation · today’s climate', reason: description,
+      category: 'current', metric: isSoilOnlyPlan(seq) ? soilPlanRole(seq) : sequenceRevenueAmount(seq, seq.hoje.receita_ha), metric_label: isSoilOnlyPlan(seq) ? 'primary role' : 'gross revenue / ha · full rotation · today’s climate', reason: description,
     }, priorityNote, true, tied, value.modelos));
   }
   const discarded = hasReference

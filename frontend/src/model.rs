@@ -133,6 +133,8 @@ pub struct Recommendation {
     pub tie_note: String,
     #[serde(default)]
     pub model_note: String,
+    #[serde(default)]
+    pub revenue_note: String,
     pub facts: Vec<Fact>,
     pub comparison_facts: Vec<Fact>,
     pub rank_facts: Vec<Fact>,
@@ -228,6 +230,10 @@ pub struct Stage {
     pub start_month: u8,
     pub end_month: u8,
     pub description: String,
+    #[serde(default)]
+    pub revenue_title: String,
+    #[serde(default)]
+    pub revenue_note: String,
     pub water: String,
     pub soil: String,
     pub risk: String,

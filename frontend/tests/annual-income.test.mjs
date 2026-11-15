@@ -71,6 +71,6 @@ test('annual income accepts zero but rejects missing partners, nonfinite numbers
   raw.sequencias[0].hoje.receita_ano_ha = 0;
   raw.sequencias[0].hoje.anos_ocupados = 1;
   const facts = mapMotorAnalysis(raw, farm).recommendations[0].facts;
-  assert.equal(facts.find(fact => fact.label === 'Gross revenue / ha / year · today').value, money(0));
+  assert.equal(facts.find(fact => fact.label === 'Gross revenue / ha / year · today').value, 'No revenue estimated');
   assert.equal(facts.find(fact => fact.label === 'Years accounted for · today').value, '1 year');
 });

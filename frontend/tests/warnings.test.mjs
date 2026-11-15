@@ -83,8 +83,9 @@ test('actual cover crop gaps do not misrepresent absent heat penalties or zero p
   assert.equal(view.gaps.length, 2);
   assert.equal(view.gaps[0].context, 'Sunn hemp');
   assert.match(view.gaps[0].description, /does not demonstrate heat tolerance/);
-  assert.match(view.gaps[1].description, /does not mean the crop has no value/);
-  assert.match(view.gaps[1].evidence, /BRL\s*0\/t/);
+  assert.match(view.gaps[1].description, /not evidence that the crop has no value/);
+  assert.match(view.gaps[1].evidence, /Sales revenue is excluded by the price/);
+  assert.doesNotMatch(view.gaps[1].evidence, /BRL\s*0/);
   assert.ok(!view.gaps[0].card_summary.includes('crotalaria'));
 });
 

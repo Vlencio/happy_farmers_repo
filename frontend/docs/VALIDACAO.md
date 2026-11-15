@@ -1,5 +1,37 @@
 # Verificação da integração · 14/11/2026
 
+## Receita zero e papel das culturas de cobertura · 15/11/2026
+
+- Cards, referência atual e etapas explicam quando uma cultura é representada
+  por sua contribuição ao solo, sem transformar benefício agronômico em renda.
+  Planos de cobertura substituem o destaque `BRL 0` por sua finalidade e evitam
+  repetir valores monetários zerados. Rotações mistas preservam a receita total.
+- Critério conservador: IDs de cobertura conhecidos, aviso de mercado, zero em
+  todos os cenários e atributos entregues pelo motor. Milho com preço editado
+  para zero não ganha o rótulo de adubação verde. Dados ausentes não viram zero;
+  demais zeros têm explicação neutra e riscos continuam acessíveis.
+- **165 testes JavaScript** passaram, incluindo dez testes novos de apresentação,
+  preservação dos dados, respostas antigas, culturas desconhecidas, preços
+  zerados e valores positivos pequenos. Build Rune/WASM + Vite, formatação e
+  diff check passaram. Permanecem os avisos conhecidos de Rune/tamanho do bundle.
+- **67 verificações de navegador**: caso de receita 24 e renda anual 43,
+  com três análises reais no total, desktop e celular simulado. Sem mocks,
+  chamadas ao chat ou erros JavaScript. Nenhum teste em celular físico.
+- Caso reproduzível: **Use sample field**, sem histórico, **February**,
+  **Next crop**, prioridades 1/1/1 e clima sem ajuste. Crotalária (**Sunn hemp**)
+  aparece em primeiro com **Green manure & soil cover**. Em **October** e
+  **Next two crops**, soja → crotalária mantém a receita positiva da soja e
+  explica a etapa de cobertura separadamente.
+- Capturas em `output/playwright/revenue-cover-*.png` e
+  `revenue-mixed-stage-desktop.png`; logs `revenue-browser.log`,
+  `revenue-annual.log`, `frontend/.cache/revenue-unit.log` e
+  `frontend/.cache/revenue-build.log`. `frontend/tests/browser-revenue.js`
+  prepara os casos em contexto isolado, preservando o rascunho do usuário.
+
+Sem alteração de motor, API, dados ou fixtures canônicas. A ausência de campos
+explícitos de finalidade/preço por cultura é tratada conservadoramente no front;
+não há nova dependência de API para estes casos atuais.
+
 ## Barra de rolagem visível · 15/11/2026
 
 - Barra vertical nas telas de entrada, resultados e detalhes, visível em repouso

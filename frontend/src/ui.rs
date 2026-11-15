@@ -1548,6 +1548,24 @@ fn category(category: &str) -> (&'static str, &'static str, &'static str, &'stat
         _ => ("3RD TODAY", "Third-highest score", "#4d7c88", "#e4eff0"),
     }
 }
+fn revenue_context(title: &str, note: &str, compact: bool) -> El {
+    if note.is_empty() {
+        return el();
+    }
+    col()
+        .w_full()
+        .gap(7.0)
+        .padding(if compact { 12.0 } else { 14.0 })
+        .radius(9.0)
+        .fill(color("#edf2e6"))
+        .child(eyebrow(title.to_uppercase()).wrap().w_full())
+        .child(
+            label(note, if compact { 12.0 } else { 14.0 }, 400.0, INK)
+                .wrap()
+                .w_full(),
+        )
+}
+
 fn recommendation_card(
     rec: &Recommendation,
     selection: SelectedStrategy,
@@ -1697,6 +1715,7 @@ fn recommendation_card(
             label(&rec.model_note, 12.0, 400.0, MUTED).wrap().w_full()
         })
         .child(metrics)
+        .child(revenue_context("REVENUE CONTEXT", &rec.revenue_note, true))
         .child(exposure_summary)
         .child(rule())
         .child(paragraph(&rec.reason))
@@ -1732,12 +1751,13 @@ fn recommendation_card(
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. {} {} {} {} Open timeline",
+                "{}: {}. {}. {} {} {} {} {} Open timeline",
                 name,
                 rec.crop,
                 comparison_label,
                 rec.tie_note,
                 rec.model_note,
+                rec.revenue_note,
                 benefits_label,
                 warnings_label
             ))
@@ -2593,6 +2613,11 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(pill(&stage.period, tint, accent))
         .child(label(&stage.title, 27.0, 600.0, INK).wrap().w_full())
         .child(paragraph(&stage.description))
+        .child(revenue_context(
+            &stage.revenue_title,
+            &stage.revenue_note,
+            false,
+        ))
         .child(rule())
         .child(
             col()
@@ -2691,6 +2716,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
         .child(presentation_context(s, k, true))
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note))
+        .child(revenue_context("REVENUE CONTEXT", &rec.revenue_note, false))
         .child(facts)
         .child(paragraph(&analysis.priority_note))
         .child(chat_panel(s, k, narrow))
