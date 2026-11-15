@@ -41,6 +41,9 @@ CAD_POR_TEXTURA = {"arenoso": 30, "medio": 45, "argiloso": 60}
 # sem perda) do sistema de referencia: soja na safra e milho na safrinha. Nao depende das outras
 # sequencias avaliadas. Sem essas culturas na tabela, o teto e a maior receita por ano avaliada.
 SISTEMA_REFERENCIA = (("soja", "produtividade"), ("milho", "produtividade_safrinha"))
+# Cultura de referencia de cada slot: o teto soma so os slots que as sequencias ocupam. Com uma
+# cultura so, o teto e o da cultura de referencia daquele slot (soja na safra, milho na safrinha).
+REFERENCIA_POR_SLOT = dict(zip(("safra", "safrinha"), SISTEMA_REFERENCIA))
 
 # Valores provisorios, sem fonte: ajustar com um agronomo.
 PENALIDADE_REPETICAO = 0.85  # fator na produtividade ao repetir a cultura anterior
@@ -675,15 +678,17 @@ def anos_ocupados(dias):
     return max(dias, 365) / 365
 
 
-def teto_de_renda(culturas, receitas_ano):
-    """Receita potencial por ano do sistema de referencia (SISTEMA_REFERENCIA), em R$/ha/ano.
+def teto_de_renda(culturas, receitas_ano, slots=SLOTS):
+    """Receita potencial por ano da referencia nos slots da sequencia, em R$/ha/ano.
 
-    Usa o preco da tabela, nao o editado em `precos`: a referencia nao muda com o que o usuario
-    digita (preco zero de soja e milho zeraria o teto). Sem as culturas, ou com teto zero, vale a
-    maior receita por ano avaliada.
+    Soma, para cada slot, a cultura de referencia daquele slot (REFERENCIA_POR_SLOT) sem perda.
+    Com duas culturas: soja safra + milho safrinha. Com uma: so a do slot, para a renda de uma
+    cultura so nao ficar espremida contra o teto de duas. Usa o preco da tabela, nao o editado
+    em `precos`. Sem as culturas, ou com teto zero, vale a maior receita por ano avaliada.
     """
-    if all(nome in culturas for nome, _ in SISTEMA_REFERENCIA):
-        teto = sum(culturas[nome]["preco"] * culturas[nome][campo] for nome, campo in SISTEMA_REFERENCIA)
+    referencia = [REFERENCIA_POR_SLOT[slot] for slot in slots]
+    if all(nome in culturas for nome, _ in referencia):
+        teto = sum(culturas[nome]["preco"] * culturas[nome][campo] for nome, campo in referencia)
         if teto > 0:
             return teto
     return max(receitas_ano, default=0.0) or 1.0
@@ -1402,7 +1407,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     sequencias = [s for s in todas if not motivo_do_descarte(aval["hoje"][s])]
 
     # renda de 0 a 1: receita por ano ocupado / receita potencial do sistema de referencia (regra 12)
-    teto = teto_de_renda(tabela, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias])
+    teto = teto_de_renda(tabela, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias], slots)
     rank = {}
     for cen, porseq in aval.items():
         for s in sequencias:

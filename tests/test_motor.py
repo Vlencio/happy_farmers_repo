@@ -377,6 +377,16 @@ class TestRecomendar(unittest.TestCase):
         zerada = {n: {**c, "preco": 0.0} for n, c in tabela.items()}
         self.assertEqual(motor.teto_de_renda(zerada, [4.0, 7.0]), 7.0)  # teto zero: maior receita avaliada
 
+    def test_teto_acompanha_os_slots(self):
+        tabela = motor._tabela_culturas(self.dados[0])
+        self.assertEqual(motor.teto_de_renda(tabela, [], ("safrinha",)), 1000 * 5.0)  # so milho safrinha
+        self.assertEqual(motor.teto_de_renda(tabela, [], ("safra",)), 2100 * 3.6)  # so soja
+        self.assertEqual(motor.teto_de_renda(tabela, [], ("safrinha", "safra")), 2100 * 3.6 + 1000 * 5.0)
+        # uma cultura na safrinha: a renda do milho e medida contra o milho safrinha, nao contra o sistema de duas
+        saida = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 2, "rotacao_atual": ["soja"]}, *self.dados)
+        milho = next(s for s in saida["sequencias"] if s["id"] == "milho")["hoje"]
+        self.assertAlmostEqual(milho["renda"], min(1.0, milho["receita_ano_ha"] / (1000 * 5.0)), delta=2e-3)
+
     def test_preco_editado_nao_muda_o_teto(self):
         # soja e milho a preco zero: o teto continua o da tabela (antes dava divisao por zero)
         saida = recomendar({**ENTRADA, "precos": {"soja": 0, "milho": 0}}, *self.dados)
