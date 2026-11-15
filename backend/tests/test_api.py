@@ -30,6 +30,7 @@ class TestApi(unittest.TestCase):
         self.assertEqual(metadata["demo_field"]["boundary"]["type"], "FeatureCollection")
         self.assertTrue(metadata["point_climate_available"])
         self.assertTrue(metadata["capabilities"]["declividade_pct"])
+        self.assertTrue(metadata["capabilities"]["ajuste"])
         self.assertIsInstance(metadata["capabilities"]["chat"], bool)
 
     def test_validation_and_unknown_culture(self):
@@ -40,6 +41,9 @@ class TestApi(unittest.TestCase):
             {"lat": 0, "lon": 181}, {"lat": 0, "lon": -181}, {"lat": 0, "lon": "NaN"},
             {"lat": 0, "declividade_pct": -1}, {"lat": 0, "declividade_pct": 101},
             {"lat": 0, "declividade_pct": "NaN"}, {"lat": 0, "declividade_pct": "Infinity"},
+            {"lat": 0, "ajuste": {"chuva_pct": -51}}, {"lat": 0, "ajuste": {"chuva_pct": 31}},
+            {"lat": 0, "ajuste": {"temp_c": -1}}, {"lat": 0, "ajuste": {"temp_c": 4.5}},
+            {"lat": 0, "ajuste": {"temp_c": "NaN"}}, {"lat": 0, "ajuste": {"vento": 1}}, {"lat": 0, "ajuste": [10, 2]},
         ]:
             self.assertEqual(self.client.post("/analyze", json=request).status_code, 422, request)
 
@@ -60,6 +64,19 @@ class TestApi(unittest.TestCase):
         without = self.client.post("/analyze", json={k: v for k, v in request.items() if k != "declividade_pct"}).json()
         self.assertIsNone(without["entrada"]["declividade_pct"])
         self.assertNotIn("indice_erosao", without["sequencias"][0]["hoje"]["descoberto"])
+
+    def test_adjustment_reaches_engine(self):
+        request = {"lat": -20.032, "rotacao_atual": ["soja", "milho"], "ajuste": {"chuva_pct": -20, "temp_c": 2}}
+        response = self.client.post("/analyze", json=request)
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(result["entrada"]["ajuste"], {"chuva_pct": -20.0, "temp_c": 2.0})
+        self.assertEqual(sorted(result["clima"]), ["futuro", "hoje", "seco"])  # the dry year is adjusted too
+        partial = self.client.post("/analyze", json={"lat": -20.032, "ajuste": {"chuva_pct": -10}}).json()
+        self.assertEqual(partial["entrada"]["ajuste"], {"chuva_pct": -10.0, "temp_c": 0.0})
+        without = self.client.post("/analyze", json={"lat": -20.032, "rotacao_atual": ["soja", "milho"]}).json()
+        self.assertNotIn("ajuste", without["entrada"])
 
     def test_cors_for_local_frontend(self):
         response = self.client.options("/analyze", headers={"Origin": "http://127.0.0.1:4173", "Access-Control-Request-Method": "POST"})

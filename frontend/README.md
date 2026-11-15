@@ -66,6 +66,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
 - Prioridades de água, solo e renda entre 0 e 3, iniciando em 1/1/1; tudo em zero usa pesos iguais. Nos resultados, mudar uma prioridade refaz a análise e reinicia o chat.
+- Controles “Simule outro clima”: chuva de −50% a +30% e temperatura de 0 a +4 °C, com persistência, aplicação e reset. Aguardam a API anunciar `capabilities.ajuste: true`; hoje ficam indisponíveis. Resultados ajustados são identificados como hipóteses (Parte 6 em `docs/API.md`).
 - Até três cards na ordem do ranking de hoje devolvido pelo motor, com posição e score de hoje/futuro. Não escolhe vencedores por objetivo nem recalcula o ranking (Parte 5 em `docs/API.md`).
 - Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
 - Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; a API aceita a declividade enviada para o contorno exato da demonstração (Parte 2 em `docs/API.md`).
@@ -78,7 +79,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
 - Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
 - Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
-- Ano seco real (2020/21) ligado para a demonstração; faixa entre modelos ainda aguarda D2.
+- Ano seco real (2020/21) ligado para a demonstração. D2 foi entregue em `dados-calor` (`5deed52`), ainda pendente de merge: o painel consome a faixa climática dos modelos para o contorno de demonstração. Faixas de receita e rank por estratégia continuam dependendo do motor/API da Parte 7.
 - POWER por ponto com delta regional de Minas, cache diário e avisos de origem/fallback/cobertura; veja o [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API
@@ -146,6 +147,7 @@ Principais arquivos:
 | `web/farm-preview.mjs`, `web/preview-layout.mjs`, `web/imagery.mjs` | Imagem de satélite do resumo, projeção compartilhada de contorno/tiles e fonte do mapa |
 | `web/main.mjs` | Arquivos, rascunho e coordenação assíncrona |
 | `web/api.mjs` | Contrato e cliente HTTP para FastAPI |
+| `web/scenario.mjs` | Validação, confirmação do ajuste retornado e texto do cenário hipotético |
 | `web/warnings.mjs` | Validação e apresentação dos riscos e lacunas de cada sequência |
 | `web/benefits.mjs` | Validação e apresentação dos benefícios entregues pelo motor |
 | `web/chat.mjs` | Cliente HTTP e conversa em memória vinculada à análise atual |

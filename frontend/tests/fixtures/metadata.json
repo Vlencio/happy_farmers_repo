@@ -287,6 +287,27 @@
     },
     "sources": "NDVI: MOD13Q1, 250 m, série 2014–2024; relevo: SRTM, 30 m; clima: POWER e correção local da INMET A520. Escopo: um talhão. As resoluções são diferentes."
   },
-  "model_spread": null,
+  "model_spread": {
+    "models": [
+      {
+        "model": "ACCESS-CM2",
+        "rain_delta_mm": 7.91,
+        "tmax_delta_c": 2.3091666666666666
+      },
+      {
+        "model": "MIROC6",
+        "rain_delta_mm": -79.59,
+        "tmax_delta_c": 1.3408333333333333
+      },
+      {
+        "model": "MRI-ESM2-0",
+        "rain_delta_mm": 32.660000000000004,
+        "tmax_delta_c": 1.49
+      }
+    ],
+    "source": "data/clima_modelos.csv",
+    "scope": "talhao_demo_2",
+    "method": "Chuva: soma dos deltas mensais; máxima: média dos 12 deltas mensais. Futuro menos histórico."
+  },
   "point_climate_available": true
 }

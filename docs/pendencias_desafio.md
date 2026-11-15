@@ -23,7 +23,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Prioridades e ranking integrados na tela; restrições em aberto | Pedro, Gabriel | Não | Reaberto (15/11) |
-| 6 | Controles de cenário | Motor feito; faltam API e tela | Gabriel | Não | Não |
+| 6 | Controles de cenário | Motor, API e front feitos; falta testar a tela contra a API real | Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
 | 9 | Informação local de solo | Falta | Brenno, Pedro | Sim | Sim (SoilGrids) |
@@ -186,11 +186,13 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 - [x] Motor: entrada opcional de ajuste aplicada às tabelas de clima e à série diária antes da conta.
 - [x] `docs/contrato_motor.md` (entrada `ajuste`, regra 19, "Em aberto" item 19).
+- [x] Tela (Gabriel): controles de chuva e temperatura, persistência, reset, reanálise e identificação de cenário hipotético nos resultados/detalhes. Aguardam `capabilities.ajuste: true`; ver `frontend/docs/API.md`.
 
 **Falta:**
 
-- [ ] API (Gabriel): aceitar e validar `ajuste` em `backend/app.py`, repassar ao motor e anunciar em `/metadata`.
-- [ ] Tela (Gabriel): dois controles (chuva e temperatura), com o texto de que é um "e se", não uma previsão.
+- [x] API (15/11): `backend/app.py` aceita `ajuste` opcional (`chuva_pct` de −50 a +30 e `temp_c` de 0 a +4, finitos, padrão 0, sem campos extras), repassa ao motor depois de escolher o clima do ponto e anuncia `capabilities.ajuste: true` em `/metadata`. Valor fora da faixa dá 422. Testes em `backend/tests/test_api.py`.
+- [x] Chat (15/11): o prompt diz que, com `entrada.ajuste`, todos os números (inclusive do ano seco) são do cenário hipotético, e não previsão.
+- [ ] Integração (Gabriel): testar os controles da tela contra a API real.
 - [ ] Dados (Brenno, opcional): uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py`. Hoje os dias quentes entre os limiares são interpolados, e abaixo de 32 °C, extrapolados.
 - [ ] Chat (Gabriel, opcional): a IA traduz "e se chover menos?" em `ajuste` e chama o motor; o número continua vindo do motor.
 
@@ -211,12 +213,14 @@ Duas revisões do motor, uma estatística e uma agronômica, sem contexto do des
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −80 mm, ACCESS-CM2 +8 mm, MRI-ESM2-0 +33 mm por ano). O leitor da faixa já existe na API, mas `data/clima_modelos.csv` não foi entregue e a tela mostra "ainda não foi disponibilizada". O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). Breno entregou `data/clima_modelos.csv` em `dados-calor`, commit `5deed52` (15/11/2026), ainda fora da `main` e da `front-dev3`. O leitor da API e o painel do front aceitam essa entrega para o contorno de demonstração; sem o CSV no servidor, a tela continua informando que a faixa não está disponível. Isso descreve a faixa climática do talhão, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 
-- [ ] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Os números já estão em `data/nexgddp/`.
+- [x] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Feito em 15/11 por `scripts/montar_clima.py`; teste em `tests/test_clima_modelos.py`. Só o talhão de demonstração.
+- [ ] Integração: trazer D2 para a `main`, reiniciar a API e regenerar a fixture canônica do front. A validação antecipada usa `metadata-d2.json` exportada do checkout isolado.
 - [ ] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank.
+- [ ] API e tela: definir o contrato e apresentar as faixas de receita e rank de cada estratégia quando o motor as entregar.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 
 **Feito quando:** cada estratégia mostra a faixa entre os três modelos, e não só a média.

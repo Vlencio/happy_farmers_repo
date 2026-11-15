@@ -1,5 +1,61 @@
 # Verificação da integração · 14/11/2026
 
+## D2 — faixa climática entre modelos · 15/11/2026
+
+Front na `front-dev3` (`a7bf90e` como base), com a entrega de Breno `5deed52`
+verificada em checkout isolado de `dados-calor` (`67d1c3f`). A API real desse
+checkout foi iniciada em 8001, e o front atual em 4174; não houve merge nem
+alteração dos arquivos de dados, backend ou motor da `front-dev3`.
+
+- 114 testes JS passaram; os 10 testes de contexto do talhão foram conferidos
+  novamente após tornar a verificação de ausência de D2 independente da fixture.
+- Os 5 testes originais de D2 e os 3 testes do leitor de contexto passaram.
+  Nenhum script de download foi executado.
+- Build Vite passou; não houve mudança Rust/WASM nesta entrega.
+- `tests/browser-model-spread.js`: 20 verificações no Chromium, usando respostas
+  reais de `/metadata` e `/analyze`, sem simular os números. Conferiu o texto
+  +1,34 a +2,31 °C e −79,6 a +32,7 mm, os avisos de discordância da chuva e de
+  faixa entre modelos (não intervalo de confiança), além dos cards existentes.
+- Contorno importado equivalente, com anel invertido, mantém a faixa; mover um
+  vértice a oculta. A única análise foi da demonstração, com
+  `origem.hoje=tabela_demo`: nenhuma consulta externa ao POWER e nenhuma chamada
+  ao chat. Sem erros de JavaScript.
+- Capturas `output/playwright/d2-desktop.png` (1440 px) e `d2-mobile.png`
+  (390 px) inspecionadas, com texto completo e sem corte na faixa climática.
+- `metadata-d2.json` foi produzida por `backend.export_fixture` no checkout D2.
+  A regeneração das quatro fixtures canônicas na `front-dev3` não produziu diff,
+  preservando a verificação do CI enquanto o CSV ainda não foi integrado.
+
+Isso valida o resumo climático de D2. Faixas de receita/rank por estratégia,
+dados por modelo fora da demonstração, deploy e celular físico não foram
+validados. A Parte 7 completa ainda depende das entregas do motor/API.
+
+## Parte 6 — cenário de chuva e temperatura · 15/11/2026
+
+Base: Main `d6d7a73` na `front-dev3`. O motor já calcula `ajuste`; o front agora
+prepara e apresenta esse pedido. A API real ainda não anuncia a capability nem
+aceita o campo: `/analyze` com `ajuste` retorna 422 `extra_forbidden`.
+Ativação proposta: `capabilities.ajuste: true`, conforme [API.md](API.md).
+
+- 112 testes JS, 9 testes de ajuste do motor e 1 Rust passaram.
+- As 36 análises HTTP existentes passaram contra a API real, sem ajustes:
+  24 calendários, 6 referências, 5 conjuntos de prioridades e o exemplo de fevereiro.
+- Build Rune/WASM e Vite passou. Nenhum arquivo do motor, backend ou dados foi alterado.
+- Seis respostas reais foram geradas pelo motor com as tabelas locais, sem download,
+  usando `scripts/export-scenario-fixtures.py`. O arquivo fica em
+  `output/playwright/scenario-fixtures.json`, ignorado pelo Git.
+- `tests/browser-scenarios.js`: 77 verificações passaram no Chromium. O caminho
+  sem suporte usa a API atual; o caminho ajustado simula o transporte/capability
+  com as respostas reais do motor. Cobriu arraste provisório/soltura, setas/Home/End,
+  aplicação/reset, limites, persistência, ajuste ausente/divergente na resposta,
+  descarte de análise atrasada e reinício/contexto do chat (3 chamadas simuladas).
+- Capturas `output/playwright/scenarios-*.png` inspecionadas em 1440 px e 390 px,
+  sem cortes nos controles e avisos. Sem erros de JavaScript. Os botões −/+
+  consultam o estado atual para preservar cada passo em cliques consecutivos.
+- API ajustada real, Anthropic real, celular físico e leitores de tela continuam
+  sem validação nesta entrega. O front permanece indisponível para ajustes até
+  o servidor anunciar suporte; uma análise normal continua funcionando.
+
 ## Parte 5 — prioridades e ranking · 15/11/2026
 
 `front-dev3` atualizada por fast-forward para a Main `2413f15`. Os controles de

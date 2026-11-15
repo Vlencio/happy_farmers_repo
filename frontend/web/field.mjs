@@ -47,8 +47,8 @@ export function modelSpreadText(spread) {
   }
   const rain = spread.models.map((m) => m.rain_delta_mm);
   const temp = spread.models.map((m) => m.tmax_delta_c);
-  const signed = (v) => `${v > 0 ? '+' : ''}${fmt(v)}`;
-  return `${spread.models.length} modelos: mudança na temperatura máxima média de ${signed(Math.min(...temp))} a ${signed(Math.max(...temp))} °C; chuva anual de ${signed(Math.min(...rain))} a ${signed(Math.max(...rain))} mm. ${Math.min(...rain) < 0 && Math.max(...rain) > 0 ? 'Na chuva, os modelos discordam do sinal da mudança. ' : ''}Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.`;
+  const signed = (v, digits = 1) => `${v > 0 ? '+' : ''}${fmt(v, digits)}`;
+  return `${spread.models.length} modelos: mudança na temperatura máxima média de ${signed(Math.min(...temp), 2)} a ${signed(Math.max(...temp), 2)} °C; chuva anual de ${signed(Math.min(...rain))} a ${signed(Math.max(...rain))} mm. ${Math.min(...rain) < 0 && Math.max(...rain) > 0 ? 'Na chuva, os modelos discordam do sinal da mudança. ' : ''}Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.`;
 }
 
 export function buildFieldContext(farm, metadata) {

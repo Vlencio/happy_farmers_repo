@@ -5,6 +5,9 @@ import { buildFieldContext, getAnalysisSlope, matchesDemoBoundary, modelSpreadTe
 import { normalizeFarm } from '../web/geometry.mjs';
 
 const metadata = JSON.parse(readFileSync(new URL('./fixtures/metadata.json', import.meta.url)));
+// Exported by backend.export_fixture from dados-calor commit 5deed52 (D2).
+// Keep the baseline fixture aligned with this branch until the data is merged.
+const metadataD2 = JSON.parse(readFileSync(new URL('./fixtures/metadata-d2.json', import.meta.url)));
 const boundary = metadata.demo_field.boundary;
 const farm = normalizeFarm(boundary);
 
@@ -15,7 +18,7 @@ test('real field facts retain the 50% August / 60% September distinction and sou
   assert.match(field.terrain, /4,05%.*7,07%.*17,82%/);
   assert.match(field.station, /-2,5 a -1,2 °C/);
   assert.match(field.source, /250 m.*30 m/);
-  assert.match(field.model_spread, /ainda não/);
+  assert.match(buildFieldContext(farm, { ...metadata, model_spread: null }).model_spread, /ainda não/);
 });
 test('demo facts follow the boundary, including imported, reversed and rotated rings', () => {
   const imported = structuredClone(farm); imported.source = 'file'; imported.name = 'Meu arquivo';
@@ -93,4 +96,19 @@ test('model range is computed from delivery, including rainfall sign disagreemen
   assert.equal(buildFieldContext(other, { ...metadata, model_spread: spread }), null);
   spread.models[1].rain_delta_mm = NaN;
   assert.throws(() => modelSpreadText(spread), /inválidos/);
+});
+
+test('delivered D2 metadata shows the real range with two temperature decimals and rainfall disagreement', () => {
+  assert.deepEqual(metadataD2.model_spread.models.map(model => model.model), ['ACCESS-CM2', 'MIROC6', 'MRI-ESM2-0']);
+  const field = buildFieldContext(normalizeFarm(metadataD2.demo_field.boundary), metadataD2);
+  assert.equal(field.model_spread, '3 modelos: mudança na temperatura máxima média de +1,34 a +2,31 °C; chuva anual de -79,6 a +32,7 mm. Na chuva, os modelos discordam do sinal da mudança. Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.');
+});
+
+test('delivered D2 range follows an equivalent imported boundary and disappears when a vertex moves', () => {
+  const imported = normalizeFarm(metadataD2.demo_field.boundary, { source: 'file' });
+  const ring = imported.geojson.geometry.coordinates[0].slice(0, -1).reverse();
+  imported.geojson.geometry.coordinates[0] = [...ring, ring[0]];
+  assert.match(buildFieldContext(imported, metadataD2).model_spread, /3 modelos/);
+  imported.geojson.geometry.coordinates[0][1][0] += 0.00001;
+  assert.equal(buildFieldContext(imported, metadataD2), null);
 });

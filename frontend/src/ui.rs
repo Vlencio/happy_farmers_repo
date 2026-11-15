@@ -1,7 +1,8 @@
 use crate::{
     State, host,
     model::{
-        Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy, StrategyWarning,
+        Adjustment, Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy,
+        StrategyWarning,
     },
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
@@ -650,6 +651,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
         .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
     view = view.child(priorities_panel(s, k, narrow));
+    view = view.child(scenario_panel(s, k, narrow));
     let action = Button::new(if s.loading {
         "Analisando…"
     } else {
@@ -657,7 +659,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     })
     .variant(ButtonVariant::Contrast)
     .control_size(ControlSize::ExtraLarge)
-    .disabled(s.farm.is_none() || s.loading || !s.ready)
+    .disabled(s.farm.is_none() || s.loading || !s.ready || s.adjustment_blocked())
     .on_press(State::analyze)
     .build(k)
     .key("analyze")
@@ -891,6 +893,211 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
         view = view.child(label("Mudar uma prioridade refaz a análise e reinicia o chat. Em empate de pontuação, o motor considera a média de água, solo e renda.", 12.0, 400.0, MUTED).wrap().w_full());
     }
     view
+}
+fn scenario_value(value: f64, unit: &str) -> String {
+    let number = if value == 0.0 {
+        "0".to_owned()
+    } else {
+        format!("{value:+.2}")
+            .trim_end_matches('0')
+            .trim_end_matches('.')
+            .replace('.', ",")
+    };
+    format!("{number}{unit}")
+}
+fn scenario_control(s: &State, k: &Kit, field: usize) -> El {
+    let adjustment = s.adjustment_preview.unwrap_or(s.settings.ajuste);
+    let (name, value, min, max, step, unit, down, up) = if field == 0 {
+        (
+            "Chuva",
+            adjustment.chuva_pct,
+            -50.0,
+            30.0,
+            5.0,
+            "%",
+            "Diminuir chuva em 5%",
+            "Aumentar chuva em 5%",
+        )
+    } else {
+        (
+            "Temperatura",
+            adjustment.temp_c,
+            0.0,
+            4.0,
+            0.5,
+            " °C",
+            "Diminuir temperatura em 0,5 °C",
+            "Aumentar temperatura em 0,5 °C",
+        )
+    };
+    let fraction = ((value - min) / (max - min)) as f32;
+    let accent = if s.scenario_available {
+        "#355e3e"
+    } else {
+        "#aab6a4"
+    };
+    let mut track = el()
+        .key(format!("scenario-track-{field}"))
+        .w(0.0)
+        .min_w(0.0)
+        .grow(1.0)
+        .h(44.0)
+        .center_y()
+        .role("group")
+        .label(format!(
+            "{name} do cenário: {}",
+            scenario_value(value, unit)
+        ))
+        .child(
+            row()
+                .w_full()
+                .h(22.0)
+                .center_y()
+                .child(
+                    el().w(0.0)
+                        .grow(fraction)
+                        .h(6.0)
+                        .radius(3.0)
+                        .fill(color(accent)),
+                )
+                .child(
+                    el().w(22.0)
+                        .h(22.0)
+                        .radius(11.0)
+                        .fill(color(accent))
+                        .border(3.0, Color::WHITE),
+                )
+                .child(
+                    el().w(0.0)
+                        .grow(1.0 - fraction)
+                        .h(6.0)
+                        .radius(3.0)
+                        .fill(color(LINE)),
+                ),
+        );
+    if s.scenario_available {
+        track = track
+            .focusable(true)
+            .range_value(value, min, max)
+            .range_step(step)
+            .on_step(move |s: &mut State, delta, _| {
+                s.step_adjustment(field, delta);
+            })
+            .on_step_limit(move |s: &mut State, end, _| {
+                s.change_adjustment(field, if end { max } else { min })
+            })
+            .on_drag(move |s: &mut State, drag, _| {
+                if drag.cancelled() {
+                    s.adjustment_preview = None;
+                    return;
+                }
+                let fraction = ((drag.x - 11.0) / (drag.w - 22.0).max(1.0)).clamp(0.0, 1.0) as f64;
+                let value = ((min + fraction * (max - min)) / step).round() * step;
+                let mut adjustment = s.settings.ajuste;
+                if field == 0 {
+                    adjustment.chuva_pct = value;
+                } else {
+                    adjustment.temp_c = value;
+                }
+                if drag.phase == rune::Phase::Up {
+                    s.save_adjustment(adjustment);
+                } else {
+                    s.adjustment_preview = Some(adjustment);
+                }
+            })
+            .role("group");
+    }
+    col()
+        .gap(8.0)
+        .w_full()
+        .child(
+            row()
+                .justify_between()
+                .center_y()
+                .gap(8.0)
+                .child(label(name, 15.0, 600.0, INK))
+                .child(label(scenario_value(value, unit), 20.0, 600.0, accent)),
+        )
+        .child(
+            row()
+                .gap(10.0)
+                .w_full()
+                .center_y()
+                .child(
+                    Button::new("−")
+                        .variant(ButtonVariant::Outline)
+                        .disabled(!s.scenario_available || value <= min)
+                        .on_press(move |s: &mut State| s.step_adjustment(field, -1))
+                        .build(k)
+                        .key(format!("scenario-minus-{field}"))
+                        .label(down)
+                        .w(44.0)
+                        .h(44.0),
+                )
+                .child(track)
+                .child(
+                    Button::new("+")
+                        .variant(ButtonVariant::Outline)
+                        .disabled(!s.scenario_available || value >= max)
+                        .on_press(move |s: &mut State| s.step_adjustment(field, 1))
+                        .build(k)
+                        .key(format!("scenario-plus-{field}"))
+                        .label(up)
+                        .w(44.0)
+                        .h(44.0),
+                ),
+        )
+        .child(
+            row()
+                .justify_between()
+                .w_full()
+                .child(label(scenario_value(min, unit), 11.0, 400.0, MUTED))
+                .child(label(scenario_value(max, unit), 11.0, 400.0, MUTED)),
+        )
+}
+fn scenario_panel(s: &State, k: &Kit, narrow: bool) -> El {
+    let mut view = panel().key("scenario-panel").w_full().gap(16.0)
+        .child(label("Simule outro clima", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("E se chover menos ou fizer mais calor? É uma simulação, não uma previsão. O mesmo ajuste vale para todos os meses dos cenários de hoje, futuro e ano seco, quando disponível."))
+        .child(responsive_row(narrow)
+            .child(column_width(scenario_control(s, k, 0), narrow, 1.0))
+            .child(column_width(scenario_control(s, k, 1), narrow, 1.0)));
+    if !s.scenario_available {
+        view = view.child(paragraph(
+            "Os ajustes de cenário ainda não estão disponíveis neste servidor.",
+        ));
+    } else {
+        view = view.child(label("Arraste os controles ou use − e +. No teclado, use as setas, Home e End. Ajuste a chuva de 5 em 5% e a temperatura de 0,5 em 0,5 °C; depois aplique para recalcular.", 12.0, 400.0, MUTED).wrap().w_full());
+    }
+    if s.adjustment_blocked() {
+        let message = "Seu rascunho tem um cenário ajustado. Volte ao clima sem ajuste para analisar neste servidor; os valores não serão ignorados.";
+        view = view.child(col().role("alert").label(message).child(paragraph(message)));
+    }
+    view = view.child(
+        Button::new("Voltar ao clima sem ajuste")
+            .variant(ButtonVariant::Outline)
+            .disabled(!s.settings.ajuste.active())
+            .on_press(|s: &mut State| s.save_adjustment(Adjustment::default()))
+            .build(k)
+            .key("scenario-reset")
+            .h(44.0)
+            .w_full(),
+    );
+    if s.page != Page::Setup {
+        view = view.child(label("Ao mudar o cenário, a análise anterior e o chat são reiniciados. Use Aplicar cenário para consultar os novos resultados.", 12.0, 400.0, MUTED).wrap().w_full());
+    }
+    view
+}
+fn adjustment_banner(analysis: &Analysis) -> El {
+    if analysis.adjustment_note.is_empty() {
+        return el();
+    }
+    panel()
+        .fill(color("#fff4df"))
+        .gap(8.0)
+        .w_full()
+        .child(eyebrow("CENÁRIO HIPOTÉTICO"))
+        .child(paragraph(&analysis.adjustment_note))
 }
 fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     let month = Select::new("month-select", MONTHS)
@@ -1778,19 +1985,24 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
                 } else {
                     "Vamos consultar suas estratégias?"
                 },
-                "O ranking é calculado pelo motor com as prioridades escolhidas.",
+                "O motor recalcula os resultados com as prioridades e o cenário escolhidos.",
                 narrow,
             ))
             .child(priorities_panel(s, k, narrow))
+            .child(scenario_panel(s, k, narrow))
             .child(if s.loading {
                 button(k, "cancel-priorities", "Cancelar análise", false, |s| {
                     s.page = Page::Setup;
                     host(json!({"type":"cancel"}));
                 })
             } else {
-                button(k, "retry-priorities", "Analisar novamente", true, |s| {
-                    s.analyze()
-                })
+                Button::new("Aplicar cenário")
+                    .variant(ButtonVariant::Contrast)
+                    .disabled(!s.ready || s.farm.is_none() || s.adjustment_blocked())
+                    .on_press(State::analyze)
+                    .build(k)
+                    .key("apply-scenario")
+                    .h(44.0)
             })
             .child(button(
                 k,
@@ -1837,6 +2049,8 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "As melhores pontuações de hoje." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Até três estratégias na ordem do motor, com as suas prioridades. Compare a posição e a pontuação de hoje e do futuro, junto da sua rotação atual." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
         .child(priorities_panel(s, k, narrow))
+        .child(scenario_panel(s, k, narrow))
+        .child(adjustment_banner(analysis))
         .child(paragraph(&analysis.priority_note))
         .child(paragraph(&analysis.scenario_note))
         .child(chat_panel(s, k, narrow))
@@ -2031,7 +2245,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     col().w_full().gap(22.0).child(button(k, "back-results", "← Comparar estratégias", false, |s| s.page = Page::Results))
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
-        .child(farm_summary(s)).child(analysis_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
+        .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
         .child(paragraph(&analysis.priority_note))
         .child(chat_panel(s, k, narrow))
         .child(benefits_panel(rec))

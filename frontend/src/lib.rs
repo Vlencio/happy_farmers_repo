@@ -6,7 +6,8 @@ mod model;
 mod season;
 mod ui;
 use model::{
-    Analysis, ChatState, Culture, Farm, FieldContext, HistoryItem, Page, SelectedStrategy, Settings,
+    Adjustment, Analysis, ChatState, Culture, Farm, FieldContext, HistoryItem, Page,
+    SelectedStrategy, Settings,
 };
 
 struct State {
@@ -26,6 +27,8 @@ struct State {
     crop_open: bool,
     cultures: Vec<Culture>,
     settings: Settings,
+    scenario_available: bool,
+    adjustment_preview: Option<Adjustment>,
     month_open: bool,
     horizon_open: bool,
     discarded_open: bool,
@@ -61,6 +64,8 @@ impl Default for State {
             crop_open: false,
             cultures: vec![],
             settings: Settings::default(),
+            scenario_available: false,
+            adjustment_preview: None,
             month_open: false,
             horizon_open: false,
             discarded_open: false,
@@ -109,6 +114,7 @@ impl State {
         self.exposure_month = 0;
         self.loading = false;
         self.discarded_open = false;
+        self.adjustment_preview = None;
         self.error.clear();
     }
     fn save_history(&mut self) {
@@ -160,6 +166,10 @@ impl State {
         if self.farm.is_none() || self.loading || !self.ready {
             return;
         }
+        if self.adjustment_blocked() {
+            self.error = "O cenário salvo tem ajustes indisponíveis neste servidor. Volte ao clima sem ajuste para analisar.".into();
+            return;
+        }
         self.crop_open = false;
         self.month_open = false;
         self.horizon_open = false;
@@ -195,11 +205,47 @@ impl State {
         *priority = value;
         let reanalyze = self.page != Page::Setup || self.loading;
         self.invalidate();
-        if reanalyze && self.ready && self.farm.is_some() {
+        if reanalyze && self.ready && self.farm.is_some() && !self.adjustment_blocked() {
             self.page = Page::Results;
             self.loading = true;
         }
         host(json!({"type":"priorities", "settings":self.settings, "analyze":self.loading}));
+    }
+    fn adjustment_blocked(&self) -> bool {
+        !self.scenario_available && self.settings.ajuste.active()
+    }
+    fn save_adjustment(&mut self, adjustment: Adjustment) {
+        self.adjustment_preview = None;
+        if adjustment == self.settings.ajuste {
+            return;
+        }
+        let was_results = self.page != Page::Setup || self.loading;
+        self.settings.ajuste = adjustment;
+        self.invalidate();
+        if was_results {
+            self.page = Page::Results;
+        }
+        host(json!({"type":"scenario", "settings":self.settings}));
+    }
+    fn change_adjustment(&mut self, field: usize, value: f64) {
+        if !self.scenario_available || !value.is_finite() {
+            return;
+        }
+        let mut adjustment = self.settings.ajuste;
+        if field == 0 {
+            adjustment.chuva_pct = value.clamp(-50.0, 30.0);
+        } else {
+            adjustment.temp_c = value.clamp(0.0, 4.0);
+        }
+        self.save_adjustment(adjustment);
+    }
+    fn step_adjustment(&mut self, field: usize, steps: i32) {
+        let (value, step) = if field == 0 {
+            (self.settings.ajuste.chuva_pct, 5.0)
+        } else {
+            (self.settings.ajuste.temp_c, 0.5)
+        };
+        self.change_adjustment(field, (value / step + steps as f64).round() * step);
     }
     fn crop_label(&self, id: &str) -> String {
         self.cultures
@@ -221,6 +267,8 @@ enum Command {
         ready: bool,
         cultures: Vec<Culture>,
         data_notice: String,
+        #[serde(default)]
+        scenario_available: bool,
     },
     Farm {
         farm: Farm,
@@ -266,8 +314,10 @@ fn apply_command(s: &mut State, command: Command) {
             ready,
             cultures,
             data_notice,
+            scenario_available,
         } => {
             s.ready = ready;
+            s.scenario_available = scenario_available;
             s.cultures = cultures;
             s.data_notice = data_notice;
             if ready {
@@ -311,11 +361,13 @@ fn apply_command(s: &mut State, command: Command) {
         Command::Cleared => {
             let ready = s.ready;
             let chat_available = s.chat.available;
+            let scenario_available = s.scenario_available;
             let cultures = s.cultures.clone();
             let data_notice = s.data_notice.clone();
             *s = State::default();
             s.ready = ready;
             s.chat.available = chat_available;
+            s.scenario_available = scenario_available;
             s.cultures = cultures;
             s.data_notice = data_notice;
         }

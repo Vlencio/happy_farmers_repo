@@ -31,8 +31,11 @@ export function restoreDraft(text) {
   repaired ||= history.length !== items.length;
   try { settings = validateSettings(draft.settings); } catch {
     repaired ||= draft.version !== 1;
-    // A damaged priority control must not erase a valid planning calendar.
-    try { settings = validateSettings({ ...draft.settings, prioridades: undefined }); } catch { /* Keep defaults. */ }
+    // Recover each setting group independently, preserving other valid choices.
+    const partial = draft.settings ?? {};
+    try { Object.assign(settings, validateSettings({ mes_plantio: partial.mes_plantio, horizonte: partial.horizonte })); } catch { /* Keep the default calendar. */ }
+    try { settings.prioridades = validateSettings({ ...DEFAULT_SETTINGS, prioridades: partial.prioridades }).prioridades; } catch { /* Keep equal priorities. */ }
+    try { settings.ajuste = validateSettings({ ...DEFAULT_SETTINGS, ajuste: partial.ajuste }).ajuste; } catch { /* Keep the unadjusted climate. */ }
   }
   return { farm, history, settings, repaired };
 }
