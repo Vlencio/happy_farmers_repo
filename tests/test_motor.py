@@ -613,6 +613,88 @@ class TestSolo(unittest.TestCase):
                 self.com(textura)
 
 
+class TestAltitude(unittest.TestCase):
+    """Regra 21: cultura com altitude_min_m acima da altitude do talhao descarta a sequencia.
+
+    A tabela de teste ganha a coluna com milho a 800 m e as outras vazias.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        culturas = cls.dados[0]
+        cls.culturas = culturas.assign(altitude_min_m=[800.0 if c == "milho" else None for c in culturas["cultura"]])
+        cls.com_coluna = (cls.culturas, *cls.dados[1:])
+        cls.sem = recomendar(ENTRADA, *cls.dados)
+        cls.baixo = recomendar({**ENTRADA, "altitude_m": 500}, *cls.com_coluna)
+
+    def test_sem_altitude_a_saida_nao_muda(self):
+        self.assertNotIn("altitude_m", self.sem["entrada"])
+        self.assertEqual(recomendar(ENTRADA, *self.com_coluna), self.sem)  # a coluna sozinha nao muda nada
+        self.assertEqual(recomendar({**ENTRADA, "altitude_m": None}, *self.com_coluna), self.sem)
+
+    def test_tabela_sem_a_coluna_nao_restringe(self):
+        saida = recomendar({**ENTRADA, "altitude_m": 500}, *self.dados)
+        self.assertEqual(saida["entrada"].pop("altitude_m"), 500.0)
+        self.assertEqual(saida, self.sem)
+
+    def test_altitude_igual_a_minima_nao_descarta(self):
+        saida = recomendar({**ENTRADA, "altitude_m": 800}, *self.com_coluna)
+        saida["entrada"].pop("altitude_m")
+        self.assertEqual(saida, self.sem)
+
+    def test_descarta_a_cultura_abaixo_da_altitude_minima(self):
+        viaveis = ids(self.baixo["sequencias"])
+        self.assertTrue(viaveis)
+        self.assertFalse([s for s in viaveis if "milho" in s.split(">")])
+        # as outras viaveis continuam, na mesma ordem
+        self.assertEqual(viaveis, [s for s in ids(self.sem["sequencias"]) if "milho" not in s.split(">")])
+        self.assertEqual([s["rank_hoje"] for s in self.baixo["sequencias"]], list(range(1, len(viaveis) + 1)))
+        fora = {s["id"]: s["motivo"] for s in self.baixo["descartadas"]}
+        self.assertEqual(fora["soja>milho"], {
+            "cultura": "milho", "posicao": 2, "slot": "safrinha", "mes_livre": 2, "mes_plantio": 2,
+            "altitude_min_m": 800.0, "altitude_m": 500.0,
+        })  # fmt: skip
+        self.assertEqual(len(self.baixo["sequencias"]) + len(self.baixo["descartadas"]), len(self.culturas) ** 2)
+
+    def test_epoca_vem_antes_da_altitude(self):
+        # algodao>milho ja era descartada pelo calendario: o motivo continua o de epoca
+        antes = {s["id"]: s["motivo"] for s in self.sem["descartadas"]}
+        depois = {s["id"]: s["motivo"] for s in self.baixo["descartadas"]}
+        for seq, motivo in antes.items():
+            self.assertEqual(depois[seq], motivo, seq)
+        novas = set(depois) - set(antes)
+        self.assertEqual(novas, {s for s in ids(self.sem["sequencias"]) if "milho" in s.split(">")})
+        self.assertTrue(all("altitude_min_m" in depois[s] for s in novas))
+
+    def test_rotacao_atual_fora_de_altitude(self):
+        atual = self.baixo["atual"]
+        self.assertEqual((atual["id"], atual["viavel"]), ("soja>milho", False))
+        self.assertEqual(atual["motivo"]["altitude_min_m"], 800.0)
+        self.assertEqual(next(s for s in self.baixo["descartadas"] if s["atual"])["motivo"], atual["motivo"])
+
+    def test_vale_para_seco_modelos_e_diario(self):
+        seco = self.dados[1].assign(chuva_mm=self.dados[1]["chuva_mm"] * 0.5)
+        modelos = deltas_modelos(TestModelos.MODELOS)
+        serie = serie_das_medias(self.dados[1], 2001, 2010)
+        saida = recomendar({**ENTRADA, "altitude_m": 500}, *self.com_coluna, seco, diario=serie, clima_modelos=modelos)
+        self.assertEqual(ids(saida["sequencias"]), ids(self.baixo["sequencias"]))
+        self.assertEqual(saida["descartadas"], self.baixo["descartadas"])
+        for s in saida["sequencias"]:
+            self.assertNotIn("milho", s["culturas"])
+            for chave in ("seco", "rank_seco", "diario", "modelos"):
+                self.assertIn(chave, s)
+            self.assertLessEqual(s["modelos"]["rank_max"], len(saida["sequencias"]))
+        self.assertNotIn("milho", " ".join(v for v in saida["modelos"]["primeiro"].values() if v))
+
+    def test_altitude_invalida(self):
+        for altitude in ("500", float("nan"), float("inf"), -101, 6001, True, [500]):
+            with self.assertRaises(ValueError, msg=altitude):
+                recomendar({**ENTRADA, "altitude_m": altitude}, *self.com_coluna)
+        with self.assertRaises(ValueError):
+            recomendar(ENTRADA, self.culturas.assign(altitude_min_m=float("inf")), *self.dados[1:])
+
+
 class TestHospedeiroComum(unittest.TestCase):
     """Regra 10: culturas diferentes que dividem praga ou doenca (HOSPEDEIRO_COMUM)."""
 

@@ -83,7 +83,7 @@ Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha
 | `preco` | R$/t (0 = cobertura) |
 | `produtividade`, `produtividade_safrinha` | t/ha, Conab 2024/25 (média Brasil) |
 | `temp_calor_c` | Máxima diária (°C) que prejudica o florescimento (Luo 2011). Vazio = cobertura, regra de calor não se aplica |
-| `altitude_min_m` | Altitude mínima recomendada (m) no sistema de sequeiro; vazio = sem limite. Só o trigo (800 m, Embrapa). O motor ainda não lê |
+| `altitude_min_m` | Altitude mínima recomendada (m) no sistema de sequeiro; vazio = sem limite. Só o trigo (800 m, Embrapa). O motor lê com a entrada `altitude_m` (regra 21 de `docs/contrato_motor.md`) |
 | `preco_status`, `temp_calor_c_status` | Valor ainda sem fonte conferida (`memoria` ou `sem fonte`); vazio = conferido. O motor gera o aviso `valor_a_conferir` |
 
 ## 6. Tabelas de clima do motor

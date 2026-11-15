@@ -118,6 +118,10 @@ NOME_FATOR = {"temperatura": "a temperatura", "chuva": "a chuva do ciclo", "calo
 AJUSTE_CHUVA_PCT = (-50.0, 30.0)  # % sobre a chuva de cada mes
 AJUSTE_TEMP_C = (0.0, 4.0)  # graus C somados a minima e a maxima de cada mes
 
+# Altitude do talhao (entrada altitude_m, regra 21): faixa aceita, em metros. Escolha do time, sem
+# fonte; so barra erro de digitacao ou de unidade.
+ALTITUDE_M = (-100.0, 6000.0)
+
 # Futuro por modelo (regra 20). Limite provisorio, sem fonte: so decide quando avisar.
 AVISO_FAIXA_RANK = 5  # rank do futuro que varia mais que isso entre os modelos vira aviso
 COLUNAS_MODELOS = ["modelo", "mes", "delta_chuva_mm", "delta_tmin_c", "delta_tmax_c"]  # razao_chuva, off_* opcionais
@@ -566,10 +570,12 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_an
     )
 
 
-def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos, cad=None):
+def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos, cad=None, altitude_m=None):
     """Simula as culturas em fila, uma por slot, com o talhao livre no dia 1 de mes_plantio.
 
     Se uma cultura nao pode ser plantada no slot dela, devolve so {"fora_de_epoca": motivo}.
+    Com altitude_m, uma cultura com altitude_min_m acima dela devolve so {"fora_de_altitude": motivo}
+    (regra 21), so se a sequencia cabe no calendario: fora_de_epoca vem antes.
     """
     cad = CAD_MM if cad is None else cad
     dia = dia_livre = sum(DIAS_MES[: mes_plantio - 1])  # dia em que o talhao fica livre
@@ -581,9 +587,11 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
     fim_anterior = dia_livre - DIAS_COLHEITA
     ciclos = []  # (dia do plantio, dia do fim do ciclo, a cultura deixa palhada?)
     resultados = []
+    livres = []  # dia em que o talhao fica livre antes de cada cultura
     for nome, slot in zip(nomes, slots):
         c = culturas[nome]
         mes = c[f"mes_plantio_{slot}"]
+        livres.append(dia)
         plantio = dia_de_plantio(mes, dia)
         if plantio is None:
             return {
@@ -612,6 +620,23 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         anterior = nome
         fim_anterior = sem_cultura
 
+    if altitude_m is not None:  # so depois do calendario: a altitude descarta sequencias que cabem nele
+        for i, (nome, slot) in enumerate(zip(nomes, slots)):
+            minima = culturas[nome].get("altitude_min_m")
+            if minima is not None and minima > altitude_m:
+                # os campos de fora_de_epoca (posicao, slot, mes livre, mes de plantio) mais as duas altitudes
+                return {
+                    "fora_de_altitude": {
+                        "cultura": nome,
+                        "posicao": i + 1,
+                        "slot": slot,
+                        "mes_livre": MES_DO_DIA[livres[i] % 365],
+                        "mes_plantio": culturas[nome][f"mes_plantio_{slot}"],
+                        "altitude_min_m": minima,
+                        "altitude_m": altitude_m,
+                    }
+                }
+
     receita = sum(r["receita_ha"] for r in resultados)
     anos = anos_ocupados(dia - dia_livre)
     atendimento = atendimento_da_sequencia(resultados)
@@ -626,6 +651,11 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         "descoberto": solo_descoberto(dia_livre, ciclos, palhada_inicial, clima),
         "culturas": resultados,
     }
+
+
+def motivo_do_descarte(a):
+    """Motivo do descarte de uma sequencia avaliada (fora_de_epoca ou fora_de_altitude); None se e viavel."""
+    return a.get("fora_de_epoca") or a.get("fora_de_altitude")
 
 
 def atendimento_da_sequencia(resultados):
@@ -1268,11 +1298,13 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
     Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
-    fora da epoca de plantio do slot nao entra no ranking: vai para "descartadas".
+    fora da epoca de plantio do slot nao entra no ranking: vai para "descartadas". Com
+    altitude_m, tambem vai a sequencia com cultura cuja altitude_min_m passa da do talhao.
 
     entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos,
-    declividade_pct, ajuste ({"chuva_pct", "temp_c"}: "e se", aplicado a todos os climas) e
-    solo_textura ("arenoso", "medio" ou "argiloso": agua que o solo guarda, CAD_POR_TEXTURA).
+    declividade_pct, ajuste ({"chuva_pct", "temp_c"}: "e se", aplicado a todos os climas),
+    solo_textura ("arenoso", "medio" ou "argiloso": agua que o solo guarda, CAD_POR_TEXTURA) e
+    altitude_m (altitude do talhao em metros: descarta cultura com altitude_min_m maior, regra 21).
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
     clima_seco: opcional, mesma forma das outras duas. Se vier, a saida ganha um
     terceiro cenario ("seco"); sem ele, a saida so tem hoje e futuro.
@@ -1313,6 +1345,14 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         raise ValueError(f"solo_textura deve ser um de {sorted(CAD_POR_TEXTURA)}")
     cad = CAD_MM if textura is None else CAD_POR_TEXTURA[textura]
 
+    altitude = entrada.get("altitude_m")
+    if altitude is not None:
+        if isinstance(altitude, bool) or not isinstance(altitude, (int, float)):
+            raise ValueError("altitude_m deve ser um numero, em metros")
+        altitude = float(altitude)
+        if not (math.isfinite(altitude) and ALTITUDE_M[0] <= altitude <= ALTITUDE_M[1]):
+            raise ValueError(f"altitude_m deve estar entre {ALTITUDE_M[0]:g} e {ALTITUDE_M[1]:g} m")
+
     lat = float(entrada["lat"])
     horizonte = int(entrada.get("horizonte", 2))
     mes_plantio = int(entrada.get("mes_plantio", 10))
@@ -1341,22 +1381,25 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
 
     def avaliar(slots):
         return {
-            cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos, cad) for s in todas}
+            cen: {
+                s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos, cad, altitude)
+                for s in todas
+            }
             for cen, clima in climas.items()
         }
 
-    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas em todos os climas
+    # a epoca de plantio e a altitude nao dependem do clima: as descartadas sao as mesmas em todos os climas
     slots = ordem_dos_slots(mes_plantio, horizonte)
     aval = avaliar(slots)
-    if all("fora_de_epoca" in aval["hoje"][s] for s in todas):
+    if all(motivo_do_descarte(aval["hoje"][s]) for s in todas):
         # nenhuma sequencia cabe na ordem do semestre (talhao livre de abril a junho, ou em dezembro
         # com duas culturas): tenta comecar pelo outro slot (regra 2)
         outra = ordem_dos_slots(1 if slots[0] == "safra" else 7, horizonte)
         aval_outra = avaliar(outra)
-        if any("fora_de_epoca" not in aval_outra["hoje"][s] for s in todas):
+        if any(not motivo_do_descarte(aval_outra["hoje"][s]) for s in todas):
             slots, aval = outra, aval_outra
-    descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
-    sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
+    descartadas = [s for s in todas if motivo_do_descarte(aval["hoje"][s])]
+    sequencias = [s for s in todas if not motivo_do_descarte(aval["hoje"][s])]
 
     # renda de 0 a 1: receita por ano ocupado / receita potencial do sistema de referencia (regra 12)
     teto = teto_de_renda(tabela, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias])
@@ -1400,6 +1443,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             "declividade_pct": declividade,
             **({"ajuste": ajuste} if ajuste is not None else {}),
             **({"solo_textura": textura, "cad_mm": cad} if textura is not None else {}),
+            **({"altitude_m": altitude} if altitude is not None else {}),
         },
         "slots": slots,
         # a rotacao atual, para comparar com as outras: os numeros dela estao em "sequencias"
@@ -1410,7 +1454,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             "id": ">".join(atual),
             "culturas": list(atual),
             "viavel": atual in sequencias,
-            "motivo": aval["hoje"][atual].get("fora_de_epoca"),
+            "motivo": motivo_do_descarte(aval["hoje"][atual]),
         },
         "clima": {
             cen: [{**m, "et0_mm": et0[cen][i] * DIAS_MES[i]} for i, m in enumerate(clima)]
@@ -1434,7 +1478,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],
         "descartadas": [
-            {"id": ">".join(s), "culturas": list(s), "atual": s == atual, "motivo": aval["hoje"][s]["fora_de_epoca"]}
+            {"id": ">".join(s), "culturas": list(s), "atual": s == atual, "motivo": motivo_do_descarte(aval["hoje"][s])}
             for s in descartadas
         ],
     }
@@ -1555,6 +1599,10 @@ def _tabela_culturas(df):
         c["produtividade_safrinha"] = c["produtividade"] if pd.isna(safrinha) else float(safrinha)
         limiar = linha.get("temp_calor_c")  # coluna opcional; vazio = a regra de calor nao se aplica
         c["temp_calor_c"] = None if limiar is None or pd.isna(limiar) else int(limiar)
+        minima = linha.get("altitude_min_m")  # coluna opcional; vazio = sem altitude minima (regra 21)
+        c["altitude_min_m"] = None if minima is None or pd.isna(minima) else float(minima)
+        if c["altitude_min_m"] is not None and not math.isfinite(c["altitude_min_m"]):
+            raise ValueError(f"{nome}: altitude_min_m deve ser um numero finito ou vazio")
         ky = linha.get("ky")  # coluna opcional; sem ela, vale a tabela KY. So o modo diario usa
         c["ky"] = KY.get(nome, KY_PADRAO) if ky is None or pd.isna(ky) else float(ky)
         c["ky_padrao"] = (ky is None or pd.isna(ky)) and nome not in KY
