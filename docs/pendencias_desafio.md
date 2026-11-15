@@ -259,7 +259,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 - [x] Time (15/11): fonte de textura escolhida entre as da lista do desafio, sem reabrir SoilGrids: GLDAS (NASA, 0,25°) ou HWSD/GAEZ (FAO, ~1 km). A textura do ponto é sugestão; o produtor confirma ou troca.
 - [x] Motor (15/11, branch `motor-solo`): entrada `solo_textura` (`arenoso`, `medio`, `argiloso`) → água que o solo guarda de 30, 45 ou 60 mm (classes do ZARC; regra 6 e `CAD_POR_TEXTURA` no contrato). Sem o campo, 60 mm, como antes.
-- [ ] Dados (Brenno): textura sugerida por ponto em Minas Gerais, a partir do GLDAS ou do HWSD/GAEZ, num arquivo que a API leia (como `delta_mensal.csv`). Download com o aval de quem cuida dos dados.
+- [x] Dados (Brenno, 15/11): textura sugerida por quadrado de 0,25° a partir do GLDAS2/Noah (NASA), em `data/solo/regiao_mg/textura.csv`, nos mesmos centros de `delta_mensal.csv` (`scripts/puxar_solo.py`, `scripts/montar_solo_mg.py`; colunas em `docs/colunas_dados.md`, seção 9). Quadrado do talhão de demonstração: argiloso (51,8% de argila), igual ao padrão do motor.
 - [ ] API (Gabriel): aceitar `solo_textura`, anunciar `capabilities.solo_textura`, e devolver a textura sugerida do ponto com a fonte.
 - [ ] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), pré-preenchido com a sugestão e a fonte, que o produtor pode trocar.
 

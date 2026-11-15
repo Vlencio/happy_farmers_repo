@@ -18,3 +18,4 @@ frontend/*.log
 .playwright-cli/
 output/playwright/
 data/grace/bruto/
+data/solo/bruto/

@@ -171,3 +171,24 @@ Colunas de `culturas_mg.csv`:
 | `melhor_mes_plantio` | Mês de início com o maior encaixe hoje. Vazio nas perenes |
 | `encaixe_temp_hoje`, `encaixe_chuva_hoje`, `encaixe_hoje` | 0 a 1, contra `clima_hoje.csv`. `encaixe` é o menor dos dois |
 | `encaixe_temp_futuro`, `encaixe_chuva_futuro`, `encaixe_futuro` | O mesmo contra `clima_futuro.csv`, no mesmo mês |
+
+## 9. Solo — textura sugerida por quadrado (GLDAS)
+
+Arquivo: `data/solo/regiao_mg/textura.csv`. Gerado por `scripts/montar_solo_mg.py` a partir
+dos parâmetros de solo do GLDAS2/Noah (`scripts/puxar_solo.py`, https://ldas.gsfc.nasa.gov/gldas/soils,
+sem login). Uma linha por quadrado de 0,25°, nos mesmos centros de `delta_mensal.csv`:
+1.861 quadrados, 803 com o centro em Minas Gerais. Os 27 quadrados do clima sem linha aqui
+são mar ou litoral (nenhum em MG). O dado é estático: só muda se a NASA publicar outra versão.
+
+| Coluna | Significado |
+|---|---|
+| `lat`, `lon` | Centro do quadrado |
+| `em_mg` | 1 se o centro cai em Minas Gerais (máscara de `backend/geo`) |
+| `argila_pct`, `areia_pct`, `silte_pct` | Frações do GLDAS em % (camada de 0 a 30 cm; somam 100 ± 1) |
+| `classe_gldas` | Classe de textura do Noah (16 categorias da FAO), só para auditoria. Vem de outro arquivo do GLDAS e nem sempre concorda com as frações |
+| `textura` | `arenoso` (argila < 15%), `medio` (15 a 35%) ou `argiloso` (> 35%): os valores de `solo_textura` do motor |
+| `fonte` | Texto para a tela |
+
+É sugestão para o produtor confirmar: o quadrado tem cerca de 27 km e as frações vêm do mapa
+de solos da FAO (Reynolds et al. 2000). Em MG: 15 arenoso, 548 médio, 240 argiloso. Quadrado
+do talhão de demonstração (-20,125, -48,625): argiloso, 51,8% de argila. Teste: `tests/test_solo_regiao.py`.
