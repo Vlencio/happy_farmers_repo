@@ -145,10 +145,12 @@ async (originalPage) => {
     check(dimensions.scrollWidth <= dimensions.width + 1, 'Mobile map has no horizontal overflow');
     await page.screenshot({ path: 'output/playwright/qa-mobile-map.png' });
     await page.locator('#close-map').click();
-    await click('Restart planning');
+    await click('Analyze farm →');
+    await waitText('HAPPY FARMERS ANALYSIS');
+    await click('Analyze another field');
     await click('Keep draft');
     check((await draft()).farm !== null, 'Keeping the draft cancels reset');
-    await click('Restart planning');
+    await click('Analyze another field');
     await click('Delete draft');
     check(await draft() === null, 'Confirmed reset removes the saved draft');
     check(await button('Analyze farm →').isDisabled(), 'Reset returns to an empty, disabled analysis');

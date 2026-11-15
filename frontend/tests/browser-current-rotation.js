@@ -42,7 +42,7 @@ async (originalPage) => {
     await page.reload();
     await waitConnected();
     await click('Analyze farm →');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
   }
   try {
     await analyze(['soja', 'milho']);

@@ -26,7 +26,7 @@ async (originalPage) => {
   }, value, { timeout: 20000 });
   const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
-  const heading = () => page.getByRole('heading', { name: 'Soil texture', exact: true });
+  const heading = () => page.getByRole('heading', { name: 'Soil texture', exact: true }).or(page.getByRole('button', { name: /^Soil texture · (expand|collapse)$/ }));
   const button = name => page.getByRole('button', { name, exact: true });
   const labels = { arenoso: 'Sandy · 30 mm', medio: 'Medium · 45 mm', argiloso: 'Clay · 60 mm' };
   const soilName = texture => new RegExp(`^${labels[texture]}(?: · selected)?$`);
@@ -37,6 +37,14 @@ async (originalPage) => {
     if (request.method() !== 'POST') return;
     if (new URL(request.url()).pathname.endsWith('/chat')) chats.push(request.postDataJSON());
   });
+  // Parameter tests open the new disclosure before exercising its controls.
+  // Default collapsed states and ordering are covered in browser-document.js.
+  async function openControls() {
+    const outer = 'Adjust priorities, soil and climate · expand';
+    if (await button(outer).count()) await click(outer);
+    const setup = 'Soil texture · expand';
+    if (await button(setup).count()) await click(setup);
+  }
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox(), height = page.viewportSize().height;
@@ -81,7 +89,7 @@ async (originalPage) => {
       localStorage.setItem('happy-farmers-draft-v1', JSON.stringify({ version: 2, farm,
         history: ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2022 + i), notes: '' })), settings }));
     }, texture);
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
   }
   async function expectTexture(texture) {
     await page.waitForFunction(texture => JSON.parse(localStorage.getItem('happy-farmers-draft-v1'))?.settings.solo_textura === texture, texture);
@@ -95,7 +103,7 @@ async (originalPage) => {
     await click(action);
     const response = await pending, raw = await response.json(), request = response.request().postDataJSON();
     check(response.status() === 200 && request.solo_textura === texture, `SIMULATED transport submits texture ${texture ?? 'omitted'}`);
-    await waitText('ENGINE ANALYSIS'); await page.waitForTimeout(180);
+    await waitText('HAPPY FARMERS ANALYSIS'); await openControls(); await page.waitForTimeout(180);
     check(raw.entrada.solo_textura === texture, 'The actual-engine fixture echoes the requested texture');
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
@@ -131,7 +139,7 @@ async (originalPage) => {
     await route.fulfill({ status: 200, json: raw });
   });
   try {
-    await page.goto(originalPage.url()); await waitConnected();
+    await page.goto(originalPage.url()); await waitConnected(); await openControls();
     fixtures = await page.evaluate(async () => (await fetch('/qa-soil-fixtures')).json());
     await seed(); await expectTexture('argiloso');
     check(await heading().count() === 1 && suggestions.length > 0, 'SIMULATED capability exposes the selector and requests a point suggestion');
@@ -142,13 +150,13 @@ async (originalPage) => {
     const sandy = await analyze('arenoso', soilName('arenoso'));
     check(sandy.entrada.cad_mm === 30 && !same(sandy.sequencias, clay.sequencias), 'Selecting sandy soil reruns the analysis and the actual engine output changes');
     await expectTexture('arenoso');
-    await page.reload(); await waitConnected(); await waitText('Regional suggestion: clay');
+    await page.reload(); await waitConnected(); await openControls(); await waitText('Regional suggestion: clay');
     check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selected`).count() === 1, 'Reload preserves the manual texture despite a different regional suggestion');
     await analyze('arenoso');
     const baseline = await analyze(undefined, reset);
     check(!Object.hasOwn(requests.at(-1), 'solo_textura') && !Object.hasOwn(requests.at(-1), 'solo_padrao'), 'Reset omits both soil and local-only reset preference from the API request');
     check(same(baseline, fixtures.baseline.result), 'Reset restores the exact baseline engine output');
-    await page.reload(); await waitConnected(); await waitText('Regional suggestion: clay');
+    await page.reload(); await waitConnected(); await openControls(); await waitText('Regional suggestion: clay');
     check((await draft()).settings.solo_textura === undefined, 'Explicit default survives reload and is not replaced by automatic suggestion');
     await analyze(undefined);
 

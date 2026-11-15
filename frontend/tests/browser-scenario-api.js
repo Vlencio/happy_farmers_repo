@@ -14,7 +14,7 @@ async (originalPage) => {
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const button = name => page.getByRole('button', { name, exact: true });
   const cards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
-  const heading = () => page.getByRole('heading', { name: 'Simulate another climate', exact: true });
+  const heading = () => page.getByRole('heading', { name: 'What if the climate changes in your region?', exact: true }).or(page.getByRole('button', { name: /^What if the climate changes in your region\? · (expand|collapse)$/ }));
   const controls = ['Decrease rainfall by 5%', 'Increase rainfall by 5%', 'Decrease temperature by 0.5 °C', 'Increase temperature by 0.5 °C'];
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
   const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
@@ -25,6 +25,14 @@ async (originalPage) => {
     if (new URL(request.url()).pathname.endsWith('/analyze')) requests.push(request.postDataJSON());
     if (new URL(request.url()).pathname.endsWith('/chat')) chats.push(request.postDataJSON());
   });
+  // Parameter tests open the new disclosure before exercising its controls.
+  // Default collapsed states and ordering are covered in browser-document.js.
+  async function openControls() {
+    const outer = 'Adjust priorities, soil and climate · expand';
+    if (await button(outer).count()) await click(outer);
+    const setup = 'What if the climate changes in your region? · expand';
+    if (await button(setup).count()) await click(setup);
+  }
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox(), height = page.viewportSize().height;
@@ -68,7 +76,7 @@ async (originalPage) => {
     check(same(request.ajuste, expected), label + ': request preserves selected adjustment');
     check(expected ? same(raw.entrada.ajuste, expected) : !Object.hasOwn(raw.entrada, 'ajuste'), label + ': engine confirms the effective adjustment');
     check(raw.origem?.hoje === 'tabela_demo', label + ': demo climate needs no external POWER query');
-    await waitText('ENGINE ANALYSIS'); await page.waitForTimeout(180);
+    await waitText('HAPPY FARMERS ANALYSIS'); await openControls(); await page.waitForTimeout(180);
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
     const labels = await cards().allTextContents();
@@ -96,7 +104,7 @@ async (originalPage) => {
   }
   try {
     const metadataPending = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/metadata'));
-    await page.goto(originalPage.url()); await waitConnected();
+    await page.goto(originalPage.url()); await waitConnected(); await openControls();
     const metadata = await (await metadataPending).json();
     check(metadata.capabilities?.ajuste === true, 'Actual API advertises scenario support');
     await page.evaluate(async () => {
@@ -106,7 +114,7 @@ async (originalPage) => {
         history: ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2022 + i), notes: '' })),
         settings: { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { chuva_pct: 0, temp_c: 0 } } }));
     });
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     check(!(await button(controls[0]).isDisabled()) && !(await button(controls[3]).isDisabled()), 'Actual capability enables rain and heat controls');
     check(!(await text()).includes('Scenario adjustments are not yet available on this server.'), 'Connected server is not mislabeled as unsupported');
     const baseline = await analyze('Baseline', undefined, 'Analyze farm →');
@@ -139,7 +147,7 @@ async (originalPage) => {
     await change('temp_c', 4);
     const warm = await analyze('Heat +2', { chuva_pct: 0, temp_c: 2 });
     check(!same(warm.raw.sequencias, baseline.raw.sequencias), 'Temperature alone changes the real engine output');
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     const restored = await analyze('Restored heat +2', { chuva_pct: 0, temp_c: 2 }, 'Analyze farm →');
     check(same(restored.raw, warm.raw), 'Reload keeps the adjustment and reproduces its real result');
     const rainTrack = await reveal(page.getByRole('group', { name: /^Scenario Rainfall:/ }));

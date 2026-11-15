@@ -52,6 +52,7 @@ async originalPage => {
     await page.screenshot({ path: 'output/playwright/english-map-mobile.png' });
     check(await page.locator('#confirm-boundary').isEnabled(), 'Translated map preserves boundary confirmation');
     await page.locator('#confirm-boundary').click();
+    if (await button('Soil texture · expand').count()) await click('Soil texture · expand');
     await waitText('Regional suggestion: clay');
     check((await text()).includes('GLDAS') && !(await text()).includes('Sugestão regional'), 'Real soil source is localized');
     await capture('context-mobile', page.getByText(/^Metric units: hectares/));
@@ -78,7 +79,7 @@ async originalPage => {
     const response = await pending, raw = await response.json();
     check(response.status() === 200, 'Real English-interface analysis succeeds');
     check(response.request().postDataJSON().rotacao_atual.join('|') === 'soja|milho', 'Language does not change analysis wire IDs');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     check(!noPortuguese.test(await text()), 'Cards, current reference and API source notices are in English');
     check((await text()).includes('BRL') && !(await text()).includes('R$'), 'Currency is explicitly BRL with no dollar conversion');
     check((await text()).includes('Brazilian reais (BRL)') && (await text()).includes('Revenue is gross, before costs. It is not profit.'), 'Results explain the currency and gross nature of revenue');

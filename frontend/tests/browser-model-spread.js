@@ -33,6 +33,16 @@ async (originalPage) => {
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
     await page.waitForTimeout(150);
   }
+  async function analyze() {
+    const pending = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
+    await click('Analyze farm →');
+    const response = await pending;
+    check(response.status() === 200, 'Real demo-area analysis succeeds with the D2 API');
+    const raw = await response.json();
+    check(raw.origem?.hoje === 'tabela_demo', 'Nearby boundaries use demo tables without an external POWER request');
+    await waitText('HAPPY FARMERS ANALYSIS');
+    return raw;
+  }
   async function observations() {
     if (await button('Show field observations').count()) await click('Show field observations');
     await waitText(expected);
@@ -66,6 +76,8 @@ async (originalPage) => {
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
     await page.locator('#confirm-boundary').click();
     await waitText('Demonstration field');
+    check(await page.getByRole('button', { name: /^(Show|Hide) field observations$/ }).count() === 0, 'Setup no longer contains field observations');
+    const analysis = await analyze();
     await observations();
     check((await text()).includes('The models disagree on the direction of rainfall change.'), 'Rain sign disagreement is visible');
     check((await text()).includes('Range across models, not a confidence interval. Future minus historical.'), 'Model range is distinguished from confidence interval');
@@ -76,13 +88,6 @@ async (originalPage) => {
     await capture('mobile');
     await page.setViewportSize({ width: 1440, height: 1100 });
     await page.waitForTimeout(250);
-    const pendingAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analyze farm →');
-    const analysisResponse = await pendingAnalysis;
-    check(analysisResponse.status() === 200, 'Real demo analysis succeeds with the D2 API');
-    const analysis = await analysisResponse.json();
-    check(analysis.origem?.hoje === 'tabela_demo', 'Demo analysis uses delivered tables without a POWER point query');
-    await waitText('ENGINE ANALYSIS');
     const cards = page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
     check(await cards.count() === Math.min(3, analysis.sequencias.length), 'Existing strategy cards still render the actual ranked analysis');
     await click('← Edit farm and history');
@@ -91,16 +96,19 @@ async (originalPage) => {
     const ring = geometry.coordinates[0].slice(0, -1).reverse();
     geometry.coordinates[0] = [...ring, ring[0]];
     await importBoundary(imported, 'Same imported boundary');
+    await analyze();
     await observations();
     check((await text()).includes(expected), 'Imported equivalent boundary retains the model range');
     const other = structuredClone(imported);
     const otherGeometry = other.type === 'FeatureCollection' ? other.features[0].geometry : other.type === 'Feature' ? other.geometry : other;
     otherGeometry.coordinates[0][1][0] += 0.00001;
+    await click('← Edit farm and history');
     await importBoundary(other, 'Changed boundary');
+    await analyze();
     await waitText('These data are not yet available for this field.');
     check(!(await text()).includes(expected), 'Changing one vertex hides the demo model range');
     check(await button('Show field observations').count() === 0 && await button('Hide field observations').count() === 0, 'Another boundary cannot open the demo observations');
-    check(analyses.length === 1, 'Only the demo is analyzed; no outside-point POWER query is triggered');
+    check(analyses.length === 3, 'Three nearby boundaries are analyzed using demo climate; no external POWER query is triggered');
     check(chats.length === 0, 'No chat or LLM provider call is requested');
     check(errors.length === 0, 'No uncaught JavaScript errors');
     return { passed: checks.length, checks, metadataUrl: response.url(), models: metadata.model_spread.models };

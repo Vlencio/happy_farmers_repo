@@ -59,6 +59,14 @@ valor pela área em hectares. **Gross revenue / ha / year** apresenta
 renda. Todos são receita bruta antes dos custos. A UI não converte moeda,
 anualiza valores ausentes nem muda o ranking.
 
+O resumo apresentado informa apenas quantidade de rotações viáveis, mês de
+disponibilidade e número de culturas planejadas. `data_sources` reúne a nota
+de dados e a origem normal (tabelas da demonstração ou POWER/NEX regional).
+`source_warning` conserva em destaque os casos de fallback, ponto fora de
+Minas Gerais, extremos de chuva no norte da grade e avisos desconhecidos do
+provedor. O texto de origem não é descartado ao simplificar o resultado.
+Esses campos pertencem ao modelo de apresentação JS/Rune, sem mudança na API HTTP.
+
 O chat mantém o protocolo, o foco e o histórico originais. A interface e a
 recusa fixa conhecida são apresentadas em inglês; respostas livres da IA
 dependem da instrução do servidor, ainda em português nesta base. Pendência

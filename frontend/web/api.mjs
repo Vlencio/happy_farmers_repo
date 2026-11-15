@@ -9,6 +9,7 @@ export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
 export const CATEGORIES = ['rank1', 'rank2', 'rank3'];
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { ...DEFAULT_ADJUSTMENT } };
 // POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
 export const ANALYSIS_TIMEOUT_MS = 360_000;
@@ -428,6 +429,42 @@ function currentRotation(value, farm, priorityNote, tied) {
   return state('unavailable', 'The current rotation could not be identified in this result. Available alternatives are shown below.');
 }
 
+// Only the current provider's routine provenance moves out of the warning band.
+// New/unrecognized notices stay prominent until their meaning is known.
+const ROUTINE_SOURCE_NOTICES = [
+  'This point is within 25 km of the demonstration field. We use that field’s climate with the A520 station correction, without a new POWER request.',
+  'POWER data for this point and regional NEX-GDDP projections, without the A520 station correction.',
+  'Planting months still follow the Triângulo Mineiro calendar; check local suitability.',
+];
+function climateSources(origin, dataNotice, demo) {
+  const notice = englishSourceNotice(origin?.aviso || '');
+  const remainder = ROUTINE_SOURCE_NOTICES.reduce((text, routine) => text.replaceAll(routine, ''), notice).trim();
+  const knownSource = ['tabela_demo', 'power_api', 'power_arquivo'].includes(origin?.hoje);
+  const fallback = origin?.hoje === 'fallback_tabela_demo';
+  const outside = origin?.dentro_mg === false;
+  const exceptional = fallback || outside || Boolean(notice && (!knownSource || remainder));
+  let baseline = englishSourceNotice(dataNotice);
+  if (knownSource || fallback) {
+    baseline = /\bPOWER\b/.test(baseline)
+      ? baseline.replace(/(?<!NASA )\bPOWER\b/g, 'NASA POWER')
+      : ['Historical climate source: NASA POWER.', baseline].filter(Boolean).join(' ');
+  }
+  if (['nex_talhao_demo', 'nex_regional'].includes(origin?.delta)) {
+    baseline = baseline.includes('future: around 2060, using regional changes.')
+      ? baseline.replace('future: around 2060, using regional changes.', 'future: NASA NEX-GDDP-CMIP6 projections around 2060, using regional changes.')
+      : [baseline, 'Future projection source: NASA NEX-GDDP-CMIP6.'].filter(Boolean).join(' ');
+  }
+  const missingWarning = [
+    fallback ? 'POWER climate data is unavailable for this point. The analysis uses demonstration-field climate tables.' : '',
+    outside ? 'The field point is outside Minas Gerais. The planting calendar is regional; this result is exploratory.' : '',
+  ].filter(Boolean).join(' ');
+  return {
+    data_sources: [baseline, exceptional ? '' : notice,
+      demo ? 'Fixed example: does not use your history or settings.' : ''].filter(Boolean).join(' '),
+    source_warning: exceptional ? notice || missingWarning : '',
+  };
+}
+
 export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
   const value = validateMotorOutput(raw);
   const adjustment_note = adjustmentNote(validateOutputAdjustment(value.entrada));
@@ -445,8 +482,8 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
     metric_label: 'weighted score · today’s climate',
     reason: `Rank #${seq.rank_hoje} among viable sequences in today’s climate. ${priority_note} Future ranking uses the same weights and may change.`,
   }, priority_note, current_rotation.strategy?.sequence_id === seq.id, tied, value.modelos));
-  return { demo, summary: `${value.sequencias.length} viable sequences and ${value.descartadas.length} excluded by the engine. Field available in ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} crop(s). ${demo ? 'Fixed example: does not use your history or settings. ' : ''}${englishSourceNotice(dataNotice)}`,
-    source_warning: englishSourceNotice(value.origem?.aviso || ''), ranking_note, soil_note: soilNote(value),
+  return { demo, summary: `${value.sequencias.length} viable ${value.sequencias.length === 1 ? 'rotation' : 'rotations'} · field available from ${MONTH_NAMES[value.entrada.mes_plantio - 1]} · planning ${value.entrada.horizonte} ${value.entrada.horizonte === 1 ? 'crop' : 'crops'}`,
+    ...climateSources(value.origem, dataNotice, demo), ranking_note, soil_note: soilNote(value),
     scenario_note: value.clima.seco
       ? adjustment_note
         ? 'Dry year: a what-if scenario applied to the 2020/21 baseline. The displayed values have been adjusted by the engine; they are not the original observations. Details compare it with the same adjustment as the other scenarios.'

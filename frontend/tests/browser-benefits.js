@@ -55,7 +55,7 @@ async (originalPage) => {
     const response = await pending;
     check(response.status() === 200, 'Real analyze request succeeds for ' + crops.join(' → '));
     const raw = await response.json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       const farm = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm;

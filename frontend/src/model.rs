@@ -102,6 +102,8 @@ pub enum SelectedStrategy {
 pub struct Analysis {
     pub demo: bool,
     pub summary: String,
+    #[serde(default)]
+    pub data_sources: String,
     pub source_warning: String,
     pub scenario_note: String,
     pub priority_note: String,

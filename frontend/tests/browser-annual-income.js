@@ -66,6 +66,7 @@ async (originalPage) => {
     await waitText('Demonstration field');
     // Let the asynchronous suggestion save its state before seeding the draft.
     // A direct localStorage edit does not update the running host's history.
+    if (await button('Soil texture · expand').count()) await click('Soil texture · expand');
     await waitText('Regional suggestion: clay');
     // Restore the same history as the real February fixture without modifying
     // the user's draft; this entire flow has its own isolated browser context.
@@ -79,8 +80,6 @@ async (originalPage) => {
     check(await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).settings.mes_plantio) === 2, 'The visible month control saves February');
     check((await text()).includes('gross revenue per hectare and per year of field occupancy. Costs are not deducted.'), 'Income priority explains annual field occupancy');
     check((await text()).includes('around 2060') && !/2041[–-]2060|2050/.test(await text()), 'Setup shows the corrected future label without the old date');
-    if (await button('Show field observations').count()) await click('Show field observations');
-    check((await text()).includes('+1.34 to +2.31 °C; annual rainfall from -79.6 to +32.7 mm.'), 'D2 range is visible from the integrated real metadata');
     await click('Understand the terms · expand');
     const glossaryText = await text();
     check(['30 mm for sandy soil', '45 mm for medium texture', '60 mm for clay soil', 'With no texture specified, the reference is 60 mm', 'not measurements of this field']
@@ -93,7 +92,9 @@ async (originalPage) => {
     check(analysisResponse.status() === 200, 'Real February analysis succeeds');
     const raw = await analysisResponse.json();
     check(raw.entrada.rotacao_atual.join('|') === 'soja|milho', 'Analysis retains the seeded crop history after the soil suggestion completes');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
+    if (await button('Show field observations').count()) await click('Show field observations');
+    check((await text()).includes('+1.34 to +2.31 °C; annual rainfall from -79.6 to +32.7 mm.'), 'D2 range is visible in results from the integrated real metadata');
     check(raw.origem?.hoje === 'tabela_demo', 'Analysis uses demo tables without an external POWER query');
     check(raw.sequencias[0].id === 'crotalaria>soja', 'New February winner is crotalaria-soybean: ' + JSON.stringify({ entry: raw.entrada, first: raw.sequencias[0].id }));
     const cards = page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });

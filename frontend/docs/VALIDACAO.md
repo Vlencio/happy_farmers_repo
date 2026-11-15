@@ -1,5 +1,49 @@
 # Verificação da integração · 14/11/2026
 
+## Ajustes do documento de revisão do front · 15/11/2026
+
+Implementados na `front-dev3` os ajustes E1–E10 e R1–R9 de
+`happy_farmers_ajustes_front.docx`, mantendo o selo E11. Interface em inglês,
+sem alteração de backend, motor, dados ou fixtures canônicas.
+
+- Entrada com cinco passos no guia, títulos novos, informações/glossário no
+  topo e passo 04 com seções recolhíveis. Prioridades começam abertas; solo e
+  clima, fechados. `Analyze farm` ocupa uma linha própria com maior destaque.
+- Resultado com informações, análise, aviso de cenário e cards antes dos
+  parâmetros. Parâmetros começam recolhidos; chat e observações vêm depois.
+  Descartes ficam disponíveis quando não há recomendações. O botão
+  `Analyze another field` mantém a confirmação e aparece também no rodapé desktop.
+- `Reset parameters` restaura pesos 1/1/1, referência de solo e clima sem ajuste,
+  limpa a conversa e dispara uma única análise. Preserva área, histórico, mês e
+  horizonte; a referência explícita evita reaplicar a sugestão automática de solo.
+- Fontes normais ficam em `DATA SOURCES`; fallback, fora de Minas Gerais,
+  extremos de chuva e avisos desconhecidos continuam destacados. O texto explica
+  a análise sem prometer cálculo diário: a API atual fornece tabelas mensais.
+- Corrigida uma perda de foco descoberta nos controles de clima: resultados
+  pendentes e prontos reutilizam o contêiner dos parâmetros e suas chaves.
+  Home/End continuam funcionando após a primeira alteração do cenário.
+- **155 testes JavaScript**, **1 Rust**, formatação, diff check e build
+  Rune/WASM + Vite passaram. Permanecem os avisos conhecidos da biblioteca Rune.
+- Integração HTTP real passou: 24 combinações de mês/horizonte, sete casos de
+  rotação atual, cinco prioridades e seis ajustes, além de baseline, zero/reset
+  e rejeição de entrada fora dos limites.
+- **377 verificações de navegador**: documento 41, prioridades 98, solo/API 46,
+  cenários/API 85, inglês/contexto 41, renda anual 43 e faixa entre modelos 25.
+  O fluxo do documento cobre ordem, seções, reset, confirmação, resultado vazio
+  e layouts desktop/mobile. Os 18 scripts de navegador passaram na checagem
+  de sintaxe; os demais roteiros não foram executados nesta rodada.
+- Limites: prioridades inclui oito verificações de chat simulado; o fluxo do
+  documento simula uma troca de chat e três origens excepcionais, mantendo o
+  cálculo real. Inglês inclui uma falha de metadata simulada. Sem chamada ao
+  provedor de IA ou consulta externa ao POWER.
+- Revisão visual em 1440 px e celular simulado de 390 px: subtítulo do resultado
+  em uma linha no desktop, painéis e botões sem cortes horizontais. Capturas e
+  logs em `output/playwright/doc-*.log`, `document-*.png` e `doc-visual-*.png`;
+  unitários, HTTP e build em `frontend/.cache/doc-*.log`.
+
+Sem teste de aparelho físico, leitor de tela, Docker, CI remoto ou produção
+nesta rodada. Nenhuma nova dependência de API/motor para estes ajustes.
+
 ## Contexto brasileiro, moeda e período da receita · 15/11/2026
 
 - Contexto visível de Minas Gerais/Brasil, calendário do Triângulo Mineiro,

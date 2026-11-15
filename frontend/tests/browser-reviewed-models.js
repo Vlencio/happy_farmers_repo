@@ -88,7 +88,7 @@ async (originalPage) => {
     check(response.status() === 200, key + ': simulated transport accepts the actual UI inputs');
     const raw = await response.json();
     check(same(raw, expected.result), key + ': transport preserves the complete real-engine response');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       return mapMotorAnalysis(raw, JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm);
