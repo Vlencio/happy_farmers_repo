@@ -6,7 +6,7 @@ async (originalPage) => {
   const context = await originalPage.context().browser().newContext({ viewport: { width: 1440, height: 1100 } });
   const page = await context.newPage();
   const checks = [], errors = [], analyses = [], chats = [];
-  const expected = '3 modelos: mudança na temperatura máxima média de +1,34 a +2,31 °C; chuva anual de -79,6 a +32,7 mm.';
+  const expected = '3 models: change in mean maximum temperature from +1.34 to +2.31 °C; annual rainfall from -79.6 to +32.7 mm.';
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const button = name => page.getByRole('button', { name, exact: true });
@@ -34,7 +34,7 @@ async (originalPage) => {
     await page.waitForTimeout(150);
   }
   async function observations() {
-    if (await button('Mostrar observações do talhão').count()) await click('Mostrar observações do talhão');
+    if (await button('Show field observations').count()) await click('Show field observations');
     await waitText(expected);
   }
   async function capture(name) {
@@ -54,7 +54,7 @@ async (originalPage) => {
   try {
     const metadataResponse = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/metadata'));
     await page.goto(originalPage.url());
-    await waitText('Motor conectado');
+    await waitText('Engine connected');
     const response = await metadataResponse;
     check(response.status() === 200, 'Real metadata transport succeeds');
     const metadata = await response.json();
@@ -62,14 +62,14 @@ async (originalPage) => {
     check(metadata.model_spread.models.map(model => model.model).sort().join(',') === 'ACCESS-CM2,MIROC6,MRI-ESM2-0', 'Real metadata contains all three delivered models');
     const derived = await page.evaluate(async spread => (await import('/web/field.mjs')).modelSpreadText(spread), metadata.model_spread);
     check(derived.startsWith(expected), 'Display values are derived from actual API aggregates');
-    await click('Usar área de exemplo');
+    await click('Use sample field');
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
     await page.locator('#confirm-boundary').click();
-    await waitText('Talhão de demonstração');
+    await waitText('Demonstration field');
     await observations();
-    check((await text()).includes('Na chuva, os modelos discordam do sinal da mudança.'), 'Rain sign disagreement is visible');
-    check((await text()).includes('Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.'), 'Model range is distinguished from confidence interval');
-    check(!(await text()).includes('A faixa entre modelos ainda não foi disponibilizada'), 'D2 replaces the missing-data notice');
+    check((await text()).includes('The models disagree on the direction of rainfall change.'), 'Rain sign disagreement is visible');
+    check((await text()).includes('Range across models, not a confidence interval. Future minus historical.'), 'Model range is distinguished from confidence interval');
+    check(!(await text()).includes('The data team has not provided a range across climate models yet'), 'D2 replaces the missing-data notice');
     await capture('desktop');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(350);
@@ -77,29 +77,29 @@ async (originalPage) => {
     await page.setViewportSize({ width: 1440, height: 1100 });
     await page.waitForTimeout(250);
     const pendingAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     const analysisResponse = await pendingAnalysis;
     check(analysisResponse.status() === 200, 'Real demo analysis succeeds with the D2 API');
     const analysis = await analysisResponse.json();
     check(analysis.origem?.hoje === 'tabela_demo', 'Demo analysis uses delivered tables without a POWER point query');
-    await waitText('ANÁLISE DO MOTOR');
-    const cards = page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
+    await waitText('ENGINE ANALYSIS');
+    const cards = page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
     check(await cards.count() === Math.min(3, analysis.sequencias.length), 'Existing strategy cards still render the actual ranked analysis');
-    await click('← Editar fazenda e histórico');
+    await click('← Edit farm and history');
     const imported = structuredClone(metadata.demo_field.boundary);
     const geometry = imported.type === 'FeatureCollection' ? imported.features[0].geometry : imported.type === 'Feature' ? imported.geometry : imported;
     const ring = geometry.coordinates[0].slice(0, -1).reverse();
     geometry.coordinates[0] = [...ring, ring[0]];
-    await importBoundary(imported, 'Mesmo contorno importado');
+    await importBoundary(imported, 'Same imported boundary');
     await observations();
     check((await text()).includes(expected), 'Imported equivalent boundary retains the model range');
     const other = structuredClone(imported);
     const otherGeometry = other.type === 'FeatureCollection' ? other.features[0].geometry : other.type === 'Feature' ? other.geometry : other;
     otherGeometry.coordinates[0][1][0] += 0.00001;
-    await importBoundary(other, 'Contorno alterado');
-    await waitText('Ainda não há esses dados para esta área.');
+    await importBoundary(other, 'Changed boundary');
+    await waitText('These data are not yet available for this field.');
     check(!(await text()).includes(expected), 'Changing one vertex hides the demo model range');
-    check(await button('Mostrar observações do talhão').count() === 0 && await button('Ocultar observações do talhão').count() === 0, 'Another boundary cannot open the demo observations');
+    check(await button('Show field observations').count() === 0 && await button('Hide field observations').count() === 0, 'Another boundary cannot open the demo observations');
     check(analyses.length === 1, 'Only the demo is analyzed; no outside-point POWER query is triggered');
     check(chats.length === 0, 'No chat or LLM provider call is requested');
     check(errors.length === 0, 'No uncaught JavaScript errors');

@@ -14,12 +14,12 @@ export function validSeason(value) {
 export function restoreDraft(text) {
   if (!text) return null;
   const draft = JSON.parse(text);
-  if (!draft || ![1, 2].includes(draft.version)) throw new Error('Versão de rascunho não reconhecida.');
+  if (!draft || ![1, 2].includes(draft.version)) throw new Error('Unrecognized draft version.');
   let farm = null, settings = validateSettings(DEFAULT_SETTINGS), repaired = false;
   if (draft.farm) {
     try {
       farm = normalizeFarm(draft.farm.geojson, {
-        name: typeof draft.farm.name === 'string' ? draft.farm.name : 'Minha fazenda',
+        name: typeof draft.farm.name === 'string' ? draft.farm.name : 'My farm',
         source: ['draw', 'sample', 'import'].includes(draft.farm.source) ? draft.farm.source : 'import',
       });
     } catch { repaired = true; }

@@ -8,9 +8,9 @@ async (originalPage) => {
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
-  const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
-  const benefitsHeading = () => page.getByRole('heading', { name: 'Benefícios considerados pelo motor', exact: true });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const benefitsHeading = () => page.getByRole('heading', { name: 'Benefits considered by the engine', exact: true });
   async function reveal(locator) {
     for (let i = 0; i < 45; i++) {
       const box = await locator.boundingBox();
@@ -51,11 +51,11 @@ async (originalPage) => {
     await page.reload();
     await waitConnected();
     const pending = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     const response = await pending;
     check(response.status() === 200, 'Real analyze request succeeds for ' + crops.join(' → '));
     const raw = await response.json();
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       const farm = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm;
@@ -69,7 +69,7 @@ async (originalPage) => {
     check(rec.benefits.items.length === source.beneficios.length, 'No returned benefit is lost for ' + rec.category);
     check(rec.benefits.items.every(item => [item.title, item.context, item.description, item.evidence].every(value => screen.includes(value))),
       'Every benefit retains its context, explanation and evidence for ' + rec.category);
-    check(screen.includes(rec.benefits.note) && screen.includes('Riscos e lacunas desta estratégia'),
+    check(screen.includes(rec.benefits.note) && screen.includes('Risks and data gaps for this strategy'),
       'Benefits retain limitations and existing warnings for ' + rec.category);
   }
   try {
@@ -87,53 +87,53 @@ async (originalPage) => {
     await page.screenshot({ path: 'output/playwright/benefits-cards-desktop.png' });
     for (const [i, rec] of recs.entries()) {
       await click(names[i]);
-      await waitText('Benefícios considerados pelo motor');
+      await waitText('Benefits considered by the engine');
       await verifyDetail(rec, first.raw.sequencias.find(seq => seq.id === rec.sequence_id));
       if (i === 0) {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
         check(new Set(source.beneficios.map(item => item.codigo)).size === 4, 'The real current rotation has four benefits without a nitrogen bonus after commercial soybean');
-        check((await text()).includes('queda de 1,5%') && (await text()).includes('13.003') && (await text()).includes('12.808'),
+        check((await text()).includes('decline of 1.5%') && (await text()).includes('13,003') && (await text()).includes('12,808'),
           'The real future-revenue decline and both revenues reach the detail');
-        check(!(await text()).includes('Fatores favoráveis hoje e no futuro'),
+        check(!(await text()).includes('Favorable factors today and in the future'),
           'The UI does not invent the favorable-climate benefit removed by the engine');
         await align(benefitsHeading());
         await page.screenshot({ path: 'output/playwright/benefits-current-desktop.png' });
-        await align(page.getByRole('heading', { name: 'Estabilidade de receita no futuro', exact: true }));
+        await align(page.getByRole('heading', { name: 'Stable future revenue', exact: true }));
         await page.screenshot({ path: 'output/playwright/benefits-evidence-desktop.png' });
       }
       if (rec.sequence_id === 'soja>sorgo') {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
         check(rec.sequence_id === 'soja>sorgo' && source.beneficios.some(item => item.codigo === 'clima_favoravel')
-          && (await text()).includes('não inclui o ano seco') && source.avisos.some(item => item.cenario === 'seco'),
+          && (await text()).includes('excludes the dry year') && source.avisos.some(item => item.cenario === 'seco'),
           'Favorable climate benefit for soybean-sorghum excludes its dry-year risks');
       }
       if (rec.sequence_id === 'soja>crotalaria') {
-        check((await text()).includes('Crotalária') && !(await text()).includes('crotalaria'), 'Cover-crop benefit labels preserve Portuguese accents');
+        check((await text()).includes('Sunn hemp') && !(await text()).includes('crotalaria'), 'Cover-crop benefit labels use English crop names');
       }
-      await click('← Comparar estratégias');
+      await click('← Compare strategies');
     }
     const bean = await analyze(['soja', 'feijao']);
     const current = bean.view.current_rotation.strategy;
     check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 4,
       'Changing the real current rotation changes four benefits to two');
     await click(await cards().first().textContent());
-    await waitText('Benefícios considerados pelo motor');
+    await waitText('Benefits considered by the engine');
     await verifyDetail(current, bean.raw.sequencias.find(seq => seq.id === current.sequence_id));
-    check((await text()).includes('Feijão: fixadora de nitrogênio') || current.benefits.items.some(item => item.context === 'Feijão'),
-      'Bean fixation retains its own accented culture context');
+    check((await text()).includes('Common bean: nitrogen fixer') || current.benefits.items.some(item => item.context === 'Common bean'),
+      'Bean fixation retains its own English crop context');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(350);
     await align(benefitsHeading());
     const headingBox = await benefitsHeading().boundingBox();
-    const itemBoxes = await page.getByRole('heading', { name: 'Fixação de nitrogênio', exact: true }).all();
+    const itemBoxes = await page.getByRole('heading', { name: 'Nitrogen fixation', exact: true }).all();
     check(headingBox.x >= 0 && headingBox.x + headingBox.width <= 391, 'Mobile benefit heading fits the viewport');
     const boxes = await Promise.all(itemBoxes.map(item => item.boundingBox()));
     check(boxes.length === 2 && boxes.every(box => box.x >= 0 && box.x + box.width <= 391),
       'Mobile renders both individual benefit headings without horizontal overflow');
     await page.screenshot({ path: 'output/playwright/benefits-bean-mobile.png' });
-    await align(page.getByRole('heading', { name: 'Riscos e lacunas desta estratégia', exact: true }), 400);
+    await align(page.getByRole('heading', { name: 'Risks and data gaps for this strategy', exact: true }), 400);
     await page.screenshot({ path: 'output/playwright/benefits-warnings-mobile.png' });
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
     const mobileCards = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));
     check(mobileCards.every((box, i) => box.x >= 0 && box.x + box.width <= 391 && (i === 0 || box.y > mobileCards[i - 1].y)),
       'Mobile stacks all four benefit cards without horizontal overflow');

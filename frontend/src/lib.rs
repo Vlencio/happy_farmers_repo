@@ -52,7 +52,7 @@ impl Default for State {
         Self {
             farm: None,
             farm_preview: rune::Pixels::new(),
-            preview_note: "Carregando imagem de satélite…".into(),
+            preview_note: "Loading satellite imagery…".into(),
             field_context: None,
             field_open: true,
             glossary_open: false,
@@ -104,7 +104,7 @@ impl State {
         }
         let question = self.chat_question.text.trim().to_owned();
         if question.is_empty() || question.chars().count() > 1000 {
-            self.chat.error = "Escreva uma pergunta de até 1.000 caracteres.".into();
+            self.chat.error = "Enter a question of up to 1,000 characters.".into();
             return;
         }
         host(json!({"type":"chat_send", "pergunta":question}));
@@ -134,19 +134,19 @@ impl State {
             .unwrap_or_default();
         let season = self.season.text.trim().to_owned();
         if crop.is_empty() || crop.chars().count() > 80 {
-            self.error = "Escolha a cultura para adicionar ao histórico.".into();
+            self.error = "Choose a crop to add to the history.".into();
             return;
         }
         if !season::valid_season(&season) {
-            self.error = "Informe a safra como 2025 ou 2025/26.".into();
+            self.error = "Enter a season as 2025 or 2025/26.".into();
             return;
         }
         if self.notes.text.chars().count() > 500 {
-            self.error = "Resuma a observação em até 500 caracteres.".into();
+            self.error = "Keep your note to 500 characters or fewer.".into();
             return;
         }
         if self.history.len() >= 12 {
-            self.error = "O histórico aceita até 12 registros neste protótipo.".into();
+            self.error = "This prototype supports up to 12 history entries.".into();
             return;
         }
         if self
@@ -154,7 +154,7 @@ impl State {
             .iter()
             .any(|item| item.crop == crop && item.season == season)
         {
-            self.error = "Essa cultura e safra já estão no histórico.".into();
+            self.error = "This crop and season are already in the history.".into();
             return;
         }
         self.history.push(HistoryItem {
@@ -171,11 +171,11 @@ impl State {
             return;
         }
         if self.adjustment_blocked() {
-            self.error = "O cenário salvo tem ajustes indisponíveis neste servidor. Volte ao clima sem ajuste para analisar.".into();
+            self.error = "Your saved scenario has adjustments this server does not support. Reset the climate to run an analysis.".into();
             return;
         }
         if self.soil_blocked() {
-            self.error = "A textura salva está indisponível nesta análise. Use a referência padrão para continuar.".into();
+            self.error = "The saved soil texture is unavailable for this analysis. Use the default reference to continue.".into();
             return;
         }
         self.crop_open = false;
@@ -282,7 +282,22 @@ impl State {
             .iter()
             .find(|c| c.id == id)
             .map(|c| c.label.clone())
-            .unwrap_or_else(|| id.into())
+            .unwrap_or_else(|| {
+                match id {
+                    "soja" => "Soybean",
+                    "milho" => "Corn",
+                    "sorgo" => "Sorghum",
+                    "feijao" => "Common bean",
+                    "girassol" => "Sunflower",
+                    "algodao" => "Cotton",
+                    "trigo" => "Wheat",
+                    "milheto" => "Pearl millet",
+                    "braquiaria" => "Brachiaria",
+                    "crotalaria" => "Sunn hemp",
+                    _ => id,
+                }
+                .into()
+            })
     }
 }
 
@@ -379,7 +394,7 @@ fn apply_command(s: &mut State, command: Command) {
             s.invalidate();
             s.farm = Some(farm);
             s.farm_preview = rune::Pixels::new();
-            s.preview_note = "Carregando imagem de satélite…".into();
+            s.preview_note = "Loading satellite imagery…".into();
             s.field_context = None;
         }
         Command::FieldContext { context } => s.field_context = context,
@@ -391,7 +406,7 @@ fn apply_command(s: &mut State, command: Command) {
             s.farm = farm;
             s.history = history;
             s.settings = settings;
-            s.notice = "Seu rascunho foi restaurado neste navegador.".into();
+            s.notice = "Your draft was restored from this browser.".into();
         }
         Command::Analysis { analysis } => {
             s.loading = false;
@@ -407,7 +422,7 @@ fn apply_command(s: &mut State, command: Command) {
         Command::PreviewNote { message } => s.preview_note = message,
         Command::Cancelled => {
             s.loading = false;
-            s.notice = "Análise cancelada.".into();
+            s.notice = "Analysis canceled.".into();
         }
         Command::Cleared => {
             let ready = s.ready;
@@ -464,7 +479,7 @@ pub fn receive_farm_preview(
         || height > 512
         || rgba.len() != width as usize * height as usize * 4
     {
-        return Err("Dimensões inválidas da prévia do mapa.".into());
+        return Err("Invalid map preview dimensions.".into());
     }
     HANDLE.with(|slot| {
         if let Some(handle) = slot.borrow().as_ref() {

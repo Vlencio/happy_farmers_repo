@@ -8,7 +8,7 @@ export function parseCoordinates(value) {
   const match = separated || dotted;
   const coordinates = match?.slice(1).map(part => Number(part.replace(',', '.')));
   if (!coordinates || !coordinates.every(Number.isFinite) || Math.abs(coordinates[0]) > 85 || Math.abs(coordinates[1]) > 180) {
-    throw new Error('Informe latitude e longitude. Exemplos: -20,032; -48,526 ou -20.032, -48.526. Latitude entre −85 e 85; longitude entre −180 e 180.');
+    throw new Error('Enter latitude and longitude, for example: -20.032, -48.526. Latitude must be between −85 and 85; longitude between −180 and 180. Decimal commas are accepted when separated by a semicolon.');
   }
   return coordinates;
 }

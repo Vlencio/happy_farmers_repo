@@ -1,8 +1,9 @@
 import { normalizeFarm } from './geometry.mjs';
 import { MONTHS } from './api.mjs';
+import { englishSourceNotice } from './external-text.mjs';
 
-const fmt = (value, digits = 1) => value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
-const fail = () => { throw new Error('Os dados de contexto do talhão estão incompletos ou inválidos.'); };
+const fmt = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
+const fail = () => { throw new Error('Field context data is incomplete or invalid.'); };
 const finite = (value, min = -Infinity, max = Infinity) => {
   if (!Number.isFinite(value) || value < min || value > max) fail();
 };
@@ -39,7 +40,7 @@ export function getAnalysisSlope(farm, metadata) {
 }
 
 export function modelSpreadText(spread) {
-  if (spread == null) return 'A faixa entre modelos ainda não foi disponibilizada pela equipe de dados.';
+  if (spread == null) return 'The data team has not provided a range across climate models yet.';
   if (spread.scope !== 'talhao_demo_2' || !Array.isArray(spread.models) || !spread.models.length) fail();
   for (const model of spread.models) {
     if (typeof model.model !== 'string' || !model.model.trim()) fail();
@@ -48,7 +49,7 @@ export function modelSpreadText(spread) {
   const rain = spread.models.map((m) => m.rain_delta_mm);
   const temp = spread.models.map((m) => m.tmax_delta_c);
   const signed = (v, digits = 1) => `${v > 0 ? '+' : ''}${fmt(v, digits)}`;
-  return `${spread.models.length} modelos: mudança na temperatura máxima média de ${signed(Math.min(...temp), 2)} a ${signed(Math.max(...temp), 2)} °C; chuva anual de ${signed(Math.min(...rain))} a ${signed(Math.max(...rain))} mm. ${Math.min(...rain) < 0 && Math.max(...rain) > 0 ? 'Na chuva, os modelos discordam do sinal da mudança. ' : ''}Faixa entre modelos, não intervalo de confiança. Futuro menos histórico.`;
+  return `${spread.models.length} models: change in mean maximum temperature from ${signed(Math.min(...temp), 2)} to ${signed(Math.max(...temp), 2)} °C; annual rainfall from ${signed(Math.min(...rain))} to ${signed(Math.max(...rain))} mm. ${Math.min(...rain) < 0 && Math.max(...rain) > 0 ? 'The models disagree on the direction of rainfall change. ' : ''}Range across models, not a confidence interval. Future minus historical.`;
 }
 
 export function buildFieldContext(farm, metadata) {
@@ -70,11 +71,11 @@ export function buildFieldContext(farm, metadata) {
   const corrections = station.corrections.map((row) => row.off_tmin);
   const august = months[7].frequency, september = months[8].frequency, october = months[9].frequency;
   return {
-    summary: 'Observações do talhão de demonstração. Estes dados pertencem a este contorno, independentemente da sequência escolhida.',
-    coverage: `Indício de solo descoberto ou palhada: agosto ${august}, setembro ${september} e outubro ${october} dos anos observados. Critério: NDVI abaixo de 0,35; não é uma medição direta da cobertura do solo.`,
-    terrain: `Declividade média de ${fmt(terrain.decl_media_pct, 2)}%; 90% da área abaixo de ${fmt(terrain.decl_p90_pct, 2)}%; máxima de ${fmt(terrain.decl_max_pct, 2)}%. Relevo suave na média, sem atribuir risco de erosão a uma cultura.`,
-    station: `${station.name}, a cerca de ${fmt(station.distance_km)} km. Correção mensal da mínima: ${fmt(Math.min(...corrections))} a ${fmt(Math.max(...corrections))} °C em relação ao POWER. Temperaturas e dias quentes usam a correção; ET0 e chuva não. Chuva: viés aproximado de −5% e correlação de 0,90 com a estação.`,
-    source: field.sources,
+    summary: 'Observations for the demo field. These data belong to this boundary, regardless of the selected sequence.',
+    coverage: `Possible bare soil or crop residue: August ${august}, September ${september} and October ${october} of observed years. Criterion: NDVI below 0.35; this is not a direct measurement of soil cover.`,
+    terrain: `Mean slope ${fmt(terrain.decl_media_pct, 2)}%; 90% of the field below ${fmt(terrain.decl_p90_pct, 2)}%; maximum ${fmt(terrain.decl_max_pct, 2)}%. Generally gentle terrain, without attributing erosion risk to a crop.`,
+    station: `${station.name}, about ${fmt(station.distance_km)} km away. Monthly minimum-temperature correction: ${fmt(Math.min(...corrections))} to ${fmt(Math.max(...corrections))} °C relative to POWER. Temperatures and hot-day counts use this correction; ET0 and rainfall do not. Rainfall: approximately −5% bias and 0.90 correlation with the station.`,
+    source: englishSourceNotice(field.sources),
     model_spread: modelSpreadText(metadata.model_spread), months,
   };
 }

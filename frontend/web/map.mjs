@@ -9,7 +9,7 @@ export function downloadGeoJSON(farm) {
   data.properties.name = farm.name;
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/geo+json' }));
   const link = document.createElement('a');
-  link.href = url; link.download = 'happy-farmers-limite.geojson'; link.click();
+  link.href = url; link.download = 'happy-farmers-boundary.geojson'; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -26,19 +26,19 @@ export function createFarmMap(onConfirm) {
     if (boundary) {
       try {
         const input = boundary.toGeoJSON(false);
-        input.features[0].properties.name = $('farm-name').value.trim() || 'Minha fazenda';
+        input.features[0].properties.name = $('farm-name').value.trim() || 'My farm';
         candidate = normalizeFarm(input, { source });
-        $('map-area').textContent = `${candidate.area_ha.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ha`;
+        $('map-area').textContent = `${candidate.area_ha.toLocaleString('en-US', { maximumFractionDigits: 2 })} ha`;
         $('geojson-preview').textContent = JSON.stringify(candidate.geojson, null, 2);
-        status(tileWarning ? 'Não foi possível carregar parte da imagem satélite. O contorno continua disponível.' : `${candidate.point_count} vértices · WGS84 · Confira os limites antes de confirmar.`, tileWarning);
+        status(tileWarning ? 'Some satellite imagery could not be loaded. The boundary is still available.' : `${candidate.point_count} vertices · WGS84 · Check the boundary before confirming.`, tileWarning);
       } catch (error) {
-        $('map-area').textContent = 'Contorno inválido';
-        $('geojson-preview').textContent = 'Corrija o contorno para visualizar o GeoJSON.';
+        $('map-area').textContent = 'Invalid boundary';
+        $('geojson-preview').textContent = 'Fix the boundary to view its GeoJSON.';
         status(error.message, true);
       }
     } else {
-      $('map-area').textContent = 'Nenhum contorno';
-      $('geojson-preview').textContent = 'Desenhe ou importe um contorno.';
+      $('map-area').textContent = 'No boundary';
+      $('geojson-preview').textContent = 'Draw or import a boundary.';
     }
     const drawing = map?.pm.globalDrawModeEnabled();
     $('confirm-boundary').disabled = !candidate || drawing;
@@ -58,27 +58,27 @@ export function createFarmMap(onConfirm) {
     map = L.map('satellite-map', { zoomControl: true, preferCanvas: true }).setView([-20.032, -48.526], 13);
     L.tileLayer(SATELLITE_TILES, {
       maxZoom: 19, attribution: `Tiles &copy; ${SATELLITE_CREDIT}`,
-    }).on('tileerror', () => { tileWarning = true; status('Imagem satélite indisponível ou incompleta. Verifique sua conexão; é possível importar e revisar o contorno.', true); }).addTo(map);
-    map.pm.setLang('pt_br');
+    }).on('tileerror', () => { tileWarning = true; status('Satellite imagery is unavailable or incomplete. Check your connection; you can still import and review a boundary.', true); }).addTo(map);
+    map.pm.setLang('en');
     map.on('pm:drawstart', refresh);
     map.on('pm:drawend', refresh);
     map.on('pm:globaleditmodetoggled', refresh);
     map.on('pm:create', (event) => {
       source = 'draw'; mount(event.layer.toGeoJSON(false)); event.layer.remove();
-      $('map-help').textContent = 'Contorno concluído. Edite os pontos se necessário e escolha Usar esta área.';
+      $('map-help').textContent = 'Boundary complete. Edit the points if needed, then choose Use this area.';
     });
     $('draw-boundary').onclick = () => {
       map.pm.disableGlobalEditMode();
       map.pm.enableDraw('Polygon', { snappable: true, allowSelfIntersection: false, templineStyle: { color: '#d4f398' }, pathOptions: { color: '#d4f398' } });
-      $('map-help').textContent = 'Clique ou toque em cada vértice. Feche no primeiro ponto ou use Concluir desenho. O novo desenho substitui o contorno anterior ao ser concluído.';
+      $('map-help').textContent = 'Click or tap each vertex. Close at the first point or use Finish drawing. The completed drawing replaces the previous boundary.';
     };
     $('finish-draw').onclick = () => {
-      if (!map.pm.Draw.Polygon.enabled()) { status('Escolha Desenhar contorno para iniciar.'); return; }
-      if (!map.pm.finishDraw()) status('Marque ao menos três pontos e confira se o contorno não se cruza.', true);
+      if (!map.pm.Draw.Polygon.enabled()) { status('Choose Draw boundary to start.'); return; }
+      if (!map.pm.finishDraw()) status('Mark at least three points and check that the boundary does not cross itself.', true);
     };
     $('edit-boundary').onclick = () => {
       map.pm.disableDraw(); map.pm.toggleGlobalEditMode({ allowSelfIntersection: false });
-      $('map-help').textContent = 'Arraste os vértices para ajustar o limite. Os pontos intermediários adicionam novos vértices.';
+      $('map-help').textContent = 'Drag vertices to adjust the boundary. Drag the points between them to add new vertices.';
     };
     $('coordinate-search').onsubmit = (event) => {
       event.preventDefault();
@@ -86,15 +86,15 @@ export function createFarmMap(onConfirm) {
       try { parts = parseCoordinates($('coordinates').value); }
       catch (error) { status(error.message, true); $('coordinates').setAttribute('aria-invalid', 'true'); return; }
       $('coordinates').removeAttribute('aria-invalid');
-      map.setView(parts, 15); status('Localização encontrada pelas coordenadas.');
+      map.setView(parts, 15); status('Location found from the coordinates.');
     };
     $('locate').onclick = () => {
-      if (!navigator.geolocation) { status('Localização não disponível neste navegador.', true); return; }
-      status('Buscando a localização do dispositivo…');
+      if (!navigator.geolocation) { status('Location is unavailable in this browser.', true); return; }
+      status('Finding your device location…');
       navigator.geolocation.getCurrentPosition((position) => {
         map.setView([position.coords.latitude, position.coords.longitude], 15);
-        status('Localização aproximada do dispositivo. Confira o contorno no mapa.');
-      }, () => status('Localização não disponível. Navegue pelo mapa ou informe as coordenadas.', true), { timeout: 12000 });
+        status('Approximate device location. Check the boundary on the map.');
+      }, () => status('Location unavailable. Browse the map or enter coordinates.', true), { timeout: 12000 });
     };
   }
   $('farm-name').addEventListener('input', refresh);
@@ -111,10 +111,10 @@ export function createFarmMap(onConfirm) {
       if (!map) init();
       map.pm.disableDraw(); map.pm.disableGlobalEditMode();
       source = farm?.source || 'draw';
-      $('farm-name').value = farm?.name || 'Minha fazenda';
+      $('farm-name').value = farm?.name || 'My farm';
       $('map-help').textContent = farm
-        ? 'Confira a área importada ou salva. Use Editar pontos para ajustar o contorno.'
-        : 'Aproxime o mapa, escolha Desenhar contorno e marque os limites. Toque no primeiro ponto para fechar.';
+        ? 'Review the imported or saved area. Use Edit points to adjust the boundary.'
+        : 'Zoom in, choose Draw boundary and mark the field edges. Tap the first point to close the shape.';
       status(''); mount(farm?.geojson);
       requestAnimationFrame(() => {
         map.invalidateSize();

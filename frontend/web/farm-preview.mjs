@@ -41,8 +41,8 @@ export async function renderFarmPreview(farm, dimensions, signal) {
     width: plan.width, height: plan.height,
     rgba: new Uint8Array(ctx.getImageData(0, 0, plan.width, plan.height).data.buffer),
     note: complete ? '' : available
-      ? 'Parte da imagem de satélite não carregou. O contorno está completo.'
-      : 'Imagem de satélite indisponível. O contorno continua visível.',
+      ? 'Some satellite imagery did not load. The boundary is complete.'
+      : 'Satellite imagery unavailable. The boundary is still visible.',
   };
 }
 
@@ -61,7 +61,7 @@ export function createFarmPreview(onFrame, { render = renderFarmPreview, pixelRa
         const frame = await render(selected, dimensions, signal);
         if (current === generation && !signal.aborted) onFrame(frame);
       } catch {
-        if (current === generation && !signal.aborted) onFrame({ note: 'Não foi possível carregar a prévia de satélite. Abra o mapa para conferir o talhão.' });
+        if (current === generation && !signal.aborted) onFrame({ note: 'Unable to load the satellite preview. Open the map to review your field.' });
       }
     }, debounce);
   }

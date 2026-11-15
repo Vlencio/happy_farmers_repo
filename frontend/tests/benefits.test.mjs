@@ -9,7 +9,7 @@ const fixtures = ['motor', 'motor-fevereiro', 'motor-seco'].map(name =>
 const find = (id, fixture = fixtures[0]) => fixture.sequencias.find(seq => seq.id === id);
 const show = seq => buildBenefits(seq, cropLabel);
 const benefit = (codigo, dados = {}, cultura = null, cenario = null) =>
-  ({ codigo, dados, cultura, cenario, texto: 'Texto de teste entregue pelo motor.' });
+  ({ codigo, dados, cultura, cenario, texto: 'Texto de teste entregue by the engine.' });
 const withBenefits = (...beneficios) => ({ culturas: ['soja', 'feijao'], beneficios });
 
 test('all real benefits validate and keep the supplied order and evidence unchanged', () => {
@@ -22,7 +22,7 @@ test('all real benefits validate and keep the supplied order and evidence unchan
       assert.equal(view.items.length, seq.beneficios.length);
       assert.ok(view.items.every(item =>
         ['title', 'context', 'description', 'evidence', 'card_summary'].every(key => typeof item[key] === 'string' && item[key])));
-      assert.ok(view.items.every(item => item.title !== 'Outro benefício informado'));
+      assert.ok(view.items.every(item => item.title !== 'Additional engine benefit'));
     }
     assert.deepEqual(fixture, before);
   }
@@ -34,24 +34,24 @@ test('soybean-corn displays its four delivered benefits and exact source values 
     'fixa_nitrogenio', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro',
   ]); // the nitrogen bonus now follows only a green manure (engine rule 10), not soybean
   const view = show(corn);
-  assert.equal(view.summary, '4 benefícios apontados pelo motor.');
-  assert.equal(view.items[0].context, 'Soja');
-  assert.equal(view.items[1].context, 'Milho');
-  assert.equal(view.items[2].evidence, '10 dias expostos; 74,3 mm de chuva sobre o solo exposto.');
-  assert.match(view.items[3].evidence, /queda de 1,5%.*13\.003.*12\.808/);
-  assert.ok(view.items.every(item => item.title !== 'Fatores favoráveis hoje e no futuro'));
+  assert.equal(view.summary, '4 benefits flagged by the engine.');
+  assert.equal(view.items[0].context, 'Soybean');
+  assert.equal(view.items[1].context, 'Corn');
+  assert.equal(view.items[2].evidence, '10 exposed days; 74.3 mm of rain on exposed soil.');
+  assert.match(view.items[3].evidence, /decline of 1.5%.*13,003.*12,808/);
+  assert.ok(view.items.every(item => item.title !== 'Favorable factors today and in the future'));
 });
 
-test('benefits remain strategy-specific and use accented crop names', () => {
+test('benefits remain strategy-specific and use English crop names', () => {
   const bean = show(find('soja>feijao'));
   const cover = show(find('soja>crotalaria'));
   assert.equal(bean.items.length, 3);
-  assert.equal(bean.items[1].context, 'Feijão');
-  assert.ok(bean.items.slice(0, 2).every(item => item.title === 'Fixação de nitrogênio'));
-  assert.equal(bean.items[2].title, 'Estabilidade de receita no futuro');
-  assert.equal(cover.items[1].context, 'Crotalária');
+  assert.equal(bean.items[1].context, 'Common bean');
+  assert.ok(bean.items.slice(0, 2).every(item => item.title === 'Nitrogen fixation'));
+  assert.equal(bean.items[2].title, 'Stable future revenue');
+  assert.equal(cover.items[1].context, 'Sunn hemp');
   assert.equal(find('soja>crotalaria').hoje.culturas[1].mes_plantio, 2);
-  assert.match(cover.items[3].evidence, /10 dias.*74,3 mm/);
+  assert.match(cover.items[3].evidence, /10 exposed days.*74\.3 mm/);
   assert.ok(!JSON.stringify(bean).includes('feijao'));
   assert.ok(!JSON.stringify(cover).includes('crotalaria'));
 });
@@ -60,9 +60,9 @@ test('fixation and mulch are explicitly table attributes and model assumptions',
   const view = show(find('soja>milho'));
   assert.equal(find('soja>milho').hoje.culturas[0].fixa_n, true);
   assert.equal(find('soja>milho').hoje.culturas[1].cobre_solo, true);
-  assert.match(view.items[0].description, /tabela.*atributo.*não é uma medição/);
-  assert.match(view.items[1].description, /supõe.*próximo plantio.*sem medir quantidade ou duração/);
-  assert.match(view.note, /não comprovam um resultado no talhão/);
+  assert.match(view.items[0].description, /table.*attribute.*not a field measurement/);
+  assert.match(view.items[1].description, /assumes.*next planting.*without measuring its amount or persistence/);
+  assert.match(view.note, /do not establish a field outcome/);
 });
 
 test('nitrogen benefit distinguishes green manure, elapsed days and the final factor after a host penalty', () => {
@@ -70,43 +70,43 @@ test('nitrogen benefit distinguishes green manure, elapsed days and the final fa
   const seq = { culturas: ['milho'], beneficios: [benefit('bonus_apos_fixadora', { fator_sequencia: 1.012, slot: 'safra', dias_apos_anterior: 37 }, 'milho')] };
   const before = structuredClone(seq);
   const item = show(seq).items[0];
-  assert.equal(item.title, 'Bônus após adubo verde');
-  assert.match(item.description, /não fixadora.*adubo verde.*60 dias.*provisórios.*desconto por hospedeiro comum/);
-  assert.equal(item.evidence, 'Plantio 37 dias após o fim do ciclo anterior. Fator de sequência aplicado: 1,012×.');
-  assert.equal(item.card_summary, 'Milho · safra: após adubo verde, fator 1,012×.');
+  assert.equal(item.title, 'Bonus after green manure');
+  assert.match(item.description, /non-fixing.*green manure.*60 days.*provisional.*shared pest or disease host penalty/);
+  assert.equal(item.evidence, 'Planted 37 days after the previous cycle ended. Applied sequence factor: 1.012×.');
+  assert.equal(item.card_summary, 'Corn · Main season: after green manure, factor 1.012×.');
   assert.deepEqual(seq, before);
   delete seq.beneficios[0].dados.dias_apos_anterior;
-  assert.equal(show(seq).items[0].evidence, 'Intervalo entre culturas não informado nesta resposta. Fator de sequência aplicado: 1,012×.');
+  assert.equal(show(seq).items[0].evidence, 'The interval between crops is not provided in this response. Applied sequence factor: 1.012×.');
 });
 
 test('climate benefit covers today and future even when dry-year risks exist', () => {
   const sorghum = find('soja>sorgo', fixtures[2]);
   assert.ok(sorghum.avisos.some(item => item.codigo === 'fator_limitante' && item.cenario === 'seco'));
   const climate = show(sorghum).items[sorghum.beneficios.findIndex(item => item.codigo === 'clima_favoravel')];
-  assert.equal(climate.title, 'Fatores favoráveis hoje e no futuro');
-  assert.equal(climate.context, 'Sequência inteira · clima de hoje e futuro');
-  assert.equal(climate.evidence, 'Menor fator entre as culturas, hoje e no futuro: 90,2 / 100.');
-  assert.match(climate.description, /avaliação mensal.*não inclui o ano seco.*nem comprova resistência/);
-  assert.ok(!climate.card_summary.includes('ano seco'));
+  assert.equal(climate.title, 'Favorable factors today and in the future');
+  assert.equal(climate.context, 'Whole sequence · today\'s and future climate');
+  assert.equal(climate.evidence, 'Lowest factor across crops, today and in the future: 90.2 / 100.');
+  assert.match(climate.description, /monthly assessment.*excludes the dry year.*does not demonstrate resilience/);
+  assert.ok(!climate.card_summary.includes('dry year'));
 });
 
 test('negative decline is displayed as revenue growth without recalculating source evidence', () => {
   const seq = withBenefits(benefit('estavel_no_futuro', { queda: -0.125, receita_hoje: 8000, receita_futuro: 9000 }, null, 'futuro'));
   const item = show(seq).items[0];
-  assert.match(item.evidence, /alta de 12,5%.*8\.000.*9\.000/);
-  assert.equal(item.card_summary, 'Receita no futuro: alta de 12,5%.');
-  assert.match(item.description, /Não é previsão de preço.*nem de lucro/);
+  assert.match(item.evidence, /increase of 12.5%.*8,000.*9,000/);
+  assert.equal(item.card_summary, 'Future revenue: increase of 12.5%.');
+  assert.match(item.description, /not a forecast of selling prices or profit/);
   seq.beneficios[0].dados.queda = 0;
-  assert.match(show(seq).items[0].card_summary, /sem variação/);
+  assert.match(show(seq).items[0].card_summary, /no change/);
 });
 
 test('zero exposed days are preserved and repeated crop benefits are not duplicated', () => {
   const zero = withBenefits(benefit('pouco_solo_exposto', { dias_expostos: 0, chuva_exposta_mm: 0 }));
-  assert.equal(show(zero).items[0].evidence, '0 dias expostos; 0 mm de chuva sobre o solo exposto.');
+  assert.equal(show(zero).items[0].evidence, '0 exposed days; 0 mm of rain on exposed soil.');
   const repeated = find('feijao>feijao');
   assert.ok(repeated);
   assert.equal(repeated.beneficios.filter(item => item.codigo === 'fixa_nitrogenio').length, 1);
-  assert.equal(show(repeated).items.filter(item => item.title === 'Fixação de nitrogênio').length, 1);
+  assert.equal(show(repeated).items.filter(item => item.title === 'Nitrogen fixation').length, 1);
 });
 
 test('absent benefits remain unavailable rather than an empty result', () => {
@@ -114,19 +114,22 @@ test('absent benefits remain unavailable rather than an empty result', () => {
   assert.equal(validateSequenceBenefits({ culturas: ['soja'] }, ['hoje', 'futuro']), false);
   const empty = show(withBenefits());
   assert.deepEqual(empty.items, []);
-  assert.equal(empty.summary, 'Nenhum benefício sinalizado pelo motor nesta sequência.');
-  assert.match(empty.note, /Considere também os riscos e as lacunas/);
+  assert.equal(empty.summary, 'The engine flagged no benefits for this sequence.');
+  assert.match(empty.note, /Also consider this strategy.*risks and data gaps/);
 });
 
-test('future benefit codes retain supplied plain text, context and nested evidence', () => {
+test('future benefit codes remain flagged without inventing an English explanation or exposing raw prose', () => {
   const unknown = benefit('beneficio_novo', { valor_medido: 12.345, observacoes: { verificado: false, referencia: null }, amostras: [1, 2] }, 'feijao', 'hoje');
   unknown.texto = '<b>Texto simples do motor, sem executar HTML.</b>';
+  const original = structuredClone(unknown);
   const item = show(withBenefits(unknown)).items[0];
-  assert.equal(item.title, 'Outro benefício informado');
-  assert.equal(item.description, unknown.texto);
-  assert.equal(item.context, 'Feijão · clima de hoje');
-  assert.match(item.evidence, /valor medido: 12,345.*verificado: não.*referencia: não informado.*amostras: 1, 2/);
-  assert.match(item.card_summary, /Feijão/);
+  assert.equal(item.title, 'Additional engine benefit');
+  assert.match(item.description, /English explanation is not yet available/);
+  assert.equal(item.context, 'Common bean · today\'s climate');
+  assert.equal(item.evidence, 'Engine code: beneficio_novo.');
+  assert.doesNotMatch(JSON.stringify(item), /Texto simples|<b>|observacoes|valor_medido/);
+  assert.deepEqual(unknown, original);
+  assert.match(item.card_summary, /Common bean/);
 });
 
 test('malformed envelopes and invalid crop or scenario scope are rejected', () => {
@@ -143,7 +146,7 @@ test('malformed envelopes and invalid crop or scenario scope are rejected', () =
     withBenefits({ ...benefit('novo'), texto: '' }),
     withBenefits({ ...benefit('novo'), dados: [] }),
   ];
-  for (const seq of cases) assert.throws(() => validateSequenceBenefits(seq, ['hoje', 'futuro']), /contrato do motor: beneficios\./);
+  for (const seq of cases) assert.throws(() => validateSequenceBenefits(seq, ['hoje', 'futuro']), /engine contract: beneficios\./);
 });
 
 test('nonfinite evidence and invalid numerical ranges cannot enter the UI', () => {

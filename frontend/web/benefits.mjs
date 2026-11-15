@@ -1,8 +1,9 @@
-const number = (value, digits = 1) => value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
-const money = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-const SCENARIOS = { hoje: 'clima de hoje', futuro: 'clima futuro', seco: 'ano seco' };
+const number = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
+const money = (value) => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
+const SCENARIOS = { hoje: 'today\'s climate', futuro: 'future climate', seco: 'dry year' };
+const SLOTS = { safra: 'Main season', safrinha: 'Second season' };
 const CODES = ['fixa_nitrogenio', 'bonus_apos_fixadora', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro', 'clima_favoravel'];
-const invalid = (path) => { throw new Error(`Resposta incompatível com o contrato do motor: beneficios.${path}.`); };
+const invalid = (path) => { throw new Error(`Response does not match the engine contract: beneficios.${path}.`); };
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 function string(value, path, max = 2000) {
   if (typeof value !== 'string' || !value.trim() || value.length > max) invalid(path);
@@ -59,47 +60,39 @@ export function validateSequenceBenefits(seq, scenarios) {
   return true;
 }
 
-function readable(value) {
-  if (value === null) return 'não informado';
-  if (typeof value === 'number') return number(value, 3);
-  if (typeof value === 'boolean') return value ? 'sim' : 'não';
-  if (Array.isArray(value)) return value.map(readable).join(', ');
-  if (typeof value === 'object') return Object.entries(value).map(([key, entry]) => `${key.replaceAll('_', ' ')}: ${readable(entry)}`).join('; ');
-  return value;
-}
 function present(benefit, cropLabel) {
   const d = benefit.dados;
   const crop = benefit.cultura === null ? null : cropLabel(benefit.cultura);
-  const scenario = benefit.codigo === 'clima_favoravel' ? 'clima de hoje e futuro'
+  const scenario = benefit.codigo === 'clima_favoravel' ? 'today\'s and future climate'
     : benefit.cenario === null ? null : SCENARIOS[benefit.cenario];
-  const context = [crop || 'Sequência inteira', typeof d.slot === 'string' ? d.slot : null, scenario].filter(Boolean).join(' · ');
+  const context = [crop || 'Whole sequence', Object.hasOwn(SLOTS, d.slot) ? SLOTS[d.slot] : null, scenario].filter(Boolean).join(' · ');
   const item = (title, description, evidence, card_summary) => ({ title, context, description, evidence, card_summary });
   switch (benefit.codigo) {
     case 'fixa_nitrogenio':
-      return item('Fixação de nitrogênio', 'A tabela classifica esta cultura como fixadora de nitrogênio. O motor usa esse atributo no índice de solo; não é uma medição no talhão.',
-        'Fixação de nitrogênio: sim, segundo a tabela de culturas.', `${crop}: fixadora de nitrogênio na tabela do motor.`);
+      return item('Nitrogen fixation', 'The crop table classifies this crop as a nitrogen fixer. The engine uses this attribute in the soil index; it is not a field measurement.',
+        'Nitrogen fixation: yes, according to the crop table.', `${crop}: nitrogen fixer in the engine\'s crop table.`);
     case 'bonus_apos_fixadora':
-      return item('Bônus após adubo verde',
-        'Esta cultura não fixadora recebe um bônus após um adubo verde que fixa nitrogênio. A regra atual exige plantio até 60 dias após o fim do ciclo anterior; o prazo e o bônus são provisórios. O fator aplicado também pode incluir desconto por hospedeiro comum de pragas ou doenças.',
-        `${d.dias_apos_anterior === undefined ? 'Intervalo entre culturas não informado nesta resposta.' : `Plantio ${d.dias_apos_anterior} dias após o fim do ciclo anterior.`} Fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
-        `${crop} · ${d.slot}: após adubo verde, fator ${number(d.fator_sequencia, 3)}×.`);
+      return item('Bonus after green manure',
+        'This non-fixing crop receives a bonus after nitrogen-fixing green manure. The current rule requires planting within 60 days of the previous cycle ending; the time limit and bonus are provisional. The applied factor may also include a shared pest or disease host penalty.',
+        `${d.dias_apos_anterior === undefined ? 'The interval between crops is not provided in this response.' : `Planted ${d.dias_apos_anterior} days after the previous cycle ended.`} Applied sequence factor: ${number(d.fator_sequencia, 3)}×.`,
+        `${crop} · ${SLOTS[d.slot]}: after green manure, factor ${number(d.fator_sequencia, 3)}×.`);
     case 'deixa_palhada':
-      return item('Cobertura por palhada', 'Segundo a tabela, esta cultura deixa palhada. O motor supõe que ela cobre o solo do fim do ciclo até o próximo plantio, sem medir quantidade ou duração no talhão.',
-        'Cobertura do solo: sim, segundo a tabela de culturas.', `${crop}: palhada considerada até o próximo plantio.`);
+      return item('Mulch cover', 'According to the crop table, this crop leaves mulch. The engine assumes it covers the soil from the end of the cycle until the next planting, without measuring its amount or persistence in the field.',
+        'Soil cover: yes, according to the crop table.', `${crop}: mulch is assumed to last until the next planting.`);
     case 'pouco_solo_exposto':
-      return item('Pouco solo exposto', 'O motor sinaliza um período curto de solo sem cultura e sem palhada nos primeiros 365 dias. A chuva corresponde ao clima de hoje.',
-        `${d.dias_expostos} dias expostos; ${number(d.chuva_exposta_mm)} mm de chuva sobre o solo exposto.`, `${d.dias_expostos} dias expostos nos primeiros 365 dias.`);
+      return item('Limited exposed soil', 'The engine flags a short period without a crop or mulch in the first 365 days. Rainfall refers to today\'s climate.',
+        `${d.dias_expostos} exposed days; ${number(d.chuva_exposta_mm)} mm of rain on exposed soil.`, `${d.dias_expostos} exposed days in the first 365 days.`);
     case 'estavel_no_futuro': {
-      const change = d.queda === 0 ? 'sem variação' : `${d.queda < 0 ? 'alta' : 'queda'} de ${number(Math.abs(d.queda) * 100)}%`;
-      return item('Estabilidade de receita no futuro', 'O motor classifica a variação da receita bruta como estável ou em alta entre hoje e o futuro. Não é previsão de preço de venda nem de lucro.',
-        `Variação informada: ${change}. Receita hoje: ${money(d.receita_hoje)}/ha; futuro: ${money(d.receita_futuro)}/ha.`, `Receita no futuro: ${change}.`);
+      const change = d.queda === 0 ? 'no change' : `${d.queda < 0 ? 'increase' : 'decline'} of ${number(Math.abs(d.queda) * 100)}%`;
+      return item('Stable future revenue', 'The engine classifies gross revenue as stable or increasing from today to the future. This is not a forecast of selling prices or profit.',
+        `Reported change: ${change}. Revenue today: ${money(d.receita_hoje)}/ha; future: ${money(d.receita_futuro)}/ha.`, `Future revenue: ${change}.`);
     }
     case 'clima_favoravel':
-      return item('Fatores favoráveis hoje e no futuro', 'Os fatores de temperatura, chuva, calor e atendimento hídrico das culturas são favoráveis na avaliação mensal de hoje e do futuro. Este benefício não inclui o ano seco nem comprova resistência a eventos extremos.',
-        `Menor fator entre as culturas, hoje e no futuro: ${number(d.menor_fator * 100)} / 100.`, `Hoje e futuro: menor fator de clima ou água em ${number(d.menor_fator * 100)} / 100.`);
+      return item('Favorable factors today and in the future', 'Temperature, rainfall, heat and water-supply factors are favorable in the monthly assessment of today\'s and future climate. This benefit excludes the dry year and does not demonstrate resilience to extreme events.',
+        `Lowest factor across crops, today and in the future: ${number(d.menor_fator * 100)} / 100.`, `Today and future: lowest climate or water factor at ${number(d.menor_fator * 100)} / 100.`);
     default: {
-      const evidence = Object.entries(d).map(([key, value]) => `${key.replaceAll('_', ' ')}: ${readable(value)}`).join('; ');
-      return item('Outro benefício informado', benefit.texto, evidence || 'Nenhum dado adicional informado.', `${context}: ${benefit.texto}`);
+      return item('Additional engine benefit', 'The engine reported this benefit, but an English explanation is not yet available.',
+        `Engine code: ${benefit.codigo}.`, `${context}: additional engine benefit; English explanation unavailable.`);
     }
   }
 }
@@ -109,8 +102,8 @@ export function buildBenefits(seq, cropLabel) {
   return {
     items: seq.beneficios.map(benefit => present(benefit, cropLabel)),
     summary: seq.beneficios.length
-      ? `${seq.beneficios.length} ${seq.beneficios.length === 1 ? 'benefício apontado' : 'benefícios apontados'} pelo motor.`
-      : 'Nenhum benefício sinalizado pelo motor nesta sequência.',
-    note: 'Os benefícios descrevem os atributos e cálculos usados pelo motor; não comprovam um resultado no talhão. Considere também os riscos e as lacunas desta estratégia.',
+      ? `${seq.beneficios.length} ${seq.beneficios.length === 1 ? 'benefit flagged' : 'benefits flagged'} by the engine.`
+      : 'The engine flagged no benefits for this sequence.',
+    note: 'Benefits describe the attributes and calculations used by the engine; they do not establish a field outcome. Also consider this strategy\'s risks and data gaps.',
   };
 }

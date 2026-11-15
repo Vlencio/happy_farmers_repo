@@ -6,7 +6,7 @@ async (originalPage) => {
   const page = await context.newPage();
   const checks = [], errors = [], posts = [], deferred = [], analyzePosts = [];
   let syntheticChecks = 0, holdChat = false;
-  let reply = { resposta: 'SIMULAÇÃO: resposta para verificar o contexto.', modelo: 'qa-simulado', recusada: false };
+  let reply = { resposta: 'SIMULATED: answer to check context.', modelo: 'qa-simulado', recusada: false };
   let priorities = { agua: 1, solo: 1, renda: 1 };
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
@@ -18,17 +18,17 @@ async (originalPage) => {
     if (synthetic) syntheticChecks++;
   };
   const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
-  const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
-  const labels = { agua: 'Água', solo: 'Solo', renda: 'Renda' };
-  const levels = ['sem peso', 'baixo', 'médio', 'alto'];
-  const priorityName = (field, value) => new RegExp(`^${labels[field]}: prioridade ${value} \\(${levels[value]}\\)(?:, selecionada)?$`);
+  const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 1 });
+  const labels = { agua: 'Water', solo: 'Soil', renda: 'Income' };
+  const levels = ['no weight', 'low', 'medium', 'high'];
+  const priorityName = (field, value) => new RegExp(`^${labels[field]}: priority ${value} \\(${levels[value]}\\)(?:, selected)?$`);
   const button = name => page.getByRole('button', { name, exact: true });
-  const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
-  const rankedCards = () => page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
-  const priorityHeading = () => page.getByRole('heading', { name: 'Suas prioridades', exact: true });
-  const chatHeading = () => page.getByRole('heading', { name: 'Converse sobre esta análise', exact: true });
-  const input = () => page.getByRole('textbox', { name: 'Sua pergunta sobre a análise', exact: true });
-  const counter = () => page.getByText(/^\d+\/1\.000 caracteres · Ctrl\+Enter para enviar$/);
+  const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const rankedCards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
+  const priorityHeading = () => page.getByRole('heading', { name: 'Your priorities', exact: true });
+  const chatHeading = () => page.getByRole('heading', { name: 'Chat about this analysis', exact: true });
+  const input = () => page.getByRole('textbox', { name: 'Your question about the analysis', exact: true });
+  const counter = () => page.getByText(/^\d+\/1,000 characters · Ctrl\+Enter to send$/);
   const text = () => page.locator('[data-rune-a11y]').evaluate(root => root.textContent
     + [...root.querySelectorAll('[role="alert"], [role="status"]')].map(node => node.getAttribute('aria-label') || '').join(' '));
   const waitText = value => page.waitForFunction(value => {
@@ -37,7 +37,7 @@ async (originalPage) => {
       .map(node => node.getAttribute('aria-label') || '').join(' ');
     return content.includes(value);
   }, value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox();
@@ -71,7 +71,7 @@ async (originalPage) => {
   async function result(response) {
     check(response.status() === 200, 'Real analyze succeeds with ' + JSON.stringify(response.request().postDataJSON().prioridades));
     const raw = await response.json();
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     await page.waitForTimeout(220);
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
@@ -81,7 +81,7 @@ async (originalPage) => {
   }
   async function submit() {
     const pending = analysisResponse();
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     return result(await pending);
   }
   async function seed(month = 10, horizon = 2, values, crops = ['soja', 'milho']) {
@@ -116,22 +116,22 @@ async (originalPage) => {
     check(weightSummaries.every(count => count === 1), name + ': displayed calculation weights match the normalized weights returned by the engine');
     const names = await rankedCards().allTextContents();
     check(names.length === ids.length && analysis.view.recommendations.every((rec, i) => rec.sequence_id === ids[i]
-      && names[i].includes(`${i + 1}ª DE HOJE`) && names[i].includes(rec.crop)), name + ': visible cards retain engine order');
+      && names[i].includes(`${['1ST', '2ND', '3RD'][i]} TODAY`) && names[i].includes(rec.crop)), name + ': visible cards retain engine order');
     const hasCurrent = analysis.view.current_rotation.status === 'ready';
     check(await cards().count() === ids.length + (hasCurrent ? 1 : 0), name + ': reference is separate and no cards are fabricated');
     const namesById = analysis.view.recommendations.map((rec, i) => [rec, names[i]]);
     if (hasCurrent) namesById.push([analysis.view.current_rotation.strategy, await cards().first().textContent()]);
     check(namesById.every(([rec, name]) => {
       const seq = analysis.raw.sequencias.find(seq => seq.id === rec.sequence_id);
-      const facts = [ ['Posição · hoje', '#' + seq.rank_hoje], ['Score · hoje', number(seq.hoje.score) + ' / 100'],
-        ['Posição · futuro', '#' + seq.rank_futuro], ['Score · futuro', number(seq.futuro.score) + ' / 100'] ];
+      const facts = [ ['Rank · today', '#' + seq.rank_hoje], ['Score · today', number(seq.hoje.score) + ' / 100'],
+        ['Rank · future', '#' + seq.rank_futuro], ['Score · future', number(seq.futuro.score) + ' / 100'] ];
       return facts.every(([label, value]) => name.includes(`${label}: ${value}`))
         && rec.comparison_facts.every(fact => name.includes(`${fact.label}: ${fact.value}`));
     }), name + ': every card exposes actual current/future rank, score, and comparison values');
-    if (hasCurrent) check((await cards().first().textContent()).includes('ROTAÇÃO ATUAL'), name + ': current rotation remains the comparison reference');
+    if (hasCurrent) check((await cards().first().textContent()).includes('CURRENT ROTATION'), name + ': current rotation remains the comparison reference');
   }
   async function openChat() {
-    if (await button('Abrir chat com IA').count()) await click('Abrir chat com IA');
+    if (await button('Open AI chat').count()) await click('Open AI chat');
     await counter().waitFor();
   }
   async function send(question, keyboard = false) {
@@ -143,11 +143,11 @@ async (originalPage) => {
     await page.keyboard.insertText(question);
     await page.waitForTimeout(120);
     if (keyboard) await page.keyboard.press('ControlOrMeta+Enter');
-    else await click('Enviar pergunta');
+    else await click('Send question');
   }
   async function releaseChat() {
     for (const route of deferred.splice(0)) await route.fulfill({ status: 200,
-      json: { resposta: 'RESPOSTA ANTIGA SIMULADA', modelo: 'qa-simulado', recusada: false } }).catch(() => {});
+      json: { resposta: 'SIMULATED OLD ANSWER', modelo: 'qa-simulado', recusada: false } }).catch(() => {});
     await page.waitForTimeout(250);
   }
   const expectedFocus = analysis => [...new Set([...analysis.raw.sequencias.slice(0, 3).map(seq => seq.id),
@@ -162,14 +162,14 @@ async (originalPage) => {
     check(await priorityHeading().count() === 1, 'Setup exposes the priorities panel');
     const controls = await Promise.all(Object.keys(labels).flatMap(field => levels.map((_, value) => button(priorityName(field, value)).count())));
     check(controls.every(count => count === 1), 'All twelve priority buttons have specific accessible names');
-    check(await page.getByRole('button', { name: /: prioridade 1 \(baixo\), selecionada$/ }).count() === 3,
+    check(await page.getByRole('button', { name: /: priority 1 \(low\), selected$/ }).count() === 3,
       'Each initial priority exposes its selected state in the accessible label');
     await click(priorityName('agua', 2));
     const setupDraft = await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
     check(analyzePosts.length === 0 && setupDraft.settings.prioridades.agua === 2,
       'Setup priority edits save the choice without submitting an analysis before the producer is ready');
     await click(priorityName('agua', 3));
-    const exampleWeights = await Promise.all(['Água · 60%', 'Solo · 20%', 'Renda · 20%'].map(name =>
+    const exampleWeights = await Promise.all(['Water · 60%', 'Soil · 20%', 'Income · 20%'].map(name =>
       page.getByRole('group', { name, exact: true }).count()));
     check(exampleWeights.every(count => count === 1) && analyzePosts.length === 0,
       'Setup previews 3/1/1 as 60/20/20 weights without requesting an analysis');
@@ -197,7 +197,7 @@ async (originalPage) => {
     await verifyRanking(zeros, ['soja>crotalaria', 'soja>milho', 'soja>sorgo'], 'All zero priorities in October');
     check(same(zeros.request.prioridades, { agua: 0, solo: 0, renda: 0 }) && same(zeros.raw.entrada.prioridades, first.raw.entrada.prioridades),
       'Zero values reach the engine, which applies equal normalized weights');
-    check((await text()).includes('Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1.'),
+    check((await text()).includes('All set to zero: we use equal weights for the three criteria, just like 1/1/1.'),
       'All-zero choices explain the equal-weight fallback without claiming all criteria are ignored');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
     check(same(saved.settings.prioridades, { agua: 0, solo: 0, renda: 0 }), 'Draft stores the producer zero choices rather than normalized engine weights');
@@ -219,11 +219,11 @@ async (originalPage) => {
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-desktop.png' });
     await click(await rankedCards().first().textContent());
-    await waitText('Seu ciclo, etapa por etapa');
+    await waitText('Your crop cycle, step by step');
     const detail = await text();
-    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '78,1 / 100', '77,5 / 100'].every(value => detail.includes(value)),
+    check(['RANK · TODAY', 'SCORE · TODAY', 'RANK · FUTURE', 'SCORE · FUTURE', '#1', '78.1 / 100', '77.5 / 100'].every(value => detail.includes(value)),
       'February detail retains the real current and future ranks and scores');
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
     await align(priorityHeading());
     const mobileControls = await Promise.all(Object.keys(labels).flatMap(field => levels.map((_, value) => button(priorityName(field, value)).boundingBox())));
@@ -241,7 +241,7 @@ async (originalPage) => {
     await verifyRanking(one, ['algodao'], 'December one-crop horizon has only one viable choice');
     const empty = await analyze(4);
     await verifyRanking(empty, [], 'April has zero viable choices');
-    check((await text()).includes('Vamos ajustar o calendário?'), 'Zero results explain the calendar constraint');
+    check((await text()).includes('Let\'s review your planting options.'), 'Zero results explain the calendar constraint');
 
     // Only the provider capability and replies below are simulated. /analyze remains real.
     await page.route('**/api/metadata', async route => {
@@ -252,7 +252,7 @@ async (originalPage) => {
     const chatFirst = await analyze();
     check(await chatHeading().count() === 1, 'SIMULATED provider capability exposes the chat', true);
     await openChat();
-    const firstQuestion = 'Quais sequências estão visíveis agora?';
+    const firstQuestion = 'Which sequences are visible now?';
     await send(firstQuestion, true); await waitText(reply.resposta);
     check(same(posts.at(-1).foco, expectedFocus(chatFirst)) && posts.at(-1).foco.length === 3,
       'SIMULATED chat focuses the three ranked cards and deduplicates the current rotation', true);
@@ -260,28 +260,28 @@ async (originalPage) => {
       'SIMULATED first question uses the exact raw analysis and no history', true);
     await setPriority('agua', 0);
     const chatIncome = await setPriority('solo', 0);
-    check(await button('Abrir chat com IA').count() === 1 && !(await text()).includes(firstQuestion),
+    check(await button('Open AI chat').count() === 1 && !(await text()).includes(firstQuestion),
       'SIMULATED priority recalculation clears and collapses the previous conversation', true);
     await openChat();
-    reply = { resposta: 'SIMULAÇÃO: agora as prioridades favorecem a renda.', modelo: 'qa-simulado', recusada: false };
-    await send('O que mudou com a renda?'); await waitText(reply.resposta);
+    reply = { resposta: 'SIMULATED: the priorities now favor income.', modelo: 'qa-simulado', recusada: false };
+    await send('What changed with income?'); await waitText(reply.resposta);
     check(same(posts.at(-1).foco, expectedFocus(chatIncome)) && !posts.at(-1).foco.includes('soja>crotalaria')
       && posts.at(-1).foco.includes('soja>girassol') && !posts.at(-1).foco.includes('soja>trigo') && posts.at(-1).historico.length === 0,
       'SIMULATED next question uses only newly visible cards and starts a clean history', true);
     holdChat = true;
-    const pendingQuestion = 'Pergunta pendente antes de mudar a prioridade.';
-    await send(pendingQuestion); await button('Cancelar resposta').waitFor();
+    const pendingQuestion = 'Pending question before changing the priority.';
+    await send(pendingQuestion); await button('Cancel response').waitFor();
     const chatChanged = await setPriority('renda', 3);
     await releaseChat(); holdChat = false;
     await openChat();
-    check(!(await text()).includes('RESPOSTA ANTIGA SIMULADA') && !(await text()).includes(pendingQuestion),
+    check(!(await text()).includes('SIMULATED OLD ANSWER') && !(await text()).includes(pendingQuestion),
       'SIMULATED pending reply cannot contaminate an analysis after priority changes', true);
-    reply = { resposta: 'SIMULAÇÃO: conversa nova após cancelamento.', modelo: 'qa-simulado', recusada: false };
-    await send('Quais são as prioridades novas?'); await waitText(reply.resposta);
+    reply = { resposta: 'SIMULATED: new conversation after cancellation.', modelo: 'qa-simulado', recusada: false };
+    await send('What are the new priorities?'); await waitText(reply.resposta);
     check(posts.at(-1).historico.length === 0 && same(posts.at(-1).analise, chatChanged.raw),
       'SIMULATED conversation after cancellation sends the new full analysis without stale history', true);
     const distinct = await analyze(10, 2, undefined, ['soja', 'girassol']);
-    await openChat(); await send('Compare com a minha rotação atual.'); await waitText(reply.resposta);
+    await openChat(); await send('Compare this with my current rotation.'); await waitText(reply.resposta);
     check(same(posts.at(-1).foco, expectedFocus(distinct)) && posts.at(-1).foco.length === 4 && posts.at(-1).foco.includes('soja>girassol'),
       'SIMULATED distinct current rotation joins the three ranked cards in focus', true);
     check(errors.length === 0, 'No uncaught JavaScript errors');

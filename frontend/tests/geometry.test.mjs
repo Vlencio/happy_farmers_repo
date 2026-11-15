@@ -26,26 +26,26 @@ test('holes and multipolygons survive GeoJSON round trip and affect the area', (
 test('rejects invalid JSON, points, open rings, nonfinite and projected coordinates', () => {
   assert.throws(() => parseGeoJSON('{'), /JSON/);
   assert.throws(() => normalizeFarm({ type: 'Point', coordinates: [0, 0] }), /Polygon/);
-  assert.throws(() => normalizeFarm(polygon([ring.slice(0, -1)])), /aberto/);
-  assert.throws(() => normalizeFarm(polygon([[[0,0],[NaN,1],[1,1],[0,0]]])), /inválidas/);
+  assert.throws(() => normalizeFarm(polygon([ring.slice(0, -1)])), /open/);
+  assert.throws(() => normalizeFarm(polygon([[[0,0],[NaN,1],[1,1],[0,0]]])), /invalid/);
   assert.throws(() => normalizeFarm(polygon([[[500000,7400000],[500010,7400000],[500000,7400010],[500000,7400000]]])), /WGS84/);
   assert.throws(() => normalizeFarm({ ...polygon([ring]), crs: { name: 'EPSG:3857' } }), /CRS/);
 });
 test('rejects self intersections, empty geometries, zero area and multiple farms', () => {
-  assert.throws(() => normalizeFarm(polygon([[[0,0],[1,1],[0,1],[1,0],[0,0]]])), /cruza|inválidos/);
-  assert.throws(() => normalizeFarm(polygon([])), /contorno/);
+  assert.throws(() => normalizeFarm(polygon([[[0,0],[1,1],[0,1],[1,0],[0,0]]])), /crosses|invalid/);
+  assert.throws(() => normalizeFarm(polygon([])), /boundary/);
   assert.throws(() => normalizeFarm(polygon([[[0,0],[1,0],[2,0],[0,0]]])));
-  assert.throws(() => normalizeFarm({ type: 'FeatureCollection', features: [polygon([ring]), polygon([ring])] }), /única fazenda/);
+  assert.throws(() => normalizeFarm({ type: 'FeatureCollection', features: [polygon([ring]), polygon([ring])] }), /one farm/);
 });
 test('bounds input work and prevents oversized files', () => {
   assert.throws(() => parseGeoJSON(' '.repeat(2 * 1024 * 1024 + 1)), /2 MB/);
-  assert.throws(() => normalizeFarm(polygon([Array.from({length: 5002}, () => [0,0])])), /5.000/);
+  assert.throws(() => normalizeFarm(polygon([Array.from({length: 5002}, () => [0,0])])), /5,000/);
 });
 test('rejects holes outside the farm and nested excluded areas', () => {
   const outer = [[0,0],[10,0],[10,10],[0,10],[0,0]];
   const outside = [[20,20],[21,20],[21,21],[20,21],[20,20]];
   const hole = [[2,2],[8,2],[8,8],[2,8],[2,2]];
   const nested = [[3,3],[4,3],[4,4],[3,4],[3,3]];
-  assert.throws(() => normalizeFarm(polygon([outer, outside])), /fora do contorno/);
-  assert.throws(() => normalizeFarm(polygon([outer, hole, nested])), /sobrepor/);
+  assert.throws(() => normalizeFarm(polygon([outer, outside])), /outside the outer boundary/);
+  assert.throws(() => normalizeFarm(polygon([outer, hole, nested])), /overlap/);
 });

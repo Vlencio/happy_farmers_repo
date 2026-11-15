@@ -39,6 +39,21 @@ por vírgulas quando necessário. Os servidores locais escutam apenas em loopbac
 
 ## Entrada da interface
 
+### Idioma da apresentação
+
+A UI usa inglês (`en-US`), inclusive nomes de cultura e meses, com BRL explícito
+e unidades originais. O contrato continua usando `soja`, `milho`, `safra`,
+`safrinha`, `hoje`, `futuro` etc. `requestMetadata` fornece rótulos ingleses
+sem mutar o payload recebido; conversão de IDs e envio de histórico preservam
+as regras existentes. Nenhum cálculo ou moeda é convertido pela tradução.
+Avisos conhecidos da API são localizados em `web/external-text.mjs`; fontes e
+cobertura conservam seus significados. Texto autoral do usuário é preservado.
+
+O chat mantém o protocolo, o foco e o histórico originais. A interface e a
+recusa fixa conhecida são apresentadas em inglês; respostas livres da IA
+dependem da instrução do servidor, ainda em português nesta base. Pendência
+e mensagem para Pedro em [ENGLISH_HANDOFF.md](ENGLISH_HANDOFF.md).
+
 ```json
 {
   "lat": -20.032,

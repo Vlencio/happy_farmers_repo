@@ -10,9 +10,9 @@ async (originalPage) => {
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
   try {
     await page.goto(originalPage.url()); await waitText('conectado');
-    await activate('Desenhar no mapa');
+    await activate('Draw on map');
     await page.locator('#locate').click();
-    await page.waitForFunction(() => document.querySelector('#map-status').textContent.includes('Localização aproximada'));
+    await page.waitForFunction(() => document.querySelector('#map-status').textContent.includes('Approximate device location'));
     check(true, 'Granted geolocation centers on the emulated device position');
     await page.locator('#draw-boundary').click();
     check(await page.locator('#confirm-boundary').isDisabled(), 'Drawing cannot be confirmed prematurely');
@@ -24,11 +24,11 @@ async (originalPage) => {
     await page.touchscreen.tap(mapBox.x + mapBox.width * .53, mapBox.y + mapBox.height * .72);
     await page.locator('#finish-draw').click();
     check(await page.locator('#confirm-boundary').isEnabled(), 'Three touch vertices form a valid boundary');
-    await page.locator('#farm-name').fill('Fazenda QA com um nome bastante longo para conferir a quebra de texto nas menores telas disponíveis');
+    await page.locator('#farm-name').fill('QA farm with a very long name to check text wrapping on the smallest available screens');
     await page.locator('#confirm-boundary').click();
     check((await draft()).farm.point_count === 3, 'Touch-drawn field is saved with three vertices');
     const original = (await draft()).farm.geojson;
-    await activate('Ver e editar no mapa');
+    await activate('View and edit on map');
     await page.locator('#edit-boundary').click();
     const vertex = page.locator('.leaflet-marker-icon').first();
     await vertex.waitFor();
@@ -39,19 +39,19 @@ async (originalPage) => {
     await page.locator('#confirm-boundary').click();
     check(JSON.stringify((await draft()).farm.geojson) !== JSON.stringify(original), 'Dragging a vertex changes the confirmed GeoJSON');
     const confirmed = (await draft()).farm.geojson;
-    await activate('Ver e editar no mapa');
+    await activate('View and edit on map');
     await page.locator('#draw-boundary').click();
     await page.keyboard.press('Escape');
     check(JSON.stringify((await draft()).farm.geojson) === JSON.stringify(confirmed), 'Cancelling a replacement drawing preserves the previous field');
-    await activate('Ver e editar no mapa');
+    await activate('View and edit on map');
     check(await page.locator('#finish-draw').isDisabled(), 'Reopening the map clears the unfinished drawing mode');
     await page.evaluate(() => { navigator.geolocation.getCurrentPosition = (_ok, fail) => fail({ code: 1, message: 'Permission denied for QA' }); });
     await page.locator('#locate').click();
-    check((await page.locator('#map-status').textContent()).includes('Localização não disponível'), 'Denied geolocation offers coordinate navigation');
+    check((await page.locator('#map-status').textContent()).includes('Location unavailable'), 'Denied geolocation offers coordinate navigation');
     await page.locator('#close-map').click();
     await page.evaluate(() => {
       const key = 'happy-farmers-draft-v1'; const value = JSON.parse(localStorage.getItem(key));
-      value.history = Array.from({ length: 12 }, (_, i) => ({ crop: i % 2 ? 'milho' : 'soja', season: String(2013 + i), notes: 'Observação longa para verificar a leitura e a quebra do histórico em telas pequenas.' }));
+      value.history = Array.from({ length: 12 }, (_, i) => ({ crop: i % 2 ? 'milho' : 'soja', season: String(2013 + i), notes: 'A long note to check readability and history wrapping on small screens.' }));
       localStorage.setItem(key, JSON.stringify(value));
     });
     await page.reload(); await waitText('conectado');
@@ -61,7 +61,7 @@ async (originalPage) => {
       check(overflow.length === 0, 'Setup controls fit at ' + width + 'px');
       layouts.push({ width, overflow });
       if ([320, 900, 1440].includes(width)) await page.screenshot({ path: `output/playwright/qa-layout-${width}.png` });
-      await activate('Ver e editar no mapa');
+      await activate('View and edit on map');
       const fits = await page.locator('#map-dialog').evaluate(el => el.scrollWidth <= el.clientWidth + 1);
       check(fits, 'Map dialog fits at ' + width + 'px');
       await page.locator('#close-map').click();

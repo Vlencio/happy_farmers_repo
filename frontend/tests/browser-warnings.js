@@ -14,9 +14,9 @@ async (originalPage) => {
   };
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
-  const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
-  const warningsHeading = () => page.getByRole('heading', { name: 'Riscos e lacunas desta estratégia', exact: true });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const warningsHeading = () => page.getByRole('heading', { name: 'Risks and data gaps for this strategy', exact: true });
   async function reveal(locator) {
     for (let i = 0; i < 36; i++) {
       const box = await locator.boundingBox();
@@ -44,11 +44,14 @@ async (originalPage) => {
     }
   }
   async function openWithKeyboard(name) {
-    // Rune keeps DOM focus on canvas while tracking button focus internally.
+    // Rune keeps DOM focus on canvas while tracking control focus internally.
     // Start at a visible navigation control, then follow its exposed Tab order.
-    await click('Seus caminhos');
-    const enabled = await page.getByRole('button').evaluateAll(buttons => buttons.filter(button => !button.disabled).map(button => button.textContent));
-    const start = enabled.indexOf('Seus caminhos');
+    // Scenario tracks expose role=group and participate in the same order as buttons.
+    await click('Your options');
+    const enabled = await page.getByRole('button').or(page.getByRole('group', { name: /^Scenario (Rainfall|Temperature):/ }))
+      .evaluateAll(controls => controls.filter(control => !control.disabled && control.getAttribute('aria-disabled') !== 'true')
+        .map(control => control.textContent));
+    const start = enabled.indexOf('Your options');
     const target = enabled.indexOf(name);
     if (start < 0 || target <= start) throw new Error('Missing keyboard route to strategy: ' + name);
     for (let i = start; i < target; i++) {
@@ -56,7 +59,7 @@ async (originalPage) => {
       await page.waitForTimeout(100);
     }
     await page.keyboard.press('Enter');
-    await waitText('Riscos e lacunas desta estratégia');
+    await waitText('Risks and data gaps for this strategy');
   }
   async function analyze(crops = ['soja', 'milho']) {
     await page.goto(originalPage.url());
@@ -72,9 +75,9 @@ async (originalPage) => {
     await page.reload();
     await waitConnected();
     const response = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
-    await click('Analisar fazenda →');
+    await click('Analyze farm →');
     const raw = await (await response).json();
-    await waitText('ANÁLISE DO MOTOR');
+    await waitText('ENGINE ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       const farm = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm;
@@ -87,8 +90,8 @@ async (originalPage) => {
     const risks = source.avisos.filter(item => item.tipo === 'risco');
     const gaps = source.avisos.filter(item => item.tipo === 'lacuna');
     check(await warningsHeading().count() === 1, 'Strategy detail exposes a warning-section heading: ' + rec.sequence_id);
-    check(await page.getByRole('heading', { name: 'Riscos para revisar · ' + risks.length, exact: true }).count() === 1 &&
-      await page.getByRole('heading', { name: 'Lacunas de informação · ' + gaps.length, exact: true }).count() === 1,
+    check(await page.getByRole('heading', { name: 'Risks to review · ' + risks.length, exact: true }).count() === 1 &&
+      await page.getByRole('heading', { name: 'Information gaps · ' + gaps.length, exact: true }).count() === 1,
     'Detail separates risks and gaps with counts from the real response: ' + rec.sequence_id);
     check([...rec.warnings.risks, ...rec.warnings.gaps].every(item =>
       [item.title, item.context, item.description, item.evidence].every(value => !value || screen.includes(value))),
@@ -113,9 +116,9 @@ async (originalPage) => {
     await openWithKeyboard(names[0]);
     check(true, 'Tab and Enter open current-rotation warning details');
     await verifyDetail(first.view.current_rotation.strategy, first.raw.sequencias.find(seq => seq.id === first.view.current_rotation.strategy.sequence_id));
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
     await click(names[3]);
-    await waitText('Riscos e lacunas desta estratégia');
+    await waitText('Risks and data gaps for this strategy');
     await verifyDetail(thirdRanked, first.raw.sequencias.find(seq => seq.id === thirdRanked.sequence_id));
     await align(warningsHeading());
     await page.screenshot({ path: 'output/playwright/warnings-soil-desktop.png' });
@@ -126,11 +129,11 @@ async (originalPage) => {
     check(current.sequence_id === 'soja>feijao' && source.avisos.some(item => item.codigo === 'queda_no_futuro') && source.avisos.some(item => item.codigo === 'solo_exposto'),
       'The real soybean-bean reference supplies income loss and soil-exposure warnings');
     await click(await cards().first().textContent());
-    await waitText('Riscos e lacunas desta estratégia');
+    await waitText('Risks and data gaps for this strategy');
     await verifyDetail(current, source);
-    check((await text()).includes('Feijão') && !(await text()).includes('feijao'), 'Crop labels in warning copy retain Portuguese accents');
+    check((await text()).includes('Common bean') && !(await text()).includes('feijao'), 'Crop labels in warning copy use English crop names');
     const exposure = source.avisos.find(item => item.codigo === 'solo_exposto').dados;
-    const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+    const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 1 });
     check((await text()).includes(String(exposure.dias_expostos)) && (await text()).includes(number(exposure.chuva_exposta_mm)),
       'Real exposed days and rainfall reach the rendered warning evidence');
     await align(warningsHeading());
@@ -142,10 +145,11 @@ async (originalPage) => {
     check(headingBox.x >= 0 && headingBox.x + headingBox.width <= 391, 'Mobile warning heading fits the viewport');
     check([...current.warnings.risks, ...current.warnings.gaps].every(item => item.evidence && item.context), 'Every bean warning has its own evidence and context');
     await page.screenshot({ path: 'output/playwright/warnings-bean-mobile.png' });
-    await align(page.getByRole('heading', { name: 'Lacunas de informação · ' + current.warnings.gaps.length, exact: true }));
+    await align(page.getByRole('heading', { name: 'Information gaps · ' + current.warnings.gaps.length, exact: true }));
     await page.screenshot({ path: 'output/playwright/warnings-gaps-mobile.png' });
     check((await text()).includes('32 °C'), 'Mobile retains the actual heat-threshold information gap');
-    await click('← Comparar estratégias');
+    await click('← Compare strategies');
+    await align(cards().first());
     const mobileBoxes = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));
     check(mobileBoxes.every((box, i) => box.x >= 0 && box.x + box.width <= 391 && (i === 0 || box.y > mobileBoxes[i - 1].y)),
       'Mobile stacks warning cards without horizontal overflow');
@@ -155,7 +159,7 @@ async (originalPage) => {
     check(await cards().count() === 3 && noHistory.raw.sequencias.every(seq => seq.avisos.some(item => item.codigo === 'sem_historico')),
       'Empty history preserves three ranked cards and real missing-history gaps');
     await click(await cards().first().textContent());
-    await waitText('Riscos e lacunas desta estratégia');
+    await waitText('Risks and data gaps for this strategy');
     const noHistoryRec = noHistory.view.recommendations[0];
     await verifyDetail(noHistoryRec, noHistory.raw.sequencias.find(seq => seq.id === noHistoryRec.sequence_id));
 
@@ -167,10 +171,10 @@ async (originalPage) => {
       await route.fulfill({ response, json: body });
     });
     await analyze();
-    check((await text()).includes('Avisos indisponíveis nesta resposta do motor.'), 'SIMULATED legacy response marks warning data unavailable on cards', true);
+    check((await text()).includes('Warnings are unavailable in this engine response.'), 'SIMULATED legacy response marks warning data unavailable on cards', true);
     await click(await cards().first().textContent());
-    await waitText('Riscos e lacunas desta estratégia');
-    check((await text()).includes('Avisos indisponíveis nesta resposta do motor.') && !(await text()).includes('Nenhum aviso sinalizado pelo motor'),
+    await waitText('Risks and data gaps for this strategy');
+    check((await text()).includes('Warnings are unavailable in this engine response.') && !(await text()).includes('The engine flagged no warnings'),
       'SIMULATED legacy detail does not turn missing warnings into an empty result', true);
     await page.unroute('**/api/analyze');
 
@@ -182,11 +186,11 @@ async (originalPage) => {
       await route.fulfill({ response, json: body });
     });
     await analyze();
-    check((await text()).includes('Nenhum aviso sinalizado pelo motor') && !(await text()).includes('Avisos indisponíveis nesta resposta do motor.'),
+    check((await text()).includes('The engine flagged no warnings') && !(await text()).includes('Warnings are unavailable in this engine response.'),
       'SIMULATED empty warning list renders as a supplied result on cards', true);
     await click(await cards().first().textContent());
-    await waitText('Riscos e lacunas desta estratégia');
-    check((await text()).includes('Nenhum aviso sinalizado pelo motor'), 'SIMULATED empty detail keeps the explicit no-warning state', true);
+    await waitText('Risks and data gaps for this strategy');
+    check((await text()).includes('The engine flagged no warnings'), 'SIMULATED empty detail keeps the explicit no-warning state', true);
     check(errors.length === 0, 'No uncaught JavaScript errors');
     return { passed: checks.length, synthetic_checks: syntheticChecks, checks };
   } catch (error) {

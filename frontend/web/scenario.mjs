@@ -9,7 +9,7 @@ export function validateAdjustment(value = DEFAULT_ADJUSTMENT) {
     || Object.keys(value).some(key => !['chuva_pct', 'temp_c'].includes(key))
     || typeof value.chuva_pct !== 'number' || !Number.isFinite(value.chuva_pct) || value.chuva_pct < -50 || value.chuva_pct > 30
     || typeof value.temp_c !== 'number' || !Number.isFinite(value.temp_c) || value.temp_c < 0 || value.temp_c > 4) {
-    throw new Error('Escolha o ajuste de chuva entre −50% e +30% e de temperatura entre 0 e +4 °C.');
+    throw new Error('Choose a rainfall adjustment between −50% and +30% and a temperature adjustment between 0 and +4 °C.');
   }
   return { chuva_pct: value.chuva_pct, temp_c: value.temp_c };
 }
@@ -20,7 +20,7 @@ export function validateOutputAdjustment(entrada) {
     if (entrada.ajuste === undefined) throw new Error();
     return validateAdjustment(entrada.ajuste);
   } catch {
-    throw new Error('Resposta incompatível com o contrato do motor: entrada.ajuste.');
+    throw new Error('Response does not match the engine contract: entrada.ajuste.');
   }
 }
 
@@ -28,14 +28,14 @@ export function assertAdjustmentApplied(raw, request) {
   const requested = validateAdjustment(request?.ajuste);
   const actual = validateOutputAdjustment(raw?.entrada);
   if (requested.chuva_pct !== actual.chuva_pct || requested.temp_c !== actual.temp_c) {
-    throw new Error('O motor não confirmou o ajuste de cenário solicitado. Tente novamente; os resultados recebidos não foram exibidos.');
+    throw new Error('The engine did not confirm the requested scenario adjustment. Try again; the returned results were not displayed.');
   }
 }
 
 export function adjustmentNote(ajuste) {
   if (!hasAdjustment(ajuste)) return '';
-  const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-  const rain = ajuste.chuva_pct === 0 ? 'chuva sem alteração' : `${number(Math.abs(ajuste.chuva_pct))}% ${ajuste.chuva_pct < 0 ? 'menos' : 'mais'} chuva`;
-  const heat = ajuste.temp_c === 0 ? 'temperatura sem alteração' : `temperatura +${number(ajuste.temp_c)} °C`;
-  return `Cenário “e se”: ${rain}; ${heat}. É uma simulação, não uma previsão. O mesmo ajuste vale para todos os meses e cenários exibidos, incluindo o ano seco quando disponível.${ajuste.temp_c > 0 ? ' Os dias quentes usam os limiares disponíveis; valores intermediários são estimados por interpolação. Extrapolação só é usada fora da faixa desses dados.' : ''}`;
+  const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  const rain = ajuste.chuva_pct === 0 ? 'rainfall unchanged' : `${number(Math.abs(ajuste.chuva_pct))}% ${ajuste.chuva_pct < 0 ? 'less' : 'more'} rainfall`;
+  const heat = ajuste.temp_c === 0 ? 'temperature unchanged' : `temperature +${number(ajuste.temp_c)} °C`;
+  return `What-if scenario: ${rain}; ${heat}. This is a simulation, not a forecast. The same adjustment applies to all displayed months and scenarios, including the dry year when available.${ajuste.temp_c > 0 ? ' Hot-day counts use the available thresholds; intermediate values are estimated by interpolation. Extrapolation is only used outside the range of those data.' : ''}`;
 }

@@ -36,7 +36,7 @@ test('soil selection requires an explicit boolean capability without blocking le
     { capabilities: { solo_textura: 1 } }];
   for (const metadata of unsupported) {
     assert.equal(supportsSoil(metadata), false);
-    assert.throws(() => buildRequest(farm, [], settings('arenoso'), [], metadata), /textura de solo ainda não está disponível/);
+    assert.throws(() => buildRequest(farm, [], settings('arenoso'), [], metadata), /Soil texture is not available/);
     assert.equal(Object.hasOwn(buildRequest(farm, [], DEFAULT_SETTINGS, [], metadata), 'solo_textura'), false);
   }
   assert.equal(supportsSoil(supported), true);
@@ -62,9 +62,9 @@ test('only canonical texture values are sent and optional omission does not sele
     assert.equal(Object.hasOwn(buildRequest(farm, [], settings(texture), [], supported), 'solo_textura'), false);
   }
   for (const texture of ['', 'Médio', 'argiloso ', 'siltoso', 0, false, [], {}, ['arenoso']]) {
-    assert.throws(() => validateSoilTexture(texture), /textura de solo válida/);
-    assert.throws(() => validateSettings(settings(texture)), /textura de solo válida/);
-    assert.throws(() => buildRequest(farm, [], settings(texture), [], supported), /textura de solo válida/);
+    assert.throws(() => validateSoilTexture(texture), /valid soil texture/);
+    assert.throws(() => validateSettings(settings(texture)), /valid soil texture/);
+    assert.throws(() => buildRequest(farm, [], settings(texture), [], supported), /valid soil texture/);
   }
 });
 
@@ -90,17 +90,17 @@ test('soil output requires the texture and positive finite capacity together and
 test('requested soil needs a matching engine echo and unsolicited soil cannot replace the default silently', () => {
   assert.doesNotThrow(() => assertSoilApplied(baseline, {}));
   assert.doesNotThrow(() => assertSoilApplied(withSoil('medio', 45), { solo_textura: 'medio' }));
-  assert.throws(() => assertSoilApplied(baseline, { solo_textura: 'medio' }), /não confirmou a textura/);
-  assert.throws(() => assertSoilApplied(withSoil('argiloso', 60), { solo_textura: 'medio' }), /não confirmou a textura/);
-  assert.throws(() => assertSoilApplied(withSoil('medio', 45), {}), /não confirmou a textura/);
+  assert.throws(() => assertSoilApplied(baseline, { solo_textura: 'medio' }), /did not confirm the selected soil texture/);
+  assert.throws(() => assertSoilApplied(withSoil('argiloso', 60), { solo_textura: 'medio' }), /did not confirm the selected soil texture/);
+  assert.throws(() => assertSoilApplied(withSoil('medio', 45), {}), /did not confirm the selected soil texture/);
   assert.throws(() => assertSoilApplied(withSoil('medio', undefined), { solo_textura: 'medio' }), /entrada.solo_textura\/cad_mm/);
 });
 
 test('soil explanations use the supplied capacity and distinguish a model reference from a field measurement', () => {
-  assert.match(soilNote(baseline), /Textura não informada.*60 mm.*Não é uma medição/);
+  assert.match(soilNote(baseline), /Soil texture not specified.*60 mm.*not a field measurement/);
   // A future changed capacity is displayed as supplied, never derived again from the enum.
   const raw = withSoil('medio', 42.5);
-  assert.equal(soilNote(raw), 'Solo médio: reserva de água de 42,5 mm usada nesta análise. É uma referência do cálculo, não uma medição do talhão.');
+  assert.equal(soilNote(raw), 'Medium-textured soil: 42.5 mm of water storage used in this analysis. This is a calculation reference, not a field measurement.');
 });
 
 test('suggested soil is requested for the exact point and retains its source and nullable coverage', async () => {
@@ -112,10 +112,10 @@ test('suggested soil is requested for the exact point and retains its source and
     assert.equal(options.signal, controller.signal);
     return response(soil);
   } });
-  assert.deepEqual(received, before);
+  assert.deepEqual(received, { ...before, fonte: 'GLDAS · NASA, 0.25° grid' });
   assert.deepEqual(soil, before);
   const noCoverage = { ...point, textura_sugerida: null, fonte: 'Ponto fora da cobertura da grade de Minas Gerais.' };
-  assert.deepEqual(await requestSoilSuggestion('/api', point, { fetcher: async () => response(noCoverage) }), noCoverage);
+  assert.deepEqual(await requestSoilSuggestion('/api', point, { fetcher: async () => response(noCoverage) }), { ...noCoverage, fonte: 'Point outside the Minas Gerais grid coverage.' });
   assert.equal(await requestSoilSuggestion('/api', point, { fetcher: async () => response(null) }), null);
   assert.equal(await requestSoilSuggestion('/api', point, { fetcher: async () => ({ ok: true, json: async () => ({}) }) }), null);
 });
@@ -124,7 +124,7 @@ test('an uncovered point accepts the API null source without weakening point or 
   const uncovered = { ...point, textura_sugerida: null, fonte: null };
   assert.deepEqual(await requestSoilSuggestion('/api', point, { fetcher: async () => response(uncovered) }), uncovered);
   for (const soil of [{ ...uncovered, lat: point.lat + 1 }, { ...uncovered, textura_sugerida: 'argiloso' }]) {
-    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /não corresponde ao ponto/);
+    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /does not match the requested point/);
   }
 });
 
@@ -140,12 +140,12 @@ test('a suggestion for another point, malformed texture or missing source is rej
   ];
   for (const change of changes) {
     const soil = structuredClone(original); change(soil);
-    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /não corresponde ao ponto/);
+    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /does not match the requested point/);
   }
   for (const soil of [[], 'medio', 1, true]) {
-    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /não corresponde ao ponto/);
+    await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => response(soil) }), /does not match the requested point/);
   }
-  await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => ({ ok: false, status: 503 }) }), /não pôde ser consultada/);
+  await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => ({ ok: false, status: 503 }) }), /could not be retrieved/);
   await assert.rejects(requestSoilSuggestion('/api', point, { fetcher: async () => { throw new DOMException('Cancelled', 'AbortError'); } }), { name: 'AbortError' });
 });
 
@@ -214,7 +214,7 @@ test('explicit default persists locally while both soil controls stay out of the
 
 test('invalid or conflicting default preference cannot silently override the chosen soil', () => {
   for (const solo_padrao of [true, null, 'true', 1, {}, []]) {
-    assert.throws(() => validateSettings({ ...settings('arenoso'), solo_padrao }), /textura de solo ou a referência padrão/);
+    assert.throws(() => validateSettings({ ...settings('arenoso'), solo_padrao }), /soil texture or the default reference/);
   }
   assert.deepEqual(validateSettings({ ...settings('arenoso'), solo_padrao: false }), validateSettings(settings('arenoso')));
   const conflicting = saved(); conflicting.settings.solo_padrao = true;

@@ -1,4 +1,5 @@
 import { bbox } from '@turf/turf';
+import { englishSourceNotice, englishApiError } from './external-text.mjs';
 import { supportsSoil, validateSoilTexture, validateOutputSoil, soilNote } from './soil.mjs';
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
@@ -7,17 +8,18 @@ import { DEFAULT_ADJUSTMENT, validateAdjustment, validateOutputAdjustment, suppo
 export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
 export const CATEGORIES = ['rank1', 'rank2', 'rank3'];
-export const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { ...DEFAULT_ADJUSTMENT } };
 // POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
 export const ANALYSIS_TIMEOUT_MS = 360_000;
-const accents = { feijao: 'Feijão', algodao: 'Algodão', braquiaria: 'Braquiária', crotalaria: 'Crotalária' };
-export const cropLabel = (id) => accents[id] || id.charAt(0).toUpperCase() + id.slice(1);
-const number = (value, digits = 1) => value.toLocaleString('pt-BR', { maximumFractionDigits: digits });
-const money = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const cropLabels = { soja: 'Soybean', milho: 'Corn', sorgo: 'Sorghum', feijao: 'Common bean', girassol: 'Sunflower', algodao: 'Cotton', trigo: 'Wheat', milheto: 'Pearl millet', braquiaria: 'Brachiaria', crotalaria: 'Sunn hemp' };
+export const cropLabel = (id) => cropLabels[id] || id.charAt(0).toUpperCase() + id.slice(1);
+const seasonLabel = slot => slot === 'safrinha' ? 'Second season' : 'Main season';
+const number = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
+const money = (value) => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
 const index = (value) => `${number(value * 100)} / 100`;
 const normalize = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-const invalid = (path) => { throw new Error(`Resposta incompatível com o contrato do motor: ${path}.`); };
+const invalid = (path) => { throw new Error(`Response does not match the engine contract: ${path}.`); };
 function finite(value, path, min = -Infinity, max = Infinity) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) invalid(path);
 }
@@ -40,7 +42,7 @@ function validateDiscardReason(reason, horizon, altitude) {
     finite(reason.altitude_min_m, 'motivo.altitude_min_m');
     finite(reason.altitude_m, 'motivo.altitude_m', -100, 6000);
     if (reason.altitude_m !== altitude || reason.altitude_min_m <= reason.altitude_m || reason.mes_plantio === null) {
-      invalid('motivo.altitude: incompatível com a entrada ou com o descarte');
+      invalid('motivo.altitude: inconsistent with the input or exclusion');
     }
   }
 }
@@ -63,14 +65,14 @@ function validateRotationFactors(crop) {
 function validateModelRanges(value) {
   const present = Object.hasOwn(value, 'modelos');
   if (!present) {
-    if (value.sequencias.some(seq => Object.hasOwn(seq, 'modelos'))) invalid('modelos: resumo ausente');
+    if (value.sequencias.some(seq => Object.hasOwn(seq, 'modelos'))) invalid('modelos: missing summary');
     return;
   }
   const models = value.modelos;
   if (!models || typeof models !== 'object' || Array.isArray(models)) invalid('modelos');
   list(models.nomes, 'modelos.nomes', 1, 100);
   models.nomes.forEach(name => string(name, 'modelos.nomes'));
-  if (new Set(models.nomes).size !== models.nomes.length) invalid('modelos.nomes: repetidos');
+  if (new Set(models.nomes).size !== models.nomes.length) invalid('modelos.nomes: duplicates');
   if (!['razao', 'aproximada'].includes(models.chuva)) invalid('modelos.chuva');
   if (typeof models.et0_sem_correcao !== 'boolean') invalid('modelos.et0_sem_correcao');
   integer(models.aviso_faixa_rank, 'modelos.aviso_faixa_rank', 0, Infinity);
@@ -86,9 +88,9 @@ function validateModelRanges(value) {
       for (const key of ['chuva_mm', 'et0_mm']) finite(month[key], `modelos.clima.${key}`, 0);
       for (const key of ['tmin_c', 'tmax_c']) finite(month[key], `modelos.clima.${key}`);
     }
-    if (months.size !== 12) invalid('modelos.clima: meses repetidos');
+    if (months.size !== 12) invalid('modelos.clima: duplicate months');
     if (!value.sequencias.length) {
-      if (models.primeiro[name] !== null) invalid('modelos.primeiro: sem sequência viável');
+      if (models.primeiro[name] !== null) invalid('modelos.primeiro: no viable sequence');
     } else if (!value.sequencias.some(seq => seq.id === models.primeiro[name])) invalid('modelos.primeiro');
   }
   for (const seq of value.sequencias) {
@@ -100,7 +102,7 @@ function validateModelRanges(value) {
       finite(model.score, 'modelos.por_modelo.score', 0, 100);
       integer(model.rank, 'modelos.por_modelo.rank', 1, value.sequencias.length);
       finite(model.receita_ano_ha, 'modelos.por_modelo.receita_ano_ha', 0);
-      if ((model.rank === 1) !== (models.primeiro[model.modelo] === seq.id)) invalid('modelos.primeiro: rank divergente');
+      if ((model.rank === 1) !== (models.primeiro[model.modelo] === seq.id)) invalid('modelos.primeiro: inconsistent rank');
     }
     for (const key of ['rank_min', 'rank_max']) integer(range[key], `modelos.${key}`, 1, value.sequencias.length);
     for (const key of ['receita_ano_ha_min', 'receita_ano_ha_max']) finite(range[key], `modelos.${key}`, 0);
@@ -108,24 +110,24 @@ function validateModelRanges(value) {
     const revenues = range.por_modelo.map(model => model.receita_ano_ha);
     if (range.rank_min !== Math.min(...ranks) || range.rank_max !== Math.max(...ranks) ||
       Math.abs(range.receita_ano_ha_min - Math.min(...revenues)) > .001 ||
-      Math.abs(range.receita_ano_ha_max - Math.max(...revenues)) > .001) invalid('modelos: faixa divergente');
+      Math.abs(range.receita_ano_ha_max - Math.max(...revenues)) > .001) invalid('modelos: inconsistent range');
   }
   for (const [i] of models.nomes.entries()) {
     const ranks = value.sequencias.map(seq => seq.modelos.por_modelo[i].rank);
-    if (new Set(ranks).size !== ranks.length) invalid('modelos.por_modelo.rank: repetido');
+    if (new Set(ranks).size !== ranks.length) invalid('modelos.por_modelo.rank: duplicate');
   }
 }
 export function validateSettings(value) {
   if (!Number.isInteger(value?.mes_plantio) || value.mes_plantio < 1 || value.mes_plantio > 12 || ![1, 2].includes(value.horizonte)) {
-    throw new Error('Escolha o mês em que o talhão fica livre e uma ou duas culturas.');
+    throw new Error('Choose the month when the field becomes available and one or two crops.');
   }
   // Drafts saved before priority controls used equal weights.
   const priorities = value.prioridades === undefined ? DEFAULT_SETTINGS.prioridades : value.prioridades;
   if (!priorities || ['agua', 'solo', 'renda'].some(key => !Number.isInteger(priorities[key]) || priorities[key] < 0 || priorities[key] > 3)) {
-    throw new Error('Escolha uma prioridade de 0 a 3 para água, solo e renda.');
+    throw new Error('Choose a priority from 0 to 3 for water, soil and income.');
   }
   if ((value.solo_padrao !== undefined && typeof value.solo_padrao !== 'boolean') || (value.solo_padrao && value.solo_textura)) {
-    throw new Error('Escolha uma textura de solo ou a referência padrão.');
+    throw new Error('Choose a soil texture or the default reference.');
   }
   return { mes_plantio: value.mes_plantio, horizonte: value.horizonte,
     prioridades: { agua: priorities.agua, solo: priorities.solo, renda: priorities.renda },
@@ -134,24 +136,24 @@ export function validateSettings(value) {
     ...(value.solo_padrao ? { solo_padrao: true } : {}) };
 }
 export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, cultures = [], metadata = {}) {
-  if (!farm?.geojson || !Number.isFinite(farm.area_ha) || farm.area_ha <= 0) throw new Error('Defina uma área válida antes de analisar.');
+  if (!farm?.geojson || !Number.isFinite(farm.area_ha) || farm.area_ha <= 0) throw new Error('Define a valid field before analyzing.');
   const bounds = bbox(farm.geojson);
   const lat = (bounds[1] + bounds[3]) / 2;
   const lon = (bounds[0] + bounds[2]) / 2;
-  if (!Number.isFinite(lat) || Math.abs(lat) > 90) throw new Error('A latitude da fazenda é inválida.');
-  if (!Number.isFinite(lon) || Math.abs(lon) > 180) throw new Error('A longitude da fazenda é inválida.');
-  if (!Array.isArray(history) || history.length > 12) throw new Error('Revise o histórico de plantio (até 12 registros).');
+  if (!Number.isFinite(lat) || Math.abs(lat) > 90) throw new Error('The farm latitude is invalid.');
+  if (!Number.isFinite(lon) || Math.abs(lon) > 180) throw new Error('The farm longitude is invalid.');
+  if (!Array.isArray(history) || history.length > 12) throw new Error('Review the crop history (up to 12 entries).');
   const rotacao_atual = history.map(({ crop }) => {
     const match = cultures.find((c) => normalize(c.id) === normalize(crop) || normalize(c.label) === normalize(crop));
-    if (!match) throw new Error(`A cultura “${crop}” não está no catálogo do motor. Remova ou corrija esse registro para continuar.`);
+    if (!match) throw new Error(`The crop “${crop}” is not in the engine catalog. Remove or correct this entry to continue.`);
     return match.id;
   });
   const { ajuste, solo_padrao, ...options } = validateSettings(settings);
   if (options.solo_textura && !supportsSoil(metadata)) {
-    throw new Error('A textura de solo ainda não está disponível neste servidor. Use a referência padrão para analisar.');
+    throw new Error('Soil texture is not available on this server yet. Use the default reference to analyze.');
   }
   if (hasAdjustment(ajuste) && !supportsAdjustment(metadata)) {
-    throw new Error('Os ajustes de cenário ainda não estão disponíveis neste servidor. Volte ao clima sem ajuste para analisar.');
+    throw new Error('Scenario adjustments are not available on this server yet. Reset to the original climate to analyze.');
   }
   // Seasons and notes remain in the browser: the engine accepts only ordered crop IDs.
   return { lat, lon, rotacao_atual, ...options, precos: {}, ...(hasAdjustment(ajuste) ? { ajuste } : {}) };
@@ -169,7 +171,7 @@ export function validateMotorOutput(value) {
   if (Object.hasOwn(value.entrada, 'altitude_m')) finite(value.entrada.altitude_m, 'entrada.altitude_m', -100, 6000);
   validateOutputAdjustment(value.entrada);
   for (const key of ['agua', 'solo', 'renda']) finite(value.entrada.prioridades?.[key], `entrada.prioridades.${key}`, 0, 1);
-  if (Object.values(value.entrada.prioridades).every(weight => weight === 0)) invalid('entrada.prioridades: pesos não normalizados');
+  if (Object.values(value.entrada.prioridades).every(weight => weight === 0)) invalid('entrada.prioridades: weights not normalized');
   list(value.entrada.rotacao_atual, 'entrada.rotacao_atual', 0, 12);
   value.entrada.rotacao_atual.forEach((crop) => string(crop, 'entrada.rotacao_atual.cultura'));
   list(value.slots, 'slots', value.entrada.horizonte, value.entrada.horizonte);
@@ -184,7 +186,7 @@ export function validateMotorOutput(value) {
       for (const key of ['chuva_mm', 'et0_mm']) finite(month[key], `clima.${key}`, 0);
       for (const key of ['tmin_c', 'tmax_c']) finite(month[key], `clima.${key}`);
     }
-    if (months.size !== 12) invalid('clima: meses repetidos');
+    if (months.size !== 12) invalid('clima: duplicate months');
   }
   list(value.sequencias, 'sequencias'); list(value.descartadas, 'descartadas');
   const ids = new Set();
@@ -192,12 +194,12 @@ export function validateMotorOutput(value) {
     string(seq.id, 'id');
     list(seq.culturas, 'culturas', value.entrada.horizonte, value.entrada.horizonte);
     seq.culturas.forEach((crop) => string(crop, 'cultura'));
-    if (ids.has(seq.id) || seq.id !== seq.culturas.join('>') || typeof seq.atual !== 'boolean') invalid('sequência');
+    if (ids.has(seq.id) || seq.id !== seq.culturas.join('>') || typeof seq.atual !== 'boolean') invalid('sequence');
     ids.add(seq.id);
   }
-  if ([...value.sequencias, ...value.descartadas].filter((seq) => seq.atual).length > 1) invalid('mais de uma rotação atual');
+  if ([...value.sequencias, ...value.descartadas].filter((seq) => seq.atual).length > 1) invalid('more than one current rotation');
   for (const seq of value.sequencias) {
-    if (!hasDry && (Object.hasOwn(seq, 'seco') || Object.hasOwn(seq, 'rank_seco'))) invalid('cenário seco sem clima.seco');
+    if (!hasDry && (Object.hasOwn(seq, 'seco') || Object.hasOwn(seq, 'rank_seco'))) invalid('dry-year scenario without clima.seco');
     for (const scenario of scenarios) {
       integer(seq[`rank_${scenario}`], `rank_${scenario}`, 1, value.sequencias.length);
       const result = seq[scenario];
@@ -213,7 +215,7 @@ export function validateMotorOutput(value) {
       }
       list(result.culturas, 'culturas', seq.culturas.length, seq.culturas.length);
       for (const [i, crop] of result.culturas.entries()) {
-        if (crop.cultura !== seq.culturas[i] || crop.slot !== value.slots[i]) invalid('ordem das culturas/slots');
+        if (crop.cultura !== seq.culturas[i] || crop.slot !== value.slots[i]) invalid('crop/season order');
         for (const key of ['mes_plantio', 'mes_colheita']) integer(crop[key], key, 1, 12);
         integer(crop.ciclo_dias, 'ciclo_dias', 1, 365);
         integer(crop.espera_dias, 'espera_dias', 0, 365);
@@ -229,14 +231,14 @@ export function validateMotorOutput(value) {
           integer(month.mes, 'meses.mes', 1, 12); integer(month.dias, 'meses.dias', 1, 62);
           for (const key of ['kc', 'chuva_mm', 'etc_mm', 'deficit_mm']) finite(month[key], `meses.${key}`, 0);
         }
-        if (crop.meses[0].mes !== crop.mes_plantio || crop.meses.at(-1).mes !== crop.mes_colheita) invalid('meses do ciclo');
+        if (crop.meses[0].mes !== crop.mes_plantio || crop.meses.at(-1).mes !== crop.mes_colheita) invalid('crop-cycle months');
       }
     }
     for (const scenario of scenarios.slice(1)) {
       seq.hoje.culturas.forEach((crop, i) => {
         const other = seq[scenario].culturas[i];
         if (['mes_plantio', 'mes_colheita', 'ciclo_dias', 'espera_dias'].some((key) => crop[key] !== other[key]) ||
-          crop.meses.length !== other.meses.length || crop.meses.some((m, j) => m.mes !== other.meses[j].mes || m.dias !== other.meses[j].dias)) invalid('calendários dos cenários');
+          crop.meses.length !== other.meses.length || crop.meses.some((m, j) => m.mes !== other.meses[j].mes || m.dias !== other.meses[j].dias)) invalid('scenario calendars');
       });
     }
     validateSequenceExposure(seq, scenarios, value.entrada.mes_plantio);
@@ -252,16 +254,16 @@ export function validateMotorOutput(value) {
   if (Object.hasOwn(value, 'atual')) {
     const current = value.atual;
     if (current === null) {
-      if (value.entrada.rotacao_atual.length) invalid('atual: referência ausente para o histórico');
+      if (value.entrada.rotacao_atual.length) invalid('atual: missing reference for the history');
     } else {
       if (!current || typeof current !== 'object' || Array.isArray(current)) invalid('atual');
-      if (!value.entrada.rotacao_atual.length) invalid('atual: referência sem histórico');
+      if (!value.entrada.rotacao_atual.length) invalid('atual: reference without history');
       string(current.id, 'atual.id');
       list(current.culturas, 'atual.culturas', value.entrada.horizonte, value.entrada.horizonte);
       current.culturas.forEach((crop) => string(crop, 'atual.culturas'));
       if (current.id !== current.culturas.join('>') || typeof current.viavel !== 'boolean') invalid('atual');
       if (current.viavel) {
-        if (current.motivo !== null || !value.sequencias.some((seq) => seq.id === current.id)) invalid('atual: sequência viável');
+        if (current.motivo !== null || !value.sequencias.some((seq) => seq.id === current.id)) invalid('atual: viable sequence');
       } else {
         validateDiscardReason(current.motivo, value.entrada.horizonte, value.entrada.altitude_m);
       }
@@ -273,8 +275,8 @@ export function validateMotorOutput(value) {
 function timeline(seq, firstMonth) {
   let last = firstMonth - 1;
   const scenarios = seq.seco ? ['hoje', 'futuro', 'seco'] : ['hoje', 'futuro'];
-  const order = seq.seco ? 'hoje / futuro / ano seco' : 'hoje / futuro';
-  const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · ano ${Math.floor(absolute / 12) + 1}`;
+  const order = seq.seco ? 'today / future / dry year' : 'today / future';
+  const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · year ${Math.floor(absolute / 12) + 1}`;
   const stages = seq.hoje.culturas.map((crop, i) => {
     const crops = scenarios.map((key) => seq[key].culturas[i]);
     const compare = (key, format = number) => crops.map((c) => format(c[key])).join(' / ');
@@ -288,48 +290,48 @@ function timeline(seq, firstMonth) {
         rain: compareMonth('chuva_mm'), demand: compareMonth('etc_mm'), deficit: compareMonth('deficit_mm') };
     });
     last = end;
-    return { title: `${cropLabel(crop.cultura)} · ${crop.slot}`, period: `${monthLabel(start)} → ${monthLabel(end)}`,
+    return { title: `${cropLabel(crop.cultura)} · ${seasonLabel(crop.slot)}`, period: `${monthLabel(start)} → ${monthLabel(end)}`,
       start_month: start - firstMonth + 2, end_month: end - firstMonth + 2,
-      description: `${crop.ciclo_dias} dias de ciclo; ${crop.espera_dias} dias de espera pelo plantio. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} dias entre o fim da cultura anterior e este plantio${i === 0 ? ' (para a primeira cultura, o fim do histórico é uma suposição do cálculo)' : ''}. ` : ''}Receita bruta por hectare (${order}): ${compare('receita_ha', money)}.`,
-      water: `Atendimento hídrico (${order}): ${compare('atendimento_hidrico', (v) => number(v * 100))} de 100. Déficit no ciclo: ${compare('deficit_mm')} mm.`,
-      soil: `Índice de solo (${order}): ${compare('solo', (v) => number(v * 100))} de 100. Fator da sequência: ${number(crop.fator_sequencia, 3)}×. ${rotationFactors(crop)}O índice combina fixação de nitrogênio, cobertura e diversidade, ajustadas ao encaixe climático; não é uma medição do solo.`,
-      risk: `Encaixe de temperatura: ${compare('encaixe_temp', (v) => number(v * 100))} de 100. Encaixe de chuva: ${compare('encaixe_chuva', (v) => number(v * 100))} de 100. ${crops.every((c) => c.encaixe_calor != null) ? `Encaixe de calor: ${compare('encaixe_calor', (v) => number(v * 100))} de 100; dias quentes na fase sensível: ${compare('dias_calor')}. ` : ''}Ordem: ${order}. Valide os limites de calor com seu agrônomo; ausência de penalização não comprova tolerância.`, monthly };
+      description: `${crop.ciclo_dias} days in the crop cycle; ${crop.espera_dias} days waiting for planting. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} days between the end of the previous crop and this planting${i === 0 ? ' (for the first crop, the end of the crop history is an assumption in the calculation)' : ''}. ` : ''}Gross revenue per hectare (${order}): ${compare('receita_ha', money)}.`,
+      water: `Water demand met (${order}): ${compare('atendimento_hidrico', (v) => number(v * 100))} out of 100. Deficit over the crop cycle: ${compare('deficit_mm')} mm.`,
+      soil: `Soil index (${order}): ${compare('solo', (v) => number(v * 100))} out of 100. Sequence factor: ${number(crop.fator_sequencia, 3)}×. ${rotationFactors(crop)}The index combines nitrogen fixation, cover and diversity, adjusted for climate suitability; it is not a soil measurement.`,
+      risk: `Temperature suitability: ${compare('encaixe_temp', (v) => number(v * 100))} out of 100. Rainfall suitability: ${compare('encaixe_chuva', (v) => number(v * 100))} out of 100. ${crops.every((c) => c.encaixe_calor != null) ? `Heat suitability: ${compare('encaixe_calor', (v) => number(v * 100))} out of 100; hot days during the sensitive growth stage: ${compare('dias_calor')}. ` : ''}Order: ${order}. Check heat thresholds with your agronomist; no penalty does not prove tolerance.`, monthly };
   });
-  return { timeline: stages, water_caption: `Chuva, demanda e déficit: ${order}, em milímetros. Dias e Kc correspondem ao período da cultura dentro de cada mês. Deslize a tabela para ver todas as colunas.`, month_labels: Array.from({ length: Math.max(12, last - firstMonth + 2) }, (_, i) => monthLabel(firstMonth - 1 + i)) };
+  return { timeline: stages, water_caption: `Rainfall, demand and deficit: ${order}, in millimeters. Days and Kc refer to the part of each month occupied by the crop. Scroll the table to see every column.`, month_labels: Array.from({ length: Math.max(12, last - firstMonth + 2) }, (_, i) => monthLabel(firstMonth - 1 + i)) };
 }
 
 function rotationFactors(crop) {
   const notes = [];
-  if (crop.repete) notes.push('Repete a cultura anterior.');
-  if (crop.bonus_n) notes.push('Recebe o bônus após adubo verde dentro da janela de 60 dias adotada pelo cálculo.');
-  if (crop.hospedeiro_comum) notes.push(`Compartilha praga ou doença com ${cropLabel(crop.hospedeiro_comum.anterior)}.${crop.penalidade_hospedeiro === undefined ? '' : ` Fator de hospedeiro comum aplicado: ${number(crop.penalidade_hospedeiro, 3)}×.`}`);
+  if (crop.repete) notes.push('Repeats the previous crop.');
+  if (crop.bonus_n) notes.push('Receives the green-manure bonus within the 60-day window used in the calculation.');
+  if (crop.hospedeiro_comum) notes.push(`Shares a pest or disease with ${cropLabel(crop.hospedeiro_comum.anterior)}.${crop.penalidade_hospedeiro === undefined ? '' : ` Shared-host factor applied: ${number(crop.penalidade_hospedeiro, 3)}×.`}`);
   return notes.length ? `${notes.join(' ')} ` : '';
 }
 
 function comparisonFacts(seq) {
   return [
-    { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
-    { label: 'Solo · hoje', value: index(seq.hoje.solo) },
-    { label: 'Encaixe · futuro', value: index(seq.futuro.encaixe) },
+    { label: 'Revenue / ha · today', value: money(seq.hoje.receita_ha) },
+    { label: 'Soil · today', value: index(seq.hoje.solo) },
+    { label: 'Suitability · future', value: index(seq.futuro.encaixe) },
   ];
 }
 
 function annualIncomeFacts(seq) {
-  return [['hoje', 'hoje'], ['futuro', 'futuro'], ['seco', 'ano seco']].flatMap(([key, label]) => {
+  return [['hoje', 'today'], ['futuro', 'future'], ['seco', 'dry year']].flatMap(([key, label]) => {
     const result = seq[key];
     if (!result || result.receita_ano_ha === undefined) return [];
     return [
-      { label: `Receita / ha / ano · ${label}`, value: money(result.receita_ano_ha) },
-      { label: `Anos considerados · ${label}`, value: `${number(result.anos_ocupados, 2)} ${result.anos_ocupados === 1 ? 'ano' : 'anos'}` },
+      { label: `Revenue / ha / year · ${label}`, value: money(result.receita_ano_ha) },
+      { label: `Years accounted for · ${label}`, value: `${number(result.anos_ocupados, 2)} ${result.anos_ocupados === 1 ? 'year' : 'years'}` },
     ];
   });
 }
 
 function waterFacts(seq) {
-  return [['hoje', 'hoje'], ['futuro', 'futuro'], ['seco', 'ano seco']].flatMap(([key, label]) => {
+  return [['hoje', 'today'], ['futuro', 'future'], ['seco', 'dry year']].flatMap(([key, label]) => {
     const result = seq[key];
     return result?.atendimento_hidrico === undefined ? [] : [
-      { label: `Atendimento de água · ${label}`, value: `${number(result.atendimento_hidrico * 100)}% da demanda` },
+      { label: `Water demand met · ${label}`, value: `${number(result.atendimento_hidrico * 100)}% of demand` },
     ];
   });
 }
@@ -337,16 +339,16 @@ function waterFacts(seq) {
 function modelFacts(seq) {
   if (!seq.modelos) return [];
   return [
-    { label: 'Posição · futuro entre modelos', value: `#${seq.modelos.rank_min}–#${seq.modelos.rank_max}` },
-    { label: 'Receita / ha / ano · futuro entre modelos', value: `${money(seq.modelos.receita_ano_ha_min)} a ${money(seq.modelos.receita_ano_ha_max)}` },
+    { label: 'Rank · future across models', value: `#${seq.modelos.rank_min}–#${seq.modelos.rank_max}` },
+    { label: 'Revenue / ha / year · future across models', value: `${money(seq.modelos.receita_ano_ha_min)} to ${money(seq.modelos.receita_ano_ha_max)}` },
   ];
 }
 
 function modelNote(seq, models) {
   if (!seq.modelos) return '';
   const { rank_min, rank_max } = seq.modelos;
-  const positions = rank_min === rank_max ? `${rank_min}ª posição` : `${rank_min}ª–${rank_max}ª posição`;
-  return `Futuro entre modelos: ${positions} (${models.nomes.length} ${models.nomes.length === 1 ? 'modelo' : 'modelos'}). Faixa mín–máx, não intervalo de confiança.${models.chuva === 'aproximada' ? ' Chuva por aproximação.' : ''}`;
+  const positions = rank_min === rank_max ? `rank #${rank_min}` : `ranks #${rank_min}–#${rank_max}`;
+  return `Future across models: ${positions} (${models.nomes.length} ${models.nomes.length === 1 ? 'model' : 'models'}). Min–max range, not a confidence interval.${models.chuva === 'aproximada' ? ' Rainfall is approximated.' : ''}`;
 }
 
 function closeLeaders(sequences) {
@@ -361,38 +363,38 @@ function closeLeaders(sequences) {
 function discardedReason(seq) {
   const r = seq.motivo;
   if (Object.hasOwn(r, 'altitude_min_m')) {
-    return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) pede altitude mínima de ${number(r.altitude_min_m, 2)} m; o talhão tem ${number(r.altitude_m, 2)} m. Descartada pelo motor por altitude.`;
+    return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) requires a minimum elevation of ${number(r.altitude_min_m, 2)} m; this field is at ${number(r.altitude_m, 2)} m. Excluded by the engine due to elevation.`;
   }
-  return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
+  return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) ${r.mes_plantio === null ? `has no planting window in the ${seasonLabel(r.slot).toLowerCase()}` : `is planted in ${MONTHS[r.mes_plantio - 1]}, but the field is only available in ${MONTHS[r.mes_livre - 1]}`}.`;
 }
 
 function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false, tied = new Set(), models = null) {
   return {
     ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
-    tie_note: tied.has(seq.id) ? 'Empate técnico · hoje' : '',
+    tie_note: tied.has(seq.id) ? 'Technical tie · today' : '',
     model_note: modelNote(seq, models),
     comparison_facts: comparisonFacts(seq),
     rank_facts: [
-      { label: 'Posição · hoje', value: `#${seq.rank_hoje}` },
-      { label: 'Score · hoje', value: `${number(seq.hoje.score)} / 100` },
-      { label: 'Posição · futuro', value: `#${seq.rank_futuro}` },
-      { label: 'Score · futuro', value: `${number(seq.futuro.score)} / 100` },
+      { label: 'Rank · today', value: `#${seq.rank_hoje}` },
+      { label: 'Score · today', value: `${number(seq.hoje.score)} / 100` },
+      { label: 'Rank · future', value: `#${seq.rank_futuro}` },
+      { label: 'Score · future', value: `${number(seq.futuro.score)} / 100` },
     ],
     exposure: buildExposure(seq, firstMonth),
     warnings: buildWarnings(seq, cropLabel),
     benefits: buildBenefits(seq, cropLabel),
-    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. ${priorityNote} ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. As receitas por hectare e da área somam toda a sequência. ${seq.hoje.receita_ano_ha !== undefined ? 'A prioridade renda usa a receita por ano de ocupação, comparada ao sistema de referência do motor. Os anos considerados vão do talhão livre ao fim da última colheita, com mínimo de 1 ano; uma sequência mais curta não é multiplicada para simular novas safras. ' : 'Esta resposta não informa receita anual nem anos de ocupação. '}Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
+    tradeoff: `Overall rank: #${seq.rank_hoje} today and #${seq.rank_futuro} in the future${seq.seco ? `; #${seq.rank_seco} in the dry year` : ''}. ${priorityNote} ${isCurrent ? 'This sequence is the reference from your crop history. ' : ''}Revenue is gross, before costs. Per-hectare and field revenue cover the entire sequence. ${seq.hoje.receita_ano_ha !== undefined ? 'The income priority uses revenue per year of field occupancy, compared with the engine reference system. Occupancy runs from field availability to the end of the final harvest, with a minimum of one year; a shorter sequence is not multiplied to simulate additional seasons. ' : 'This response does not include annual revenue or years of occupancy. '}Check prices, heat thresholds and provisional engine constants with your agronomist. Historical prices are not a sales forecast.`,
     facts: [
-      { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
-      { label: 'Receita / ha · futuro', value: money(seq.futuro.receita_ha) },
-      { label: 'Ranking · hoje / futuro', value: `#${seq.rank_hoje} / #${seq.rank_futuro}` },
-      { label: 'Receita da área · hoje', value: money(seq.hoje.receita_ha * farm.area_ha) },
-      { label: 'Receita da área · futuro', value: money(seq.futuro.receita_ha * farm.area_ha) },
-      { label: 'Score geral · hoje / futuro', value: `${number(seq.hoje.score)} / ${number(seq.futuro.score)}` },
+      { label: 'Revenue / ha · today', value: money(seq.hoje.receita_ha) },
+      { label: 'Revenue / ha · future', value: money(seq.futuro.receita_ha) },
+      { label: 'Rank · today / future', value: `#${seq.rank_hoje} / #${seq.rank_futuro}` },
+      { label: 'Field revenue · today', value: money(seq.hoje.receita_ha * farm.area_ha) },
+      { label: 'Field revenue · future', value: money(seq.futuro.receita_ha * farm.area_ha) },
+      { label: 'Overall score · today / future', value: `${number(seq.hoje.score)} / ${number(seq.futuro.score)}` },
       ...(seq.seco ? [
-        { label: 'Receita / ha · ano seco', value: money(seq.seco.receita_ha) },
-        { label: 'Receita da área · ano seco', value: money(seq.seco.receita_ha * farm.area_ha) },
-        { label: 'Ranking / score · ano seco', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
+        { label: 'Revenue / ha · dry year', value: money(seq.seco.receita_ha) },
+        { label: 'Field revenue · dry year', value: money(seq.seco.receita_ha * farm.area_ha) },
+        { label: 'Rank / score · dry year', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
       ] : []),
       ...annualIncomeFacts(seq),
       ...waterFacts(seq),
@@ -402,28 +404,28 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
 }
 
 function currentRotation(value, farm, priorityNote, tied) {
-  const state = (status, description, strategy = null) => ({ status, title: 'Rotação atual', description, strategy });
+  const state = (status, description, strategy = null) => ({ status, title: 'Current rotation', description, strategy });
   const history = value.entrada.rotacao_atual;
-  if (!history.length) return state('no_history', 'Adicione seu histórico de plantio para comparar a rotação atual com as alternativas.');
+  if (!history.length) return state('no_history', 'Add your crop history to compare the current rotation with the alternatives.');
   const hasReference = Object.hasOwn(value, 'atual');
   // Only legacy responses lack the dedicated reference and can mark the oldest crops.
-  if (!hasReference && history.length > value.entrada.horizonte) return state('unavailable', 'Não foi possível identificar com segurança a rotação atual neste resultado. As alternativas continuam disponíveis.');
+  if (!hasReference && history.length > value.entrada.horizonte) return state('unavailable', 'The current rotation could not be reliably identified in this result. The alternatives are still available.');
   const repetition = history.length < value.entrada.horizonte
-    ? ' Como o histórico tem uma única cultura, a referência repete essa cultura nas duas posições do planejamento.' : '';
+    ? ' Because the history contains one crop, the reference repeats it in both positions of the plan.' : '';
   const seq = hasReference
     ? value.atual?.viavel && value.sequencias.find((item) => item.id === value.atual.id)
     : value.sequencias.find((item) => item.atual);
   if (seq) {
-    const description = `Referência identificada a partir do histórico informado, com os mesmos indicadores das alternativas.${repetition}`;
+    const description = `Reference identified from your crop history, using the same indicators as the alternatives.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
-      category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'receita bruta / ha · clima de hoje', reason: description,
+      category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'gross revenue / ha · today’s climate', reason: description,
     }, priorityNote, true, tied, value.modelos));
   }
   const discarded = hasReference
     ? value.atual?.viavel === false && value.atual
     : value.descartadas.find((item) => item.atual);
-  if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'A rotação de referência foi descartada por altitude.' : 'A rotação de referência não cabe no calendário escolhido.'} ${discardedReason(discarded)}${repetition}`);
-  return state('unavailable', 'Não foi possível identificar a rotação atual neste resultado. As alternativas disponíveis continuam abaixo.');
+  if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'The reference rotation was excluded due to elevation.' : 'The reference rotation does not fit the selected calendar.'} ${discardedReason(discarded)}${repetition}`);
+  return state('unavailable', 'The current rotation could not be identified in this result. Available alternatives are shown below.');
 }
 
 export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
@@ -431,37 +433,37 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
   const adjustment_note = adjustmentNote(validateOutputAdjustment(value.entrada));
   const priorities = value.entrada.prioridades;
   const equal = priorities.agua === priorities.solo && priorities.solo === priorities.renda;
-  const priority_note = `Prioridades aplicadas pelo motor: água ${number(priorities.agua * 100)}%, solo ${number(priorities.solo * 100)}% e renda ${number(priorities.renda * 100)}%.${equal ? ' Pesos iguais entre as três prioridades.' : ''}`;
+  const priority_note = `Priorities applied by the engine: water ${number(priorities.agua * 100)}%, soil ${number(priorities.solo * 100)}% and income ${number(priorities.renda * 100)}%.${equal ? ' Equal weights across all three priorities.' : ''}`;
   const tied = closeLeaders(value.sequencias);
   const ranking_note = tied.size
-    ? `Empate técnico entre as ${tied.size === 2 ? 'duas' : 'três'} primeiras sugestões: as notas estão a menos de 2 pontos da maior pontuação. É uma faixa de comparação, não igualdade exata nem garantia estatística. Compare também os demais indicadores.`
+    ? `Technical tie among the top ${tied.size === 2 ? 'two' : 'three'} suggestions: their scores are less than 2 points below the leader. This is a comparison band, not exact equality or a statistical guarantee. Compare the other indicators too.`
     : '';
   const current_rotation = currentRotation(value, farm, priority_note, tied);
   // The engine owns ranking and tie-breaking. Keep its order, including cover crops.
   const recommendations = value.sequencias.slice(0, 3).map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
     category: CATEGORIES[i], metric: `${number(seq.hoje.score)} / 100`,
-    metric_label: 'score ponderado · clima de hoje',
-    reason: `${seq.rank_hoje}ª posição entre as sequências viáveis no clima de hoje. ${priority_note} A posição no futuro usa os mesmos pesos e pode mudar.`,
+    metric_label: 'weighted score · today’s climate',
+    reason: `Rank #${seq.rank_hoje} among viable sequences in today’s climate. ${priority_note} Future ranking uses the same weights and may change.`,
   }, priority_note, current_rotation.strategy?.sequence_id === seq.id, tied, value.modelos));
-  return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas pelo motor. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
-    source_warning: value.origem?.aviso || '', ranking_note, soil_note: soilNote(value),
+  return { demo, summary: `${value.sequencias.length} viable sequences and ${value.descartadas.length} excluded by the engine. Field available in ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} crop(s). ${demo ? 'Fixed example: does not use your history or settings. ' : ''}${englishSourceNotice(dataNotice)}`,
+    source_warning: englishSourceNotice(value.origem?.aviso || ''), ranking_note, soil_note: soilNote(value),
     scenario_note: value.clima.seco
       ? adjustment_note
-        ? 'Ano seco: cenário “e se” aplicado sobre a base de 2020/21. Os valores exibidos foram ajustados pelo motor; não são as observações originais. Ele é comparado nos detalhes com o mesmo ajuste dos demais cenários.'
-        : 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os cards mostram as melhores posições de hoje com as prioridades aplicadas.'
-      : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
+        ? 'Dry year: a what-if scenario applied to the 2020/21 baseline. The displayed values have been adjusted by the engine; they are not the original observations. Details compare it with the same adjustment as the other scenarios.'
+        : 'Dry year: observations from 2020/21, not an average or a forecast. Details include this comparison; cards show today’s highest-ranked options using your priorities.'
+      : 'Dry-year comparison is not available in this engine response.',
     priority_note, adjustment_note, current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
 }
 
 async function readResponse(response) {
   let value;
   try { value = await response.json(); } catch {
-    throw new Error(response.ok ? 'A API retornou uma resposta que não é JSON.' : `Motor indisponível (HTTP ${response.status}).`);
+    throw new Error(response.ok ? 'The API returned a response that is not JSON.' : `Engine unavailable (HTTP ${response.status}).`);
   }
   if (!response.ok) {
     const detail = typeof value?.detail === 'string' ? value.detail : Array.isArray(value?.detail)
       ? value.detail.filter(d => d && typeof d.msg === 'string').map((d) => `${Array.isArray(d.loc) ? d.loc.slice(1).join('.') || 'entrada' : 'entrada'}: ${d.msg}`).join('; ') : '';
-    throw new Error(`Motor retornou HTTP ${response.status}. ${detail}`.trim());
+    throw new Error(`The engine returned HTTP ${response.status}. ${detail ? englishApiError(detail) : ''}`.trim());
   }
   return value;
 }
@@ -476,5 +478,5 @@ export async function requestMetadata(baseUrl, { signal, fetcher = fetch } = {})
   list(value?.cultures, 'metadata.cultures', 1, 100);
   value.cultures.forEach((crop) => { string(crop?.id, 'culture.id'); string(crop?.label, 'culture.label'); });
   string(value.data_notice, 'data_notice');
-  return value;
+  return { ...value, cultures: value.cultures.map(crop => ({ ...crop, label: cropLabel(crop.id) })), data_notice: englishSourceNotice(value.data_notice) };
 }

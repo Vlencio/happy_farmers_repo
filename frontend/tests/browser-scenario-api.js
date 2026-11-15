@@ -9,15 +9,15 @@ async (originalPage) => {
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const normalized = value => value.replace(/\s/g, '');
-  const money = value => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-  const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const money = value => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
+  const number = value => value.toLocaleString('en-US', { maximumFractionDigits: 1 });
   const text = () => page.locator('[data-rune-a11y]').textContent();
   const button = name => page.getByRole('button', { name, exact: true });
-  const cards = () => page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
-  const heading = () => page.getByRole('heading', { name: 'Simule outro clima', exact: true });
-  const controls = ['Diminuir chuva em 5%', 'Aumentar chuva em 5%', 'Diminuir temperatura em 0,5 °C', 'Aumentar temperatura em 0,5 °C'];
+  const cards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
+  const heading = () => page.getByRole('heading', { name: 'Simulate another climate', exact: true });
+  const controls = ['Decrease rainfall by 5%', 'Increase rainfall by 5%', 'Decrease temperature by 0.5 °C', 'Increase temperature by 0.5 °C'];
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
-  const waitConnected = () => page.waitForFunction(() => /Motor conectado|Conectado/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
   page.on('pageerror', error => errors.push(error.message));
   page.on('request', request => {
@@ -59,7 +59,7 @@ async (originalPage) => {
         { field, value: before + Math.sign(steps) * (field === 'temp_c' ? .5 : 5) });
     }
   }
-  async function analyze(label, expected, action = 'Aplicar cenário') {
+  async function analyze(label, expected, action = 'Apply scenario') {
     const pending = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'), { timeout: 30000 });
     await click(action);
     const response = await pending;
@@ -68,31 +68,31 @@ async (originalPage) => {
     check(same(request.ajuste, expected), label + ': request preserves selected adjustment');
     check(expected ? same(raw.entrada.ajuste, expected) : !Object.hasOwn(raw.entrada, 'ajuste'), label + ': engine confirms the effective adjustment');
     check(raw.origem?.hoje === 'tabela_demo', label + ': demo climate needs no external POWER query');
-    await waitText('ANÁLISE DO MOTOR'); await page.waitForTimeout(180);
+    await waitText('ENGINE ANALYSIS'); await page.waitForTimeout(180);
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
     const labels = await cards().allTextContents();
     check(labels.length === Math.min(3, raw.sequencias.length) && view.recommendations.every((rec, i) => labels[i].includes(rec.crop)), label + ': cards preserve the engine order');
     check(view.recommendations.every((rec, i) => {
       const seq = raw.sequencias.find(seq => seq.id === rec.sequence_id);
-      return [`Posição · hoje: #${seq.rank_hoje}`, `Score · hoje: ${number(seq.hoje.score)} / 100`,
-        `Posição · futuro: #${seq.rank_futuro}`, `Score · futuro: ${number(seq.futuro.score)} / 100`].every(value => labels[i].includes(value));
+      return [`Rank · today: #${seq.rank_hoje}`, `Score · today: ${number(seq.hoje.score)} / 100`,
+        `Rank · future: #${seq.rank_futuro}`, `Score · future: ${number(seq.futuro.score)} / 100`].every(value => labels[i].includes(value));
     }), label + ': visible ranks and scores match the API');
-    check(expected ? (await text()).includes(view.adjustment_note) && /simulação, não uma previsão/.test(view.adjustment_note)
-      : !view.adjustment_note && !(await text()).includes('CENÁRIO HIPOTÉTICO'), label + ': scenario labeling matches the result');
+    check(expected ? (await text()).includes(view.adjustment_note) && /simulation, not a forecast/.test(view.adjustment_note)
+      : !view.adjustment_note && !(await text()).includes('WHAT-IF SCENARIO'), label + ': scenario labeling matches the result');
     results.push({ label, raw });
     return { raw, view };
   }
   async function verifyDetail(analysis) {
-    await click(await cards().first().textContent()); await waitText('Seu ciclo, etapa por etapa');
+    await click(await cards().first().textContent()); await waitText('Your crop cycle, step by step');
     const screen = normalized(await text()), first = analysis.raw.sequencias[0];
-    for (const [key, label] of [['hoje', 'HOJE'], ['futuro', 'FUTURO'], ['seco', 'ANO SECO']]) {
-      check(screen.includes(normalized(`RECEITA / HA · ${label}${money(first[key].receita_ha)}`)), 'Adjusted detail uses actual total revenue for ' + key);
-      check(screen.includes(normalized(`RECEITA / HA / ANO · ${label}${money(first[key].receita_ano_ha)}`)), 'Adjusted detail uses actual annual revenue for ' + key);
+    for (const [key, label] of [['hoje', 'TODAY'], ['futuro', 'FUTURE'], ['seco', 'DRY YEAR']]) {
+      check(screen.includes(normalized(`REVENUE / HA · ${label}${money(first[key].receita_ha)}`)), 'Adjusted detail uses actual total revenue for ' + key);
+      check(screen.includes(normalized(`REVENUE / HA / YEAR · ${label}${money(first[key].receita_ano_ha)}`)), 'Adjusted detail uses actual annual revenue for ' + key);
     }
     check((await text()).includes(analysis.view.adjustment_note), 'Hypothetical warning remains in the detail');
-    check((await text()).includes('não são as observações originais'), 'Adjusted dry year is explicitly distinguished from observations');
-    await click('← Comparar estratégias');
+    check((await text()).includes('not the original observations'), 'Adjusted dry year is explicitly distinguished from observations');
+    await click('← Compare strategies');
   }
   try {
     const metadataPending = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/metadata'));
@@ -108,8 +108,8 @@ async (originalPage) => {
     });
     await page.reload(); await waitConnected();
     check(!(await button(controls[0]).isDisabled()) && !(await button(controls[3]).isDisabled()), 'Actual capability enables rain and heat controls');
-    check(!(await text()).includes('Os ajustes de cenário ainda não estão disponíveis neste servidor.'), 'Connected server is not mislabeled as unsupported');
-    const baseline = await analyze('Baseline', undefined, 'Analisar fazenda →');
+    check(!(await text()).includes('Scenario adjustments are not yet available on this server.'), 'Connected server is not mislabeled as unsupported');
+    const baseline = await analyze('Baseline', undefined, 'Analyze farm →');
     const beforeRain = requests.length;
     await change('chuva_pct', -4);
     check(requests.length === beforeRain && await cards().count() === 0, 'Editing clears old cards and waits for explicit Apply');
@@ -132,7 +132,7 @@ async (originalPage) => {
     await page.screenshot({ path: 'output/playwright/real-scenarios-mobile.png' });
     await align(cards().first()); await page.screenshot({ path: 'output/playwright/real-scenarios-cards-mobile.png' });
     await page.setViewportSize({ width: 1440, height: 1100 }); await page.waitForTimeout(300);
-    await click('Voltar ao clima sem ajuste');
+    await click('Reset climate adjustments');
     check(await cards().count() === 0 && same((await draft()).settings.ajuste, { chuva_pct: 0, temp_c: 0 }), 'Reset clears adjusted cards and stored controls');
     const reset = await analyze('Reset', undefined);
     check(same(reset.raw, baseline.raw), 'Reset restores the exact unadjusted API result');
@@ -140,20 +140,20 @@ async (originalPage) => {
     const warm = await analyze('Heat +2', { chuva_pct: 0, temp_c: 2 });
     check(!same(warm.raw.sequencias, baseline.raw.sequencias), 'Temperature alone changes the real engine output');
     await page.reload(); await waitConnected();
-    const restored = await analyze('Restored heat +2', { chuva_pct: 0, temp_c: 2 }, 'Analisar fazenda →');
+    const restored = await analyze('Restored heat +2', { chuva_pct: 0, temp_c: 2 }, 'Analyze farm →');
     check(same(restored.raw, warm.raw), 'Reload keeps the adjustment and reproduces its real result');
-    const rainTrack = await reveal(page.getByRole('group', { name: /^Chuva do cenário:/ }));
+    const rainTrack = await reveal(page.getByRole('group', { name: /^Scenario Rainfall:/ }));
     await page.mouse.click(rainTrack.x + rainTrack.width / 2, rainTrack.y + rainTrack.height / 2);
     await page.keyboard.press('Home'); await page.waitForTimeout(150);
-    const temperatureTrack = await reveal(page.getByRole('group', { name: /^Temperatura do cenário:/ }));
+    const temperatureTrack = await reveal(page.getByRole('group', { name: /^Scenario Temperature:/ }));
     await page.mouse.click(temperatureTrack.x + temperatureTrack.width / 2, temperatureTrack.y + temperatureTrack.height / 2);
     await page.keyboard.press('End'); await page.waitForTimeout(150);
     check((await button(controls[0]).isDisabled()) && (await button(controls[3]).isDisabled()), 'The UI enforces lower rain and upper heat bounds');
     await analyze('Bounds -50/+4', { chuva_pct: -50, temp_c: 4 });
-    const upperRain = await reveal(page.getByRole('group', { name: /^Chuva do cenário:/ }));
+    const upperRain = await reveal(page.getByRole('group', { name: /^Scenario Rainfall:/ }));
     await page.mouse.click(upperRain.x + upperRain.width / 2, upperRain.y + upperRain.height / 2);
     await page.keyboard.press('End'); await page.waitForTimeout(150);
-    const lowerHeat = await reveal(page.getByRole('group', { name: /^Temperatura do cenário:/ }));
+    const lowerHeat = await reveal(page.getByRole('group', { name: /^Scenario Temperature:/ }));
     await page.mouse.click(lowerHeat.x + lowerHeat.width / 2, lowerHeat.y + lowerHeat.height / 2);
     await page.keyboard.press('Home'); await page.waitForTimeout(150);
     check((await button(controls[1]).isDisabled()) && (await button(controls[2]).isDisabled()), 'The UI enforces upper rain and lower heat bounds');
