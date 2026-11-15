@@ -4,11 +4,13 @@ import { supportsSoil, validateSoilTexture, validateOutputSoil, soilNote } from 
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
 import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
+import { cropRevenueContext, isSoilOnlyPlan, soilPlanRole, sequenceRevenueNote, revenueAmount, sequenceRevenueAmount } from './revenue.mjs';
 import { DEFAULT_ADJUSTMENT, validateAdjustment, validateOutputAdjustment, supportsAdjustment, hasAdjustment, adjustmentNote } from './scenario.mjs';
 export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
 export const CATEGORIES = ['rank1', 'rank2', 'rank3'];
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { ...DEFAULT_ADJUSTMENT } };
 // POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
 export const ANALYSIS_TIMEOUT_MS = 360_000;
@@ -16,7 +18,6 @@ const cropLabels = { soja: 'Soybean', milho: 'Corn', sorgo: 'Sorghum', feijao: '
 export const cropLabel = (id) => cropLabels[id] || id.charAt(0).toUpperCase() + id.slice(1);
 const seasonLabel = slot => slot === 'safrinha' ? 'Second season' : 'Main season';
 const number = (value, digits = 1) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
-const money = (value) => value.toLocaleString('en-US', { style: 'currency', currency: 'BRL', currencyDisplay: 'code', maximumFractionDigits: 0 });
 const index = (value) => `${number(value * 100)} / 100`;
 const normalize = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const invalid = (path) => { throw new Error(`Response does not match the engine contract: ${path}.`); };
@@ -279,6 +280,7 @@ function timeline(seq, firstMonth) {
   const monthLabel = (absolute) => `${MONTHS[absolute % 12]} · year ${Math.floor(absolute / 12) + 1}`;
   const stages = seq.hoje.culturas.map((crop, i) => {
     const crops = scenarios.map((key) => seq[key].culturas[i]);
+    const revenue = cropRevenueContext(seq, crop.cultura, cropLabel(crop.cultura));
     const compare = (key, format = number) => crops.map((c) => format(c[key])).join(' / ');
     let start = crop.mes_plantio - 1;
     while (start < last) start += 12;
@@ -292,7 +294,8 @@ function timeline(seq, firstMonth) {
     last = end;
     return { title: `${cropLabel(crop.cultura)} · ${seasonLabel(crop.slot)}`, period: `${monthLabel(start)} → ${monthLabel(end)}`,
       start_month: start - firstMonth + 2, end_month: end - firstMonth + 2,
-      description: `${crop.ciclo_dias} days in the crop cycle; ${crop.espera_dias} days waiting for planting. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} days between the end of the previous crop and this planting${i === 0 ? ' (for the first crop, the end of the crop history is an assumption in the calculation)' : ''}. ` : ''}Gross revenue per hectare (${order}): ${compare('receita_ha', money)}.`,
+      description: `${crop.ciclo_dias} days in the crop cycle; ${crop.espera_dias} days waiting for planting. ${crop.dias_apos_anterior != null ? `${crop.dias_apos_anterior} days between the end of the previous crop and this planting${i === 0 ? ' (for the first crop, the end of the crop history is an assumption in the calculation)' : ''}. ` : ''}${revenue.kind === 'soil' ? '' : `Gross revenue per hectare for this crop cycle (${order}): ${compare('receita_ha', value => revenueAmount(value, revenue.kind === 'market' ? 'Market revenue not included' : 'No revenue estimated'))}.`}`.trim(),
+      revenue_title: revenue.title, revenue_note: revenue.note,
       water: `Water demand met (${order}): ${compare('atendimento_hidrico', (v) => number(v * 100))} out of 100. Deficit over the crop cycle: ${compare('deficit_mm')} mm.`,
       soil: `Soil index (${order}): ${compare('solo', (v) => number(v * 100))} out of 100. Sequence factor: ${number(crop.fator_sequencia, 3)}×. ${rotationFactors(crop)}The index combines nitrogen fixation, cover and diversity, adjusted for climate suitability; it is not a soil measurement.`,
       risk: `Temperature suitability: ${compare('encaixe_temp', (v) => number(v * 100))} out of 100. Rainfall suitability: ${compare('encaixe_chuva', (v) => number(v * 100))} out of 100. ${crops.every((c) => c.encaixe_calor != null) ? `Heat suitability: ${compare('encaixe_calor', (v) => number(v * 100))} out of 100; hot days during the sensitive growth stage: ${compare('dias_calor')}. ` : ''}Order: ${order}. Check heat thresholds with your agronomist; no penalty does not prove tolerance.`, monthly };
@@ -310,7 +313,9 @@ function rotationFactors(crop) {
 
 function comparisonFacts(seq) {
   return [
-    { label: 'Revenue / ha · today', value: money(seq.hoje.receita_ha) },
+    isSoilOnlyPlan(seq)
+      ? { label: 'Primary role', value: soilPlanRole(seq) }
+      : { label: 'Gross revenue / ha · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha) },
     { label: 'Soil · today', value: index(seq.hoje.solo) },
     { label: 'Suitability · future', value: index(seq.futuro.encaixe) },
   ];
@@ -321,7 +326,7 @@ function annualIncomeFacts(seq) {
     const result = seq[key];
     if (!result || result.receita_ano_ha === undefined) return [];
     return [
-      { label: `Revenue / ha / year · ${label}`, value: money(result.receita_ano_ha) },
+      ...(isSoilOnlyPlan(seq) ? [] : [{ label: `Gross revenue / ha / year · ${label}`, value: sequenceRevenueAmount(seq, result.receita_ano_ha) }]),
       { label: `Years accounted for · ${label}`, value: `${number(result.anos_ocupados, 2)} ${result.anos_ocupados === 1 ? 'year' : 'years'}` },
     ];
   });
@@ -340,7 +345,9 @@ function modelFacts(seq) {
   if (!seq.modelos) return [];
   return [
     { label: 'Rank · future across models', value: `#${seq.modelos.rank_min}–#${seq.modelos.rank_max}` },
-    { label: 'Revenue / ha / year · future across models', value: `${money(seq.modelos.receita_ano_ha_min)} to ${money(seq.modelos.receita_ano_ha_max)}` },
+    ...(isSoilOnlyPlan(seq) ? [] : [{ label: 'Gross revenue / ha / year · future across models', value: seq.modelos.receita_ano_ha_max === 0
+      ? sequenceRevenueAmount(seq, 0)
+      : `${revenueAmount(seq.modelos.receita_ano_ha_min)} to ${revenueAmount(seq.modelos.receita_ano_ha_max)}` }]),
   ];
 }
 
@@ -369,10 +376,12 @@ function discardedReason(seq) {
 }
 
 function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false, tied = new Set(), models = null) {
+  const soilOnly = isSoilOnlyPlan(seq);
   return {
     ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
     tie_note: tied.has(seq.id) ? 'Technical tie · today' : '',
     model_note: modelNote(seq, models),
+    revenue_note: sequenceRevenueNote(seq, cropLabel),
     comparison_facts: comparisonFacts(seq),
     rank_facts: [
       { label: 'Rank · today', value: `#${seq.rank_hoje}` },
@@ -383,17 +392,23 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
     exposure: buildExposure(seq, firstMonth),
     warnings: buildWarnings(seq, cropLabel),
     benefits: buildBenefits(seq, cropLabel),
-    tradeoff: `Overall rank: #${seq.rank_hoje} today and #${seq.rank_futuro} in the future${seq.seco ? `; #${seq.rank_seco} in the dry year` : ''}. ${priorityNote} ${isCurrent ? 'This sequence is the reference from your crop history. ' : ''}Revenue is gross, before costs. Per-hectare and field revenue cover the entire sequence. ${seq.hoje.receita_ano_ha !== undefined ? 'The income priority uses revenue per year of field occupancy, compared with the engine reference system. Occupancy runs from field availability to the end of the final harvest, with a minimum of one year; a shorter sequence is not multiplied to simulate additional seasons. ' : 'This response does not include annual revenue or years of occupancy. '}Check prices, heat thresholds and provisional engine constants with your agronomist. Historical prices are not a sales forecast.`,
+    tradeoff: `Overall rank: #${seq.rank_hoje} today and #${seq.rank_futuro} in the future${seq.seco ? `; #${seq.rank_seco} in the dry year` : ''}. ${priorityNote} ${isCurrent ? 'This sequence is the reference from your crop history. ' : ''}All amounts are in Brazilian reais (BRL). Gross revenue is before costs, not profit. Values labeled "full rotation" cover the entire sequence; field totals also account for your field's area in hectares. ${seq.hoje.receita_ano_ha !== undefined ? 'Values labeled "/ year" are per year of field occupancy. The income priority uses revenue per year of field occupancy, compared with the engine reference system. Occupancy runs from field availability to the end of the final harvest, with a minimum of one year; a shorter sequence is not multiplied to simulate additional seasons. ' : 'This response does not include annual revenue or years of occupancy. '}Check prices, heat thresholds and provisional engine constants with your agronomist. Historical prices are not a sales forecast.`,
     facts: [
-      { label: 'Revenue / ha · today', value: money(seq.hoje.receita_ha) },
-      { label: 'Revenue / ha · future', value: money(seq.futuro.receita_ha) },
+      ...(soilOnly ? [{ label: 'Revenue treatment', value: 'Soil benefits are not monetized' }] : [
+        { label: 'Gross revenue / ha · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha) },
+        { label: 'Gross revenue / ha · full rotation · future', value: sequenceRevenueAmount(seq, seq.futuro.receita_ha) },
+      ]),
       { label: 'Rank · today / future', value: `#${seq.rank_hoje} / #${seq.rank_futuro}` },
-      { label: 'Field revenue · today', value: money(seq.hoje.receita_ha * farm.area_ha) },
-      { label: 'Field revenue · future', value: money(seq.futuro.receita_ha * farm.area_ha) },
+      ...(soilOnly ? [] : [
+        { label: 'Gross field revenue · full rotation · today', value: sequenceRevenueAmount(seq, seq.hoje.receita_ha * farm.area_ha) },
+        { label: 'Gross field revenue · full rotation · future', value: sequenceRevenueAmount(seq, seq.futuro.receita_ha * farm.area_ha) },
+      ]),
       { label: 'Overall score · today / future', value: `${number(seq.hoje.score)} / ${number(seq.futuro.score)}` },
       ...(seq.seco ? [
-        { label: 'Revenue / ha · dry year', value: money(seq.seco.receita_ha) },
-        { label: 'Field revenue · dry year', value: money(seq.seco.receita_ha * farm.area_ha) },
+        ...(soilOnly ? [] : [
+          { label: 'Gross revenue / ha · full rotation · dry year', value: sequenceRevenueAmount(seq, seq.seco.receita_ha) },
+          { label: 'Gross field revenue · full rotation · dry year', value: sequenceRevenueAmount(seq, seq.seco.receita_ha * farm.area_ha) },
+        ]),
         { label: 'Rank / score · dry year', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
       ] : []),
       ...annualIncomeFacts(seq),
@@ -418,7 +433,7 @@ function currentRotation(value, farm, priorityNote, tied) {
   if (seq) {
     const description = `Reference identified from your crop history, using the same indicators as the alternatives.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
-      category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'gross revenue / ha · today’s climate', reason: description,
+      category: 'current', metric: isSoilOnlyPlan(seq) ? soilPlanRole(seq) : sequenceRevenueAmount(seq, seq.hoje.receita_ha), metric_label: isSoilOnlyPlan(seq) ? 'primary role' : 'gross revenue / ha · full rotation · today’s climate', reason: description,
     }, priorityNote, true, tied, value.modelos));
   }
   const discarded = hasReference
@@ -426,6 +441,42 @@ function currentRotation(value, farm, priorityNote, tied) {
     : value.descartadas.find((item) => item.atual);
   if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'The reference rotation was excluded due to elevation.' : 'The reference rotation does not fit the selected calendar.'} ${discardedReason(discarded)}${repetition}`);
   return state('unavailable', 'The current rotation could not be identified in this result. Available alternatives are shown below.');
+}
+
+// Only the current provider's routine provenance moves out of the warning band.
+// New/unrecognized notices stay prominent until their meaning is known.
+const ROUTINE_SOURCE_NOTICES = [
+  'This point is within 25 km of the demonstration field. We use that field’s climate with the A520 station correction, without a new POWER request.',
+  'POWER data for this point and regional NEX-GDDP projections, without the A520 station correction.',
+  'Planting months still follow the Triângulo Mineiro calendar; check local suitability.',
+];
+function climateSources(origin, dataNotice, demo) {
+  const notice = englishSourceNotice(origin?.aviso || '');
+  const remainder = ROUTINE_SOURCE_NOTICES.reduce((text, routine) => text.replaceAll(routine, ''), notice).trim();
+  const knownSource = ['tabela_demo', 'power_api', 'power_arquivo'].includes(origin?.hoje);
+  const fallback = origin?.hoje === 'fallback_tabela_demo';
+  const outside = origin?.dentro_mg === false;
+  const exceptional = fallback || outside || Boolean(notice && (!knownSource || remainder));
+  let baseline = englishSourceNotice(dataNotice);
+  if (knownSource || fallback) {
+    baseline = /\bPOWER\b/.test(baseline)
+      ? baseline.replace(/(?<!NASA )\bPOWER\b/g, 'NASA POWER')
+      : ['Historical climate source: NASA POWER.', baseline].filter(Boolean).join(' ');
+  }
+  if (['nex_talhao_demo', 'nex_regional'].includes(origin?.delta)) {
+    baseline = baseline.includes('future: around 2060, using regional changes.')
+      ? baseline.replace('future: around 2060, using regional changes.', 'future: NASA NEX-GDDP-CMIP6 projections around 2060, using regional changes.')
+      : [baseline, 'Future projection source: NASA NEX-GDDP-CMIP6.'].filter(Boolean).join(' ');
+  }
+  const missingWarning = [
+    fallback ? 'POWER climate data is unavailable for this point. The analysis uses demonstration-field climate tables.' : '',
+    outside ? 'The field point is outside Minas Gerais. The planting calendar is regional; this result is exploratory.' : '',
+  ].filter(Boolean).join(' ');
+  return {
+    data_sources: [baseline, exceptional ? '' : notice,
+      demo ? 'Fixed example: does not use your history or settings.' : ''].filter(Boolean).join(' '),
+    source_warning: exceptional ? notice || missingWarning : '',
+  };
 }
 
 export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
@@ -445,8 +496,8 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
     metric_label: 'weighted score · today’s climate',
     reason: `Rank #${seq.rank_hoje} among viable sequences in today’s climate. ${priority_note} Future ranking uses the same weights and may change.`,
   }, priority_note, current_rotation.strategy?.sequence_id === seq.id, tied, value.modelos));
-  return { demo, summary: `${value.sequencias.length} viable sequences and ${value.descartadas.length} excluded by the engine. Field available in ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} crop(s). ${demo ? 'Fixed example: does not use your history or settings. ' : ''}${englishSourceNotice(dataNotice)}`,
-    source_warning: englishSourceNotice(value.origem?.aviso || ''), ranking_note, soil_note: soilNote(value),
+  return { demo, summary: `${value.sequencias.length} viable ${value.sequencias.length === 1 ? 'rotation' : 'rotations'} · field available from ${MONTH_NAMES[value.entrada.mes_plantio - 1]} · planning ${value.entrada.horizonte} ${value.entrada.horizonte === 1 ? 'crop' : 'crops'}`,
+    ...climateSources(value.origem, dataNotice, demo), ranking_note, soil_note: soilNote(value),
     scenario_note: value.clima.seco
       ? adjustment_note
         ? 'Dry year: a what-if scenario applied to the 2020/21 baseline. The displayed values have been adjusted by the engine; they are not the original observations. Details compare it with the same adjustment as the other scenarios.'

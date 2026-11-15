@@ -88,7 +88,7 @@ async (originalPage) => {
     check(response.status() === 200, key + ': simulated transport accepts the actual UI inputs');
     const raw = await response.json();
     check(same(raw, expected.result), key + ': transport preserves the complete real-engine response');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       return mapMotorAnalysis(raw, JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm);
@@ -118,8 +118,9 @@ async (originalPage) => {
   }
   async function openCurrent(analysis) {
     const current = analysis.view.current_rotation.strategy;
-    check(current && (await cards().first().textContent()).includes('CURRENT ROTATION'), 'Current reference is visible before opening its new warnings');
-    await click(await cards().first().textContent()); await waitText('Risks and data gaps for this strategy');
+    const reference = page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ });
+    check(current && await reference.count() === 1, 'Current reference is visible before opening its new warnings');
+    await click(await reference.textContent()); await waitText('Risks and data gaps for this strategy');
     const screen = await text();
     check([...current.warnings.risks, ...current.warnings.gaps].every(item =>
       [item.title, item.context, item.description, item.evidence].every(value => !value || screen.includes(value))), 'Every current-reference warning retains its actual context and evidence');
@@ -142,7 +143,7 @@ async (originalPage) => {
     let screen = await text();
     check(screen.includes(october.view.recommendations[1].model_note) && screen.includes('#1–#2'), 'Detail exposes the same real model rank range as the card');
     check(normalized(screen).includes(normalized(`RANK · FUTURE ACROSS MODELS#${corn.modelos.rank_min}–#${corn.modelos.rank_max}`)), 'Model rank fact preserves both supplied endpoints');
-    check(normalized(screen).includes(normalized(`REVENUE / HA / YEAR · FUTURE ACROSS MODELS${money(corn.modelos.receita_ano_ha_min)} to ${money(corn.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
+    check(normalized(screen).includes(normalized(`GROSS REVENUE / HA / YEAR · FUTURE ACROSS MODELS${money(corn.modelos.receita_ano_ha_min)} to ${money(corn.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
     await align(page.getByText(october.view.recommendations[1].model_note, { exact: true }));
     await page.screenshot({ path: 'output/playwright/reviewed-models-detail-desktop.png' });
     await click('← Compare strategies');

@@ -25,7 +25,7 @@ async (originalPage) => {
   const button = name => page.getByRole('button', { name, exact: true });
   const cards = () => page.getByRole('button', { name: /Open timeline$/ });
   const rankedCards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
-  const priorityHeading = () => page.getByRole('heading', { name: 'Your priorities', exact: true });
+  const priorityHeading = () => page.getByRole('heading', { name: 'Your priorities', exact: true }).or(page.getByRole('button', { name: /^Your priorities · (expand|collapse)$/ }));
   const chatHeading = () => page.getByRole('heading', { name: 'Chat about this analysis', exact: true });
   const input = () => page.getByRole('textbox', { name: 'Your question about the analysis', exact: true });
   const counter = () => page.getByText(/^\d+\/1,000 characters · Ctrl\+Enter to send$/);
@@ -38,6 +38,14 @@ async (originalPage) => {
     return content.includes(value);
   }, value, { timeout: 20000 });
   const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  // Parameter tests open the new disclosure before exercising its controls.
+  // Default collapsed states and ordering are covered in browser-document.js.
+  async function openControls() {
+    const outer = 'Adjust priorities, soil and climate · expand';
+    if (await button(outer).count()) await click(outer);
+    const setup = 'Your priorities · expand';
+    if (await button(setup).count()) await click(setup);
+  }
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox();
@@ -71,7 +79,7 @@ async (originalPage) => {
   async function result(response) {
     check(response.status() === 200, 'Real analyze succeeds with ' + JSON.stringify(response.request().postDataJSON().prioridades));
     const raw = await response.json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS'); await openControls();
     await page.waitForTimeout(220);
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
@@ -120,7 +128,8 @@ async (originalPage) => {
     const hasCurrent = analysis.view.current_rotation.status === 'ready';
     check(await cards().count() === ids.length + (hasCurrent ? 1 : 0), name + ': reference is separate and no cards are fabricated');
     const namesById = analysis.view.recommendations.map((rec, i) => [rec, names[i]]);
-    if (hasCurrent) namesById.push([analysis.view.current_rotation.strategy, await cards().first().textContent()]);
+    if (hasCurrent) namesById.push([analysis.view.current_rotation.strategy,
+      await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent()]);
     check(namesById.every(([rec, name]) => {
       const seq = analysis.raw.sequencias.find(seq => seq.id === rec.sequence_id);
       const facts = [ ['Rank · today', '#' + seq.rank_hoje], ['Score · today', number(seq.hoje.score) + ' / 100'],
@@ -128,7 +137,8 @@ async (originalPage) => {
       return facts.every(([label, value]) => name.includes(`${label}: ${value}`))
         && rec.comparison_facts.every(fact => name.includes(`${fact.label}: ${fact.value}`));
     }), name + ': every card exposes actual current/future rank, score, and comparison values');
-    if (hasCurrent) check((await cards().first().textContent()).includes('CURRENT ROTATION'), name + ': current rotation remains the comparison reference');
+    if (hasCurrent) check(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).count() === 1,
+      name + ': current rotation remains the comparison reference');
   }
   async function openChat() {
     if (await button('Open AI chat').count()) await click('Open AI chat');

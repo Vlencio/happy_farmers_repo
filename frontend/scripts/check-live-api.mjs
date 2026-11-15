@@ -25,7 +25,8 @@ for (const horizonte of [1, 2]) {
     assert.equal(raw.entrada.mes_plantio, mes_plantio);
     assert.equal(raw.sequencias.length + raw.descartadas.length, metadata.cultures.length ** horizonte);
     const view = mapMotorAnalysis(raw, farm);
-    assert.match(view.source_warning, /demonstration field/);
+    assert.match(view.data_sources, /demonstration field/);
+    assert.equal(view.source_warning, '', 'Routine demo provenance belongs with data sources, not in the exception warning.');
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id));
     assert.equal(view.recommendations.length, Math.min(3, raw.sequencias.length));
     if (horizonte === 1 && [3, 4, 5, 12].includes(mes_plantio)) {

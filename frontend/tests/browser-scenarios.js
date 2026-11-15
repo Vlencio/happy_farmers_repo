@@ -23,7 +23,7 @@ async (originalPage) => {
   const button = name => page.getByRole('button', { name, exact: true });
   const cards = () => page.getByRole('button', { name: /Open timeline$/ });
   const rankedCards = () => page.getByRole('button', { name: /^(?:1ST|2ND|3RD) TODAY.*Open timeline$/ });
-  const scenarioHeading = () => page.getByRole('heading', { name: 'Simulate another climate', exact: true });
+  const scenarioHeading = () => page.getByRole('heading', { name: 'What if the climate changes in your region?', exact: true }).or(page.getByRole('button', { name: /^What if the climate changes in your region\? · (expand|collapse)$/ }));
   const controlNames = ['Decrease rainfall by 5%', 'Increase rainfall by 5%',
     'Decrease temperature by 0.5 °C', 'Increase temperature by 0.5 °C'];
   const text = () => page.locator('[data-rune-a11y]').evaluate(root => root.textContent
@@ -35,6 +35,14 @@ async (originalPage) => {
     return content.includes(value);
   }, value, { timeout: 20000 });
   const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
+  // Parameter tests open the new disclosure before exercising its controls.
+  // Default collapsed states and ordering are covered in browser-document.js.
+  async function openControls() {
+    const outer = 'Adjust priorities, soil and climate · expand';
+    if (await button(outer).count()) await click(outer);
+    const setup = 'What if the climate changes in your region? · expand';
+    if (await button(setup).count()) await click(setup);
+  }
   async function reveal(locator) {
     for (let i = 0; i < 50; i++) {
       const box = await locator.boundingBox();
@@ -69,7 +77,7 @@ async (originalPage) => {
   async function result(response) {
     check(response.status() === 200, 'Analysis transport succeeds: ' + JSON.stringify(response.request().postDataJSON().ajuste ?? null));
     const raw = await response.json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS'); await openControls();
     await page.waitForTimeout(200);
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
@@ -105,16 +113,18 @@ async (originalPage) => {
   }
   async function seed(ajuste) {
     await page.goto(originalPage.url());
-    await waitConnected();
+    await waitConnected(); await openControls();
     await page.evaluate(async ajuste => {
       const { normalizeFarm } = await import('/web/geometry.mjs');
       const farm = normalizeFarm(await (await fetch('/demo-farm.geojson')).json(), { source: 'sample' });
-      const settings = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } };
+      // These climate fixtures use the default soil reference. Keep the regional
+      // lookup from adding a texture absent from their actual-engine requests.
+      const settings = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, solo_padrao: true };
       if (ajuste) settings.ajuste = ajuste;
       localStorage.setItem('happy-farmers-draft-v1', JSON.stringify({ version: 2, farm,
         history: ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2022 + i), notes: '' })), settings }));
     }, ajuste);
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
   }
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
   async function verifyCards(analysis, ids, name) {
@@ -179,7 +189,7 @@ async (originalPage) => {
     await route.fulfill({ status: 200, json: reply });
   });
   try {
-    await page.goto(originalPage.url()); await waitConnected();
+    await page.goto(originalPage.url()); await waitConnected(); await openControls();
     fixtureCases = await page.evaluate(async () => (await fetch('/qa-scenario-fixtures')).json());
     const realMetadata = await (await page.request.get(new URL('/api/metadata', originalPage.url()).href)).json();
     check(typeof realMetadata.capabilities?.ajuste === 'boolean', 'Actual API capability is read separately from simulated legacy support');
@@ -265,7 +275,7 @@ async (originalPage) => {
     await verifyCards(hot, hot.raw.sequencias.slice(0, 3).map(seq => seq.id), 'Real engine fixture with 2 degrees warming');
     check(same(hot.raw, fixtureCases.temp2.result),
       'Warming preserves the complete supplied engine result and future ranking');
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     const reloaded = await submit();
     check(same(reloaded.request.ajuste, { chuva_pct: 0, temp_c: 2 }), 'Scenario survives reload through the existing local draft');
 

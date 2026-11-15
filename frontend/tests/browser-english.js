@@ -34,7 +34,12 @@ async originalPage => {
     check(await page.locator('html').getAttribute('lang') === 'en-US', 'Document language is English for assistive technology');
     check(await page.locator('#rune-app').getAttribute('aria-label') === 'Happy Farmers, farm planning', 'Canvas accessibility label is English');
     check(!noPortuguese.test(await text()), 'Setup and metadata notices have English presentation text');
+    check((await text()).includes('Demonstration in Minas Gerais, Brazil.') && (await text()).includes('Brazilian reais (BRL)'), 'Compact setup identifies the Brazilian demonstration and currency');
     await capture('setup-desktop', page.getByRole('heading', { name: 'What will your next crop cycle be?' }));
+    await click('About this analysis · expand');
+    check((await text()).includes('Triângulo Mineiro region; crop prices reflect Brazilian conditions.'), 'Expanded context identifies the regional calendar and prices');
+    check((await text()).includes('hectares (ha), millimeters (mm), degrees Celsius (°C) and meters (m). Currency: Brazilian reais (BRL).'), 'Expanded context explains metric units and the Brazilian currency before analysis');
+    await capture('context-desktop', page.getByText(/^Demonstration in Minas Gerais, Brazil\./));
     await click('Use sample field');
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
     check(await page.locator('#farm-name').inputValue() === 'Demonstration field', 'Default demonstration field name is English');
@@ -49,8 +54,10 @@ async originalPage => {
     await page.screenshot({ path: 'output/playwright/english-map-mobile.png' });
     check(await page.locator('#confirm-boundary').isEnabled(), 'Translated map preserves boundary confirmation');
     await page.locator('#confirm-boundary').click();
+    if (await button('Soil texture · expand').count()) await click('Soil texture · expand');
     await waitText('Regional suggestion: clay');
     check((await text()).includes('GLDAS') && !(await text()).includes('Sugestão regional'), 'Real soil source is localized');
+    await capture('context-mobile', page.getByText(/^Metric units: hectares/));
     await click('Understand the terms · expand');
     for (const term of ['Available soil water', 'Ky · response to water shortage', 'Frost risk', 'Bad year', 'Technical tie', 'Nitrogen-fixing crop', 'Cover crops / crop residue', 'Deep roots', 'Drought tolerance']) {
       check(await page.getByText(term, { exact: true }).count() === 1, 'English glossary: ' + term);
@@ -69,14 +76,16 @@ async originalPage => {
     await page.reload(); await waitText('Engine connected');
     check((await text()).includes('Demonstration field') && !(await text()).includes('Talhão de demonstração'), 'Legacy sample draft restores the English default field name');
     check((await text()).includes('Soybean') && (await text()).includes('Corn'), 'Saved wire IDs display as English crop names');
+    await click('About this analysis · expand');
     const pending = page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
     const response = await pending, raw = await response.json();
     check(response.status() === 200, 'Real English-interface analysis succeeds');
     check(response.request().postDataJSON().rotacao_atual.join('|') === 'soja|milho', 'Language does not change analysis wire IDs');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     check(!noPortuguese.test(await text()), 'Cards, current reference and API source notices are in English');
     check((await text()).includes('BRL') && !(await text()).includes('R$'), 'Currency is explicitly BRL with no dollar conversion');
+    check((await text()).includes('Brazilian reais (BRL)') && (await text()).includes('Revenue is gross, before costs. It is not profit.'), 'Results explain the currency and gross nature of revenue');
     const cards = page.getByRole('button', { name: /^[123].*TODAY.*Open timeline$/ });
     check(await cards.count() === 3, 'All three ranked cards remain accessible');
     check(raw.sequencias.slice(0,3).map(s => s.id).join('|') === 'soja>crotalaria|soja>milho|soja>sorgo', 'English UI preserves the real ranking');
@@ -86,6 +95,7 @@ async originalPage => {
     await click(await cards.first().textContent());
     await waitText('Benefits considered by the engine');
     check(!noPortuguese.test(await text()), 'Timeline, facts, warnings and benefits are in English');
+    check((await text()).includes('Full rotation covers all crops in the planned sequence.') && (await text()).includes('Per year means revenue per year of field occupancy'), 'Detail retains the full-rotation and annual revenue explanation');
     await capture('detail-mobile', page.getByRole('heading', { name: 'Benefits considered by the engine' }));
     await page.route('**/api/metadata*', route => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'Não foi possível ler os dados climáticos. Tente novamente.' }) }));
     await page.reload();

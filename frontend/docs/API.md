@@ -49,6 +49,41 @@ as regras existentes. Nenhum cálculo ou moeda é convertido pela tradução.
 Avisos conhecidos da API são localizados em `web/external-text.mjs`; fontes e
 cobertura conservam seus significados. Texto autoral do usuário é preservado.
 
+A apresentação identifica a demonstração em Minas Gerais, Brasil, o calendário
+do Triângulo Mineiro e a moeda **Brazilian reais (BRL)**. As medidas permanecem
+em hectares (ha), milímetros (mm), graus Celsius (°C) e metros (m).
+Os rótulos **Gross revenue / ha · full rotation** representam `receita_ha`
+da sequência inteira; **Gross field revenue · full rotation** multiplica esse
+valor pela área em hectares. **Gross revenue / ha / year** apresenta
+`receita_ano_ha` do motor, por ano de ocupação do talhão, usado na prioridade
+renda. Todos são receita bruta antes dos custos. A UI não converte moeda,
+anualiza valores ausentes nem muda o ranking.
+
+Receita zero recebe contexto em `web/revenue.mjs`, sem mudar a saída bruta:
+`crotalaria`, `milheto` e `braquiaria` só ganham a explicação de cobertura quando
+há aviso `sem_valor_de_mercado`, receita zero em todos os climas recebidos e
+atributos de solo compatíveis (`cobre_solo`; também `fixa_n` na crotalária).
+Em planos inteiramente desse tipo, o destaque financeiro vira **Primary role**
+e valores monetários zerados repetidos dão lugar a **Revenue treatment**.
+Em rotações mistas, a receita positiva total permanece e a etapa de cobertura
+tem sua explicação própria. Os benefícios de solo não são convertidos em dinheiro.
+
+Preço zero em uma cultura comercial recebe **Market revenue not included**;
+outros zeros, **No revenue estimated**, com orientação para consultar riscos
+e preços. Zero isolado não prova finalidade de cobertura. Valores positivos
+muito pequenos não são arredondados para um aparente zero; valores ausentes
+ou inválidos continuam sendo rejeitados. Zeros de score, água ou dias expostos
+permanecem numéricos. `revenue_note` na recomendação e `revenue_title`/
+`revenue_note` na etapa são campos apenas da apresentação JS/Rune.
+
+O resumo apresentado informa apenas quantidade de rotações viáveis, mês de
+disponibilidade e número de culturas planejadas. `data_sources` reúne a nota
+de dados e a origem normal (tabelas da demonstração ou POWER/NEX regional).
+`source_warning` conserva em destaque os casos de fallback, ponto fora de
+Minas Gerais, extremos de chuva no norte da grade e avisos desconhecidos do
+provedor. O texto de origem não é descartado ao simplificar o resultado.
+Esses campos pertencem ao modelo de apresentação JS/Rune, sem mudança na API HTTP.
+
 O chat mantém o protocolo, o foco e o histórico originais. A interface e a
 recusa fixa conhecida são apresentadas em inglês; respostas livres da IA
 dependem da instrução do servidor, ainda em português nesta base. Pendência
@@ -170,7 +205,7 @@ e ser finitos: `anos_ocupados >= 1`, `receita_ano_ha >= 0`. A reserva de água d
 
 ### Referência da rotação atual — Parte 1
 
-A tela acrescenta a **rotação atual** às até três sugestões, sem alterar sua ordem.
+A tela mostra a **rotação atual** em uma seção de referência após as até três sugestões, sem alterar a ordem delas.
 Os cards mostram os mesmos indicadores: receita bruta por hectare
 de hoje, índice de solo de hoje e encaixe climático futuro. A referência tem calendário,
 detalhes e ano seco quando esses dados existem na resposta. Ela permanece separada

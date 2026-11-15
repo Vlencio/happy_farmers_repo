@@ -191,8 +191,8 @@ function present(warning, cropLabel) {
       return item('Uncertain heat threshold', 'The engine flags lower confidence in hot-day counts above this threshold because POWER and NEX differ. The threshold needs local review.',
         `Threshold used: ${number(d.temp_calor_c)} °C.`, `${crop}: the ${number(d.temp_calor_c)} °C threshold is uncertain.`);
     case 'sem_valor_de_mercado':
-      return item('Market value not included', 'Forage, seed and soil benefits are excluded from this crop\'s revenue. This does not mean the crop has no value for the farm.',
-        `Price used: ${money(0)}/t.`, `${crop}: zero price in the revenue calculation.`);
+      return item('Market value not included', 'A sales value is not included for this crop. This is a limit of the calculation, not evidence that the crop has no value on the farm. Soil benefits are not converted into income.',
+        'Sales revenue is excluded by the price used in this analysis.', `${crop}: market revenue is not included.`);
     case 'ky_padrao':
       return item('No crop-specific water-response value', 'In daily mode, the engine uses a default Ky value (yield sensitivity to water shortage) because the FAO table has no crop-specific value.',
         `Ky used: ${number(d.ky, 3)}.`, `${crop}: default Ky of ${number(d.ky, 3)}.`);

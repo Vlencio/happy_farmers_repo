@@ -124,7 +124,8 @@ async function dispatch(action) {
     case 'history': invalidate(); history = action.history; saveDraft(); break;
     case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
     case 'scenario': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
-    case 'soil': {
+    case 'soil':
+    case 'reset_parameters': {
       cancelSoil(); invalidate(); settings = validateSettings(action.settings); saveDraft(); sendSoil();
       if (action.analyze) await dispatch({ type: 'analyze' });
       break;

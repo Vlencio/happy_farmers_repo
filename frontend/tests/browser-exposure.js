@@ -82,7 +82,7 @@ async (originalPage) => {
     await click('Analyze farm →');
     const response = await pending, raw = await response.json();
     check(response.status() === 200, 'Exposure analysis succeeds');
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     return page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
   }

@@ -21,6 +21,14 @@ async (originalPage) => {
     if (request.method() === 'POST' && url.pathname.endsWith('/analyze')) analyses.push(request.postDataJSON());
     if (request.method() === 'POST' && url.pathname.endsWith('/chat')) chats.push(request.postDataJSON());
   });
+  // Parameter tests open the new disclosure before exercising its controls.
+  // Default collapsed states and ordering are covered in browser-document.js.
+  async function openControls() {
+    const outer = 'Adjust priorities, soil and climate · expand';
+    if (await button(outer).count()) await click(outer);
+    const setup = 'Soil texture · expand';
+    if (await button(setup).count()) await click(setup);
+  }
   async function reveal(locator, top = 120) {
     for (let i = 0; i < 55; i++) {
       const box = await locator.boundingBox(), height = page.viewportSize().height;
@@ -48,7 +56,7 @@ async (originalPage) => {
     check(request.solo_textura === texture && raw.entrada.solo_textura === texture, `${texture ?? 'default'}: request and engine echo agree`);
     check(texture ? raw.entrada.cad_mm === { arenoso: 30, medio: 45, argiloso: 60 }[texture]
       : !Object.hasOwn(raw.entrada, 'cad_mm'), `${texture ?? 'default'}: supplied soil capacity matches the chosen reference`);
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS'); await openControls();
     const view = await page.evaluate(async raw => (await import('/web/api.mjs')).mapMotorAnalysis(raw,
       JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm), raw);
     await waitText(view.soil_note);
@@ -61,7 +69,7 @@ async (originalPage) => {
     return raw;
   }
   try {
-    await page.goto(originalPage.url()); await waitConnected();
+    await page.goto(originalPage.url()); await waitConnected(); await openControls();
     const metadata = await (await page.request.get(new URL('/api/metadata', originalPage.url()).href)).json();
     check(metadata.capabilities.solo_textura === true, 'Real API announces soil support');
     await page.evaluate(async () => {
@@ -71,7 +79,7 @@ async (originalPage) => {
         history: ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' })),
         settings: { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } } }));
     });
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     await waitText('Regional suggestion: clay');
     check((await draft()).settings.solo_textura === 'argiloso' && suggestions.length > 0, 'Real point suggestion selects clay and is saved locally');
     check((await text()).includes('GLDAS') && (await text()).includes('NASA'), 'Regional soil source is visible');
@@ -82,7 +90,7 @@ async (originalPage) => {
       && (await cards().nth(1).textContent()).includes('Soybean → Corn'), 'Reference remains separate when it also ranks second');
     const sand = await analyze('arenoso', labels.arenoso);
     check(JSON.stringify(sand.sequencias) !== JSON.stringify(clay.sequencias), 'Changing soil reruns the real engine and changes its result');
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     check((await draft()).settings.solo_textura === 'arenoso' && await button(`${labels.arenoso} · selected`).count() === 1,
       'Manual sand choice survives reload and takes precedence over the regional suggestion');
     await analyze('arenoso', 'Analyze farm →');
@@ -93,7 +101,7 @@ async (originalPage) => {
     await page.screenshot({ path: 'output/playwright/soil-api-mobile.png' });
     await analyze('medio', labels.medio);
     await analyze(undefined, reset);
-    await page.reload(); await waitConnected();
+    await page.reload(); await waitConnected(); await openControls();
     check((await draft()).settings.solo_padrao === true && (await draft()).settings.solo_textura === undefined,
       'Explicit default survives reload without a regional suggestion overriding it');
     await analyze(undefined, 'Analyze farm →');

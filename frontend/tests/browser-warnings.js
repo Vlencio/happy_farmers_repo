@@ -30,8 +30,10 @@ async (originalPage) => {
     throw new Error('Could not reveal: ' + locator);
   }
   async function click(name) {
-    const box = await reveal(page.getByRole('button', { name, exact: true }));
-    await page.mouse.click(box.x + box.width / 2, Math.min(box.y + box.height / 2, page.viewportSize().height - 40));
+    const locator = page.getByRole('button', { name, exact: true });
+    await reveal(locator); await page.waitForTimeout(120);
+    const box = await locator.boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + Math.min(box.height / 2, 50));
     await page.waitForTimeout(160);
   }
   async function align(locator, top = 120) {
@@ -77,7 +79,7 @@ async (originalPage) => {
     const response = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
     const raw = await (await response).json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       const farm = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm;
@@ -102,7 +104,7 @@ async (originalPage) => {
     const first = await analyze();
     check(await cards().count() === 4, 'Warnings preserve the current reference and three ranked cards');
     const names = await cards().allTextContents();
-    const recs = [first.view.current_rotation.strategy, ...first.view.recommendations];
+    const recs = [...first.view.recommendations, first.view.current_rotation.strategy];
     check(recs.every((rec, i) => names[i].includes(rec.warnings.summary)), 'All card accessible names include their own warning counts');
     check(recs.every((rec, i) => [rec.warnings.risks[0], rec.warnings.gaps[0]].filter(Boolean).every(item => names[i].includes(item.card_summary))),
       'Each card exposes its first risk and gap to assistive technology');
@@ -110,14 +112,15 @@ async (originalPage) => {
     const thirdRanked = first.view.recommendations[2];
     check(JSON.stringify(firstRanked.warnings) !== JSON.stringify(thirdRanked.warnings), 'Different strategies show distinct real warnings');
     const boxes = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));
-    check(boxes.every(box => Math.abs(box.y - boxes[0].y) < 2), 'Desktop retains four cards side by side');
+    check(boxes.slice(0, 3).every(box => Math.abs(box.y - boxes[0].y) < 2) && boxes[3].y > boxes[0].y + boxes[0].height,
+      'Desktop retains three ranked cards together and a separate current reference');
     await align(cards().first());
     await page.screenshot({ path: 'output/playwright/warnings-cards-desktop.png' });
-    await openWithKeyboard(names[0]);
+    await openWithKeyboard(names[3]);
     check(true, 'Tab and Enter open current-rotation warning details');
     await verifyDetail(first.view.current_rotation.strategy, first.raw.sequencias.find(seq => seq.id === first.view.current_rotation.strategy.sequence_id));
     await click('← Compare strategies');
-    await click(names[3]);
+    await click(names[2]);
     await waitText('Risks and data gaps for this strategy');
     await verifyDetail(thirdRanked, first.raw.sequencias.find(seq => seq.id === thirdRanked.sequence_id));
     await align(warningsHeading());
@@ -128,7 +131,7 @@ async (originalPage) => {
     const source = bean.raw.sequencias.find(seq => seq.id === 'soja>feijao');
     check(current.sequence_id === 'soja>feijao' && source.avisos.some(item => item.codigo === 'queda_no_futuro') && source.avisos.some(item => item.codigo === 'solo_exposto'),
       'The real soybean-bean reference supplies income loss and soil-exposure warnings');
-    await click(await cards().first().textContent());
+    await click(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent());
     await waitText('Risks and data gaps for this strategy');
     await verifyDetail(current, source);
     check((await text()).includes('Common bean') && !(await text()).includes('feijao'), 'Crop labels in warning copy use English crop names');

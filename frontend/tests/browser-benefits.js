@@ -55,7 +55,7 @@ async (originalPage) => {
     const response = await pending;
     check(response.status() === 200, 'Real analyze request succeeds for ' + crops.join(' → '));
     const raw = await response.json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       const farm = JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm;
@@ -74,12 +74,12 @@ async (originalPage) => {
   }
   try {
     const first = await analyze();
-    const recs = [first.view.current_rotation.strategy, ...first.view.recommendations];
+    const recs = [...first.view.recommendations, first.view.current_rotation.strategy];
     const names = await cards().allTextContents();
     check(names.length === 4, 'The reference and all three ranked cards remain available');
     check(recs.every((rec, i) => names[i].includes(rec.benefits.summary) && names[i].includes(rec.benefits.items[0].card_summary)),
       'All four accessible card names include their own benefit summaries');
-    check(recs[0].sequence_id === recs[2].sequence_id && names[0] !== names[2],
+    check(recs[3].sequence_id === recs[1].sequence_id && names[3] !== names[1],
       'The current rotation also ranked second keeps separate reference and ranked cards');
     check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>crotalaria|soja>milho|soja>sorgo',
       'Benefit presentation preserves the three weighted winners');
@@ -89,7 +89,7 @@ async (originalPage) => {
       await click(names[i]);
       await waitText('Benefits considered by the engine');
       await verifyDetail(rec, first.raw.sequencias.find(seq => seq.id === rec.sequence_id));
-      if (i === 0) {
+      if (i === 3) {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
         check(new Set(source.beneficios.map(item => item.codigo)).size === 4, 'The real current rotation has four benefits without a nitrogen bonus after commercial soybean');
         check((await text()).includes('decline of 1.5%') && (await text()).includes('13,003') && (await text()).includes('12,808'),
@@ -114,9 +114,9 @@ async (originalPage) => {
     }
     const bean = await analyze(['soja', 'feijao']);
     const current = bean.view.current_rotation.strategy;
-    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 4,
+    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[3].benefits.items.length === 4,
       'Changing the real current rotation changes four benefits to two');
-    await click(await cards().first().textContent());
+    await click(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent());
     await waitText('Benefits considered by the engine');
     await verifyDetail(current, bean.raw.sequencias.find(seq => seq.id === current.sequence_id));
     check((await text()).includes('Common bean: nitrogen fixer') || current.benefits.items.some(item => item.context === 'Common bean'),

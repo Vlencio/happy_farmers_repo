@@ -17,6 +17,11 @@ struct State {
     field_context: Option<FieldContext>,
     field_open: bool,
     glossary_open: bool,
+    about_open: bool,
+    priorities_open: bool,
+    soil_open: bool,
+    scenario_open: bool,
+    parameters_open: bool,
     history: Vec<HistoryItem>,
     page: Page,
     analysis: Option<Analysis>,
@@ -56,6 +61,11 @@ impl Default for State {
             field_context: None,
             field_open: true,
             glossary_open: false,
+            about_open: false,
+            priorities_open: true,
+            soil_open: false,
+            scenario_open: false,
+            parameters_open: false,
             history: vec![],
             page: Page::Setup,
             analysis: None,
@@ -183,6 +193,9 @@ impl State {
         self.horizon_open = false;
         self.error.clear();
         self.loading = true;
+        if self.page == Page::Setup {
+            self.parameters_open = false;
+        }
         self.reset_chat();
         host(json!({"type":"analyze"}));
     }
@@ -226,6 +239,24 @@ impl State {
     }
     fn adjustment_blocked(&self) -> bool {
         !self.scenario_available && self.settings.ajuste.active()
+    }
+    fn reset_parameters(&mut self) {
+        if self.loading {
+            return;
+        }
+        let reanalyze = self.page != Page::Setup && self.ready && self.farm.is_some();
+        let defaults = Settings::default();
+        self.settings.prioridades = defaults.prioridades;
+        self.settings.ajuste = defaults.ajuste;
+        self.settings.solo_textura = None;
+        // Explicitly use the reference instead of reapplying an automatic suggestion.
+        self.settings.solo_padrao = true;
+        self.invalidate();
+        if reanalyze {
+            self.page = Page::Results;
+            self.loading = true;
+        }
+        host(json!({"type":"reset_parameters", "settings":self.settings, "analyze":self.loading}));
     }
     fn soil_blocked(&self) -> bool {
         !self.soil_available && self.settings.solo_textura.is_some()

@@ -7,8 +7,8 @@ use crate::{
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, Select, SelectAppearance, TextArea,
-    TextInput,
+    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, ScrollBar, ScrollBarStyle, Select,
+    SelectAppearance, TextArea, TextInput,
 };
 use serde_json::json;
 
@@ -96,6 +96,212 @@ fn column_width(node: El, narrow: bool, fraction: f32) -> El {
     } else {
         node.w(0.0).min_w(0.0).grow(fraction)
     }
+}
+
+fn presentation_context(s: &State, k: &Kit, include_revenue: bool) -> El {
+    let mut view = col()
+        .key("presentation-context")
+        .w_full()
+        .gap(10.0)
+        .padding(14.0)
+        .radius(12.0)
+        .fill(color("#edf2e5"))
+        .child(
+            row()
+                .w_full()
+                .min_h(44.0)
+                .gap(12.0)
+                .center_y()
+                .child(
+                    col()
+                        .w(0.0)
+                        .min_w(0.0)
+                        .grow(1.0)
+                        .gap(5.0)
+                        .child(
+                            label("Demonstration in Minas Gerais, Brazil.", 13.0, 600.0, INK)
+                                .wrap()
+                                .w_full(),
+                        )
+                        .child(
+                            label(
+                                "Metric units · ha · mm · °C · m  /  Brazilian reais (BRL)",
+                                11.0,
+                                400.0,
+                                MUTED,
+                            )
+                            .wrap()
+                            .w_full(),
+                        ),
+                )
+                .child(
+                    el().key("about-toggle")
+                        .size(44.0, 44.0)
+                        .radius(9.0)
+                        .center()
+                        .fill(color("#e2ead8"))
+                        .child(label(
+                            if s.about_open { "−" } else { "+" },
+                            24.0,
+                            500.0,
+                            INK,
+                        ))
+                        .role("button")
+                        .label(format!(
+                            "About this analysis · {}",
+                            if s.about_open { "collapse" } else { "expand" }
+                        ))
+                        .expanded(s.about_open)
+                        .focusable(true)
+                        .on_press(|s: &mut State| s.about_open = !s.about_open),
+                ),
+        );
+    if !s.data_notice.is_empty() {
+        view = view.child(
+            label(
+                s.data_notice.split(". ").next().unwrap_or(&s.data_notice),
+                11.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+    }
+    if include_revenue {
+        view = view.child(
+            label(
+                "Revenue is gross, before costs. It is not profit.",
+                12.0,
+                500.0,
+                INK,
+            )
+            .wrap()
+            .w_full(),
+        );
+    }
+    if s.page != Page::Setup && s.farm.is_some() && s.field_context.is_none() {
+        view = view.child(label("Vegetation and terrain observations are available only for the demonstration field boundary. These data are not yet available for this field.", 12.0, 400.0, MUTED).wrap().w_full());
+    }
+    if s.about_open {
+        view = view
+            .child(rule())
+            .child(paragraph("Planting calendars follow the Triângulo Mineiro region; crop prices reflect Brazilian conditions."))
+            .child(label("Metric units: hectares (ha), millimeters (mm), degrees Celsius (°C) and meters (m). Currency: Brazilian reais (BRL).", 12.0, 400.0, MUTED).wrap().w_full());
+        if include_revenue {
+            view = view.child(label("READING REVENUE", 11.0, 600.0, INK))
+                .child(paragraph("Full rotation covers all crops in the planned sequence. Per year means revenue per year of field occupancy and is used by the income priority. Values labeled / ha are per hectare; field totals cover the whole boundary."));
+        }
+        if s.page == Page::Setup {
+            view = view.child(
+                label(
+                    if s.data_notice.is_empty() {
+                        "Connect to the analysis service to load the crop catalog and data sources."
+                    } else {
+                        &s.data_notice
+                    },
+                    12.0,
+                    400.0,
+                    MUTED,
+                )
+                .wrap()
+                .w_full(),
+            );
+        }
+    }
+    view.child(glossary(s, k))
+}
+
+fn disclosure(id: &str, title: &str, open: bool, action: impl Fn(&mut State) + 'static) -> El {
+    row()
+        .key(id)
+        .w_full()
+        .min_h(44.0)
+        .gap(12.0)
+        .center_y()
+        .child(
+            label(title, 19.0, 600.0, INK)
+                .wrap()
+                .w(0.0)
+                .min_w(0.0)
+                .grow(1.0),
+        )
+        .child(label(if open { "−" } else { "+" }, 25.0, 500.0, INK))
+        .role("button")
+        .label(format!(
+            "{title} · {}",
+            if open { "collapse" } else { "expand" }
+        ))
+        .expanded(open)
+        .focusable(true)
+        .on_press(action)
+}
+
+fn local_information(s: &State, k: &Kit, narrow: bool) -> El {
+    col()
+        .key("local-information")
+        .w_full()
+        .gap(16.0)
+        .child(
+            label("04  Tell us more about your field", 19.0, 600.0, INK)
+                .wrap()
+                .w_full(),
+        )
+        .child(eyebrow("LOCAL INFORMATION"))
+        .child(priorities_panel(s, k, narrow))
+        .child(soil_panel(s, k, narrow))
+        .child(scenario_panel(s, k, narrow))
+}
+
+fn parameters_panel(s: &State, k: &Kit, narrow: bool, analysis: Option<&Analysis>) -> El {
+    let mut view = panel()
+        .key("analysis-parameters")
+        .w_full()
+        .child(disclosure(
+            "parameters-toggle",
+            "Adjust priorities, soil and climate",
+            s.parameters_open,
+            |s| s.parameters_open = !s.parameters_open,
+        ));
+    if s.parameters_open {
+        if let Some(analysis) = analysis {
+            view = view
+                .child(paragraph(&analysis.priority_note))
+                .child(paragraph(&analysis.scenario_note))
+                .child(if analysis.soil_note.is_empty() {
+                    el()
+                } else {
+                    paragraph(&analysis.soil_note)
+                })
+                .child(if analysis.ranking_note.is_empty() {
+                    el()
+                } else {
+                    paragraph(&analysis.ranking_note)
+                });
+        }
+        view = view
+            .child(priorities_panel(s, k, narrow))
+            .child(soil_panel(s, k, narrow))
+            .child(scenario_panel(s, k, narrow))
+            .child(
+                Button::new("Reset parameters")
+                    .variant(ButtonVariant::Outline)
+                    .disabled(s.loading || !s.ready || s.farm.is_none())
+                    .on_press(State::reset_parameters)
+                    .build(k)
+                    .key("reset-parameters")
+                    .h(44.0)
+                    .w_full(),
+            );
+    }
+    view
+}
+
+fn another_field(k: &Kit) -> El {
+    button(k, "another-field", "Analyze another field", false, |s| {
+        s.clear_confirm = true
+    })
+    .w_full()
 }
 
 fn logo(compact: bool) -> El {
@@ -226,7 +432,7 @@ fn sidebar(s: &State, _: &Kit) -> El {
                 )),
         )
         .child(
-            Button::new("Start over")
+            Button::new("Analyze another field")
                 .variant(ButtonVariant::Ghost)
                 .on_press(|s: &mut State| {
                     s.clear_confirm = true;
@@ -246,10 +452,16 @@ fn header(s: &State, narrow: bool) -> El {
     let head = if narrow {
         logo(true)
     } else {
-        row()
-            .gap(10.0)
-            .center_y()
-            .child(label("Your growing space", 13.0, 500.0, INK))
+        row().gap(10.0).center_y().child(label(
+            match s.page {
+                Page::Setup => "Your farm / Plan your next cycle",
+                Page::Results => "Your options / Compare crop rotations",
+                Page::Timeline => "Your options / Explore the crop cycle",
+            },
+            13.0,
+            500.0,
+            INK,
+        ))
     };
     row()
         .w_full()
@@ -270,41 +482,50 @@ fn header(s: &State, narrow: bool) -> El {
         ))
 }
 fn heading(title: &str, subtitle: &str, narrow: bool) -> El {
+    heading_with_width(title, subtitle, narrow, false)
+}
+fn heading_with_width(title: &str, subtitle: &str, narrow: bool, full_width: bool) -> El {
     col()
-        .gap(10.0)
+        .gap(8.0)
         .child(eyebrow("FARM PLANNING"))
         .child(
             label(title, if narrow { 30.0 } else { 39.0 }, 600.0, INK)
+                .font(TextStyle::new(if narrow { 30.0 } else { 39.0 }, 600.0).tracking(-0.6))
                 .role("heading")
                 .level(1)
                 .wrap()
                 .w_full(),
         )
-        .child(paragraph(subtitle).max_w(780.0))
+        .child(if full_width {
+            paragraph(subtitle)
+        } else {
+            paragraph(subtitle).max_w(780.0)
+        })
 }
 fn steps(s: &State, narrow: bool) -> El {
-    let labels = [
-        if narrow { "Field" } else { "Define your field" },
-        if narrow {
-            "History"
-        } else {
-            "Add crop history"
-        },
-        if narrow {
-            "Options"
-        } else {
-            "Explore your options"
-        },
-    ];
-    let mut line = row().w_full().gap(if narrow { 8.0 } else { 20.0 });
+    let labels = if narrow {
+        ["Field", "History", "Planting", "Local info", "Options"]
+    } else {
+        [
+            "Select your field",
+            "Add crop history",
+            "Plan your next planting",
+            "Tell us about your field",
+            "Explore your options",
+        ]
+    };
+    let mut line = row().w_full().gap(if narrow { 6.0 } else { 16.0 });
     for (i, title) in labels.iter().enumerate() {
-        let active = if s.page == Page::Setup { i < 2 } else { i == 2 };
+        let active = if s.page == Page::Setup { i < 4 } else { i == 4 };
+        let item = if narrow {
+            col().center().gap(5.0)
+        } else {
+            row().center_y().gap(8.0)
+        };
         line = line.child(
-            row()
+            item.w(0.0)
                 .grow(1.0)
                 .min_w(0.0)
-                .gap(8.0)
-                .center_y()
                 .pb(14.0)
                 .child(
                     el().size(25.0, 25.0)
@@ -316,11 +537,12 @@ fn steps(s: &State, narrow: bool) -> El {
                 .child(
                     label(
                         *title,
-                        if narrow { 11.0 } else { 12.0 },
+                        if narrow { 10.0 } else { 12.0 },
                         500.0,
                         if active { INK } else { MUTED },
                     )
-                    .wrap(),
+                    .wrap()
+                    .shrink(),
                 ),
         );
     }
@@ -395,7 +617,11 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             .center_y()
             .justify_between()
             .gap(8.0)
-            .child(label("01  Your farm", 19.0, 600.0, INK).wrap().shrink())
+            .child(
+                label("01  Select your field", 19.0, 600.0, INK)
+                    .wrap()
+                    .shrink(),
+            )
             .child(pill(
                 if s.farm.is_some() {
                     "Field defined"
@@ -441,15 +667,13 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
             satellite = satellite.child(label(&s.preview_note, 11.0, 400.0, MUTED).wrap().w_full());
         }
         content = content.child(satellite);
-    } else {
-        content = content.child(field_art(None));
     }
     if let Some(farm) = &s.farm {
         let stacked = narrow || farm.name.chars().count() > 36;
         content = content.child(responsive_row(stacked).gap(14.0).center_y().justify_between()
             .child(column_width(col().gap(5.0).child(label(&farm.name, 19.0, 600.0, INK).wrap().w_full())
                 .child(label(format!("{} vertices · {}", farm.point_count, match farm.source.as_str() { "sample" => "sample field", "import" => "imported GeoJSON", _ => "drawn boundary" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
-            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).to_owned(), 26.0, 500.0, INK)).child(label("approximate area", 10.0, 400.0, MUTED))))
+            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).to_owned(), 26.0, 500.0, INK)).child(label("approximate area · hectares", 10.0, 400.0, MUTED))))
             .child(paragraph("The boundary center provides the latitude and longitude for the analysis. Area converts revenue per hectare into total revenue."))
             .child(responsive_row(narrow)
                 .child(column_width(button(k, "edit-map", "View and edit on map", false, |_| host(json!({"type":"map"}))), narrow, 1.0))
@@ -478,19 +702,14 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
                         1.0,
                     )),
             )
-            .child(
-                responsive_row(narrow)
-                    .gap(8.0)
-                    .child(label("Polygon or MultiPolygon · up to 2 MB", 10.0, 400.0, MUTED).wrap())
-                    .child(
-                        Button::new("Use sample field")
-                            .variant(ButtonVariant::Ghost)
-                            .on_press(|_: &mut State| host(json!({"type":"sample"})))
-                            .build(k)
-                            .key("sample")
-                            .h(40.0),
-                    ),
-            );
+            .child(label("Polygon or MultiPolygon · up to 2 MB", 10.0, 400.0, MUTED).wrap())
+            .child(col().w_full().gap(8.0).padding(14.0).radius(12.0).fill(color("#edf2e5"))
+                .child(label("Just exploring? Start here.", 14.0, 600.0, INK).wrap().w_full())
+                .child(label("Try a ready-to-use field in Minas Gerais, Brazil. You can review its boundary before analyzing.", 12.0, 400.0, MUTED).wrap().w_full())
+                .child(Button::new("Use sample field")
+                    .variant(ButtonVariant::Outline)
+                    .on_press(|_: &mut State| host(json!({"type":"sample"})))
+                    .build(k).key("sample").h(44.0).w_full()));
     }
     column_width(content, narrow, 1.35)
 }
@@ -516,10 +735,10 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
         .w_full()
         .h(44.0);
     let mut content = panel().gap(14.0)
-        .child(row().center_y().justify_between().child(label("02  What has been planted?", 18.0, 600.0, INK).wrap().shrink())
+        .child(row().center_y().justify_between().child(label("02  Your field's history: what has been planted?", 18.0, 600.0, INK).wrap().shrink())
             .child(pill("Optional", "#f0f1ea", MUTED)))
-        .child(paragraph("Add crops from oldest to newest. The last entry will be the previous crop used by the engine. You can continue without a history."))
-        .child(label("Seasons and notes stay in your draft; the engine receives only the crop order.", 11.0, 400.0, MUTED).wrap().w_full())
+        .child(paragraph("Add one crop at a time, from oldest to newest. You can add several seasons, or continue without a history."))
+        .child(label("Seasons and notes stay in your draft; the analysis receives only the crop order.", 11.0, 400.0, MUTED).wrap().w_full())
         .child(col().gap(6.0).child(eyebrow("PREVIOUS CROP")).child(crop));
     content = content
         .child(
@@ -648,14 +867,19 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
     column_width(content, narrow, 1.0)
 }
 fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
-    let mut view = col().w_full().gap(25.0)
+    // Each input card follows its own content height, including long histories.
+    let input_row = if narrow {
+        responsive_row(true)
+    } else {
+        responsive_row(false).items_start()
+    };
+    let mut view = col().w_full().gap(22.0)
         .child(heading("What will your next crop cycle be?", "Start with your farm. Then explore ways to grow crops, care for the soil and adapt to a changing climate.", narrow))
+        .child(presentation_context(s, k, false))
         .child(steps(s, narrow))
-        .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
+        .child(input_row.child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
-    view = view.child(priorities_panel(s, k, narrow));
-    view = view.child(soil_panel(s, k, narrow));
-    view = view.child(scenario_panel(s, k, narrow));
+    view = view.child(local_information(s, k, narrow));
     let action = Button::new(if s.loading {
         "Analyzing…"
     } else {
@@ -669,26 +893,69 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     .on_press(State::analyze)
     .build(k)
     .key("analyze")
-    .h(50.0)
-    .min_w(if narrow { 0.0 } else { 240.0 });
-    let summary = if s.farm.is_none() {
-        "Define a field to continue.".into()
-    } else if s.history.is_empty() {
-        "Field ready · analysis without crop history".into()
+    .h(58.0)
+    .w_full();
+    let summary = if s.loading {
+        "Calculating your options"
+    } else if !s.ready {
+        "Connect to analyze your field"
+    } else if s.farm.is_none() {
+        "Select a field to continue"
+    } else if s.soil_blocked() {
+        "Review your soil choice"
+    } else if s.adjustment_blocked() {
+        "Review your climate scenario"
+    } else {
+        "Your field is ready to analyze"
+    };
+    let next_step = if s.loading {
+        "Checking climate data and comparing crop sequences for your field.".to_owned()
+    } else if !s.ready {
+        "The analysis service is unavailable. Reconnect below; your saved draft is kept.".to_owned()
+    } else if s.farm.is_none() {
+        "Draw a boundary, import a GeoJSON file or use the sample field above.".to_owned()
+    } else if s.soil_blocked() {
+        "Open Soil texture and use the default reference to continue.".to_owned()
+    } else if s.adjustment_blocked() {
+        "Open the climate controls and reset the unsupported adjustment to continue.".to_owned()
     } else {
         format!(
-            "Field ready · {} crop history entry/entries",
-            s.history.len()
+            "{} · {} · {}",
+            MONTHS
+                .get(s.settings.mes_plantio.saturating_sub(1) as usize)
+                .copied()
+                .unwrap_or("Selected month"),
+            HORIZONS
+                .get(s.settings.horizonte.saturating_sub(1) as usize)
+                .copied()
+                .unwrap_or("Selected horizon"),
+            if s.history.is_empty() {
+                "without crop history".to_owned()
+            } else {
+                format!(
+                    "{} history {}",
+                    s.history.len(),
+                    if s.history.len() == 1 {
+                        "entry"
+                    } else {
+                        "entries"
+                    }
+                )
+            }
         )
     };
     view = view.child(
-        responsive_row(narrow)
-            .center_y()
+        panel()
+            .key("analysis-action")
+            .w_full()
+            .gap(14.0)
+            .fill(color("#edf2e5"))
             .child(
                 col()
-                    .gap(5.0)
-                    .grow(if narrow { 0.0 } else { 1.0 })
-                    .child(label(summary, 13.0, 500.0, INK).wrap())
+                    .gap(7.0)
+                    .w_full()
+                    .child(label(summary, 18.0, 600.0, INK).wrap().w_full())
+                    .child(label(next_step, 13.0, 400.0, MUTED).wrap().w_full())
                     .child(
                         label(
                             "Your location, crop order and planning options will be sent for analysis.",
@@ -699,7 +966,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
                         .wrap(),
                     ),
             )
-            .child(if narrow { action.w_full() } else { action }),
+            .child(action),
     );
     if s.loading {
         view = view.child(paragraph("Looking up climate data and calculating your options. The first POWER request may take a few minutes; the timeout is 6 minutes. You can cancel and continue editing."));
@@ -711,9 +978,6 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
         view = view.child(button(k, "reconnect", "Reconnect to engine", false, |_| {
             host(json!({"type":"connect"}))
         }));
-    }
-    if s.farm.is_some() {
-        view = view.child(field_panel(s, k, narrow));
     }
     view
 }
@@ -781,10 +1045,22 @@ fn field_panel(s: &State, k: &Kit, narrow: bool) -> El {
         .child(label(&field.source, 11.0, 400.0, MUTED).wrap().w_full())
 }
 fn glossary(s: &State, k: &Kit) -> El {
-    let mut view = panel().w_full().gap(14.0)
-        .child(button(k, "glossary-toggle", if s.glossary_open { "Understand the terms · collapse" } else { "Understand the terms · expand" }, false, |s| s.glossary_open = !s.glossary_open))
-        .child(label("Scope: one field. Sources have different resolutions: climate at a point, NDVI at 250 m and elevation at 30 m. Vegetation and terrain data are available for the demonstration field.", 11.0, 400.0, MUTED).wrap().w_full());
+    let mut view = col().w_full().gap(14.0).child(
+        button(
+            k,
+            "glossary-toggle",
+            if s.glossary_open {
+                "Understand the terms · collapse"
+            } else {
+                "Understand the terms · expand"
+            },
+            false,
+            |s| s.glossary_open = !s.glossary_open,
+        )
+        .expanded(s.glossary_open),
+    );
     if s.glossary_open {
+        view = view.child(label("Scope: one field. Sources have different resolutions: climate at a point, NDVI at 250 m and elevation at 30 m. Vegetation and terrain data are available for the demonstration field.", 11.0, 400.0, MUTED).wrap().w_full());
         for (term, definition) in [
             (
                 "Evapotranspiration",
@@ -867,9 +1143,28 @@ fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
     if !s.soil_available && !s.soil_blocked() {
         return el();
     }
-    let mut view = panel().gap(14.0).w_full()
-        .child(label("Soil texture", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("Texture determines the water reserve used in the calculation. Check the regional suggestion or select the soil you know in your field."));
+    let mut view = panel()
+        .key("soil-panel")
+        .gap(14.0)
+        .w_full()
+        .child(if s.page == Page::Setup {
+            disclosure("soil-toggle", "Soil texture", s.soil_open, |s| {
+                s.soil_open = !s.soil_open
+            })
+        } else {
+            label("Soil texture", 19.0, 600.0, INK)
+                .wrap()
+                .w_full()
+                .role("heading")
+                .level(2)
+        });
+    if s.page == Page::Setup && !s.soil_open {
+        if s.soil_blocked() {
+            view = view.child(paragraph("Your saved soil choice needs attention. Open Soil texture to use the default reference and continue."));
+        }
+        return view;
+    }
+    view = view.child(paragraph("Texture determines the water reserve used in the calculation. Check the regional suggestion or select the soil you know in your field."));
     if s.soil_available {
         let mut choices = responsive_row(narrow);
         for (texture, name) in [
@@ -927,9 +1222,29 @@ fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
 fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     let weights = s.settings.prioridades;
     let total = weights.agua as f64 + weights.solo as f64 + weights.renda as f64;
-    let mut view = panel().gap(16.0).w_full()
-        .child(label("Your priorities", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("Choose what matters most in the comparison. Each criterion has a weight in the score that ranks rotations; up to three options with the highest scores are suggested."));
+    let mut view =
+        panel()
+            .key("priorities-panel")
+            .gap(16.0)
+            .w_full()
+            .child(if s.page == Page::Setup {
+                disclosure(
+                    "priorities-toggle",
+                    "Your priorities",
+                    s.priorities_open,
+                    |s| s.priorities_open = !s.priorities_open,
+                )
+            } else {
+                label("Your priorities", 19.0, 600.0, INK)
+                    .wrap()
+                    .w_full()
+                    .role("heading")
+                    .level(2)
+            });
+    if s.page == Page::Setup && !s.priorities_open {
+        return view;
+    }
+    view = view.child(paragraph("Choose what matters most in the comparison. Each criterion has a weight in the score that ranks rotations; up to three options with the highest scores are suggested."));
     for (index, name, description, selected) in [
         (
             0,
@@ -1220,9 +1535,37 @@ fn scenario_control(s: &State, k: &Kit, field: usize) -> El {
         )
 }
 fn scenario_panel(s: &State, k: &Kit, narrow: bool) -> El {
-    let mut view = panel().key("scenario-panel").w_full().gap(16.0)
-        .child(label("Simulate another climate", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("What if it rains less or gets hotter? This is a simulation, not a forecast. The same adjustment applies to every month of today's, future and dry-year scenarios, when available."))
+    let mut view =
+        panel()
+            .key("scenario-panel")
+            .w_full()
+            .gap(16.0)
+            .child(if s.page == Page::Setup {
+                disclosure(
+                    "scenario-toggle",
+                    "What if the climate changes in your region?",
+                    s.scenario_open,
+                    |s| s.scenario_open = !s.scenario_open,
+                )
+            } else {
+                label(
+                    "What if the climate changes in your region?",
+                    19.0,
+                    600.0,
+                    INK,
+                )
+                .wrap()
+                .w_full()
+                .role("heading")
+                .level(2)
+            });
+    if s.page == Page::Setup && !s.scenario_open {
+        if s.adjustment_blocked() {
+            view = view.child(paragraph("Your saved climate scenario needs attention. Open this section to reset the climate and continue."));
+        }
+        return view;
+    }
+    view = view.child(paragraph("What if it rains less or gets hotter? This is a simulation, not a forecast. The same adjustment applies to every month of today's, future and dry-year scenarios, when available."))
         .child(responsive_row(narrow)
             .child(column_width(scenario_control(s, k, 0), narrow, 1.0))
             .child(column_width(scenario_control(s, k, 1), narrow, 1.0)));
@@ -1304,14 +1647,12 @@ fn planning_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> E
         .build(k, overlays)
         .w_full()
         .h(44.0);
-    panel().child(label("03  Your next crop cycle", 19.0, 600.0, INK))
+    panel().child(label("03  Plan your next planting", 19.0, 600.0, INK).wrap().w_full())
+        .child(paragraph("Choose when the field becomes available and how many crops you want to plan."))
         .child(responsive_row(narrow)
             .child(column_width(col().gap(8.0).child(eyebrow("FIELD AVAILABLE FROM")).child(month), narrow, 1.0))
             .child(column_width(col().gap(8.0).child(eyebrow("PLANNING HORIZON")).child(horizon), narrow, 1.0)))
-        .child(paragraph("The calendar assumes the field is available on the first day of this month. The engine checks each crop's planting windows."))
-        .child(col().padding(14.0).gap(6.0).radius(10.0).fill(color("#f5f0e2"))
-            .child(eyebrow("CLIMATE BASELINE FOR THIS ANALYSIS"))
-            .child(paragraph(if s.data_notice.is_empty() { "Connect to the engine to load the crop catalog and data sources." } else { &s.data_notice })))
+        .child(paragraph("The calendar assumes the field is available on the first day of this month. The analysis checks each crop's planting windows."))
 }
 fn category(category: &str) -> (&'static str, &'static str, &'static str, &'static str) {
     match category {
@@ -1324,13 +1665,31 @@ fn category(category: &str) -> (&'static str, &'static str, &'static str, &'stat
         "rank1" => (
             "1ST TODAY",
             "Highest score for your priorities",
-            "#a47930",
+            "#805817",
             "#f3ebd7",
         ),
-        "rank2" => ("2ND TODAY", "Second-highest score", "#5d7d38", "#e9efd9"),
-        _ => ("3RD TODAY", "Third-highest score", "#4d7c88", "#e4eff0"),
+        "rank2" => ("2ND TODAY", "Second-highest score", "#4c682c", "#e9efd9"),
+        _ => ("3RD TODAY", "Third-highest score", "#356571", "#e4eff0"),
     }
 }
+fn revenue_context(title: &str, note: &str, compact: bool) -> El {
+    if note.is_empty() {
+        return el();
+    }
+    col()
+        .w_full()
+        .gap(7.0)
+        .padding(if compact { 12.0 } else { 14.0 })
+        .radius(9.0)
+        .fill(color("#edf2e6"))
+        .child(eyebrow(title.to_uppercase()).wrap().w_full())
+        .child(
+            label(note, if compact { 12.0 } else { 14.0 }, 400.0, INK)
+                .wrap()
+                .w_full(),
+        )
+}
+
 fn recommendation_card(
     rec: &Recommendation,
     selection: SelectedStrategy,
@@ -1379,20 +1738,32 @@ fn recommendation_card(
         SelectedStrategy::Current => "REF.".to_owned(),
         SelectedStrategy::Ranked(i) => format!("0{}", i + 1),
     };
-    let mut metrics = col().gap(13.0).w_full().py(10.0);
-    for fact in &rec.comparison_facts {
+    let mut metrics = col().gap(14.0).w_full();
+    if let Some(fact) = rec.comparison_facts.first() {
         metrics = metrics.child(
             col()
                 .gap(4.0)
                 .w_full()
                 .child(label(&fact.label, 11.0, 400.0, MUTED).wrap().w_full())
-                .child(label(&fact.value, 22.0, 600.0, INK).wrap().w_full()),
+                .child(label(&fact.value, 24.0, 600.0, INK).wrap().w_full()),
         );
     }
+    let mut secondary = row().gap(12.0).w_full();
+    for fact in rec.comparison_facts.iter().skip(1) {
+        secondary = secondary.child(column_width(
+            col()
+                .gap(5.0)
+                .child(label(&fact.label, 11.0, 400.0, MUTED).wrap().w_full())
+                .child(label(&fact.value, 18.0, 600.0, INK).wrap().w_full()),
+            false,
+            1.0,
+        ));
+    }
+    metrics = metrics.child(secondary);
     let mut rankings = col()
         .gap(12.0)
         .w_full()
-        .padding(10.0)
+        .padding(14.0)
         .radius(9.0)
         .fill(color(tint));
     for pair in rec.rank_facts.chunks(2) {
@@ -1436,8 +1807,8 @@ fn recommendation_card(
             .w_full(),
         );
     }
-    let body = col()
-        .gap(18.0)
+    let header = col()
+        .gap(12.0)
         .child(
             row()
                 .center_y()
@@ -1467,7 +1838,29 @@ fn recommendation_card(
             .wrap()
             .w_full(),
         )
-        .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full())
+        .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full().min_h(
+            if !narrow && matches!(selection, SelectedStrategy::Ranked(_)) {
+                60.0
+            } else {
+                0.0
+            },
+        ))
+        .child(
+            row()
+                .w_full()
+                .center_y()
+                .justify_between()
+                .px(12.0)
+                .min_h(44.0)
+                .radius(8.0)
+                .fill(color(tint))
+                .child(label("Explore timeline", 13.0, 600.0, accent))
+                .child(label("→", 22.0, 400.0, accent)),
+        );
+    let overview = col()
+        .w_full()
+        .gap(16.0)
+        .child(header)
         .child(rankings)
         .child(if rec.tie_note.is_empty() {
             el()
@@ -1479,30 +1872,33 @@ fn recommendation_card(
         } else {
             label(&rec.model_note, 12.0, 400.0, MUTED).wrap().w_full()
         })
-        .child(metrics)
+        .child(metrics);
+    let supporting = col()
+        .w_full()
+        .gap(12.0)
+        .child(revenue_context("REVENUE CONTEXT", &rec.revenue_note, true))
         .child(exposure_summary)
-        .child(rule())
-        .child(paragraph(&rec.reason))
         .child(benefits_card(rec))
         .child(warnings_card(rec))
         .child(label(
             if demo {
                 "ILLUSTRATIVE EXAMPLE"
             } else {
-                "ENGINE RESULT"
+                "ANALYSIS RESULT"
             },
             9.0,
             600.0,
             MUTED,
-        ))
-        .child(
-            row()
-                .center_y()
-                .justify_between()
-                .pt(8.0)
-                .child(label("Explore timeline", 12.0, 600.0, INK))
-                .child(label("→", 22.0, 400.0, accent)),
-        );
+        ));
+    // The reference uses the same evidence as a ranked card, with room for a
+    // horizontal comparison. It must never look like an extra recommendation.
+    let body = if matches!(selection, SelectedStrategy::Current) && !narrow {
+        responsive_row(false)
+            .child(column_width(overview, false, 1.0))
+            .child(column_width(supporting, false, 1.0))
+    } else {
+        col().w_full().gap(16.0).child(overview).child(supporting)
+    };
     column_width(
         Card::new()
             .accent(color(accent))
@@ -1510,17 +1906,18 @@ fn recommendation_card(
             .build(k)
             .key(format!("card-{}", rec.category))
             .fill(Color::WHITE)
-            .padding(18.0)
+            .padding(20.0)
             .radius(14.0)
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. {} {} {} {} Open timeline",
+                "{}: {}. {}. {} {} {} {} {} Open timeline",
                 name,
                 rec.crop,
                 comparison_label,
                 rec.tie_note,
                 rec.model_note,
+                rec.revenue_note,
                 benefits_label,
                 warnings_label
             ))
@@ -1923,25 +2320,37 @@ fn current_rotation_card(current: &CurrentRotation, k: &Kit, narrow: bool, demo:
 }
 fn analysis_banner(analysis: &Analysis) -> El {
     let mut banner = col()
-        .gap(7.0)
+        .gap(9.0)
         .padding(16.0)
         .radius(10.0)
+        .w_full()
         .fill(color(if analysis.demo { "#f1ecd9" } else { "#e8eedf" }))
         .child(
             label(
                 if analysis.demo {
-                    "FIXED ENGINE EXAMPLE"
+                    "FIXED ANALYSIS EXAMPLE"
                 } else {
-                    "ENGINE ANALYSIS"
+                    "HAPPY FARMERS ANALYSIS"
                 },
-                10.0,
+                11.0,
                 600.0,
-                if analysis.demo { "#776333" } else { INK },
+                INK,
             )
             .wrap()
             .w_full(),
         )
-        .child(label(&analysis.summary, 12.0, 400.0, MUTED).wrap().w_full());
+        .child(label(&analysis.summary, 14.0, 600.0, INK).wrap().w_full());
+    banner = banner.child(label(
+        "We compare feasible crop sequences using planting windows, water, heat and crop history, then apply your priorities. Today's climate and the projection around 2060 use the same weights.",
+        12.0, 400.0, MUTED,
+    ).wrap().w_full());
+    if !analysis.data_sources.is_empty() {
+        banner = banner.child(rule()).child(eyebrow("DATA SOURCES")).child(
+            label(&analysis.data_sources, 12.0, 400.0, MUTED)
+                .wrap()
+                .w_full(),
+        );
+    }
     if !analysis.source_warning.is_empty() {
         banner = banner.child(
             col()
@@ -2001,7 +2410,7 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 .level(2),
         )
         .child(paragraph(
-            "Ask about the cards, benefits, risks and calendar. AI explains the engine's results.",
+            "Ask about the cards, benefits, risks and calendar. AI explains the analysis results.",
         ))
         .child(button(
             k,
@@ -2194,12 +2603,10 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
                 } else {
                     "Ready to explore your strategies?"
                 },
-                "The engine recalculates results using your selected priorities and scenario.",
+                "The analysis recalculates results using your selected priorities and scenario.",
                 narrow,
             ))
-            .child(priorities_panel(s, k, narrow))
-            .child(soil_panel(s, k, narrow))
-            .child(scenario_panel(s, k, narrow))
+            .child(parameters_panel(s, k, narrow, None))
             .child(if s.loading {
                 button(k, "cancel-priorities", "Cancel analysis", false, |s| {
                     s.page = Page::Setup;
@@ -2224,12 +2631,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
                 |s| s.page = Page::Setup,
             ));
     };
-    let mut card_items = vec![current_rotation_card(
-        &analysis.current_rotation,
-        k,
-        narrow,
-        analysis.demo,
-    )];
+    let mut card_items = vec![];
     for (i, rec) in analysis.recommendations.iter().enumerate() {
         card_items.push(recommendation_card(
             rec,
@@ -2242,7 +2644,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     let columns = if narrow {
         1
     } else if wide {
-        4
+        3
     } else {
         2
     };
@@ -2252,31 +2654,55 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
     for (i, card) in card_items.into_iter().enumerate() {
         line = line.child(card);
         if (i + 1) % columns == 0 || i + 1 == count {
+            // Keep a lone final option the same width as the other cards.
+            if !narrow && (i + 1) % columns != 0 {
+                for _ in (i + 1) % columns..columns {
+                    line = line.child(column_width(el(), false, 1.0));
+                }
+            }
             cards = cards.child(line);
             line = responsive_row(narrow);
         }
     }
     let mut view = col().gap(24.0).w_full()
         .child(button(k, "back-setup", "← Edit farm and history", false, |s| s.page = Page::Setup))
-        .child(heading(if analysis.recommendations.is_empty() { "Let's review your planting options." } else { "Today's highest scores." }, if analysis.recommendations.is_empty() { "The engine checked planting windows and field restrictions. Review the reasons below and change your options to run another analysis." } else { "Up to three strategies in the engine's order, using your priorities. Compare today's and future positions and scores alongside your current rotation." }, narrow))
-        .child(farm_summary(s)).child(analysis_banner(analysis))
-        .child(priorities_panel(s, k, narrow))
-        .child(soil_panel(s, k, narrow))
-        .child(scenario_panel(s, k, narrow))
+        .child(heading_with_width(if analysis.recommendations.is_empty() { "Let's review your planting options." } else { "Today's highest scores." }, if analysis.recommendations.is_empty() { "The analysis checked planting windows and field restrictions. Review the reasons below and change your options to run another analysis." } else { "Review up to three recommendations based on our data and your field's local information. Compare the scores and choose the best rotation for your farm." }, narrow, true))
+        .child(steps(s, narrow))
+        .child(presentation_context(s, k, true))
+        .child(farm_summary(s))
+        .child(analysis_banner(analysis))
         .child(adjustment_banner(analysis))
-        .child(paragraph(&analysis.priority_note))
-        .child(paragraph(&analysis.scenario_note))
-        .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
-        .child(if analysis.ranking_note.is_empty() { el() } else { panel().child(paragraph(&analysis.ranking_note)) })
-        .child(chat_panel(s, k, narrow))
+        .child(if analysis.recommendations.is_empty() { el() } else {
+            col().w_full().gap(7.0)
+                .child(label("Compare your options", 22.0, 600.0, INK).role("heading").level(2).wrap().w_full())
+                .child(paragraph(&analysis.priority_note))
+                .child(label("Open any card to explore its crop cycle, benefits and risks. Future scores use the climate projection around 2060.", 12.0, 400.0, MUTED).wrap().w_full())
+                .child(if analysis.ranking_note.is_empty() { el() } else {
+                    label(&analysis.ranking_note, 12.0, 500.0, INK).wrap().w_full()
+                })
+        })
         .child(cards);
     if analysis.recommendations.is_empty() {
         view = view.child(panel().child(label("No feasible sequence", 22.0, 600.0, INK).wrap())
             .child(paragraph("No sequence meets the selected planning options and applicable field restrictions. Review the discard reasons, the month when the field becomes available and the number of crops to plan.")));
     } else {
-        view = view.child(label("Your current rotation is a reference and may also appear as a suggestion. Cards follow today's scores; future positions may change. Revenue on each card covers the whole sequence; the income priority uses revenue per year of occupancy. Revenue is gross, before costs. Indices are not probabilities.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("Your current rotation is a reference and may also appear as a suggestion. Cards follow today's scores; future positions may change. Indices are not probabilities.", 11.0, 400.0, MUTED).wrap().w_full());
     }
-    if !analysis.discarded.is_empty() {
+    view = view.child(
+        col()
+            .w_full()
+            .gap(12.0)
+            .child(
+                eyebrow("YOUR CURRENT ROTATION · COMPARISON REFERENCE")
+                    .wrap()
+                    .w_full(),
+            )
+            .child(
+                current_rotation_card(&analysis.current_rotation, k, narrow, analysis.demo)
+                    .w_full(),
+            ),
+    );
+    if analysis.recommendations.is_empty() && !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(
             k,
             "discarded-toggle",
@@ -2295,10 +2721,13 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         }
         view = view.child(discarded);
     }
-    if s.farm.is_some() {
+    view = view
+        .child(parameters_panel(s, k, narrow, Some(analysis)))
+        .child(chat_panel(s, k, narrow));
+    if s.field_context.is_some() {
         view = view.child(field_panel(s, k, narrow));
     }
-    view
+    view.child(another_field(k))
 }
 fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     let Some(analysis) = &s.analysis else {
@@ -2364,6 +2793,11 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(pill(&stage.period, tint, accent))
         .child(label(&stage.title, 27.0, 600.0, INK).wrap().w_full())
         .child(paragraph(&stage.description))
+        .child(revenue_context(
+            &stage.revenue_title,
+            &stage.revenue_note,
+            false,
+        ))
         .child(rule())
         .child(
             col()
@@ -2460,23 +2894,31 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     col().w_full().gap(22.0).child(button(k, "back-results", "← Compare strategies", false, |s| s.page = Page::Results))
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
-        .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
-        .child(paragraph(&analysis.priority_note))
-        .child(chat_panel(s, k, narrow))
-        .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
-        .child(if rec.tie_note.is_empty() { el() } else { paragraph(&rec.tie_note) })
+        .child(presentation_context(s, k, true))
+        .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note))
+        .child(revenue_context("REVENUE CONTEXT", &rec.revenue_note, false))
+        .child(if rec.tie_note.is_empty() { el() } else {
+            paragraph(if analysis.ranking_note.is_empty() { &rec.tie_note } else { &analysis.ranking_note })
+        })
         .child(if rec.model_note.is_empty() { el() } else { paragraph(&rec.model_note) })
-        .child(benefits_panel(rec))
-        .child(warnings_panel(rec, narrow))
         .child(col().gap(13.0).child(label("Your crop cycle, step by step", 22.0, 600.0, INK).wrap())
             .child(paragraph("Select a crop to see its details. Year 1 is the starting year of your plan; the calendar may extend beyond December."))
             .child(el().w_full().scroll_x().child(months.min_w(rec.month_labels.len() as f32 * 83.0))))
-        .child(exposure_panel(s, rec, narrow))
         .child(responsive_row(narrow).child(column_width(stages, narrow, 0.8)).child(column_width(detail, narrow, 1.2)))
+        .child(col().w_full().gap(8.0)
+            .child(label("Full comparison", 24.0, 600.0, INK).role("heading").level(2).wrap().w_full())
+            .child(paragraph("Review the full rotation across today's climate, the future projection and the dry-year scenario. Revenue is gross, before costs.")))
+        .child(facts)
+        .child(paragraph(&analysis.priority_note))
+        .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
+        .child(benefits_panel(rec))
+        .child(warnings_panel(rec, narrow))
+        .child(exposure_panel(s, rec, narrow))
         .child(panel().child(label("Water, month by month", 22.0, 600.0, INK))
             .child(paragraph(&rec.water_caption))
             .child(el().w_full().scroll_x().child(water_table)))
         .child(panel().gap(8.0).child(eyebrow("WHAT TO CONSIDER IN THIS CHOICE")).child(paragraph(&rec.tradeoff)))
+        .child(chat_panel(s, k, narrow))
 }
 pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
     // Use browser conventions for every control: Tab, Enter and Space.
@@ -2505,19 +2947,12 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
         .padding(if narrow { 18.0 } else { 36.0 })
         .pt(12.0)
         .pb(40.0);
-    content = content.child(page).child(glossary(s, &kit));
+    content = content.child(page);
     if !s.notice.is_empty() {
         content = content.child(label(&s.notice, 10.0, 400.0, MUTED).wrap().w_full());
     }
-    if narrow {
-        content = content.child(
-            Button::new("Restart planning")
-                .variant(ButtonVariant::Ghost)
-                .on_press(|s: &mut State| s.clear_confirm = true)
-                .build(&kit)
-                .key("reset-mobile")
-                .h(44.0),
-        );
+    if narrow && s.page != Page::Results {
+        content = content.child(another_field(&kit));
     }
     let mut main = col()
         .role("main")
@@ -2551,7 +2986,15 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
             .scroll(ScrollSpec {
                 stick_bottom: false,
             })
-            .child(row().w_full().justify_center().child(content)),
+            .child(row().w_full().justify_center().child(content))
+            .scroll_bar_styled(
+                ScrollBarStyle::from_kit(&kit)
+                    .always_visible()
+                    .thumb(color(MUTED))
+                    .thumb_hover(color(INK))
+                    .width(8.0)
+                    .hover_width(10.0),
+            ),
     );
     let mut base = row().key("page-root").w_full().h_full().fill(color(BG));
     if !narrow {

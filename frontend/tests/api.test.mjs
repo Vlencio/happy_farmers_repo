@@ -46,7 +46,7 @@ test('current rotation stays beside the three winners with comparable actual eng
   for (const card of [current.strategy, ...view.recommendations]) {
     const source = fixture.sequencias.find((seq) => seq.id === card.sequence_id);
     assert.deepEqual(card.comparison_facts, [
-      { label: 'Revenue / ha · today', value: money(source.hoje.receita_ha) },
+      { label: 'Gross revenue / ha · full rotation · today', value: money(source.hoje.receita_ha) },
       { label: 'Soil · today', value: index(source.hoje.solo) },
       { label: 'Suitability · future', value: index(source.futuro.encaixe) },
     ]);
@@ -97,7 +97,7 @@ test('altitude discards explain the minimum and field elevation in both referenc
     assert.equal(view.current_rotation.strategy, null);
     assert.match(view.current_rotation.description, /excluded due to elevation.*800 m.*484\.41 m/);
     assert.doesNotMatch(view.current_rotation.description, /calendar|BRL/);
-    assert.match(view.summary, /excluded by the engine/);
+    assert.match(view.summary, /viable rotations · field available from October · planning 2 crops/);
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
   }
   // The dedicated reference is sufficient even if no full discarded list is sent.
@@ -299,6 +299,7 @@ test('one or two viable sequences produce exactly that many distinct cards', () 
     for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
     const view = mapMotorAnalysis(data, farm);
     assert.equal(view.recommendations.length, count);
+    assert.equal(view.summary, `${count} viable ${count === 1 ? 'rotation' : 'rotations'} · field available from October · planning 2 crops`);
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.map(seq => seq.id));
     assert.deepEqual(view.recommendations.map(rec => rec.category), ['rank1', 'rank2'].slice(0, count));
   }
@@ -402,6 +403,53 @@ test('point provenance warning reaches Rune in English without losing fallback o
   assert.equal(mapMotorAnalysis(fixture, farm).source_warning, '');
   raw.origem.aviso = { unexpected: true };
   assert.throws(() => validateMotorOutput(raw), /origem.aviso/);
+});
+
+test('analysis summary stays concise while ordinary climate provenance moves to data sources', () => {
+  const demoNotice = 'Este ponto está a até 25 km do talhão de demonstração. Usamos o clima desse talhão, com a correção da estação A520, sem nova consulta ao POWER.';
+  const regionalNotice = 'POWER do ponto e projeção NEX-GDDP regional, sem correção da estação A520. Os meses de plantio ainda são os do Triângulo Mineiro; valide a adequação local.';
+  for (const [hoje, aviso] of [['tabela_demo', demoNotice], ['power_api', regionalNotice], ['power_arquivo', regionalNotice]]) {
+    const raw = copy();
+    raw.origem = { hoje, delta: hoje === 'tabela_demo' ? 'nex_talhao_demo' : 'nex_regional', dentro_mg: true, aviso };
+    const original = structuredClone(raw);
+    const view = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
+    assert.equal(view.summary, `${raw.sequencias.length} viable rotations · field available from October · planning 2 crops`);
+    assert.equal(view.source_warning, '');
+    assert.match(view.data_sources, /POWER 2005–2024.*around 2060/);
+    assert.match(view.data_sources, /NASA POWER.*NASA NEX-GDDP-CMIP6/);
+    assert.match(view.data_sources, /Triângulo Mineiro.*local suitability/);
+    if (hoje === 'tabela_demo') assert.match(view.data_sources, /within 25 km.*A520.*without a new POWER request/);
+    else assert.match(view.data_sources, /regional NEX-GDDP.*without the A520.*Planting months/);
+    assert.deepEqual(raw, original, 'Separating the presentation must not mutate source evidence or results');
+  }
+  const example = mapMotorAnalysis(fixture, farm, { demo: true, dataNotice: metadata.data_notice });
+  assert.match(example.data_sources, /Fixed example: does not use your history or settings/);
+  assert.doesNotMatch(example.summary, /Fixed example|POWER/);
+});
+
+test('climate exceptions and unrecognized notices remain prominent instead of becoming ordinary provenance', () => {
+  const regionalNotice = 'POWER do ponto e projeção NEX-GDDP regional, sem correção da estação A520. Os meses de plantio ainda são os do Triângulo Mineiro; valide a adequação local.';
+  const cases = [
+    [{ hoje: 'fallback_tabela_demo', dentro_mg: true, aviso: 'Sem clima do POWER para este ponto (TimeoutError: consulta). Usando as tabelas do talhao de demonstracao, a 72 km.' }, /POWER.*unavailable.*demonstration-field tables from 72 km/],
+    [{ hoje: 'power_api', dentro_mg: false, aviso: 'O ponto do talhão está fora de Minas Gerais na malha simplificada do IBGE. O calendário de culturas é do Triângulo Mineiro; este resultado é exploratório.' }, /outside Minas Gerais.*Triângulo Mineiro.*exploratory/],
+    [{ hoje: 'power_api', dentro_mg: true, aviso: regionalNotice + ' No norte da grade, há extremos de chuva conhecidos nos dados NEX-GDDP que podem afetar a receita futura e a ordem de opções próximas.' }, /northern.*rainfall extremes.*future revenue.*closely ranked/],
+    [{ hoje: 'power_api', dentro_mg: true, aviso: 'New data-quality limitation supplied by the provider.' }, /New data-quality limitation/],
+    [{ hoje: 'new_provider', dentro_mg: true, aviso: regionalNotice }, /POWER data for this point/],
+    [{ hoje: 'power_api', dentro_mg: true, aviso: 'Novo aviso sobre dados climáticos.' }, /without an English translation/],
+  ];
+  for (const [origin, expected] of cases) {
+    const raw = copy(); raw.origem = origin;
+    const view = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
+    assert.match(view.source_warning, expected);
+    assert.match(view.data_sources, /POWER 2005–2024/);
+    assert.doesNotMatch(view.data_sources, expected);
+  }
+  const raw = copy();
+  raw.origem = { hoje: 'fallback_tabela_demo', dentro_mg: false, aviso: null };
+  assert.match(mapMotorAnalysis(raw, farm).source_warning, /unavailable.*demonstration-field climate.*outside Minas Gerais.*exploratory/);
+  assert.equal(mapMotorAnalysis(fixture, farm).data_sources, '');
+  const unknown = copy(); unknown.origem = { hoje: 'new_provider', delta: 'new_projection', aviso: null };
+  assert.equal(mapMotorAnalysis(unknown, farm).data_sources, '', 'Unknown providers must not inherit NASA source names');
 });
 test('metadata loads the engine catalog with English labels and stable crop IDs', async () => {
   const before = structuredClone(metadata);
@@ -569,7 +617,7 @@ test('future model ranges use only per-model ranks and annual revenues, keeping 
   assert.equal(card.rank_facts[2].value, '#1'); // Mean future can lie outside the individual-model rank range.
   assert.deepEqual(card.facts.slice(-2), [
     { label: 'Rank · future across models', value: '#2–#3' },
-    { label: 'Revenue / ha / year · future across models', value: 'BRL\u00a01,000 to BRL\u00a01,050' },
+    { label: 'Gross revenue / ha / year · future across models', value: 'BRL\u00a01,000 to BRL\u00a01,050' },
   ]);
   const rankedCurrent = view.recommendations.find(rec => rec.sequence_id === view.current_rotation.strategy.sequence_id);
   assert.equal(view.current_rotation.strategy.model_note, rankedCurrent.model_note);

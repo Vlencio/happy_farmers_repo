@@ -1,5 +1,177 @@
 # Verificação da integração · 14/11/2026
 
+## Altura do card após reiniciar · 15/11/2026
+
+- Campo e histórico mantêm suas alturas naturais no desktop. O card vazio do
+  campo deixa de esticar até a altura do histórico, eliminando a sobra branca
+  abaixo do bloco de demonstração, inclusive após `Analyze another field`.
+  O alinhamento dos cards de resultados e o empilhamento mobile não mudaram.
+- Build, formatação e diff check passaram. `browser-ux.js` passou em **43
+  verificações**, incluindo uma análise real, cancelamento e confirmação do
+  reinício, retorno aos controles vazios e telas de 1440, 1024, 390 e 320 px.
+  Capturas após o reinício: `output/playwright/ux-reset-*.png`;
+  log: `output/playwright/field-spacing-ux.log`. Sem erros JavaScript.
+
+## Hierarquia visual e navegação · 15/11/2026
+
+- Entrada com contexto compacto, glossário independente e demonstração em
+  destaque. Brasil, unidades métricas, BRL e período climático ficam visíveis;
+  `About this analysis` abre a explicação completa sem alterar o rascunho nem
+  iniciar uma requisição. A ação de análise explica seu estado de prontidão.
+- Resultados com três sugestões em colunas mais largas no desktop e referência
+  atual em seção própria abaixo. Tablet usa duas colunas, celular uma. Acesso
+  à linha do tempo perto do título; métricas, receita zero, empate técnico,
+  faixas de modelos, benefícios, riscos e lacunas continuam disponíveis.
+- A linha do tempo apresenta primeiro calendário, seleção e detalhe da cultura;
+  a comparação completa dos cenários e os dados técnicos vêm em seguida.
+  Foram removidas repetições da explicação dos pesos, sem mudar o ranking.
+- Testes de navegador antigos que dependiam da referência na primeira posição
+  foram atualizados para identificar os cards por função e continuar comparando
+  seus valores com a API. A suite de mapa também deixou de esperar o texto antigo
+  de conexão em português. O novo roteiro `tests/browser-ux.js` verifica a nova
+  disposição, teclado, responsividade, dados reais e preservação do rascunho.
+- Um teste fora do contorno demonstrativo apontou que o aviso de observações
+  indisponíveis tinha ficado recolhido; o aviso voltou a ficar sempre visível.
+  A revisão também trouxe a explicação do empate técnico para junto dos cards
+  e para o detalhe, mantendo o limite de 2 pontos e sua ressalva interpretativa.
+- **165 testes JavaScript**, **1 teste Rust de anos/safras** e **42 casos de
+  integração HTTP** passaram. Build Rune/WASM + Vite, formatação Rust, sintaxe
+  dos roteiros de navegador e diff check aprovados. Permanecem os avisos
+  conhecidos do Rune e de tamanho do bundle, sem novos erros de build.
+- **897 verificações em 21 roteiros de navegador**, sem contar repetições:
+  mapa, histórico, prioridades, análise vazia, referência atual, linha do tempo,
+  renda anual/zero, exposição, avisos, benefícios, modelos, solo, clima, chat,
+  inglês, persistência, recuperação de falhas e barra de rolagem. Larguras de
+  320 a 1920 px; teclado, mouse, desenho por toque e leitura das capturas.
+  As análises usam a API local ou fixtures geradas pelo motor atual; transporte
+  legado, falhas, geolocalização negada e respostas de chat são explicitamente
+  simulados. Nenhuma chamada a provedor de IA ou erro JavaScript não tratado.
+- A suite antiga de cenários agora fixa a referência padrão de solo usada por
+  suas fixtures, impedindo que uma sugestão regional assíncrona invalide o eco
+  da resposta simulada. Não houve alteração nos números esperados do motor.
+  O clique de card no roteiro de avisos usa a posição atual após a rolagem;
+  clique real no botão desenhado e navegação por teclado também foram conferidos.
+
+Os ajustes finais de disponibilidade, alinhamento e empate foram recompilados;
+os roteiros afetados e o novo fluxo de UX passaram novamente após as correções.
+Logs do build, unitários, Rust e integração: `frontend/.cache/ux-*.log`.
+
+Sem alteração de motor, API, dados ou fixtures canônicas. Capturas e logs
+em `output/playwright/ux-*`; testes usam contextos isolados. Celular simulado
+no navegador, sem validação em aparelho físico ou em produção.
+
+## Receita zero e papel das culturas de cobertura · 15/11/2026
+
+- Cards, referência atual e etapas explicam quando uma cultura é representada
+  por sua contribuição ao solo, sem transformar benefício agronômico em renda.
+  Planos de cobertura substituem o destaque `BRL 0` por sua finalidade e evitam
+  repetir valores monetários zerados. Rotações mistas preservam a receita total.
+- Critério conservador: IDs de cobertura conhecidos, aviso de mercado, zero em
+  todos os cenários e atributos entregues pelo motor. Milho com preço editado
+  para zero não ganha o rótulo de adubação verde. Dados ausentes não viram zero;
+  demais zeros têm explicação neutra e riscos continuam acessíveis.
+- **165 testes JavaScript** passaram, incluindo dez testes novos de apresentação,
+  preservação dos dados, respostas antigas, culturas desconhecidas, preços
+  zerados e valores positivos pequenos. Build Rune/WASM + Vite, formatação e
+  diff check passaram. Permanecem os avisos conhecidos de Rune/tamanho do bundle.
+- **67 verificações de navegador**: caso de receita 24 e renda anual 43,
+  com três análises reais no total, desktop e celular simulado. Sem mocks,
+  chamadas ao chat ou erros JavaScript. Nenhum teste em celular físico.
+- Caso reproduzível: **Use sample field**, sem histórico, **February**,
+  **Next crop**, prioridades 1/1/1 e clima sem ajuste. Crotalária (**Sunn hemp**)
+  aparece em primeiro com **Green manure & soil cover**. Em **October** e
+  **Next two crops**, soja → crotalária mantém a receita positiva da soja e
+  explica a etapa de cobertura separadamente.
+- Capturas em `output/playwright/revenue-cover-*.png` e
+  `revenue-mixed-stage-desktop.png`; logs `revenue-browser.log`,
+  `revenue-annual.log`, `frontend/.cache/revenue-unit.log` e
+  `frontend/.cache/revenue-build.log`. `frontend/tests/browser-revenue.js`
+  prepara os casos em contexto isolado, preservando o rascunho do usuário.
+
+Sem alteração de motor, API, dados ou fixtures canônicas. A ausência de campos
+explícitos de finalidade/preço por cultura é tratada conservadoramente no front;
+não há nova dependência de API para estes casos atuais.
+
+## Barra de rolagem visível · 15/11/2026
+
+- Barra vertical nas telas de entrada, resultados e detalhes, visível em repouso
+  enquanto há conteúdo para rolar. Cor da interface, 8 px de largura e 10 px
+  durante interação, sem deslocar os cards nem sobrepor os controles.
+- Usa o componente do Rune com um patch versionado de visibilidade optativa;
+  sem alterar a preferência global ou as demais áreas de rolagem. A aplicação
+  do patch é idempotente pelo `setup-rune.mjs`.
+- Build Rune/WASM + Vite, formatação e diff check passaram. **14 verificações
+  específicas** passaram: roda do mouse, arraste, clique no trilho, Home/End,
+  Page Up/Down, análise real, navegação entre telas e largura de celular.
+- O roteiro do documento passou novamente em **41 verificações**, com seis
+  análises reais, chat simulado e três origens excepcionais simuladas. Nenhum
+  erro JavaScript; sem repetir as suites de cálculo, pois não houve mudanças
+  na lógica de análise ou nos dados.
+- Capturas após 1,2 s sem interação confirmam visibilidade em desktop de 1440 px
+  e celular simulado de 390 px. Evidências em `output/playwright/scrollbar-*.png`,
+  `scrollbar-check.log`, `scrollbar-document.log` e
+  `frontend/.cache/scrollbar-build.log`. Sem teste em aparelho físico.
+
+## Ajustes do documento de revisão do front · 15/11/2026
+
+Implementados na `front-dev3` os ajustes E1–E10 e R1–R9 de
+`happy_farmers_ajustes_front.docx`, mantendo o selo E11. Interface em inglês,
+sem alteração de backend, motor, dados ou fixtures canônicas.
+
+- Entrada com cinco passos no guia, títulos novos, informações/glossário no
+  topo e passo 04 com seções recolhíveis. Prioridades começam abertas; solo e
+  clima, fechados. `Analyze farm` ocupa uma linha própria com maior destaque.
+- Resultado com informações, análise, aviso de cenário e cards antes dos
+  parâmetros. Parâmetros começam recolhidos; chat e observações vêm depois.
+  Descartes ficam disponíveis quando não há recomendações. O botão
+  `Analyze another field` mantém a confirmação e aparece também no rodapé desktop.
+- `Reset parameters` restaura pesos 1/1/1, referência de solo e clima sem ajuste,
+  limpa a conversa e dispara uma única análise. Preserva área, histórico, mês e
+  horizonte; a referência explícita evita reaplicar a sugestão automática de solo.
+- Fontes normais ficam em `DATA SOURCES`; fallback, fora de Minas Gerais,
+  extremos de chuva e avisos desconhecidos continuam destacados. O texto explica
+  a análise sem prometer cálculo diário: a API atual fornece tabelas mensais.
+- Corrigida uma perda de foco descoberta nos controles de clima: resultados
+  pendentes e prontos reutilizam o contêiner dos parâmetros e suas chaves.
+  Home/End continuam funcionando após a primeira alteração do cenário.
+- **155 testes JavaScript**, **1 Rust**, formatação, diff check e build
+  Rune/WASM + Vite passaram. Permanecem os avisos conhecidos da biblioteca Rune.
+- Integração HTTP real passou: 24 combinações de mês/horizonte, sete casos de
+  rotação atual, cinco prioridades e seis ajustes, além de baseline, zero/reset
+  e rejeição de entrada fora dos limites.
+- **377 verificações de navegador**: documento 41, prioridades 98, solo/API 46,
+  cenários/API 85, inglês/contexto 41, renda anual 43 e faixa entre modelos 25.
+  O fluxo do documento cobre ordem, seções, reset, confirmação, resultado vazio
+  e layouts desktop/mobile. Os 18 scripts de navegador passaram na checagem
+  de sintaxe; os demais roteiros não foram executados nesta rodada.
+- Limites: prioridades inclui oito verificações de chat simulado; o fluxo do
+  documento simula uma troca de chat e três origens excepcionais, mantendo o
+  cálculo real. Inglês inclui uma falha de metadata simulada. Sem chamada ao
+  provedor de IA ou consulta externa ao POWER.
+- Revisão visual em 1440 px e celular simulado de 390 px: subtítulo do resultado
+  em uma linha no desktop, painéis e botões sem cortes horizontais. Capturas e
+  logs em `output/playwright/doc-*.log`, `document-*.png` e `doc-visual-*.png`;
+  unitários, HTTP e build em `frontend/.cache/doc-*.log`.
+
+Sem teste de aparelho físico, leitor de tela, Docker, CI remoto ou produção
+nesta rodada. Nenhuma nova dependência de API/motor para estes ajustes.
+
+## Contexto brasileiro, moeda e período da receita · 15/11/2026
+
+- Contexto visível de Minas Gerais/Brasil, calendário do Triângulo Mineiro,
+  unidades métricas e moeda Brazilian reais (BRL), com explicação antes dos cards.
+- Rótulos distinguem receita bruta da rotação inteira, receita por ano de
+  ocupação e total do talhão. Valores, unidades, API e ranking foram preservados.
+- **153 testes JavaScript**, **1 Rust**, `cargo fmt --check`, `git diff --check`
+  e build Rune/WASM + Vite passaram; continuam os avisos conhecidos do Rune/bundle.
+- **110 verificações de navegador**: inglês/contexto 41, renda anual 43 e
+  referência atual 26. Usam API local real; a revisão de inglês também simula
+  uma falha de metadata para validar a restauração offline. Sem chamadas à IA.
+- Desktop de 1440 px e celular simulado de 390 px revisados visualmente:
+  contexto, explicação da receita, cards e detalhes legíveis, sem corte horizontal.
+- Alterações somente no front, testes e documentação; sem nova validação do
+  backend/motor nem teste em aparelho móvel físico nesta rodada.
+
 ## Interface em inglês para apresentação · 15/11/2026
 
 Trabalho local na `front-dev3`, atualizada por fast-forward até `2787fb9`, com

@@ -94,7 +94,7 @@ async (originalPage) => {
     const response = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
     const raw = await (await response).json();
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     const view = await page.evaluate(async raw => {
       const { mapMotorAnalysis } = await import('/web/api.mjs');
       return mapMotorAnalysis(raw, JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).farm);
@@ -126,7 +126,7 @@ async (originalPage) => {
       'Real capability=false hides the chat while analysis remains available', false);
     check(real.raw.sequencias.every(sequence => Array.isArray(sequence.beneficios)) && await cards().count() === 4,
       'Real engine delivers benefits and retains current rotation plus three cards', false);
-    await click(await cards().first().textContent());
+    await click(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent());
     await waitText('Benefits considered by the engine');
     const benefits = real.view.current_rotation.strategy.benefits.items;
     check(benefits.every(item => (item.title && item.evidence)) && (await text()).includes(benefits[0].title),
@@ -257,7 +257,7 @@ async (originalPage) => {
     const nextAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
     await nextAnalysis;
-    await waitText('ENGINE ANALYSIS');
+    await waitText('HAPPY FARMERS ANALYSIS');
     await release('RESPONSE FROM PREVIOUS ANALYSIS');
     hold = false;
     check(await button('Open AI chat').count() === 1, 'SIMULATED reanalysis on the same page resets and collapses the chat');
