@@ -45,6 +45,8 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
   assert.equal(bean.risks[1].evidence, 'heat factor: 46.1 / 100.');
   assert.equal(bean.risks[2].title, 'Shared pest or disease with the previous crop');
   assert.match(bean.risks[2].evidence, /Previous crop: Soybean.*whitefly.*Shared-host factor: 0.75×; applied sequence factor: 0.75×/);
+  assert.match(bean.risks[2].evidence, /Pests or diseases: white mold \(Sclerotinia sclerotiorum\); whitefly \(Bemisia tabaci\), vector of bean golden mosaic virus\./);
+  assert.doesNotMatch(bean.risks[2].evidence, /vetora|mosaico|feijoeiro/);
   assert.equal(bean.risks[3].evidence, '160 exposed days; 190.1 mm of rain on exposed soil.');
   assert.equal(bean.gaps[0].evidence, 'Threshold used: 32 °C.');
   assert.ok(!JSON.stringify(bean).includes('feijao'));
@@ -279,4 +281,17 @@ test('known numerical ranges reject malformed values without enforcing warning t
   // The front must retain a supplied warning even if the engine changes its trigger thresholds.
   assert.equal(show(withWarnings(warning('solo_exposto', 'risco', { dias_expostos: 0, chuva_exposta_mm: 0 }))).risks.length, 1);
   assert.equal(show(withWarnings(warning('fator_limitante', 'risco', { fator: 'temperatura', valor: 1, slot: 'safra' }, 'soja', 'hoje'))).risks.length, 1);
+});
+
+test('every pest or disease the engine emits is shown whole in English; other text keeps the fallback', () => {
+  const pests = pragas => show(withWarnings(warning('hospedeiro_comum', 'risco', {
+    penalidade: 0.75, fator_sequencia: 0.75, anterior: 'soja', pragas, slot: 'safrinha',
+  }, 'feijao'))).risks[0].evidence.match(/Pests or diseases: (.*)\. Shared-host/)[1];
+  // The two texts of HOSPEDEIRO_COMUM in motor/motor.py.
+  assert.equal(pests(['mofo-branco (Sclerotinia sclerotiorum)', 'mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro']),
+    'white mold (Sclerotinia sclerotiorum); whitefly (Bemisia tabaci), vector of bean golden mosaic virus');
+  assert.equal(pests(['mosca-branca']), 'whitefly');
+  for (const unknown of ['mosca-branca (Bemisia tabaci), vetora de outro virus', 'ferrugem-asiatica (Phakopsora pachyrhizi)', 'mofo-branco, outra praga']) {
+    assert.equal(pests([unknown]), 'Additional pest or disease: English name unavailable');
+  }
 });

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { mapMotorAnalysis, validateMotorOutput } from '../web/api.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
+import { revenueRange } from '../web/revenue.mjs';
 
 const load = name => JSON.parse(readFileSync(new URL(`./fixtures/${name}.json`, import.meta.url)));
 const october = load('motor');
@@ -222,4 +223,13 @@ test('missing or null revenue still violates the contract instead of becoming a 
     assert.throws(() => validateMotorOutput(raw), /receita/);
     assert.throws(() => mapMotorAnalysis(raw, farm), /receita/);
   }
+});
+
+test('revenue ranges keep a zero end as an amount and use the zero label only for 0 to 0', () => {
+  const seq = { culturas: ['soja'], avisos: [] };
+  assert.equal(revenueRange(seq, 0, 8107), `${money(0)} to ${money(8107)}`);
+  assert.equal(revenueRange(seq, 1000, 1050), `${money(1000)} to ${money(1050)}`);
+  assert.equal(revenueRange(seq, 0, 0), 'No revenue estimated');
+  const excluded = { culturas: ['soja'], avisos: [{ codigo: 'sem_valor_de_mercado', cultura: 'soja' }] };
+  assert.equal(revenueRange(excluded, 0, 0), 'Market revenue not included');
 });

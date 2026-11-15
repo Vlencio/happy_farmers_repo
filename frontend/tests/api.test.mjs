@@ -629,6 +629,18 @@ test('future model ranges use only per-model ranks and annual revenues, keeping 
   assert.doesNotMatch(mapMotorAnalysis(data, farm).recommendations[0].model_note, /approximated/);
 });
 
+test('a model revenue range shows a zero end as BRL 0; the zero label only when both ends are 0', () => {
+  const data = withModelRanges();
+  const seq = data.sequencias[0];
+  const revenueFact = () => mapMotorAnalysis(data, farm).recommendations[0].facts.at(-1).value;
+  seq.modelos.por_modelo[0].receita_ano_ha = 0;
+  seq.modelos.receita_ano_ha_min = 0;
+  assert.equal(revenueFact(), 'BRL 0 to BRL 1,050');
+  seq.modelos.por_modelo[1].receita_ano_ha = 0;
+  seq.modelos.receita_ano_ha_max = 0;
+  assert.equal(revenueFact(), 'No revenue estimated');
+});
+
 test('model ranges reject incomplete sets, malformed climates and inconsistent ranges instead of showing invented uncertainty', () => {
   for (const mutate of [
     data => delete data.modelos,
