@@ -204,7 +204,7 @@ Duas revisões do motor, uma estatística e uma agronômica, sem contexto do des
 
 **Falta:**
 
-- [ ] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Colunas `dias_acima_NN` de grau em grau. Dias quentes do futuro deslocando a Tmax diária, como o modo diário.
+- [ ] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Feito em 15/11 (`8a90877`): colunas `dias_acima_NN` de 26 a 40 °C, dias quentes do futuro pela Tmax diária deslocada e chuva do futuro por razão.
 - [ ] Tela (Gabriel): testes do front com os números novos; futuro chamado de "por volta de 2060".
 - [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo; penalidade por hospedeiro comum (soja→feijão).
 - [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
