@@ -100,6 +100,44 @@ Engine contract, every rule and every open question: [docs/contrato_motor.md](do
   marked in the code and in `docs/culturas_fontes.md`.
 - Outside Minas Gerais and outside the demo field, the analysis is exploratory.
 
+### Yields are not the field's
+
+The yields in `data/culturas.csv` are Conab averages for **Brazil**, 10th survey of the 2024/25
+season (first and second season separately), and for wheat the IBGE PAM 2025 average for
+**Minas Gerais**. None is the demo field's yield. The PAM yields for Minas Gerais are in
+`data/culturas_mg.csv`, but the engine does not read them (they are higher than Brazil's for
+soybean, first-season corn, sorghum, beans and sunflower, and lower for second-season corn).
+Sources: `docs/culturas_fontes.md`.
+
+These are observed yields of a real season, so they already include that season's heat and
+water losses. The engine applies its heat and water losses on top of them, so the same losses
+are counted twice: absolute revenue is understated, more for the crops the engine penalises most.
+
+### Provisional engine constants
+
+These constants at the top of `motor/motor.py` have no solid source or come from memory. They
+are provisional and need calibration with an agronomist.
+
+| Constant | Value | What it does |
+|---|---|---|
+| `PESO_SOLO` | 0.4 / 0.4 / 0.2 | Weights of nitrogen fixation, straw cover and diversity inside the soil part of the score |
+| `PENALIDADE_REPETICAO` | 0.85 | Yield factor when a crop repeats the previous one |
+| `BONUS_APOS_FIXADORA` | 1.10 | Yield factor for a non-fixing crop after a green manure |
+| `JANELA_BONUS_N_DIAS` | 60 | The bonus above only applies if the next crop is planted within 60 days of the green manure's end |
+| `PENALIDADE_HOSPEDEIRO` | 0.92 | Yield factor when the crop shares a pest or disease with the previous one (the pairs have Embrapa sources; the size of the effect does not) |
+| `PENALIDADE_MOSCA_BRANCA` | 0.75 | Yield factor for beans after soybean (whitefly, golden mosaic). Embrapa cites 40–100% losses in susceptible cultivars; 0.75 is from memory |
+| `PERDA_CALOR` | 1.0 | Share of yield lost if every day of the sensitive phase is above the crop's heat threshold (loss is proportional to the share of hot days) |
+| `FASES_KC` / `FASE_SENSIVEL` | 20% / 45% / 80% of the cycle | Kc stages; heat counts between 45% and 80% (flowering and grain filling) |
+| `DIAS_COLHEITA` | 10 | Days from the end of a cycle until the field is free, the same for every crop |
+| `ESPERA_MAX_DIAS` | 182 | Longest wait for a slot's planting month; beyond it the season has passed and the sequence is discarded |
+| `CAD_POR_TEXTURA` (sandy) | 30 mm | Soil water storage for sandy soil. The medium and clay classes were checked against ZARC; the sandy range and the texture-to-class mapping are from memory |
+
+`PESO_SOLO` is the one that changes the ranking most: in the 15 Nov statistical review, plausible
+sub-weights change the first place in October, February and January (demo field, equal priority
+weights). The warning thresholds (`AVISO_*`) and the accepted input ranges are also team choices,
+but they only decide when to warn or reject input and do not enter the score. Full list:
+[docs/contrato_motor.md](docs/contrato_motor.md), "Constantes provisórias".
+
 This is a hackathon prototype. **It supports, and does not replace, the farmer's judgment and a
 local agronomist.**
 
