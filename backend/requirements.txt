@@ -3,3 +3,4 @@ fastapi==0.162.7
 uvicorn==0.54.0
 pandas==3.1.1
 requests==2.34.2
+anthropic==2.8.0  # optional chat (POST /chat); off without credentials

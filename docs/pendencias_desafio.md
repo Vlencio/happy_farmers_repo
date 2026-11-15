@@ -294,6 +294,8 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 - [ ] Glossário: anomalia de umidade do solo, risco de geada, ano ruim, Ky.
 - [ ] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca.
+- [x] API: `POST /chat` responde dúvidas do produtor sobre a análise na tela, só com os números do motor (`docs/chat.md`).
+- [ ] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat`.
 
 **Feito quando:** todo termo técnico que aparece na tela tem explicação na própria tela.
 

@@ -219,7 +219,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
 
-Os três cards da tela não são as três primeiras de `sequencias`: cada um escolhe por um objetivo (maior `receita_ha` de hoje, maior `solo` de hoje, maior `encaixe` no futuro). A regra está em `frontend/docs/API.md`. O texto por LLM foi abandonado pelo time em 14/11.
+Os três cards da tela não são as três primeiras de `sequencias`: cada um escolhe por um objetivo (maior `receita_ha` de hoje, maior `solo` de hoje, maior `encaixe` no futuro). A regra está em `frontend/docs/API.md`. O chat com LLM (`POST /chat`, `docs/chat.md`) só explica esta saída: lê `avisos`, `beneficios` e os números das sequências na tela, e não produz número nenhum.
 
 ## Regras
 

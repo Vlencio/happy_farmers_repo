@@ -38,7 +38,9 @@ Current front-end requirements (supersede the previous one-screen/top-three-scor
 The first implementation lives in `frontend/`. It also shows approximate area,
 validates the boundary and saves a local browser draft. Main UI, forms, cards
 and timeline are Rune/rune-kit; the satellite dialog uses Leaflet/Geoman through
-a small browser bridge. The UI uses the actual engine through `backend/app.py`.
+a small browser bridge. The UI uses the actual engine through `backend/app.py`. An optional chat (`POST /chat`,
+`docs/chat.md`) lets the farmer ask about the analysis on screen; it is off without Claude
+credentials and only explains the engine output.
 Users select the field's available month and one or two crops, matching the contract.
 History is ordered oldest to newest; years and notes are retained locally because
 the engine accepts only crop IDs. Do not add weights,

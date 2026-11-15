@@ -29,7 +29,8 @@ class TestApi(unittest.TestCase):
         self.assertEqual(metadata["demo_field"]["terrain"]["decl_media_pct"], 4.05)
         self.assertEqual(metadata["demo_field"]["boundary"]["type"], "FeatureCollection")
         self.assertTrue(metadata["point_climate_available"])
-        self.assertEqual(metadata["capabilities"], {"declividade_pct": True})
+        self.assertTrue(metadata["capabilities"]["declividade_pct"])
+        self.assertIsInstance(metadata["capabilities"]["chat"], bool)
 
     def test_validation_and_unknown_culture(self):
         for request in [
