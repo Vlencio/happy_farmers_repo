@@ -120,6 +120,31 @@ test('all fourteen supported warning codes have specific labels, evidence and co
   assert.ok(!JSON.stringify(view).includes('Texto de teste'));
 });
 
+test('late planting is a data gap with crop, slot and nominal and actual months', () => {
+  const late = warning('plantio_tardio', 'lacuna', { slot: 'safra', mes_nominal: 10, mes_real: 11 }, 'soja');
+  const before = structuredClone(late);
+  const view = show(withWarnings(late));
+  assert.equal(view.risks.length, 0);
+  assert.equal(view.gaps.length, 1);
+  const [item] = view.gaps;
+  assert.equal(item.title, 'Late planting');
+  assert.equal(item.context, 'Soybean · Main season');
+  assert.equal(item.evidence, 'Usual planting month: October. Planted in: November.');
+  assert.equal(item.card_summary, 'Soybean · Main season: late planting in November (usual: October).');
+  assert.match(item.description, /no yield reduction/);
+  assert.doesNotMatch(JSON.stringify(item), /soja|Texto de teste|Additional/);
+  assert.deepEqual(late, before);
+  const cases = [
+    w => { w.tipo = 'risco'; }, w => { w.cultura = null; }, w => { w.cenario = 'hoje'; },
+    w => { w.dados.slot = 'inverno'; }, w => { w.dados.mes_real = 13; }, w => { w.dados.mes_nominal = 0; },
+    w => { w.dados.mes_real = 10.5; }, w => { delete w.dados.mes_nominal; }, w => { w.dados.mes_real = 10; },
+  ];
+  for (const mutate of cases) {
+    const item = structuredClone(late); mutate(item);
+    assert.throws(() => show(withWarnings(item)), /engine contract: avisos/);
+  }
+});
+
 test('common hosts retain previous-crop evidence and distinguish pest penalty from the combined factor', () => {
   const original = withWarnings(warning('hospedeiro_comum', 'risco', {
     penalidade: 0.92, fator_sequencia: 1.012, anterior: 'crotalaria',

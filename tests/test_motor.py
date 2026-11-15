@@ -107,12 +107,45 @@ class TestRecomendar(unittest.TestCase):
         self.assertEqual(fora["algodao>milho"], {"cultura": "milho", "posicao": 2, "slot": "safrinha", "mes_livre": 5, "mes_plantio": 2})
 
     def test_epoca_que_ja_passou(self):
-        nov = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 11}, *self.dados)
-        self.assertEqual(ids(nov["sequencias"]), ["algodao"])  # soja e milho sao de outubro
-        abr = recomendar({**ENTRADA, "mes_plantio": 4}, *self.dados)  # safrinha passou; safra de out a 183 dias
+        dez = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 12}, *self.dados)
+        self.assertEqual(ids(dez["sequencias"]), ["algodao"])  # soja e milho: outubro e a janela de novembro passaram
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):  # sem janela: abril nao tem saida
+            abr = recomendar({**ENTRADA, "mes_plantio": 4}, *self.dados)  # safrinha passou; safra de out a 183 dias
         self.assertEqual(abr["sequencias"], [])
         self.assertEqual(len(abr["descartadas"]), self.n**2)
         self.assertEqual(abr["slots"], ["safrinha", "safra"])  # sem saida nas duas ordens, fica a do semestre
+
+    def test_janela_de_plantio(self):
+        # livre em novembro: soja e milho de outubro entram na janela, no dia em que o talhao fica livre
+        nov = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 11}, *self.dados)
+        self.assertEqual(sorted(ids(nov["sequencias"])), ["algodao", "milho", "soja"])
+        soja = next(s for s in nov["sequencias"] if s["id"] == "soja")
+        r = soja["hoje"]["culturas"][0]
+        self.assertEqual((r["mes_plantio"], r["espera_dias"]), (11, 0))
+        self.assertEqual(r["meses"][0]["mes"], 11)  # clima e balanco a partir da data real
+        tardio = [a for a in soja["avisos"] if a["codigo"] == "plantio_tardio"]
+        self.assertEqual(len(tardio), 1)
+        self.assertEqual(tardio[0]["tipo"], "lacuna")
+        self.assertEqual((tardio[0]["cultura"], tardio[0]["cenario"]), ("soja", None))
+        self.assertEqual(tardio[0]["dados"], {"slot": "safra", "mes_nominal": 10, "mes_real": 11})
+        # o algodao (dezembro) espera o mes dele, sem aviso
+        algodao = next(s for s in nov["sequencias"] if s["id"] == "algodao")
+        self.assertEqual(algodao["hoje"]["culturas"][0]["mes_plantio"], 12)
+        self.assertFalse([a for a in algodao["avisos"] if a["codigo"] == "plantio_tardio"])
+        # sem penalidade: os mesmos numeros de uma soja cujo mes de plantio da tabela fosse novembro
+        culturas = self.dados[0].copy()
+        culturas.loc[culturas["cultura"] == "soja", "mes_plantio_safra"] = 11
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):
+            nominal = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 11}, culturas, *self.dados[1:])
+        soja_nov = next(s for s in nominal["sequencias"] if s["id"] == "soja")
+        for cen in ("hoje", "futuro"):
+            self.assertEqual(soja[cen], soja_nov[cen])
+
+    def test_janela_nao_muda_outubro(self):
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):
+            antes = recomendar(ENTRADA, *self.dados)
+        self.assertEqual(antes["sequencias"], self.saida["sequencias"])
+        self.assertFalse([a for s in self.saida["sequencias"] for a in s["avisos"] if a["codigo"] == "plantio_tardio"])
 
     def test_sem_sequencia_no_semestre_comeca_pelo_outro_slot(self):
         # livre em junho: a safrinha de fev/mar so volta no ano seguinte, a safra de outubro cabe
@@ -877,7 +910,13 @@ class TestPecas(unittest.TestCase):
         self.assertIsNone(motor.dia_de_plantio(None, 0))  # cultura sem mes naquele slot
         self.assertEqual(motor.dia_de_plantio(2, 0), 31)  # livre em 1/jan: espera 1/fev
         self.assertEqual(motor.dia_de_plantio(2, 40), 40)  # livre em 10/fev: planta no dia
-        self.assertIsNone(motor.dia_de_plantio(2, 59))  # livre em 1/mar: fevereiro ja passou
+        self.assertEqual(motor.dia_de_plantio(2, 59), 59)  # livre em 1/mar: janela de fevereiro (JANELA_PLANTIO_MESES)
+        self.assertEqual(motor.dia_de_plantio(2, 89), 89)  # 31/mar: ultimo dia da janela
+        self.assertIsNone(motor.dia_de_plantio(2, 90))  # livre em 1/abr: fevereiro e a janela ja passaram
+        self.assertEqual(motor.dia_de_plantio(12, 365 + 9), 365 + 9)  # 10/jan: janela de dezembro do ano anterior
+        self.assertEqual(motor.dia_de_plantio(12, 9), 9)
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):
+            self.assertIsNone(motor.dia_de_plantio(2, 59))  # sem janela: fevereiro ja passou
         self.assertEqual(motor.dia_de_plantio(2, 365 - 30), 365 + 31)  # livre em dezembro: fevereiro do ano seguinte
 
     def clima_fixo(self, dias_quentes_por_mes=0.0):
@@ -1199,7 +1238,8 @@ class TestDiario(unittest.TestCase):
         self.assertEqual(saida["diario"]["n_anos"], 9)
 
     def test_sem_sequencia_viavel(self):
-        saida = recomendar({**ENTRADA, "mes_plantio": 4, "horizonte": 1}, *self.dados, diario=self.serie)
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):  # com a janela, abril tem a crotalaria
+            saida = recomendar({**ENTRADA, "mes_plantio": 4, "horizonte": 1}, *self.dados, diario=self.serie)
         self.assertEqual(saida["sequencias"], [])
         self.assertIn("n_anos", saida["diario"])
 
@@ -1758,6 +1798,25 @@ class TestDadosReais(unittest.TestCase):
                         self.assertAlmostEqual(
                             b[nivel]["agua"], motor.parte_agua(b[nivel]["atendimento_hidrico"]), delta=0.002
                         )
+
+    def test_janela_de_plantio_nos_meses_da_revisao(self):
+        # revisao agronomica de 15/11: livre em novembro so tinha feijao na frente; em marco, nada
+        dados = carregar_dados()
+        nov = recomendar({**ENTRADA, "mes_plantio": 11}, *dados)
+        self.assertTrue(any(s["culturas"][0] == "soja" for s in nov["sequencias"]))
+        mar = recomendar({**ENTRADA, "mes_plantio": 3}, *dados)
+        self.assertGreater(len(mar["sequencias"]), 0)
+        # outubro: as sequencias que ja cabiam ficam com os mesmos numeros; as novas tem plantio tardio
+        out = recomendar({**ENTRADA, "mes_plantio": 10}, *dados)
+        with mock.patch.object(motor, "JANELA_PLANTIO_MESES", 0):
+            antes = recomendar({**ENTRADA, "mes_plantio": 10}, *dados)
+        depois = {s["id"]: s for s in out["sequencias"]}
+        for s in antes["sequencias"]:
+            self.assertEqual(depois[s["id"]]["hoje"], s["hoje"])
+            self.assertEqual(depois[s["id"]]["futuro"], s["futuro"])
+        for k in set(depois) - {s["id"] for s in antes["sequencias"]}:
+            self.assertTrue(any(a["codigo"] == "plantio_tardio" for a in depois[k]["avisos"]), k)
+        self.assertEqual(ids(out["sequencias"])[:3], ids(antes["sequencias"])[:3])
 
     def test_prioridade_agua_muda_os_cards(self):
         # com a escala fixa da agua (AGUA_REF_MIN), agua 3, solo 1, renda 1 tem que mexer nos tres

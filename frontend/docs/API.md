@@ -405,6 +405,9 @@ interfere na ordem das três sugestões. A referência atual recebe o mesmo trat
   ponto de atenção e apresenta os dados que o motor usou.
 - Os 11 códigos têm texto em português, com acentos e unidades. Valores monetários
   são receita bruta por hectare; os fatores são índices, não probabilidades.
+- `plantio_tardio` (lacuna, 15/11): cultura plantada depois do mês da tabela, dentro da
+  janela de plantio (regra 3 do contrato). Mostra os meses usual e real, em inglês, e diz
+  que o motor não desconta produtividade pelo atraso.
 - `avisos: []` significa apenas que as regras não sinalizaram avisos. Campo ausente
   em uma resposta legada significa indisponibilidade, sem presumir lista vazia.
 - Código novo mantém o texto e os dados fornecidos, dentro do grupo indicado pelo
