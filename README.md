@@ -1,135 +1,118 @@
 # Happy Farmers — Field Shift
 
-NASA Space Apps Challenge 2026, challenge **"Field Shift: Adapting Farms with
-NASA Data"**.
+NASA Space Apps Challenge 2026, challenge **"Field Shift: Adapting Farms with NASA Data"**.
 
-A decision-support tool for crop rotation. The farmer draws a boundary on a
-satellite map or imports GeoJSON, optionally supplies planting history, and
-compares three paths: income, soil health and climate resilience. Each path
-opens its own timeline. The engine uses observed and projected
-climate through the existing Python engine and a thin FastAPI adapter.
+A decision-support tool for crop rotation in the Brazilian Cerrado (Minas Gerais). The farmer
+draws a field on a satellite map or imports GeoJSON, gives the crop history, picks priorities
+(water, soil, income) and a soil texture, and gets the three best rotations for today's climate,
+each with its rank in the climate projected for around 2060. The hook: **the rotation that wins
+today may not win in the future.**
 
-**Status:** the first local front-end prototype is functional, the crop and
-climate tables are built, and a first version of the Python scoring engine
-exists. The Rune interface now consumes its real input/output contract through FastAPI; engine development
-remains a separate team workstream.
+The ranking comes from rules and arithmetic on NASA data (no machine learning). An optional AI
+chat only explains the numbers on screen; it never produces them.
 
-The chosen front end is [Rune](https://github.com/anomalyco/rune) (Rust), using
-`rune-kit` components and an API adapter for the Python/FastAPI
-backend. This replaces the earlier Streamlit/React proposal. Rune has now been compiled to WebAssembly
-and tested locally in the browser. Its exact revision, four required dependency
-patches and a small additional WASM compatibility patch are pinned in `frontend/`.
+## Run it
 
-## Run the front end
+Requirements: Python 3.11+, Node.js 22.12+, Git. The front end is Rust/WebAssembly
+([Rune](https://github.com/anomalyco/rune)); building it also needs Rust via rustup
+(the toolchain is pinned in `frontend/rust-toolchain.toml`).
 
-On the prepared Windows workspace:
-
-```powershell
-cd D:\NasaSpaceApps\frontend
-npm run dev
+```bash
+# from the repository root
+python -m venv .venv
+.venv/Scripts/python -m pip install -r backend/requirements-dev.txt   # Linux/macOS: .venv/bin/python
+cd frontend
+npm ci
+npm run dev        # starts the API (FastAPI, port 8000) and the web app (port 4173)
 ```
 
-Open [Happy Farmers locally](http://127.0.0.1:4173/). For a fresh clone, follow
-[frontend setup and architecture](frontend/README.md). The command starts both Vite and the local API;
-Ctrl+C stops both. See [integration mapping](frontend/docs/API.md) and the authoritative
-[engine contract](docs/contrato_motor.md). The API integrates the delivered point-climate
-provider and regional NEX-GDDP deltas, preserving the engine's calculations. Within
-25 km of the demo, it uses ready-made tables (including the optional dry year).
-Other covered points use NASA POWER with explicit source, scope and fallback notices.
+Open <http://127.0.0.1:4173>. A fresh clone must build the WebAssembly first: see
+[frontend/README.md](frontend/README.md). The API alone: `uvicorn backend.app:app --port 8000`
+(OpenAPI at `/docs`). A Docker image is defined in `Dockerfile`.
 
-An optional AI chat explains the current analysis when the server advertises
-`capabilities.chat: true`. Sending a question shares the question, conversation
-history and the analysis in focus (including coordinates, crop history, monthly
-climate and strategy figures) with **Anthropic**. Credentials stay on the server.
-The front end keeps the conversation only in memory, resets it on a new analysis
-and resends its history with each question; the server stores no conversation.
-See the [chat contract](docs/chat.md) for configuration and limits.
+Tests, from the repository root:
+
+```bash
+python -m unittest discover -s tests            # engine
+python -m unittest discover -s backend/tests    # API
+python -m backend.export_fixture                # front-end fixtures; must not change
+npm test --prefix frontend                      # front end (JS)
+```
+
+CI runs these plus the Rust tests and a Docker smoke test ([docs/CI.md](docs/CI.md)).
+The engine also runs alone: `python -m motor`.
+
+## Data
+
+All preprocessed tables for the demo field are in the repository; nothing has to be downloaded
+to run the app. The download scripts under `scripts/` are maintenance tools.
+
+| Source | Agency | What we use | Resolution | How it reaches the field |
+|---|---|---|---|---|
+| **NASA POWER** (daily, community AG) | NASA | Rain, Tmin, Tmax 2005–2024; daily series for the daily mode | ~0.5° cell | The cell containing the field, averaged by month. Tmin/Tmax corrected with the INMET A520 station |
+| **NEX-GDDP-CMIP6** (MIROC6, ACCESS-CM2, MRI-ESM2-0) | NASA | Change between `historical` 1995–2014 and `ssp245` 2041–2060 | 0.25° cell | Delta method: today × rain ratio, today + temperature delta. Never compared directly to POWER. Future centred around 2060 |
+| **MODIS MOD13Q1** (AppEEARS) | NASA | NDVI every 16 days, 2014–2024 | 250 m | Mean of the pixels inside the field polygon, cloudy dates removed |
+| **SRTMGL1** (AppEEARS) | NASA | Elevation and slope | 30 m | Statistics over the field polygon (slope ~4%, altitude ~484 m) |
+| **GLDAS2/Noah soil parameters** | NASA | Clay/sand/silt fractions → suggested texture | 0.25° cell | The cell containing the point; shown as a suggestion the farmer confirms |
+| FAO ECOCROP (via GAEZ) | FAO | Temperature, rain and cycle ranges per crop | — | Crop table |
+| FAO-56 | FAO | Kc and Ky per crop, ET0 method (Hargreaves) | — | Crop table and engine constants |
+| ZARC / IN SPA-MAPA 1/2022 | MAPA (Brazil) | Soil available-water classes (30/45/60 mm by texture) | — | Engine constant |
+| CEPEA/Conab, IBGE PAM | Brazil | Prices and yields | State / national | Crop table (`docs/culturas_fontes.md` marks values still to check) |
+| Embrapa technical notes | Brazil | Shared pests (white mould, whitefly), wheat altitude, sunn hemp planting month | — | Engine rules and crop table, with the source in the code |
+
+Point climate outside the demo uses POWER for the point and the regional NEX-GDDP delta grid
+(cached). NDVI, slope, the dry year (2020/21) and the per-model range are demo-only.
+Column reference: [docs/colunas_dados.md](docs/colunas_dados.md).
+
+**Datasets the challenge lists that we did not use, and why:** SMAP (9–36 km, top 5 cm, short
+record; we model soil water with a daily bucket and treat SMAP as the natural next check),
+GPM/IMERG (POWER already gives a consistent 20-year rain series for the method; IMERG would be the
+upgrade for extremes), GRACE/GRACE-FO (hundreds of km: regional context, not field level),
+ECOSTRESS and Landsat (field-scale heat and NDVI would feed a zone map, which we did not build).
+
+## How the engine decides
+
+Engine contract, every rule and every open question: [docs/contrato_motor.md](docs/contrato_motor.md).
+
+- Every sequence of one or two crops is simulated day by day in its planting window
+  (safra/safrinha), with a water balance (rain − Kc × ET0, soil storage by texture), climate fit
+  (FAO ECOCROP ranges), a heat rule (days above each crop's threshold during flowering) and
+  sequence rules (repetition, shared pests, nitrogen credit only after a green manure).
+- **Score** = weighted mean of three parts, with the farmer's weights:
+  water (share of the crop water demand met), soil (nitrogen fixation, straw cover, diversity)
+  and income (revenue per year of field use ÷ the loss-free revenue of soybean + second-season
+  corn). The three cards are the three best scores today; each shows its future rank and, at the
+  demo field, the range across the three climate models.
+- Each strategy lists **benefits, risks and information gaps** derived from its own numbers.
+- Optional: "what if" rain/temperature sliders, a daily mode (one run per year, 2005–2023) and a
+  dry-year scenario.
+
+## Limitations (from an independent statistics and agronomy review, 15 Nov)
+
+- Scores within ~2 points are a **tie** (year-to-year noise is 1–1.3 points); the screen marks
+  them. Weights are not shares of the result: with equal weights income drives about half of it.
+- The robust today-vs-future signal is the **fall of bean sequences** in the future; it depends on
+  the 32 °C heat threshold, the least certain value.
+- Future rain change is **not significant** (0 of 36 model-month deltas with |t| > 2); the models
+  agree on warming. Three models give a min–max range, not a confidence interval.
+- The monthly mode is optimistic on water (averages hide dry spells); the daily mode shows them.
+- Revenue is gross: no production cost (out of scope). Several crop values are provisional and
+  marked in the code and in `docs/culturas_fontes.md`.
+- Outside Minas Gerais and outside the demo field, the analysis is exploratory.
+
+This is a hackathon prototype. **It supports, and does not replace, the farmer's judgment and a
+local agronomist.**
 
 ## Layout
 
 ```
-data/
-  talhao_demo_2.geojson   demo field (~219 ha)
-  power/                  historical climate, monthly
-  nexgddp/                projected climate, monthly (+ cache/ with the daily series)
-  appeears/               NDVI (MOD13Q1) and elevation (SRTM) for the field
-  ecocrop/                FAO ECOCROP crop requirements
-  inmet/                  INMET A520 station vs POWER, monthly (used to correct Tmin/Tmax)
-  talhao/                 monthly NDVI, bare-soil months and slope of the field
-  culturas.csv            crop table used by the engine
-  clima_hoje.csv          today's climate, 12 months
-  clima_futuro.csv        2041-2060 climate, 12 months
-  clima_seco.csv          driest crop year in POWER (2020/21), 12 months
-docs/
-  colunas_dados.md        column reference for every source
-  culturas_fontes.md      source and status of every value in culturas.csv
-  contrato_motor.md       engine inputs, output JSON and rules
-frontend/                Rune + rune-kit web app, map bridge and API adapter
-backend/                 thin FastAPI transport for the existing engine
-motor/                    scoring engine (rules and arithmetic, no ML)
-scripts/
-  puxar_power.py          downloads NASA POWER
-  puxar_nexgddp.py        downloads NEX-GDDP-CMIP6
-  montar_culturas.py      builds culturas.csv and culturas_candidatas.csv (ECOCROP + hand-filled values)
-  puxar_pam.py            downloads IBGE PAM for Minas Gerais (SIDRA)
-  montar_culturas_mg.py   crosses MG crops with ECOCROP and the climate tables
-  montar_clima.py         builds the two climate tables
-  processar_appeears.py   NDVI and slope from the AppEEARS files
-tests/                    engine tests, with fixed test tables in tests/dados/
+motor/      scoring engine (rules and arithmetic) and its contract in docs/contrato_motor.md
+backend/    FastAPI transport (/analyze, /metadata, optional /chat)
+frontend/   Rune (Rust/WASM) web app, map bridge and API adapter
+data/       preprocessed tables for the demo field and regional grids
+scripts/    data download and preprocessing (maintenance only)
+tests/      engine tests (fixed tables in tests/dados/)
+docs/       contract, data columns, sources, reviews and the challenge checklist
 ```
 
-Run the engine demo with `python -m motor` and the tests with
-`python -m unittest discover tests`, both from the repository root.
-
-Pushes and pull requests to `main`/`front-dev3` run the automated Python, JS and
-Rust tests, check the engine fixtures, then build and smoke-test the Linux Docker
-image. See [CI and local reproduction](docs/CI.md). This workflow does not deploy.
-
-## Data
-
-Demo field: lat -20.032, lon -48.526 (Brazil, about 125 km south of
-Uberlândia). The original sources below refer to this point or its polygon.
-The API also uses the delivered regional NEX-GDDP delta grid and fetches POWER
-for other covered points; NDVI, terrain and dry-year data remain demo-specific.
-
-| Source | What | Period | How it was obtained |
-|---|---|---|---|
-| NASA POWER | Rain, temperature, radiation, humidity, wind. Daily values averaged by month | 2005–2024 | `scripts/puxar_power.py` |
-| NASA NEX-GDDP-CMIP6 | Rain, Tmin, Tmax from MIROC6, ACCESS-CM2 and MRI-ESM2-0 | `historical` 1995–2014, `ssp245` 2041–2060 | `scripts/puxar_nexgddp.py` |
-| MODIS MOD13Q1 v061 | NDVI and EVI every 16 days, with pixel reliability | Dec 2014–Dec 2024 | AppEEARS area request |
-| SRTMGL1 v003 | Elevation | 2000 | Same AppEEARS request |
-| FAO ECOCROP | Temperature, rain and cycle ranges per crop | — | `EcoCrop_DB.csv` from github.com/OpenCLIM/ecocrop |
-| IBGE PAM (not NASA) | Area, yield and farm-gate price per crop in Minas Gerais; used to pick and check the crops | 2025 | SIDRA API, tables 5457, 839 and 1002 (`scripts/puxar_pam.py`); see `docs/ibge_pam.md` |
-
-The AppEEARS request is named "Uberlandia", but it uses the demo field polygon.
-Product citations are in `data/appeears/README.md`. ECOCROP is cited as "FAO
-ECOCROP via GAEZ".
-
-Future climate is not read directly from NEX-GDDP. The difference between
-`ssp245` and `historical`, averaged over the three models, is added to the
-POWER values.
-
-## Setup
-
-```
-python -m venv venv
-venv\Scripts\activate        # Linux/macOS: source venv/bin/activate
-pip install -r requirements.txt
-```
-
-The preprocessed demo tables and regional delta grid are already in the repository.
-The API obtains and caches POWER for a new point automatically. The scripts below
-are manual collection tools for data maintenance, not required to analyze a field:
-
-```
-python scripts/puxar_power.py [lat] [lon] [start_year] [end_year]
-python scripts/puxar_nexgddp.py [lat] [lon]
-```
-
-`puxar_nexgddp.py` makes about 360 small requests and takes a few minutes; what
-it has already downloaded stays in `data/nexgddp/cache/`.
-
-## Disclaimer
-
-This is a hackathon prototype. Recommendations must be validated with an
-agronomist. Crop prices are historical averages, not forecasts.
+Team: three developers (data, engine, front end and API).
