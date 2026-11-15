@@ -52,6 +52,9 @@ JANELA_BONUS_N_DIAS = 60
 # fator na produtividade de uma cultura que divide praga ou doenca com a anterior (HOSPEDEIRO_COMUM).
 # Menor que a repeticao e nao soma com ela; multiplica o bonus apos adubo verde (1,10 x 0,92 = 1,012).
 PENALIDADE_HOSPEDEIRO = 0.92
+# Mosca-branca de soja para feijao (mosaico-dourado): fator proprio, maior. A Embrapa cita perdas de 40%
+# a 100% do feijao em cultivar suscetivel; 0,75 e provisorio, de memoria da revisao agronomica de 15/11.
+PENALIDADE_MOSCA_BRANCA = 0.75
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
@@ -59,11 +62,10 @@ ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe q
 FASE_SENSIVEL = FASES_KC[1:]  # florescimento e enchimento de graos: a fase de Kc medio
 PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase sensivel passam do limiar
 # Escala da parte agua do score: o atendimento hidrico da sequencia (1 - deficit / demanda) vai da
-# faixa fixa [AGUA_REF_MIN, 1] para [0, 1], e abaixo de AGUA_REF_MIN vale 0. Sem a escala, a agua
-# variava 0,84-1,00 entre as sequencias no clima medio e pesava ~14% com pesos iguais (solo ~32%,
-# renda ~54%). 0,6 e por volta do pior atendimento que o motor da no talhao de demonstracao: ano
-# seco 0,56-0,86, ano ruim do modo diario 0,66-0,89. Faixa fixa: nao depende das outras sequencias.
-AGUA_REF_MIN = 0.6
+# faixa fixa [AGUA_REF_MIN, 1] para [0, 1]. Com 0, a parte agua e o proprio atendimento. Foi 0,6 por
+# algumas horas em 15/11; as revisoes mostraram que isso multiplicava o peso da agua por 2,5 (a agua
+# ja entra na receita pelo fator de crescimento) e punha soja>feijao em 1o e soja>milho em 6o.
+AGUA_REF_MIN = 0.0
 
 # Hospedeiro comum (regra 10): culturas diferentes que dividem praga ou doenca relevante no Cerrado.
 # Cada item: (culturas anteriores, culturas seguintes, praga, fonte). Vale para toda cultura seguinte
@@ -522,6 +524,13 @@ def pragas_em_comum(anterior, nome):
     return [praga for anteriores, seguintes, praga, _ in HOSPEDEIRO_COMUM if anterior in anteriores and nome in seguintes]
 
 
+def fator_hospedeiro(pragas):
+    """Fator de hospedeiro comum: o menor entre as pragas em comum (nao multiplica); 1 sem nenhuma."""
+    if not pragas:
+        return 1.0
+    return min(PENALIDADE_MOSCA_BRANCA if p.startswith("mosca-branca") else PENALIDADE_HOSPEDEIRO for p in pragas)
+
+
 def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_anterior=None):
     """Regras de sequencia, receita e parte de solo de uma cultura. Preenche r.
 
@@ -529,11 +538,16 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_an
     """
     nome = c["cultura"]
     pragas = pragas_em_comum(anterior, nome)
-    if nome == anterior:
+    repete = nome == anterior
+    bonus_n = not repete and tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior)
+    penalidade = fator_hospedeiro(pragas)
+    if repete:
         fator_sequencia = PENALIDADE_REPETICAO
     else:
-        bonus = BONUS_APOS_FIXADORA if tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior) else 1.0
-        fator_sequencia = bonus * (PENALIDADE_HOSPEDEIRO if pragas else 1.0)
+        fator_sequencia = (BONUS_APOS_FIXADORA if bonus_n else 1.0) * penalidade
+    r["repete"] = repete  # marcas para os avisos e beneficios (sem comparar numeros quebrados)
+    r["bonus_n"] = bonus_n
+    r["penalidade_hospedeiro"] = penalidade
     r["dias_apos_anterior"] = dias_apos_anterior if anterior in culturas else None
     produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
     r["fixa_n"] = c["fixa_n"]  # atributos da tabela que entram na parte de solo, para explicar o numero
@@ -542,7 +556,10 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_an
     r["hospedeiro_comum"] = {"anterior": anterior, "pragas": pragas} if pragas else None
     r["fator"] = cresce * fator_sequencia
     r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
-    r["solo"] = cresce * (
+    # parte solo: o quanto a cultura cresce pelo clima (temperatura, chuva, calor), sem a agua, que ja
+    # entra na parte agua e na receita
+    clima = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"])
+    r["solo"] = clima * (
         PESO_SOLO["fixa_n"] * c["fixa_n"]
         + PESO_SOLO["cobre_solo"] * c["cobre_solo"]
         + PESO_SOLO["diversidade"] * (nome != anterior)
@@ -892,22 +909,33 @@ def _modo_diario(
             for s in sequencias
         }
 
-    niveis = {"mediano": statistics.median, "ruim": _quantil_ruim}
-    partes = ("agua", "atendimento_hidrico", "solo", "receita_ha")
+    niveis = ("mediano", "ruim")
+    partes = ("agua", "atendimento_hidrico", "solo", "receita_ha", "renda", "score")
+    # score de cada ano, com a renda pela mesma regra do modo mensal (receita por ano ocupado / teto fixo)
+    for porseq in por_ano.values():
+        for s, anos in porseq.items():
+            for a in anos.values():
+                a["renda"] = min(1.0, a["receita_ha"] / aval_hoje[s]["anos_ocupados"] / teto)
+                a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
+    # ano mediano e ano ruim sao anos reais: a posicao mediana e a posicao QUANTIL_RUIM na lista dos anos
+    # ordenada pelo score do ano, do pior para o melhor. Todas as partes vem do mesmo ano.
+    escolhido = {}
+    for cen, porseq in por_ano.items():
+        for s, anos in porseq.items():
+            ordem = sorted(anos, key=lambda ano: (anos[ano]["score"], ano))
+            escolhido[cen, s] = {"mediano": ordem[(len(ordem) - 1) // 2], "ruim": ordem[int(len(ordem) * QUANTIL_RUIM)]}
     resumo = {
         cen: {
-            s: {nivel: {p: f([a[p] for a in anos.values()]) for p in partes} for nivel, f in niveis.items()}
+            s: {
+                nivel: {"ano": escolhido[cen, s][nivel], **{p: anos[escolhido[cen, s][nivel]][p] for p in partes}}
+                for nivel in niveis
+            }
             for s, anos in porseq.items()
         }
         for cen, porseq in por_ano.items()
     }
-    # renda de 0 a 1: a mesma regra do modo mensal (receita por ano ocupado / teto fixo)
     for cen in resumo:
         for nivel in niveis:
-            for s in sequencias:
-                a = resumo[cen][s][nivel]
-                a["renda"] = min(1.0, a["receita_ha"] / aval_hoje[s]["anos_ocupados"] / teto)
-                a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             for i, s in enumerate(sorted(sequencias, key=lambda s: _chave_rank(resumo[cen][s][nivel]))):
                 resumo[cen][s][nivel]["rank"] = i + 1
 
@@ -929,8 +957,8 @@ def _modo_diario(
                         "cultura": nome,
                         "slot": slot,
                         **{
-                            nivel: {k: f([a["culturas"][i][k] for a in anos.values()]) for k in campos_cultura}
-                            for nivel, f in niveis.items()
+                            nivel: {k: anos[escolhido[cen, s][nivel]]["culturas"][i][k] for k in campos_cultura}
+                            for nivel in niveis
                         },
                         "eventos": {
                             evento: _eventos([a["culturas"][i][f"dias_{evento}"] for a in anos.values()])
@@ -979,7 +1007,7 @@ def _agua_diaria_baixa(bloco_diario):
 
 def _teve_bonus(r):
     """A cultura recebeu o bonus apos fixadora (com ou sem o desconto de hospedeiro comum)?"""
-    return r["fator_sequencia"] == BONUS_APOS_FIXADORA * (PENALIDADE_HOSPEDEIRO if r["hospedeiro_comum"] else 1.0)
+    return bool(r.get("bonus_n"))
 
 
 def _virgula(x, casas=3):
@@ -1054,7 +1082,7 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
             limite=AVISO_FAIXA_RANK,
         )  # fmt: skip
     for r in hoje["culturas"]:
-        if r["fator_sequencia"] == PENALIDADE_REPETICAO:
+        if r.get("repete"):
             aviso(
                 "risco", "repete_a_cultura",
                 f"{r['cultura']} repete a cultura anterior: o motor tira {(1 - PENALIDADE_REPETICAO) * 100:.0f}% da produtividade "
@@ -1070,9 +1098,9 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
             aviso(
                 "risco", "hospedeiro_comum",
                 f"{r['cultura']} na {r['slot']} vem depois de {hosp['anterior']}, que divide com ela "
-                f"{' e '.join(hosp['pragas'])}: o motor tira {(1 - PENALIDADE_HOSPEDEIRO) * 100:.0f}% da produtividade."
+                f"{' e '.join(hosp['pragas'])}: o motor tira {(1 - r['penalidade_hospedeiro']) * 100:.0f}% da produtividade."
                 f"{com_bonus} O valor é provisório.",
-                r["cultura"], fator_sequencia=r["fator_sequencia"], penalidade=PENALIDADE_HOSPEDEIRO,
+                r["cultura"], fator_sequencia=r["fator_sequencia"], penalidade=r["penalidade_hospedeiro"],
                 anterior=hosp["anterior"], pragas=list(hosp["pragas"]), slot=r["slot"],
             )  # fmt: skip
     expostos = hoje["descoberto"]["dias_expostos"]

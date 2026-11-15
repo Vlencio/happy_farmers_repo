@@ -387,6 +387,16 @@ class TestRecomendar(unittest.TestCase):
         zero = next(s for s in saida["sequencias"] if s["id"] == "soja>milho")
         self.assertEqual(zero["hoje"]["receita_ha"], 0.0)
 
+    def test_parte_solo_nao_usa_a_agua(self):
+        for s in self.saida["sequencias"]:
+            for r in s["hoje"]["culturas"]:
+                clima = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"])
+                esperado = clima * (
+                    motor.PESO_SOLO["fixa_n"] * r["fixa_n"] + motor.PESO_SOLO["cobre_solo"] * r["cobre_solo"]
+                    + motor.PESO_SOLO["diversidade"] * (not r["repete"])
+                )  # fmt: skip
+                self.assertAlmostEqual(r["solo"], esperado, delta=2e-3)
+
     def test_entradas_invalidas(self):
         with self.assertRaises(ValueError):
             recomendar({**ENTRADA, "horizonte": 3}, *self.dados)
@@ -664,6 +674,29 @@ class TestHospedeiroComum(unittest.TestCase):
         self.assertIn("hospedeiro comum", b["texto"])
         (a,) = [a for a in seq["avisos"] if a["codigo"] == "hospedeiro_comum"]
         self.assertIn("bônus", a["texto"])
+
+    def reais(self, historico, nome):
+        """Como uma(), com as tabelas de data/ (as de teste nao tem feijao)."""
+        saida = recomendar({**ENTRADA, "rotacao_atual": historico, "horizonte": 1, "mes_plantio": 2}, *carregar_dados())
+        return saida, next(s for s in saida["sequencias"] if s["id"] == nome)
+
+    def test_mosca_branca_tem_fator_proprio(self):
+        _, seq = self.reais(["milho", "soja"], "feijao")
+        r = seq["hoje"]["culturas"][0]
+        # soja -> feijao divide mofo-branco e mosca-branca: vale o menor fator, sem multiplicar
+        self.assertEqual(r["penalidade_hospedeiro"], motor.PENALIDADE_MOSCA_BRANCA)
+        self.assertAlmostEqual(r["fator_sequencia"], motor.PENALIDADE_MOSCA_BRANCA)
+        (a,) = [a for a in seq["avisos"] if a["codigo"] == "hospedeiro_comum"]
+        self.assertEqual(a["dados"]["penalidade"], motor.PENALIDADE_MOSCA_BRANCA)
+        _, seq = self.reais(["milho", "feijao"], "girassol")  # feijao -> girassol: so mofo-branco
+        self.assertEqual(seq["hoje"]["culturas"][0]["penalidade_hospedeiro"], motor.PENALIDADE_HOSPEDEIRO)
+
+    def test_aviso_de_repeticao_nao_depende_do_valor(self):
+        # mesmo com o fator de hospedeiro igual ao de repeticao, so a repeticao gera repete_a_cultura
+        with mock.patch.object(motor, "PENALIDADE_HOSPEDEIRO", motor.PENALIDADE_REPETICAO):
+            _, seq = self.reais(["milho", "feijao"], "girassol")
+        self.assertFalse(seq["hoje"]["culturas"][0]["repete"])
+        self.assertNotIn("repete_a_cultura", [a["codigo"] for a in seq["avisos"]])
 
     def test_nao_soma_com_a_repeticao(self):
         _, seq = self.uma(["milho", "soja"], "soja")
@@ -1568,9 +1601,12 @@ class TestDadosReais(unittest.TestCase):
             for s in saida["sequencias"]:
                 for cen in ("hoje", "futuro"):
                     b = s["diario"][cen]
-                    self.assertTrue(0 <= b["ruim"]["score"] <= b["mediano"]["score"] + 100)
-                    self.assertTrue(0 <= b["ruim"]["agua"] <= b["mediano"]["agua"] <= 1)
-                    self.assertLessEqual(b["ruim"]["receita_ha"], b["mediano"]["receita_ha"])
+                    # ano mediano e ano ruim sao anos reais, escolhidos pelo score do ano
+                    self.assertLessEqual(b["ruim"]["score"], b["mediano"]["score"])
+                    anos = {x["ano"]: x for x in b["anos"]}
+                    for nivel in ("mediano", "ruim"):
+                        self.assertTrue(0 <= b[nivel]["agua"] <= 1)
+                        self.assertEqual(b[nivel]["score"], anos[b[nivel]["ano"]]["score"])
                     for nivel in ("mediano", "ruim"):  # a mesma escala de agua do modo mensal
                         self.assertAlmostEqual(
                             b[nivel]["agua"], motor.parte_agua(b[nivel]["atendimento_hidrico"]), delta=0.002
