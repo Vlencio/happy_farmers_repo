@@ -26,6 +26,15 @@ saida = recomendar(entrada, culturas, clima_hoje, clima_futuro, diario=diario)
 
 Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diario`, descritos em "Modo diário". Os campos que já existiam continuam idênticos.
 
+```python
+# com o futuro rodado uma vez por modelo climático (opcional, regra 20)
+from motor import carregar_clima_modelos
+modelos = carregar_clima_modelos()   # data/clima_modelos.csv + off_* de clima_correcoes.csv; None se não existe
+saida = recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_modelos=modelos)
+```
+
+Sem `clima_modelos` (ou com `None`), nada muda. Com ele, cada sequência viável ganha o bloco `modelos` e a saída ganha `modelos` no topo (ver "Futuro por modelo" na saída). Score, rank e os blocos que já existiam continuam idênticos; só pode aparecer o aviso novo `rank_varia_entre_modelos`. Só vale para o talhão de demonstração: `clima_futuro` precisa ser a média dos mesmos modelos.
+
 - Demo: `python -m motor` (tabela, com o resumo do modo diário) ou `python -m motor --json` (JSON completo). `--mes 2` troca o mês em que o talhão fica livre.
 - Tamanho do JSON sem indentação, com as 10 culturas, histórico soja, milho e outubro (medido em 15/11): ~199 KB só com hoje e futuro; ~405 KB com o modo diário (fevereiro: ~257 KB e ~543 KB). O `descoberto` de cada ano soma ~70 KB em outubro e ~95 KB em fevereiro.
 - Testes: `python -m unittest discover tests`. Usam tabelas fixas em `tests/dados/`, com valores de teste.
@@ -76,6 +85,15 @@ Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje 
 As tabelas atuais trazem `et0_mm`, calculado com as temperaturas do POWER sem a correção da estação A520. Por isso o motor não recalcula.
 
 `dias_quentes` não é lido.
+
+**`data/clima_modelos.csv`** (opcional, regra 20): os deltas do NEX-GDDP (`ssp245` 2041–2060 − `historical` 1995–2014) por modelo e mês, antes da média. Só do talhão de demonstração.
+
+| Coluna | Uso no motor |
+|---|---|
+| `modelo`, `mes` | Um modelo por grupo, 12 meses cada |
+| `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c` | Mudança do modelo no mês (mm do modelo, °C) |
+| `razao_chuva` | Opcional, ainda não existe no arquivo. Chuva `ssp245` ÷ `historical` do modelo no mês. Se vier, a chuva do modelo é hoje × razão, o método de `clima_futuro.csv` |
+| `off_tmin`, `off_tmax` | Opcionais. `carregar_clima_modelos` junta de `clima_correcoes.csv` (correção da estação A520). Servem para o ET0 usar as temperaturas sem a correção, como `scripts/montar_clima.py` |
 
 **Que ano o futuro representa.** O delta do futuro vai de 1995–2014 (histórico dos modelos) a 2041–2060 (ssp245): 46 anos entre os centros dos dois períodos. Somado ao POWER de 2005–2024 (centro em 2014,5), o resultado fica centrado em **cerca de 2060**, não em 2050. Na tela e no pitch, chamar de "por volta de 2060". A outra saída, escalar o delta por 36/46, é com quem monta as tabelas (`scripts/montar_clima.py`).
 
@@ -231,6 +249,35 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
 
+### Futuro por modelo (só com `clima_modelos`)
+
+Cada item de `sequencias` ganha:
+
+```json
+"modelos": {
+  "por_modelo": [
+    {"modelo": "ACCESS-CM2", "score": 73.4, "rank": 2, "receita_ano_ha": 12810.0},
+    {"modelo": "MIROC6", "score": 74.1, "rank": 1, "receita_ano_ha": 13030.0},
+    {"modelo": "MRI-ESM2-0", "score": 79.2, "rank": 1, "receita_ano_ha": 13919.0}
+  ],
+  "rank_min": 1, "rank_max": 2,
+  "receita_ano_ha_min": 12810.0, "receita_ano_ha_max": 13919.0
+}
+```
+
+E o topo da saída ganha:
+
+| Campo | Significado |
+|---|---|
+| `modelos.nomes` | Os modelos, em ordem alfabética (a mesma de `por_modelo`) |
+| `modelos.chuva` | `"razao"` se a tabela trouxe `razao_chuva` (método do script); `"aproximada"` se não (regra 20) |
+| `modelos.et0_sem_correcao` | `true` se o ET0 usou as temperaturas sem a correção A520 (`off_tmin`/`off_tmax` presentes) |
+| `modelos.aviso_faixa_rank` | O limite do aviso `rank_varia_entre_modelos` |
+| `modelos.primeiro` | `{modelo: id}` da sequência em 1º no futuro de cada modelo |
+| `modelos.clima` | `{modelo: 12 meses}`, no formato de `clima.futuro` |
+
+`rank` vai de 1 ao número de sequências viáveis, em cada modelo. `rank_futuro` (o do futuro médio) não entra na faixa: a faixa é só entre os modelos.
+
 Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2 e 3), com o score ponderado pelas `prioridades` do produtor; cada card mostra também o `rank_futuro`. Até 14/11 cada card escolhia por um objetivo (renda, solo, clima); Pedro trocou em 15/11 (Parte 5). Em empate de score, vence a maior média simples de `agua`, `solo` e `renda`; com pesos iguais o desempate não muda nada. O chat com LLM (`POST /chat`, `docs/chat.md`) só explica esta saída: lê `avisos`, `beneficios` e os números das sequências na tela, e não produz número nenhum.
 
 ## Regras
@@ -282,6 +329,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `limiar_de_calor_pouco_confiavel` | lacuna | Cultura com limiar de 32 °C, em que POWER e NEX mais diferem | `temp_calor_c` |
 | `sem_valor_de_mercado` | lacuna | Cultura com preço zero (as de cobertura), já contando o preço editado | — |
 | `ky_padrao` | lacuna | Só no modo diário: cultura fora da tabela de Ky da FAO | `ky` |
+| `rank_varia_entre_modelos` | risco | Só com `clima_modelos`: o rank do futuro varia mais de 5 posições entre os modelos (`AVISO_FAIXA_RANK`, provisório) | `rank_min`, `rank_max`, `por_modelo` (`{modelo: rank}`), `limite` |
 | `geada` | risco | Só no modo diário, por cultura e clima: mínima de 3 °C ou menos no ciclo em algum ano | `anos`, `n_anos`, `dias_total`, `max_no_ano`, `limiar_c`, `slot` |
 | `valor_a_conferir` | lacuna | A tabela de culturas tem `<campo>_status` preenchido para a cultura | `campo`, `status`, `valor` |
 
@@ -305,6 +353,14 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
     - `dias_acima_NN` (com `temp_c` acima de 0): dias acima de NN com a máxima `temp_c` mais alta = dias acima de NN − `temp_c` na tabela original. Desde 15/11 as tabelas têm uma coluna por grau, de 26 a 40 °C: com ajuste inteiro, o motor lê a coluna exata (+3 °C no limiar 35 = `dias_acima_32`). Com ajuste fracionário, ou com tabelas que só tenham alguns limiares, o motor interpola entre os dois vizinhos e, fora da faixa, estende a reta dos dois mais próximos, entre 0 e os dias do mês.
     - Modo diário: o mesmo, dia a dia, na série de hoje; o futuro sai das tabelas já ajustadas (regra 7 do modo diário). O limiar de chuva extrema fica o da série observada, para a contagem mostrar a mudança.
     - É um "e se", não uma previsão: o mesmo ajuste em todos os meses, sem fonte para a combinação escolhida.
+20. **Futuro por modelo** (só com `clima_modelos`, Parte 7 de `docs/pendencias_desafio.md`): o motor monta um futuro para cada modelo com o método de `clima_futuro.csv`, trocando o delta médio pelo do modelo, e roda as sequências viáveis nele. Por mês:
+    - `tmin_c`, `tmax_c`: hoje + `delta_tmin_c` / `delta_tmax_c` do modelo. Igual ao script.
+    - `chuva_mm`: com `razao_chuva`, hoje × razão do modelo (igual ao script). **Sem ela (o arquivo de hoje)**, aproximação: futuro médio × (hoje + `delta_chuva_mm` do modelo) ÷ (hoje + delta médio dos modelos). A média dos modelos fica igual ao futuro médio; a diferença entre eles usa os mm do modelo, ~20% mais úmidos que o POWER, e por isso sai um pouco maior que a do método exato. Medido contra o método exato (razão por modelo tirada de `data/nexgddp/`): até 6 mm num mês, e no ano ACCESS-CM2 1.257 contra 1.249 mm, MIROC6 1.167 contra 1.182, MRI-ESM2-0 1.278 contra 1.280. O ranking com pesos iguais, em outubro e fevereiro, é o mesmo nas duas contas.
+    - `et0_mm` (se hoje traz a coluna): ET0 de hoje × Hargreaves(temperaturas sem a correção A520 + delta do modelo) ÷ Hargreaves(sem a correção). Igual ao script, a menos de 0,1 mm/mês. Sem `off_tmin`/`off_tmax`, usa as temperaturas de hoje como estão (erro de até 1,3 mm/mês). Sem a coluna em hoje, o Hargreaves do motor usa as temperaturas novas.
+    - `dias_acima_NN`: as colunas por grau de hoje deslocadas pelo `delta_tmax_c` do modelo (`dias_acima_deslocado`, a mesma conta do ajuste de temperatura). O script conta os dias do POWER com a Tmax diária + delta; a interpolação entre graus erra até 0,34 dia/mês nos limiares das culturas (32 a 38 °C).
+    - Renda com o mesmo teto (regra 12), score com os mesmos pesos, ranking com a mesma ordem (`_chave_rank`) entre as sequências viáveis. Nada disso entra no score, no rank nem nos avisos do futuro médio.
+    - `ajuste` (regra 19) vale também para os futuros por modelo, depois de montados.
+    - Média dos três futuros por modelo contra `clima_futuro.csv` (talhão de demonstração): chuva +0,08 mm/ano (no máximo 0,08 mm num mês, onde a chuva de um modelo chega a zero), Tmin e Tmax até 0,01 °C (arredondamento), ET0 −0,1 mm/ano, dias acima de 35 °C +2,6 por ano (69,5 no futuro médio). Os dias quentes não são lineares no delta: a média das contagens exatas por modelo já dá +1,6 dia/ano; a interpolação soma o resto.
 
 ## Modo diário (opcional)
 
@@ -439,8 +495,9 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `AVISO_DIAS_EXPOSTOS` | 60 | Dias sem cultura e sem palhada que viram aviso |
 | `AJUSTE_CHUVA_PCT` | −50 a +30 | Faixa aceita de `ajuste.chuva_pct` |
 | `AJUSTE_TEMP_C` | 0 a +4 | Faixa aceita de `ajuste.temp_c` |
+| `AVISO_FAIXA_RANK` | 5 | Variação do rank do futuro entre os modelos (máx − mín) acima da qual sai o aviso `rank_varia_entre_modelos` |
 
-Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os quatro limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.
+Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.
 
 > **Números das seções abaixo:** foram calculados em 14/11, com o solo de 100 mm e a `renda` antiga (dividida pela maior receita do conjunto). A partir de 15/11 o solo é de 60 mm e a `renda` é por ano ocupado com teto fixo: os números de água e os scores mudaram, e os rankings também (ver "O que mudou em 15/11"). Refazer.
 
@@ -576,3 +633,4 @@ Receita em R$/ha, sem histórico:
 
     Três primeiras de hoje, pesos iguais (futuro entre parênteses): outubro passou de `soja>milho`, `soja>sorgo`, `soja>feijao` (`soja>milho`, `soja>sorgo`, `soja>crotalaria`) para `soja>feijao`, `soja>sorgo`, `soja>crotalaria` (`soja>sorgo`, `soja>milheto`, `soja>crotalaria`); fevereiro, de `sorgo>soja`, `feijao>soja`, `crotalaria>soja` (`sorgo>soja`, `crotalaria>soja`, `milho>soja`) para `feijao>soja`, `sorgo>soja`, `feijao>milho` (`sorgo>soja`, `milheto>soja`, `crotalaria>soja`). Em outubro `soja>milho` foi de 1º para 6º hoje e 5º no futuro: o milho safrinha atende 72% da demanda, a sequência atende 87,5%, e `agua` cai de 0,875 para 0,687. `soja>feijao` vence hoje e cai para 6º no futuro, pelo calor de 32 °C do feijão (item 2); `feijao>soja` faz o mesmo em fevereiro (1º hoje, 5º no futuro). Com água 3, solo 1, renda 1, os três primeiros de hoje mudam nos dois meses (outubro: `soja>feijao`, `soja>milheto`, `soja>sorgo`; fevereiro: `feijao>soja`, `feijao>milho`, `milheto>soja`). Antes da escala também mudavam, com o feijão subindo pela água.
 21. **Textura do solo vem do produtor.** O motor recebe `solo_textura` pronta. A sugestão por ponto (GLDAS da NASA, 0,25°, ou HWSD/GAEZ da FAO, ~1 km) ainda não existe: é dado novo, com o dono dos dados. A célula é muito maior que o talhão, então a tela deve tratar a fonte como sugestão e deixar o produtor trocar. No talhão de demonstração, outubro, histórico soja, milho: em solo argiloso `soja>milho` fica em 1º hoje e no futuro; em solo arenoso ou médio `soja>feijao` fica em 1º hoje e cai para 6º no futuro, e `soja>milho` sobe de 3º para 1º. A queda do feijão vem do limiar de calor de 32 °C (item 2).
+22. **Faixa entre modelos (regra 20).** Três modelos não são uma distribuição: a faixa é mín–máx entre eles, não um intervalo de confiança. Chuva por aproximação até o dono dos dados acrescentar `razao_chuva` (ssp245 ÷ historical, por modelo e mês, 4 casas, como em `clima_correcoes.csv`) a `clima_modelos.csv`; o motor já lê a coluna se vier. Os dias quentes por modelo poderiam vir prontos do script (`dias_acima_NN` por modelo, contados na série diária), mas a interpolação já erra menos de 0,4 dia/mês. Fora do talhão de demonstração não há deltas por modelo (a grade regional só tem a média). No talhão, histórico soja, milho, pesos iguais: **outubro** — top 3 do futuro ACCESS-CM2 `soja>sorgo` 73,9, `soja>milho` 73,4, `soja>crotalaria` 71,0; MIROC6 `soja>milho` 74,1, `soja>sorgo` 73,8, `soja>crotalaria` 71,8; MRI-ESM2-0 `soja>milho` 79,2, `soja>sorgo` 78,0, `soja>crotalaria` 76,5. O vencedor muda com o ACCESS-CM2, por 0,5 ponto (empate na prática). Top 3 de hoje: `soja>milho` rank 1–2, `soja>sorgo` 1–2, `soja>feijao` 6–7. **Fevereiro** — `sorgo>soja` em 1º e `crotalaria>soja` em 2º nos três modelos; 3º: `milheto>soja` (ACCESS-CM2, MIROC6) ou `milho>soja` (MRI-ESM2-0). Top 3 de hoje: `sorgo>soja` 1–1, `feijao>soja` 6–9, `crotalaria>soja` 2–2. Com pesos iguais o vencedor de fevereiro **não** muda entre os modelos, ao contrário do que disse a revisão estatística (feita antes da renda por ano ocupado e do solo de 60 mm). Seis das 36 sequências de fevereiro passam do limite de 5 posições (a maior faixa é de 13); nenhuma das 26 de outubro passa (maior faixa: 3).
