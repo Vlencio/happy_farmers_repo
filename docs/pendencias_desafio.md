@@ -114,6 +114,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [x] Motor: lista `avisos` por sequência, gerada dos próprios dados.
 - [x] Motor: lê colunas opcionais `<campo>_status` de `culturas.csv` e avisa `valor_a_conferir`.
 - [x] `docs/contrato_motor.md` (regra 17 e coluna `<campo>_status`) e fixtures do front regeneradas.
+- [x] Motor: lista `beneficios` por sequência (regra 18): fixa nitrogênio, bônus após fixadora, deixa palhada, pouco solo exposto, estável no futuro, clima favorável. Só com o que entra na conta. `culturas[]` traz `fixa_n` e `cobre_solo`.
 
 **Falta:**
 
@@ -121,7 +122,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
 - [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
 - [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
-- [ ] Benefícios por estratégia: o texto do desafio também pede "what benefits it may offer". Hoje o benefício é o critério do card; não há lista de benefícios gerada pelo motor (fixa nitrogênio, deixa palhada, menor demanda de água).
+- [ ] Tela (Gabriel): mostrar `beneficios` ao lado de `avisos`.
 
 **Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. No motor já mostram; falta a tela.
 

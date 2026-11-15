@@ -415,6 +415,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -477,6 +479,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.901,
             "receita_ha": 5953.803,
@@ -591,6 +595,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -653,6 +659,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.893,
             "receita_ha": 5902.533,
@@ -660,7 +668,63 @@
           }
         ]
       },
-      "avisos": []
+      "avisos": [],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 74.256
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.013,
+            "receita_hoje": 14170.702,
+            "receita_futuro": 13989.477
+          },
+          "texto": "A receita cai só 1% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.812
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+        }
+      ]
     },
     {
       "id": "soja>sorgo",
@@ -785,6 +849,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -839,6 +905,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.09,
             "receita_ha": 3346.424,
@@ -960,6 +1028,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -1014,6 +1084,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.042,
             "receita_ha": 3199.893,
@@ -1021,7 +1093,63 @@
           }
         ]
       },
-      "avisos": []
+      "avisos": [],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "sorgo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 74.256
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.024,
+            "receita_hoje": 11563.322,
+            "receita_futuro": 11286.837
+          },
+          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.947
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+        }
+      ]
     },
     {
       "id": "soja>crotalaria",
@@ -1139,6 +1267,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -1193,6 +1323,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.999,
             "receita_ha": 0.0,
@@ -1307,6 +1439,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -1361,6 +1495,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.985,
             "receita_ha": 0.0,
@@ -1384,6 +1520,59 @@
           "cenario": null,
           "dados": {},
           "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 36,
+            "chuva_exposta_mm": 237.304
+          },
+          "texto": "O solo fica só 36 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.016,
+            "receita_hoje": 8216.898,
+            "receita_futuro": 8086.944
+          },
+          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.971
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -1503,6 +1692,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -1557,6 +1748,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.862,
             "receita_ha": 3896.374,
@@ -1671,6 +1864,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -1725,6 +1920,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 26,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.65,
             "receita_ha": 2935.329,
@@ -1766,6 +1963,53 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {},
+          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 36,
+            "chuva_exposta_mm": 237.304
+          },
+          "texto": "O solo fica só 36 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.09,
+            "receita_hoje": 12113.273,
+            "receita_futuro": 11022.274
+          },
+          "texto": "A receita cai só 9% do clima de hoje para o de 2041-2060."
         }
       ]
     },
@@ -1892,6 +2136,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -1946,6 +2192,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.776,
             "receita_ha": 2660.481,
@@ -2067,6 +2315,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -2121,6 +2371,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.445,
             "receita_ha": 1527.367,
@@ -2185,6 +2437,22 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
         }
       ]
     },
@@ -2311,6 +2579,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -2365,6 +2635,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.1,
             "fator": 1.077,
             "receita_ha": 3381.871,
@@ -2486,6 +2758,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -2540,6 +2814,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.1,
             "fator": 0.958,
             "receita_ha": 3009.202,
@@ -2558,6 +2834,45 @@
             "chuva_exposta_mm": 165.75
           },
           "texto": "O solo fica 140 dias sem cultura e sem palhada, com 166 mm de chuva nesses dias."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.043,
+            "receita_hoje": 11598.769,
+            "receita_futuro": 11096.146
+          },
+          "texto": "A receita cai só 4% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.871
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -2684,6 +2999,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -2738,6 +3055,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.062,
             "receita_ha": 0.0,
@@ -2859,6 +3178,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -2913,6 +3234,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.093,
             "receita_ha": 0.0,
@@ -2936,6 +3259,62 @@
           "cenario": null,
           "dados": {},
           "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "milheto na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 74.256
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.016,
+            "receita_hoje": 8216.898,
+            "receita_futuro": 8086.944
+          },
+          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.966
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -3055,6 +3434,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.986,
             "receita_ha": 8216.898,
@@ -3117,6 +3498,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.948,
             "receita_ha": 0.0,
@@ -3231,6 +3614,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.971,
             "receita_ha": 8086.944,
@@ -3293,6 +3678,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.95,
             "receita_ha": 0.0,
@@ -3316,6 +3703,62 @@
           "cenario": null,
           "dados": {},
           "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 74.256
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.016,
+            "receita_hoje": 8216.898,
+            "receita_futuro": 8086.944
+          },
+          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.862
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -3436,6 +3879,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -3490,6 +3935,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.999,
             "receita_ha": 0.0,
@@ -3605,6 +4052,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -3659,6 +4108,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.985,
             "receita_ha": 0.0,
@@ -3693,6 +4144,59 @@
           "cenario": null,
           "dados": {},
           "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.077,
+            "receita_hoje": 5695.815,
+            "receita_futuro": 5255.343
+          },
+          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.864
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -3820,6 +4324,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -3874,6 +4380,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.832,
             "receita_ha": 2854.633,
@@ -3996,6 +4504,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -4050,6 +4560,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.562,
             "receita_ha": 1928.369,
@@ -4113,6 +4625,22 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
         }
       ]
     },
@@ -4233,6 +4761,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -4295,6 +4825,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.896,
             "receita_ha": 2752.181,
@@ -4410,6 +4942,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -4472,6 +5006,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.885,
             "receita_ha": 2718.017,
@@ -4490,6 +5026,52 @@
             "slot": "safra"
           },
           "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.056,
+            "receita_hoje": 8447.996,
+            "receita_futuro": 7973.361
+          },
+          "texto": "A receita cai só 6% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.864
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -4610,6 +5192,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -4664,6 +5248,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.784,
             "receita_ha": 3542.159,
@@ -4779,6 +5365,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -4833,6 +5421,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 6,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.59,
             "receita_ha": 2668.481,
@@ -4897,6 +5487,32 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {},
+          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
         }
       ]
     },
@@ -5016,6 +5632,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.956,
             "receita_ha": 2936.707,
@@ -5070,6 +5688,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.999,
             "receita_ha": 0.0,
@@ -5184,6 +5804,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.916,
             "receita_ha": 2814.567,
@@ -5238,6 +5860,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.985,
             "receita_ha": 0.0,
@@ -5261,6 +5885,59 @@
           "cenario": null,
           "dados": {},
           "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.042,
+            "receita_hoje": 2936.707,
+            "receita_futuro": 2814.567
+          },
+          "texto": "A receita cai só 4% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.916
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -5386,6 +6063,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -5440,6 +6119,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.087,
             "receita_ha": 3338.132,
@@ -5560,6 +6241,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -5614,6 +6297,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.049,
             "receita_ha": 3222.262,
@@ -5667,6 +6352,42 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "sorgo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 65.597
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
         }
       ]
     },
@@ -5785,6 +6506,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -5847,6 +6570,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.859,
             "receita_ha": 5674.137,
@@ -5960,6 +6685,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -6022,6 +6749,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.851,
             "receita_ha": 5623.231,
@@ -6099,6 +6828,42 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 65.597
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
         }
       ]
     },
@@ -6212,6 +6977,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -6282,6 +7049,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.609,
             "receita_ha": 4021.952,
@@ -6390,6 +7159,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -6460,6 +7231,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.603,
             "receita_ha": 3982.861,
@@ -6513,6 +7286,36 @@
             "slot": "safrinha"
           },
           "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.049,
+            "receita_hoje": 9717.767,
+            "receita_futuro": 9238.204
+          },
+          "texto": "A receita cai só 5% do clima de hoje para o de 2041-2060."
         }
       ]
     },
@@ -6631,6 +7434,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -6685,6 +7490,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.999,
             "receita_ha": 0.0,
@@ -6798,6 +7605,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -6852,6 +7661,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "fixa_n": true,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.985,
             "receita_ha": 0.0,
@@ -6921,6 +7732,39 @@
           "cenario": null,
           "dados": {},
           "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 30,
+            "chuva_exposta_mm": 191.018
+          },
+          "texto": "O solo fica só 30 dias no ano sem cultura e sem palhada."
         }
       ]
     },
@@ -7040,6 +7884,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.956,
             "receita_ha": 2936.707,
@@ -7094,6 +7940,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.784,
             "receita_ha": 3542.159,
@@ -7208,6 +8056,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.916,
             "receita_ha": 2814.567,
@@ -7262,6 +8112,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.59,
             "receita_ha": 2668.481,
@@ -7315,6 +8167,32 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "sorgo",
+          "cenario": null,
+          "dados": {},
+          "texto": "sorgo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {},
+          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
         }
       ]
     },
@@ -7435,6 +8313,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -7497,6 +8377,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.949,
             "receita_ha": 2979.303,
@@ -7612,6 +8494,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -7674,6 +8558,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.906,
             "receita_ha": 2844.898,
@@ -7703,6 +8589,35 @@
             "chuva_exposta_mm": 74.062
           },
           "texto": "O solo fica 110 dias sem cultura e sem palhada, com 74 mm de chuva nesses dias."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.066,
+            "receita_hoje": 8675.118,
+            "receita_futuro": 8100.241
+          },
+          "texto": "A receita cai só 7% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.864
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -7830,6 +8745,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -7884,6 +8801,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.904,
             "receita_ha": 0.0,
@@ -8006,6 +8925,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -8060,6 +8981,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.952,
             "receita_ha": 0.0,
@@ -8094,6 +9017,52 @@
           "cenario": null,
           "dados": {},
           "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.077,
+            "receita_hoje": 5695.815,
+            "receita_futuro": 5255.343
+          },
+          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.864
+          },
+          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -8212,6 +9181,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -8266,6 +9237,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.862,
             "receita_ha": 3896.374,
@@ -8379,6 +9352,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -8433,6 +9408,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 20,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.65,
             "receita_ha": 2935.329,
@@ -8520,6 +9497,42 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {},
+          "texto": "trigo deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 30,
+            "chuva_exposta_mm": 191.018
+          },
+          "texto": "O solo fica só 30 dias no ano sem cultura e sem palhada."
         }
       ]
     },
@@ -8640,6 +9653,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.796,
             "receita_ha": 5695.815,
@@ -8702,6 +9717,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.637,
             "receita_ha": 0.0,
@@ -8817,6 +9834,8 @@
             ],
             "slot": "safra",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 0.85,
             "fator": 0.734,
             "receita_ha": 5255.343,
@@ -8879,6 +9898,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.0,
             "fator": 0.635,
             "receita_ha": 0.0,
@@ -8937,6 +9958,43 @@
           "cenario": null,
           "dados": {},
           "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {},
+          "texto": "milho deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 0,
+            "chuva_exposta_mm": 0.0
+          },
+          "texto": "O solo não fica nenhum dia sem cultura e sem palhada no ano."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.077,
+            "receita_hoje": 5695.815,
+            "receita_futuro": 5255.343
+          },
+          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
         }
       ]
     },
@@ -9062,6 +10120,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -9116,6 +10176,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.1,
             "fator": 1.082,
             "receita_ha": 3397.704,
@@ -9236,6 +10298,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -9290,6 +10354,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
             "fator_sequencia": 1.1,
             "fator": 0.983,
             "receita_ha": 3087.137,
@@ -9354,6 +10420,25 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
         }
       ]
     },
@@ -9479,6 +10564,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -9533,6 +10620,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 0.85,
             "fator": 0.671,
             "receita_ha": 2302.608,
@@ -9653,6 +10742,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -9707,6 +10798,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 0.85,
             "fator": 0.405,
             "receita_ha": 1387.954,
@@ -9806,6 +10899,15 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
         }
       ]
     },
@@ -9931,6 +11033,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -9985,6 +11089,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.042,
             "receita_ha": 0.0,
@@ -10105,6 +11211,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -10159,6 +11267,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 1.079,
             "receita_ha": 0.0,
@@ -10228,6 +11338,42 @@
           "cenario": null,
           "dados": {},
           "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "milheto na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 65.597
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
         }
       ]
     },
@@ -10346,6 +11492,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.664,
             "receita_ha": 2720.341,
@@ -10408,6 +11556,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.874,
             "receita_ha": 0.0,
@@ -10521,6 +11671,8 @@
             ],
             "slot": "safra",
             "espera_dias": 31,
+            "fixa_n": true,
+            "cobre_solo": false,
             "fator_sequencia": 1.0,
             "fator": 0.367,
             "receita_ha": 1503.56,
@@ -10583,6 +11735,8 @@
             ],
             "slot": "safrinha",
             "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": true,
             "fator_sequencia": 1.1,
             "fator": 0.874,
             "receita_ha": 0.0,
@@ -10676,6 +11830,42 @@
           "cenario": null,
           "dados": {},
           "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {},
+          "texto": "feijao fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.1,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+        },
+        {
+          "codigo": "deixa_palhada",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio."
+        },
+        {
+          "codigo": "pouco_solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 10,
+            "chuva_exposta_mm": 65.597
+          },
+          "texto": "O solo fica só 10 dias no ano sem cultura e sem palhada."
         }
       ]
     }

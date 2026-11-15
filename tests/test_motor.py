@@ -730,6 +730,78 @@ class TestAvisos(unittest.TestCase):
         self.assertEqual(self.avisos("soja>crotalaria", codigo="ky_padrao"), [])
 
 
+class TestBeneficios(unittest.TestCase):
+    """Beneficios por sequencia, so com o que entra na conta do motor (regra 18)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.saida = recomendar(ENTRADA, *cls.dados)
+
+    def seq(self, seq_id, saida=None):
+        return next(s for s in (saida or self.saida)["sequencias"] if s["id"] == seq_id)
+
+    def codigos(self, seq_id, saida=None, cultura=False):
+        return [(b["codigo"], b["cultura"]) if cultura else b["codigo"] for b in self.seq(seq_id, saida)["beneficios"]]
+
+    def test_formato(self):
+        json.dumps(self.saida)
+        for s in self.saida["sequencias"]:
+            for b in s["beneficios"]:
+                self.assertEqual(set(b), {"codigo", "cultura", "cenario", "dados", "texto"})
+                self.assertTrue(b["texto"].endswith("."))
+                self.assertIn(b["cultura"], [None, *s["culturas"]])
+        self.assertNotIn("beneficios", self.saida["descartadas"][0])
+
+    def test_atributos_da_tabela_em_cada_cultura(self):
+        r = cultura_de(self.saida, "soja>crotalaria", "hoje", 1)
+        self.assertEqual((r["fixa_n"], r["cobre_solo"]), (True, True))
+        r = cultura_de(self.saida, "soja>milho", "futuro", 1)
+        self.assertEqual((r["fixa_n"], r["cobre_solo"]), (False, False))
+
+    def test_beneficios_por_cultura(self):
+        self.assertEqual(
+            [c for c in self.codigos("soja>crotalaria", cultura=True) if c[1]],
+            [("fixa_nitrogenio", "soja"), ("fixa_nitrogenio", "crotalaria"), ("deixa_palhada", "crotalaria")],
+        )
+        (b,) = [b for b in self.seq("soja>milho")["beneficios"] if b["codigo"] == "bonus_apos_fixadora"]
+        self.assertEqual((b["cultura"], b["dados"]["fator_sequencia"]), ("milho", motor.BONUS_APOS_FIXADORA))
+        self.assertEqual(cultura_de(self.saida, "soja>milho", "hoje", 1)["fator_sequencia"], motor.BONUS_APOS_FIXADORA)
+
+    def test_cultura_repetida_conta_uma_vez(self):
+        culturas = self.dados[0].copy()
+        culturas.loc[culturas["cultura"] == "milho", ["fixa_n", "cobre_solo"]] = 1
+        codigos = self.codigos("milho>milho", recomendar(ENTRADA, culturas, *self.dados[1:]), cultura=True)
+        self.assertEqual(codigos.count(("fixa_nitrogenio", "milho")), 1)
+        self.assertEqual(codigos.count(("deixa_palhada", "milho")), 1)
+
+    def test_complementa_os_avisos(self):
+        # cada sequencia tem o aviso ou o beneficio, nunca os dois nem nenhum
+        pares = [("solo_exposto", "pouco_solo_exposto"), ("queda_no_futuro", "estavel_no_futuro")]
+        for s in self.saida["sequencias"]:
+            avisos = {a["codigo"] for a in s["avisos"]}
+            beneficios = {b["codigo"] for b in s["beneficios"]}
+            for aviso, beneficio in pares:
+                if beneficio == "estavel_no_futuro" and s["hoje"]["receita_ha"] == 0:
+                    continue
+                self.assertNotEqual(aviso in avisos, beneficio in beneficios, (s["id"], aviso))
+            limitado = any(a["codigo"] == "fator_limitante" and a["cenario"] in ("hoje", "futuro") for a in s["avisos"])
+            self.assertNotEqual(limitado, "clima_favoravel" in beneficios, s["id"])
+
+    def test_numeros_apontam_o_dado(self):
+        s = self.seq("soja>crotalaria")
+        (b,) = [b for b in s["beneficios"] if b["codigo"] == "pouco_solo_exposto"]
+        self.assertEqual(b["dados"]["dias_expostos"], s["hoje"]["descoberto"]["dias_expostos"])
+        (b,) = [b for b in s["beneficios"] if b["codigo"] == "estavel_no_futuro"]
+        self.assertAlmostEqual(b["dados"]["queda"], 1 - s["futuro"]["receita_ha"] / s["hoje"]["receita_ha"], places=3)
+
+    def test_nao_muda_score_nem_ordem(self):
+        with mock.patch.object(motor, "AVISO_FATOR", 0.0), mock.patch.object(motor, "AVISO_DIAS_EXPOSTOS", 999):
+            saida = recomendar(ENTRADA, *self.dados)
+        self.assertEqual([(s["id"], s["hoje"]["score"]) for s in saida["sequencias"]],
+                         [(s["id"], s["hoje"]["score"]) for s in self.saida["sequencias"]])  # fmt: skip
+
+
 class TestDadosReais(unittest.TestCase):
     """As tabelas de data/ carregam e produzem um ranking. Nao testa numeros."""
 
