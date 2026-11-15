@@ -1,5 +1,25 @@
 # Verificação da integração · 14/11/2026
 
+## Barra de rolagem visível · 15/11/2026
+
+- Barra vertical nas telas de entrada, resultados e detalhes, visível em repouso
+  enquanto há conteúdo para rolar. Cor da interface, 8 px de largura e 10 px
+  durante interação, sem deslocar os cards nem sobrepor os controles.
+- Usa o componente do Rune com um patch versionado de visibilidade optativa;
+  sem alterar a preferência global ou as demais áreas de rolagem. A aplicação
+  do patch é idempotente pelo `setup-rune.mjs`.
+- Build Rune/WASM + Vite, formatação e diff check passaram. **14 verificações
+  específicas** passaram: roda do mouse, arraste, clique no trilho, Home/End,
+  Page Up/Down, análise real, navegação entre telas e largura de celular.
+- O roteiro do documento passou novamente em **41 verificações**, com seis
+  análises reais, chat simulado e três origens excepcionais simuladas. Nenhum
+  erro JavaScript; sem repetir as suites de cálculo, pois não houve mudanças
+  na lógica de análise ou nos dados.
+- Capturas após 1,2 s sem interação confirmam visibilidade em desktop de 1440 px
+  e celular simulado de 390 px. Evidências em `output/playwright/scrollbar-*.png`,
+  `scrollbar-check.log`, `scrollbar-document.log` e
+  `frontend/.cache/scrollbar-build.log`. Sem teste em aparelho físico.
+
 ## Ajustes do documento de revisão do front · 15/11/2026
 
 Implementados na `front-dev3` os ajustes E1–E10 e R1–R9 de

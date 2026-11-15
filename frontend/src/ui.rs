@@ -7,8 +7,8 @@ use crate::{
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
 use rune_kit::{
-    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, Select, SelectAppearance, TextArea,
-    TextInput,
+    Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, ScrollBar, ScrollBarStyle, Select,
+    SelectAppearance, TextArea, TextInput,
 };
 use serde_json::json;
 
@@ -2775,7 +2775,15 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
             .scroll(ScrollSpec {
                 stick_bottom: false,
             })
-            .child(row().w_full().justify_center().child(content)),
+            .child(row().w_full().justify_center().child(content))
+            .scroll_bar_styled(
+                ScrollBarStyle::from_kit(&kit)
+                    .always_visible()
+                    .thumb(color(MUTED))
+                    .thumb_hover(color(INK))
+                    .width(8.0)
+                    .hover_width(10.0),
+            ),
     );
     let mut base = row().key("page-root").w_full().h_full().fill(color(BG));
     if !narrow {

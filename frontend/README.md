@@ -60,6 +60,7 @@ Nenhum binário, cache ou `node_modules` precisa ser versionado.
 - `setup-rune.mjs` busca **o SHA exato**, sem seguir `main`, e aplica o patch versionado de forma idempotente.
 - Os quatro patches exigidos pelo Rune estão no manifesto raiz: `winit`, `parley_engine`, `wgpu-hal`, `accesskit_windows`, todos vindos desse checkout.
 - Patch adicional `patches/rune-wasm-instance-cache.patch`: a revisão original guarda `wgpu::Instance` em um `static Mutex`, incompatível com os handles não `Send`/`Sync` do navegador. A correção usa `thread_local!` apenas em WASM e preserva o caminho nativo. Não usa `unsafe` nem o recurso `fragile-send-sync-non-atomic-wasm`.
+- Patch adicional `patches/rune-scrollbar-visibility.patch`: adiciona a opção `ScrollBarStyle::always_visible()` para manter a barra principal visível enquanto houver conteúdo para rolar, sem mudar o comportamento padrão das outras barras do Rune. Arraste, clique no trilho e navegação por teclado usam a rolagem existente.
 - `Cargo.lock` e `package-lock.json` fixam as demais dependências. Não altere `.cache/rune` manualmente.
 
 O build web usa fontes embutidas, WebGPU e fallback WebGL/CPU do Rune. Não exige WebGPU para abrir.

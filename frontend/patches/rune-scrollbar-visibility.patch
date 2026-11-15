@@ -1,0 +1,59 @@
+--- a/crates/rune-kit/src/scroll_bar.rs
++++ b/crates/rune-kit/src/scroll_bar.rs
+@@ -85,6 +85,8 @@
+     border: f32,
+     /// Overlaid and faded at rest whatever the system preference.
+     overlay: bool,
++    /// Keep this bar visible whenever its content overflows, regardless of the host preference.
++    always_visible: bool,
+     /// The strip sits beside the viewport, in room the caller leaves for it, rather than over
+     /// its edge.
+     gutter: bool,
+@@ -119,6 +121,7 @@
+     min_thumb: MIN_THUMB,
+     border: 0.0,
+     overlay: false,
++    always_visible: false,
+     gutter: false,
+     x: false,
+     thumb_only: false,
+@@ -144,6 +147,7 @@
+     min_thumb: 32.0,
+     border: 0.0,
+     overlay: true,
++    always_visible: false,
+     gutter: false,
+     x: false,
+     thumb_only: true,
+@@ -171,6 +175,7 @@
+     min_thumb: 32.0,
+     border: 2.0,
+     overlay: true,
++    always_visible: false,
+     gutter: true,
+     x: false,
+     thumb_only: false,
+@@ -251,6 +256,13 @@
+     /// content [`Self::strip`] of end padding while it overflows.
+     pub fn inside(mut self) -> Self {
+         self.track.gutter = false;
++        self
++    }
++
++    /// Keep this bar visible while its content overflows, even when the host normally
++    /// fades scroll bars at rest. Bars whose content fits remain hidden.
++    pub fn always_visible(mut self) -> Self {
++        self.track.always_visible = true;
+         self
+     }
+
+@@ -778,7 +790,8 @@
+ }
+
+ fn attach(style: ScrollBarStyle, area: &str, key: &str, outer: El, viewport: El) -> El {
+-    let overlay = style.track.overlay || rune::system_scroll_bars().is_overlay(rune::system_scroller_overlay());
++    let overlay = !style.track.always_visible
++        && (style.track.overlay || rune::system_scroll_bars().is_overlay(rune::system_scroller_overlay()));
+     let jumps = rune::system_scroller_jumps();
+     let bar = kept(area);
+     bar.restyle(style);
