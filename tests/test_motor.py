@@ -741,6 +741,37 @@ class TestAvisos(unittest.TestCase):
         self.assertEqual(self.avisos("soja>crotalaria", codigo="ky_padrao"), [])
 
 
+class TestPrioridades(unittest.TestCase):
+    """Os tres cards sao as tres primeiras do ranking com os pesos do produtor (Parte 5)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+
+    def ranking(self, agua, solo, renda):
+        saida = recomendar({**ENTRADA, "prioridades": {"agua": agua, "solo": solo, "renda": renda}}, *self.dados)
+        return saida, [s["id"] for s in saida["sequencias"]]
+
+    def test_pesos_mudam_a_ordem(self):
+        _, renda = self.ranking(0, 0, 1)
+        _, solo = self.ranking(0, 1, 0)
+        self.assertNotEqual(renda[:3], solo[:3])
+
+    def test_ordem_segue_o_score_com_pesos(self):
+        saida, ids = self.ranking(1, 3, 1)
+        scores = [s["hoje"]["score"] for s in saida["sequencias"]]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertEqual([s["rank_hoje"] for s in saida["sequencias"]], list(range(1, len(ids) + 1)))
+
+    def test_empate_desempata_pela_media_das_partes(self):
+        saida, _ = self.ranking(1, 0, 0)
+        seqs = saida["sequencias"]
+        for a, b in zip(seqs, seqs[1:]):
+            if a["hoje"]["score"] == b["hoje"]["score"]:
+                soma = lambda s: s["hoje"]["agua"] + s["hoje"]["solo"] + s["hoje"]["renda"]  # noqa: E731
+                self.assertGreaterEqual(soma(a), soma(b), (a["id"], b["id"]))
+
+
 class TestEventos(unittest.TestCase):
     """Modo diario: dias de geada e de chuva extrema no ciclo de cada cultura (Parte 4)."""
 

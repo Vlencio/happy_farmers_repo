@@ -22,7 +22,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
-| 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
+| 5 | Prioridades e restrições do agricultor | Motor e API prontos; falta a tela; restrições em aberto | Gabriel | Não | Reaberto (15/11) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
@@ -154,16 +154,21 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "farmer priorities"; "allow farmers to input their own priorities or constraints, such as water availability, equipment limitations, or market preferences"; "mapping which rotation ideas best align with farmer priorities".
 
-**Hoje:** o motor aceita pesos de água, solo e renda e eles mudam o ranking. A tela manda sempre 1/1/1 (`frontend/web/api.mjs`), e os três cards não usam o score com pesos. Não há como informar restrição.
+**Decisão (Pedro, 15/11):** em vez de um card por objetivo (renda, solo, clima), a tela mostra as três sequências de maior score de hoje, com os pesos de água, solo e renda escolhidos pelo produtor. Cada card mostra também a posição no futuro.
+
+**Hoje (15/11, `motor-diario`):** o motor já aceitava os pesos e ordenava por eles; a API já recebe `prioridades`. Nos dados reais, os pesos mudam as três primeiras (outubro: pesos iguais dão `soja>milho`, `soja>sorgo`, `soja>crotalaria`; só renda troca as duas últimas por `soja>trigo` e `soja>girassol`; só solo dá três sequências com crotalária).
+
+**Feito:**
+
+- [x] Time: decisão de 14/11 reaberta por Pedro.
+- [x] Motor: desempate do ranking. Com peso só em água, várias sequências empatam em 100 (a parte `agua` satura no modo mensal); o empate agora vai para a maior média simples de `agua`, `solo` e `renda`. Com pesos iguais nada muda; fixtures iguais.
 
 **Falta:**
 
-- [ ] Time: reabrir a decisão de 14/11 (pesos iguais, sem controle na tela).
-- [ ] Tela: controle de prioridade e alguma forma de mostrar qual estratégia mais combina com ela.
-- [ ] Motor: entrada de restrições. O mínimo: lista de culturas que o agricultor não quer ou não consegue plantar (equipamento, mercado) e se há irrigação.
-- [ ] Tela: campos para essas restrições.
+- [ ] Tela (Gabriel): controle de prioridade e os três cards pelo `rank_hoje`, com o `rank_futuro` em cada um.
+- [ ] Motor: entrada de restrições (culturas que o produtor não quer ou não consegue plantar; irrigação). Fora desta decisão.
 
-**Feito quando:** mudar a prioridade ou excluir uma cultura na tela muda o resultado mostrado.
+**Feito quando:** mudar a prioridade na tela muda os três cards mostrados.
 
 ## Parte 6 — Controles de cenário
 

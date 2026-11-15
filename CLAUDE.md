@@ -30,8 +30,9 @@ Current front-end requirements (supersede the previous one-screen/top-three-scor
 1. Define one farm by drawing on a satellite map or importing existing GeoJSON.
    Drawing produces downloadable GeoJSON; imports are previewed before use.
 2. Optionally add previous crops/seasons and observations as context for the engine.
-3. Show exactly three objective cards: highest income, best soil health and
-   greatest climate resilience. These are objectives, not the top three overall ranks.
+3. Show three cards: the three best scores of today, weighted by the farmer's
+   priorities (water, soil, income). Each card also shows its future rank. This
+   replaced the one-card-per-objective design on 15 Nov (Pedro, Part 5).
 4. Each card opens the engine's calendar with selectable crops and monthly water balance,
    comparing today's and future climate. Calendars can extend beyond 12 months.
 
@@ -43,8 +44,8 @@ a small browser bridge. The UI uses the actual engine through `backend/app.py`. 
 credentials and only explains the engine output.
 Users select the field's available month and one or two crops, matching the contract.
 History is ordered oldest to newest; years and notes are retained locally because
-the engine accepts only crop IDs. Do not add weights,
-ranking tables, editable prices or further screens without a new requirement.
+the engine accepts only crop IDs. Priority weights are allowed since 15 Nov;
+do not add ranking tables, editable prices or further screens without a new requirement.
 
 `docs/contrato_motor.md` is the engine's contract. `frontend/docs/API.md`
 documents the HTTP transport and how the front end maps the engine output to
@@ -210,9 +211,8 @@ integrated with the 14 Nov engine contract.
    version done and running on the real tables; open questions are at the end
    of `docs/contrato_motor.md`.
 4. Iterate on the integrated Rune front end. It now consumes the real engine;
-   objective cards select income (today's gross revenue), soil (today's soil index),
-   and climate (future fit among sequences where every future crop has positive
-   revenue; fallback to all sequences only if none qualify, future water as tiebreaker).
+   the objective cards (income, soil, climate) are being replaced by the top three
+   weighted scores of today (Part 5, `docs/pendencias_desafio.md`).
    It includes demo-boundary-only NDVI/slope/station context and a glossary.
    P1's dry year is enabled for demo climate, not reused for other points. The
    per-model CSV still awaits D2. D1 and Pedro's regional delta are integrated;

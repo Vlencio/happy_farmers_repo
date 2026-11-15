@@ -219,7 +219,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
 
-Os três cards da tela não são as três primeiras de `sequencias`: cada um escolhe por um objetivo (maior `receita_ha` de hoje, maior `solo` de hoje, maior `encaixe` no futuro). A regra está em `frontend/docs/API.md`. O chat com LLM (`POST /chat`, `docs/chat.md`) só explica esta saída: lê `avisos`, `beneficios` e os números das sequências na tela, e não produz número nenhum.
+Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2 e 3), com o score ponderado pelas `prioridades` do produtor; cada card mostra também o `rank_futuro`. Até 14/11 cada card escolhia por um objetivo (renda, solo, clima); Pedro trocou em 15/11 (Parte 5). Em empate de score, vence a maior média simples de `agua`, `solo` e `renda`; com pesos iguais o desempate não muda nada. O chat com LLM (`POST /chat`, `docs/chat.md`) só explica esta saída: lê `avisos`, `beneficios` e os números das sequências na tela, e não produz número nenhum.
 
 ## Regras
 

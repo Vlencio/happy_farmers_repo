@@ -494,6 +494,15 @@ def _eventos(valores):
     return {"anos": sum(v > 0 for v in valores), "dias_total": sum(valores), "max_no_ano": max(valores, default=0.0)}
 
 
+def _chave_rank(a):
+    """Ordem do ranking: maior score; em empate, a media simples de agua, solo e renda.
+
+    O empate acontece quando a prioridade pesa so uma parte que satura (agua = 1 em varias
+    sequencias). Com pesos iguais o desempate e o proprio score e a ordem nao muda.
+    """
+    return (-round(a["score"], 9), -round(a["agua"] + a["solo"] + a["renda"], 9))
+
+
 def _quantil_ruim(valores):
     v = sorted(valores)
     return v[int(len(v) * QUANTIL_RUIM)]
@@ -554,7 +563,7 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
                 a = resumo[cen][s][nivel]
                 a["renda"] = min(1.0, a["receita_ha"] / teto)
                 a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
-            for i, s in enumerate(sorted(sequencias, key=lambda s: -resumo[cen][s][nivel]["score"])):
+            for i, s in enumerate(sorted(sequencias, key=lambda s: _chave_rank(resumo[cen][s][nivel]))):
                 resumo[cen][s][nivel]["rank"] = i + 1
 
     campos_cultura = ("atendimento_hidrico", "fator_agua", "encaixe_calor", "fator", "receita_ha")
@@ -849,7 +858,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             if declividade is not None:  # chuva sobre solo exposto, ponderada pela declividade; fora do score
                 a["descoberto"]["indice_erosao"] = a["descoberto"]["chuva_exposta_mm"] * fator_declividade(declividade)
-        ordem = sorted(sequencias, key=lambda s: -porseq[s]["score"])
+        ordem = sorted(sequencias, key=lambda s: _chave_rank(porseq[s]))
         rank[cen] = {s: i + 1 for i, s in enumerate(ordem)}
 
     geral_diario = blocos_diario = None

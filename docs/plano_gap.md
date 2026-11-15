@@ -123,7 +123,7 @@ Duas coisas que a análise não considerou:
 
 ## Fora deste plano
 
-- **Controles de prioridade e preço editável.** A análise sugere, mas o time fechou os dois em 14/11: três cards objetivos, pesos iguais. Só voltam se os três reabrirem. O texto por IA foi reaberto por Pedro em 14/11 como chat que só explica a saída do motor (`docs/chat.md`).
+- **Preço editável.** A análise sugere, mas o time fechou em 14/11. Só volta se os três reabrirem. A prioridade foi reaberta por Pedro em 15/11: os três cards passam a ser as três melhores do score com os pesos do produtor (Parte 5). O texto por IA foi reaberto por Pedro em 14/11 como chat que só explica a saída do motor (`docs/chat.md`).
 - **Aviso de erosão por sequência.** O relevo é suave e os meses descobertos são os mesmos em todas as sequências. Vai como fato no painel do talhão (G2).
 - **Controles de mais ou menos chuva e calor, e camadas de dados no mapa.** São funcionalidades novas. O ano seco cobre parte da primeira.
 - **Família botânica na regra de pragas.** Coluna nova e regra nova sem fonte.
