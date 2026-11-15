@@ -196,6 +196,17 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Feito quando:** a tela permite pedir "20% menos chuva" e o resultado muda.
 
+## Revisão estatística e agronômica (15/11)
+
+Duas revisões do motor, uma estatística e uma agronômica, sem contexto do desafio. O que mudou no motor (branch `motor-renda-anual`) está em "O que mudou em 15/11" no contrato: `renda` por ano de talhão ocupado com teto fixo (soja safra + milho safrinha) e solo de 60 mm (ZARC).
+
+**Falta:**
+
+- [ ] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Colunas `dias_acima_NN` de grau em grau. Dias quentes do futuro deslocando a Tmax diária, como o modo diário.
+- [ ] Tela (Gabriel): testes do front com os números novos; futuro chamado de "por volta de 2060".
+- [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo; penalidade por hospedeiro comum (soja→feijão).
+- [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
+
 ## Parte 7 — Incerteza entre os modelos climáticos
 
 **Texto:** "Explain how the model interprets uncertainty".

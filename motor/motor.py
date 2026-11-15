@@ -25,8 +25,16 @@ DIAS_MES = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 MES_DO_DIA = [m + 1 for m, d in enumerate(DIAS_MES) for _ in range(d)]  # dia do ano (0-364) -> mes
 SLOTS = ("safra", "safrinha")
 
+# Agua que o solo guarda de um dia para o outro (mm). ZARC da soja: profundidade efetiva de raiz
+# de 60 cm x agua disponivel de latossolo (classes AD3 e AD4 da IN SPA/MAPA 1/2022, 0,61 a
+# 1,06 mm/cm) = 37 a 64 mm. 60 = AD4, latossolo argiloso. Classe real do talhao: sem dado.
+CAD_MM = 60
+# Renda: receita por ano de talhao ocupado, dividida pela receita potencial (preco x produtividade,
+# sem perda) do sistema de referencia: soja na safra e milho na safrinha. Nao depende das outras
+# sequencias avaliadas. Sem essas culturas na tabela, o teto e a maior receita por ano avaliada.
+SISTEMA_REFERENCIA = (("soja", "produtividade"), ("milho", "produtividade_safrinha"))
+
 # Valores provisorios, sem fonte: ajustar com um agronomo.
-CAD_MM = 100  # agua que o solo guarda de um dia para o outro (mm)
 PENALIDADE_REPETICAO = 0.85  # fator na produtividade ao repetir a cultura anterior
 BONUS_APOS_FIXADORA = 1.10  # fator na produtividade de uma nao fixadora apos uma fixadora de N
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
@@ -429,14 +437,31 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         anterior = nome
 
     etc = sum(r["etc_mm"] for r in resultados)
+    receita = sum(r["receita_ha"] for r in resultados)
+    anos = anos_ocupados(dia - dia_livre)
     return {
         "agua": 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0,
         "solo": sum(r["solo"] for r in resultados) / len(resultados),
-        "receita_ha": sum(r["receita_ha"] for r in resultados),
+        "receita_ha": receita,
+        "anos_ocupados": anos,
+        "receita_ano_ha": receita / anos,
         "encaixe": min(min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"]) for r in resultados),
         "descoberto": solo_descoberto(dia_livre, ciclos, palhada_inicial, clima),
         "culturas": resultados,
     }
+
+
+def anos_ocupados(dias):
+    """Anos de talhao que a sequencia usa, do talhao livre ate a ultima colheita. No minimo 1:
+    o calendario e anual, e uma sequencia mais curta nao libera outra safra no mesmo ano."""
+    return max(dias, 365) / 365
+
+
+def teto_de_renda(culturas, precos, receitas_ano):
+    """Receita potencial por ano do sistema de referencia (SISTEMA_REFERENCIA), em R$/ha/ano."""
+    if all(nome in culturas for nome, _ in SISTEMA_REFERENCIA):
+        return sum(precos.get(nome, culturas[nome]["preco"]) * culturas[nome][campo] for nome, campo in SISTEMA_REFERENCIA)
+    return max(receitas_ano, default=0.0) or 1.0
 
 
 def dias_sem_cultura(dia_livre, ciclos, palhada_inicial):
@@ -637,7 +662,7 @@ def _descoberto_diario(dias, inicios, chuvas, fator_erosao):
 
 def _modo_diario(
     diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos, ajuste=None,
-    declividade=None,
+    declividade=None, teto=1.0,
 ):
     """Roda cada sequencia viavel em cada ano da serie diaria, no clima de hoje e no futuro.
 
@@ -693,13 +718,12 @@ def _modo_diario(
         }
         for cen, porseq in por_ano.items()
     }
-    # renda de 0 a 1: a maior receita do ano mediano entre as sequencias, hoje e no futuro, vale 1
-    teto = max((resumo[cen][s]["mediano"]["receita_ha"] for cen in resumo for s in sequencias), default=0.0) or 1.0
+    # renda de 0 a 1: a mesma regra do modo mensal (receita por ano ocupado / teto fixo)
     for cen in resumo:
         for nivel in niveis:
             for s in sequencias:
                 a = resumo[cen][s][nivel]
-                a["renda"] = min(1.0, a["receita_ha"] / teto)
+                a["renda"] = min(1.0, a["receita_ha"] / aval_hoje[s]["anos_ocupados"] / teto)
                 a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             for i, s in enumerate(sorted(sequencias, key=lambda s: _chave_rank(resumo[cen][s][nivel]))):
                 resumo[cen][s][nivel]["rank"] = i + 1
@@ -1018,14 +1042,13 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
     sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
-    # renda de 0 a 1: a maior receita entre as sequencias viaveis, hoje e no futuro, vale 1.
-    # O ano seco fica fora do teto, para nao mudar os numeros de hoje e futuro; a renda dele para em 1.
-    teto = max((aval[cen][s]["receita_ha"] for cen in ("hoje", "futuro") for s in sequencias), default=0.0) or 1.0
+    # renda de 0 a 1: receita por ano ocupado / receita potencial do sistema de referencia (regra 12)
+    teto = teto_de_renda(tabela, precos, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias])
     rank = {}
     for cen, porseq in aval.items():
         for s in sequencias:
             a = porseq[s]
-            a["renda"] = min(1.0, a["receita_ha"] / teto)
+            a["renda"] = min(1.0, a["receita_ano_ha"] / teto)
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             if declividade is not None:  # chuva sobre solo exposto, ponderada pela declividade; fora do score
                 a["descoberto"]["indice_erosao"] = a["descoberto"]["chuva_exposta_mm"] * fator_declividade(declividade)
@@ -1036,10 +1059,13 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     if diario is not None:
         geral_diario, blocos_diario = _modo_diario(
             diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos, ajuste,
-            declividade,
+            declividade, teto,
         )
 
-    campos = ["score", "agua", "solo", "renda", "receita_ha", "encaixe", "descoberto", "culturas"]
+    campos = [
+        "score", "agua", "solo", "renda", "receita_ha", "anos_ocupados", "receita_ano_ha", "encaixe", "descoberto",
+        "culturas",
+    ]  # fmt: skip
     saida = {
         "entrada": {
             "lat": lat,

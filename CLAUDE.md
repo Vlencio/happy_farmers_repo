@@ -8,7 +8,8 @@ tool for crop rotation.
 
 Our angle: recommend the rotation that best holds up under **observed and
 projected climate**. The pitch hook is "today vs. future": the rotation that
-wins today may not win in 2050.
+wins today may not win around 2060 (the future tables are centred near
+2060, see `docs/contrato_motor.md`, "Entrada 2").
 
 Team: 3 developers (Pedro + 2), stronger in back-end and data.
 

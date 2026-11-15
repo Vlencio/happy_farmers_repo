@@ -314,6 +314,33 @@ class TestRecomendar(unittest.TestCase):
         self.assertNotEqual(renda["sequencias"][0]["id"], solo["sequencias"][0]["id"])
         self.assertEqual(renda["entrada"]["prioridades"], {"agua": 0.0, "solo": 0.0, "renda": 1.0})
 
+    def test_receita_por_ano_ocupado(self):
+        for s in self.saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                a = s[cen]
+                self.assertGreaterEqual(a["anos_ocupados"], 1.0)
+                self.assertAlmostEqual(a["receita_ano_ha"], a["receita_ha"] / a["anos_ocupados"], delta=2e-3)
+        self.assertEqual(motor.anos_ocupados(200), 1.0)  # menos de um ano conta como um
+        self.assertAlmostEqual(motor.anos_ocupados(483), 483 / 365)
+        # talhao livre em fevereiro: crotalaria (marco) e algodao (dezembro) passam de um ano
+        fev = recomendar({**ENTRADA, "mes_plantio": 2}, *self.dados)
+        longa = next(s for s in fev["sequencias"] if s["id"] == "crotalaria>algodao")
+        self.assertGreater(longa["hoje"]["anos_ocupados"], 1.2)
+
+    def test_renda_nao_depende_das_outras_sequencias(self):
+        # tirar uma cultura da tabela nao muda a renda das sequencias que ficam
+        sem_algodao = recomendar(ENTRADA, self.dados[0][self.dados[0]["cultura"] != "algodao"], *self.dados[1:])
+        renda = {s["id"]: s["hoje"]["renda"] for s in self.saida["sequencias"]}
+        for s in sem_algodao["sequencias"]:
+            self.assertEqual(s["hoje"]["renda"], renda[s["id"]])
+
+    def test_teto_sem_o_sistema_de_referencia(self):
+        culturas = {"crotalaria": {"preco": 0}}
+        self.assertEqual(motor.teto_de_renda(culturas, {}, [3.0, 5.0]), 5.0)
+        self.assertEqual(motor.teto_de_renda(culturas, {}, []), 1.0)
+        tabela = motor._tabela_culturas(self.dados[0])
+        self.assertEqual(motor.teto_de_renda(tabela, {"soja": 3000}, []), 3000 * 3.6 + 1000 * 5.0)
+
     def test_entradas_invalidas(self):
         with self.assertRaises(ValueError):
             recomendar({**ENTRADA, "horizonte": 3}, *self.dados)
@@ -370,15 +397,12 @@ class TestAnoSeco(unittest.TestCase):
         self.assertLess(sum(s["seco"]["agua"] for s in seqs), sum(s["hoje"]["agua"] for s in seqs))
         json.dumps(self.com)
 
-    def test_renda_do_seco_para_em_1(self):
-        # hoje e futuro com pouca chuva, "seco" com a chuva normal: a receita do seco passa do teto
-        pouca = self.dados[1].assign(chuva_mm=self.dados[1]["chuva_mm"] * 0.3)
-        saida = recomendar(ENTRADA, self.dados[0], pouca, pouca, self.dados[1])
-        seqs = saida["sequencias"]
-        teto = max(s[cen]["receita_ha"] for s in seqs for cen in ("hoje", "futuro"))
-        self.assertGreater(max(s["seco"]["receita_ha"] for s in seqs), teto)
-        self.assertEqual(max(s["seco"]["renda"] for s in seqs), 1.0)
-        self.assertEqual(max(s["hoje"]["renda"] for s in seqs), 1.0)
+    def test_renda_usa_o_mesmo_teto_nos_tres_climas(self):
+        teto = 2100 * 3.6 + 1000 * 5.0  # tests/dados: soja na safra + milho na safrinha, sem perda
+        for s in self.com["sequencias"]:
+            for cen in ("hoje", "futuro", "seco"):
+                a = s[cen]
+                self.assertAlmostEqual(a["renda"], min(1.0, a["receita_ano_ha"] / teto), delta=2e-3)
 
     def test_falta_coluna_de_calor_no_seco(self):
         with self.assertRaises(ValueError):
@@ -658,8 +682,12 @@ class TestDiario(unittest.TestCase):
 
     def test_aviso_de_agua_do_ano_mediano(self):
         # milho safrinha de soja>milho: no mensal atende acima de AVISO_FATOR (sem aviso);
-        # no diario, com Ky 1,25, o fator de agua do ano mediano fica abaixo
-        seq = next(s for s in self.saida["sequencias"] if s["id"] == "soja>milho")
+        # no diario, com Ky 1,25, o fator de agua do ano mediano fica abaixo. Com o solo de 60 mm o
+        # mensal ja avisa nas tabelas de teste; o caso pede o solo de 100 mm.
+        with mock.patch.object(motor, "CAD_MM", 100):
+            saida = recomendar(ENTRADA, *self.dados, diario=self.serie)
+            sem_diario = recomendar(ENTRADA, *self.dados)
+        seq = next(s for s in saida["sequencias"] if s["id"] == "soja>milho")
         mensal = [a for a in seq["avisos"] if a["codigo"] == "fator_limitante"]
         self.assertEqual(mensal, [])
         for cen in ("hoje", "futuro"):
@@ -676,7 +704,7 @@ class TestDiario(unittest.TestCase):
         # e o contrario de clima_favoravel: o beneficio sai no modo diario
         self.assertNotIn("clima_favoravel", [b["codigo"] for b in seq["beneficios"]])
         self.assertIn("clima_favoravel", [b["codigo"] for b in next(
-            s for s in recomendar(ENTRADA, *self.dados)["sequencias"] if s["id"] == "soja>milho")["beneficios"]])
+            s for s in sem_diario["sequencias"] if s["id"] == "soja>milho")["beneficios"]])
 
     def test_aviso_de_agua_segue_o_limite(self):
         # um aviso por cultura e clima com fator_agua mediano abaixo de AVISO_FATOR, e so esses
@@ -747,8 +775,14 @@ class TestDiario(unittest.TestCase):
                     self.assertAlmostEqual(b["score"], esperado, delta=0.1)
                 melhor = min(blocos, key=lambda b: b["rank"])
                 self.assertEqual(melhor["score"], max(b["score"] for b in blocos))
-        # a maior receita do ano mediano, hoje ou no futuro, vale renda 1
-        self.assertEqual(max(s["diario"][c]["mediano"]["renda"] for s in self.saida["sequencias"] for c in ("hoje", "futuro")), 1.0)
+        # renda: receita por ano ocupado (o mesmo calendario do mensal) / teto fixo
+        teto = 2100 * 3.6 + 1000 * 5.0
+        for s in self.saida["sequencias"]:
+            for c in ("hoje", "futuro"):
+                for nivel in ("mediano", "ruim"):
+                    b = s["diario"][c][nivel]
+                    esperado = min(1.0, b["receita_ha"] / s["hoje"]["anos_ocupados"] / teto)
+                    self.assertAlmostEqual(b["renda"], esperado, delta=2e-3)
 
     def test_prioridades_valem_no_modo_diario(self):
         saida = recomendar({**ENTRADA, "prioridades": {"agua": 1}}, *self.dados, diario=self.serie)
