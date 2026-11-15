@@ -2689,6 +2689,18 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "memoria",
+            "valor": 32
+          },
+          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -3308,6 +3320,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -3881,6 +3905,30 @@
             "chuva_exposta_mm": 165.75
           },
           "texto": "O solo fica 140 dias sem cultura e sem palhada, com 166 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 2000.0
+          },
+          "texto": "girassol: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "sem fonte",
+            "valor": 35
+          },
+          "texto": "girassol: o valor de temp_calor_c está marcado como 'sem fonte' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -6208,6 +6256,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -7364,6 +7424,18 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "memoria",
+            "valor": 32
+          },
+          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -8514,6 +8586,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -9146,6 +9230,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -10338,6 +10434,18 @@
         },
         {
           "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
           "codigo": "sem_limiar_de_calor",
           "cultura": "crotalaria",
           "cenario": null,
@@ -10926,6 +11034,18 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "memoria",
+            "valor": 32
+          },
+          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -11504,6 +11624,30 @@
             "chuva_exposta_mm": 74.062
           },
           "texto": "O solo fica 110 dias sem cultura e sem palhada, com 74 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 2000.0
+          },
+          "texto": "girassol: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "sem fonte",
+            "valor": 35
+          },
+          "texto": "girassol: o valor de temp_calor_c está marcado como 'sem fonte' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -12695,6 +12839,18 @@
         },
         {
           "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
           "codigo": "limiar_de_calor_pouco_confiavel",
           "cultura": "trigo",
           "cenario": null,
@@ -12702,6 +12858,18 @@
             "temp_calor_c": 32
           },
           "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "memoria",
+            "valor": 32
+          },
+          "texto": "trigo: o valor de temp_calor_c está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -13925,6 +14093,42 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 2000.0
+          },
+          "texto": "girassol: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "sem fonte",
+            "valor": 35
+          },
+          "texto": "girassol: o valor de temp_calor_c está marcado como 'sem fonte' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -14576,6 +14780,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         }
       ]
     },
@@ -15181,6 +15397,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         },
         {
           "tipo": "lacuna",
@@ -15829,6 +16057,18 @@
             "temp_calor_c": 32
           },
           "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 3500.0
+          },
+          "texto": "feijao: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
         },
         {
           "tipo": "lacuna",

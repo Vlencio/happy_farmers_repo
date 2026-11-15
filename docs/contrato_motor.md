@@ -95,7 +95,7 @@ De `scripts/montar_culturas.py`. Detalhes em `docs/colunas_dados.md`, seção 5,
 | `preco` | R$/t |
 | `produtividade`, `produtividade_safrinha` | t/ha em cada slot. Safrinha vazia = usa a da safra |
 | `temp_calor_c` | Opcional. Máxima diária (°C) que prejudica o florescimento. Vazio = a regra de calor não se aplica à cultura |
-| `<campo>_status` | Opcional, uma coluna por campo (por exemplo `preco_status`, `temp_calor_c_status`). Texto livre, como `memoria` ou `sem fonte`. Se estiver preenchida, a sequência com aquela cultura ganha o aviso `valor_a_conferir`. Vazio = valor conferido. Hoje `culturas.csv` não tem essas colunas |
+| `<campo>_status` | Opcional, uma coluna por campo (por exemplo `preco_status`, `temp_calor_c_status`). Texto livre, como `memoria` ou `sem fonte`. Se estiver preenchida, a sequência com aquela cultura ganha o aviso `valor_a_conferir`. Vazio = valor conferido. `culturas.csv` traz `preco_status` e `temp_calor_c_status` |
 
 As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não são lidas.
 
@@ -462,5 +462,5 @@ Receita em R$/ha, sem histórico:
 14. **Palhada dura até o próximo plantio.** O motor supõe que a palhada de uma cultura com `cobre_solo` = 1 cobre o solo até a cultura seguinte entrar, por mais tempo que leve, e que as outras não deixam nada. Não há taxa de decomposição nem quantidade de palhada por cultura. `cobre_solo` foi preenchido à mão.
 15. **Índice de erosão não é perda de solo.** Usa o total de chuva, não a erosividade (fator R), e deixa de fora o tipo de solo (K), o comprimento da rampa (L) e o manejo (C, P). O fator S linear subestima em declives fortes, além dos dados de origem (até 18%). A declividade é a média do talhão.
 16. **Solo descoberto no modo diário e na API.** O modo diário não devolve a chuva exposta de cada ano. A API aceita `declividade_pct` opcional (0 a 100, finito) e anuncia `capabilities.declividade_pct` em `/metadata`; o front só envia a declividade no contorno do talhão de demonstração.
-17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Elas ainda não existem: o que está marcado "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de calor de girassol e trigo) só está em texto, em `docs/culturas_fontes.md`. Preencher é em `scripts/montar_culturas.py`, com o dono dos dados.
+17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Desde 15 nov `culturas.csv` traz `preco_status` (feijão, girassol e algodão: `memoria`) e `temp_calor_c_status` (girassol: `sem fonte`; trigo: `memoria`), preenchidas em `STATUS` de `scripts/montar_culturas.py` conforme `docs/culturas_fontes.md`. Ao conferir um valor, apague a entrada em `STATUS` e rode o script de novo.
 18. **`fator_limitante` olha o modo mensal.** No modo diário a água pesa mais (Ky), e uma cultura pode ficar sem aviso de água no mensal e com `fator_agua` baixo no diário: o milho safrinha de `soja>milho` atende 82% no mensal (sem aviso) e fica com 0,70 no ano mediano do diário.

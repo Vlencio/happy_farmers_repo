@@ -64,6 +64,12 @@ MANUAL = {
     "amendoim":   (125,  0.40,  1.15,  0.60,  1,     0,    10,   None,    3632,  3.62, None, 35),  # em casca
     "aveia":      (120,  0.30,  1.15,  0.25,  0,     1,    None, 4,       660,   1.66, 1.66, 32),
 }
+# Valores ainda sem fonte conferida (docs/culturas_fontes.md). Vira a coluna <campo>_status;
+# o motor avisa valor_a_conferir. Vazio = conferido.
+STATUS = {
+    "preco": {"feijao": "memoria", "girassol": "memoria", "algodao": "memoria"},
+    "temp_calor_c": {"girassol": "sem fonte", "trigo": "memoria"},
+}
 COLS_MANUAL = ["ciclo_dias", "kc_ini", "kc_med", "kc_fim", "fixa_n", "cobre_solo",
                "mes_plantio_safra", "mes_plantio_safrinha", "preco", "produtividade",
                "produtividade_safrinha", "temp_calor_c"]
@@ -103,6 +109,8 @@ def main():
         {"cultura": cultura, **faixas_ecocrop(eco, especie), **dict(zip(COLS_MANUAL, MANUAL[cultura]))}
         for cultura, especie in ESPECIE.items()
     ])
+    for campo, por_cultura in STATUS.items():
+        df[f"{campo}_status"] = df["cultura"].map(por_cultura)
     candidata = df["cultura"].isin(CANDIDATAS)
     motor = salvar(df[~candidata], SAIDA)
     cand = salvar(df[candidata], SAIDA_CANDIDATAS)

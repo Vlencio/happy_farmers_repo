@@ -117,7 +117,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
+- [x] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
 - [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
 - [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
 - [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
