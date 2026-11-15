@@ -47,6 +47,14 @@ COLUNAS_DIARIO = ["data", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm (mm no dia) 
 DIARIO_DEMO = Path("power") / "power_diario_-20.032_-48.526_2005_2024.csv"  # talhao de demonstracao
 LAT_DEMO = -20.032
 
+# Avisos por sequencia (lacunas e riscos). Limites provisorios, sem fonte: so decidem quando avisar.
+AVISO_FATOR = 0.8  # fator de clima ou agua abaixo disso vira aviso de risco
+AVISO_QUEDA_FUTURO = 0.10  # queda da receita de hoje para o futuro acima disso
+AVISO_QUEDA_ANO_RUIM = 0.20  # modo diario: queda da receita do ano mediano para o ano ruim acima disso
+AVISO_DIAS_EXPOSTOS = 60  # dias sem cultura e sem palhada a partir dos quais avisar
+LIMIARES_POUCO_CONFIAVEIS = {32}  # graus C: POWER e NEX diferem 20% na contagem (docs/colunas_dados.md)
+NOME_FATOR = {"temperatura": "a temperatura", "chuva": "a chuva do ciclo", "calor": "o calor", "agua": "a falta de água"}
+
 COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e dias_acima_NN sao opcionais
 COLUNAS_NUMERICAS = [
     "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
@@ -547,6 +555,104 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
     return geral, blocos
 
 
+def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
+    """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
+
+    Cada aviso: tipo ("risco" ou "lacuna"), codigo, cultura e cenario (ou None), os dados
+    que o geraram e um texto pronto. A lista explica o resultado; nao muda score nem rank.
+    """
+    lista = []
+
+    def aviso(tipo, codigo, texto, cultura=None, cenario=None, **dados):
+        lista.append({"tipo": tipo, "codigo": codigo, "cultura": cultura, "cenario": cenario, "dados": dados, "texto": texto})
+
+    for cen, porseq in aval.items():
+        for r in porseq[s]["culturas"]:
+            fatores = {
+                "temperatura": r["encaixe_temp"],
+                "chuva": r["encaixe_chuva"],
+                "calor": r["encaixe_calor"],
+                "agua": r["atendimento_hidrico"],
+            }
+            fator, valor = min(fatores.items(), key=lambda kv: kv[1])
+            if valor < AVISO_FATOR:
+                aviso(
+                    "risco", "fator_limitante",
+                    f"{r['cultura']} na {r['slot']}, clima {cen}: {NOME_FATOR[fator]} limita a produtividade a {valor * 100:.0f}%.",
+                    r["cultura"], cen, fator=fator, valor=valor, slot=r["slot"],
+                )  # fmt: skip
+    hoje, futuro = aval["hoje"][s], aval["futuro"][s]
+    if hoje["receita_ha"] > 0 and 1 - futuro["receita_ha"] / hoje["receita_ha"] > AVISO_QUEDA_FUTURO:
+        queda = 1 - futuro["receita_ha"] / hoje["receita_ha"]
+        aviso(
+            "risco", "queda_no_futuro",
+            f"A receita cai {queda * 100:.0f}% do clima de hoje para o de 2041-2060.",
+            cenario="futuro", queda=queda, receita_hoje=hoje["receita_ha"], receita_futuro=futuro["receita_ha"],
+        )  # fmt: skip
+    for cen, bloco in (bloco_diario or {}).items():
+        mediano, ruim = bloco["mediano"]["receita_ha"], bloco["ruim"]["receita_ha"]
+        if mediano > 0 and 1 - ruim / mediano > AVISO_QUEDA_ANO_RUIM:
+            aviso(
+                "risco", "queda_no_ano_ruim",
+                f"Clima {cen}: em um ano ruim (1 em 5) a receita fica {(1 - ruim / mediano) * 100:.0f}% abaixo da do ano mediano.",
+                cenario=cen, queda=1 - ruim / mediano, receita_mediano=mediano, receita_ruim=ruim,
+            )  # fmt: skip
+    for r in hoje["culturas"]:
+        if r["fator_sequencia"] == PENALIDADE_REPETICAO:
+            aviso(
+                "risco", "repete_a_cultura",
+                f"{r['cultura']} repete a cultura anterior: o motor tira {(1 - PENALIDADE_REPETICAO) * 100:.0f}% da produtividade "
+                "(pragas e doenças). O valor é provisório.",
+                r["cultura"], fator_sequencia=r["fator_sequencia"], slot=r["slot"],
+            )  # fmt: skip
+    expostos = hoje["descoberto"]["dias_expostos"]
+    if expostos >= AVISO_DIAS_EXPOSTOS:
+        aviso(
+            "risco", "solo_exposto",
+            f"O solo fica {expostos} dias sem cultura e sem palhada, com {hoje['descoberto']['chuva_exposta_mm']:.0f} mm de chuva nesses dias.",
+            dias_expostos=expostos, chuva_exposta_mm=hoje["descoberto"]["chuva_exposta_mm"],
+        )  # fmt: skip
+
+    if not tem_historico:
+        aviso(
+            "lacuna", "sem_historico",
+            "Sem histórico de plantio: a primeira cultura não recebe a penalidade de repetição nem o bônus após fixadora de nitrogênio.",
+        )  # fmt: skip
+    for nome in dict.fromkeys(s):
+        c = tabela[nome]
+        if c["temp_calor_c"] is None:
+            aviso(
+                "lacuna", "sem_limiar_de_calor",
+                f"{nome} não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância.",
+                nome,
+            )  # fmt: skip
+        elif c["temp_calor_c"] in LIMIARES_POUCO_CONFIAVEIS:
+            aviso(
+                "lacuna", "limiar_de_calor_pouco_confiavel",
+                f"{nome} usa o limiar de {c['temp_calor_c']} °C, em que a contagem de dias quentes é a menos confiável.",
+                nome, temp_calor_c=c["temp_calor_c"],
+            )  # fmt: skip
+        if precos.get(nome, c["preco"]) == 0:
+            aviso(
+                "lacuna", "sem_valor_de_mercado",
+                f"{nome} está com preço zero: forragem, semente e o benefício ao solo não entram na receita.",
+                nome,
+            )  # fmt: skip
+        if bloco_diario is not None and c["ky_padrao"]:
+            aviso(
+                "lacuna", "ky_padrao",
+                f"{nome} não está na tabela de Ky da FAO: a perda por falta de água usa Ky = {KY_PADRAO:g}.",
+                nome, ky=c["ky"],
+            )  # fmt: skip
+        for campo, status in c["status"].items():
+            aviso(
+                "lacuna", "valor_a_conferir",
+                f"{nome}: o valor de {campo} está marcado como '{status}' na tabela de culturas. Confira com uma fonte local.",
+                nome, campo=campo, status=status, valor=c.get(campo),
+            )  # fmt: skip
+    return lista
+
+
 def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, diario=None):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
@@ -657,6 +763,9 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
                 **{f"rank_{cen}": rank[cen][s] for cen in climas},
                 **{cen: {k: aval[cen][s][k] for k in campos} for cen in climas},
                 **({"diario": blocos_diario[s]} if blocos_diario is not None else {}),
+                "avisos": avisos_da_sequencia(
+                    s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None
+                ),
             }
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],
@@ -754,6 +863,13 @@ def _tabela_culturas(df):
         c["temp_calor_c"] = None if limiar is None or pd.isna(limiar) else int(limiar)
         ky = linha.get("ky")  # coluna opcional; sem ela, vale a tabela KY. So o modo diario usa
         c["ky"] = KY.get(nome, KY_PADRAO) if ky is None or pd.isna(ky) else float(ky)
+        c["ky_padrao"] = (ky is None or pd.isna(ky)) and nome not in KY
+        # colunas opcionais <campo>_status (ex.: preco_status = memoria): valor ainda sem fonte conferida
+        c["status"] = {
+            col[: -len("_status")]: str(linha[col]).strip()
+            for col in df.columns
+            if col.endswith("_status") and not pd.isna(linha[col]) and str(linha[col]).strip()
+        }
         tabela[nome] = c
     if not tabela:
         raise ValueError("culturas.csv esta vazio")

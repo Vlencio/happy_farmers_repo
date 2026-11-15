@@ -455,8 +455,10 @@ class TestDiario(unittest.TestCase):
         self.assertNotIn("diario", sem["sequencias"][0])
         com = json.loads(json.dumps(self.saida))
         com.pop("diario")
+        so_no_diario = ("ky_padrao", "queda_no_ano_ruim")  # avisos que dependem da serie
         for s in com["sequencias"]:
             s.pop("diario")
+            s["avisos"] = [a for a in s["avisos"] if a["codigo"] not in so_no_diario]
         self.assertEqual(com, json.loads(json.dumps(sem)))
 
     def test_serializa_e_resume_os_anos(self):
@@ -619,6 +621,113 @@ class TestDiario(unittest.TestCase):
 
     def test_carregar_diario_sem_arquivo(self):
         self.assertIsNone(carregar_diario(FIXOS))
+
+
+class TestAvisos(unittest.TestCase):
+    """Lacunas e riscos por sequencia, gerados dos numeros da propria sequencia."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.saida = recomendar(ENTRADA, *cls.dados)
+
+    def avisos(self, seq_id, saida=None, codigo=None):
+        seq = next(s for s in (saida or self.saida)["sequencias"] if s["id"] == seq_id)
+        return [a for a in seq["avisos"] if codigo in (None, a["codigo"])]
+
+    def test_formato(self):
+        json.dumps(self.saida)
+        for s in self.saida["sequencias"]:
+            for a in s["avisos"]:
+                self.assertEqual(set(a), {"tipo", "codigo", "cultura", "cenario", "dados", "texto"})
+                self.assertIn(a["tipo"], ("risco", "lacuna"))
+                self.assertTrue(a["texto"].endswith("."))
+                self.assertIn(a["cultura"], [None, *s["culturas"]])
+        self.assertNotIn("avisos", self.saida["descartadas"][0])
+
+    def test_nao_muda_score_nem_ordem(self):
+        with mock.patch.object(motor, "AVISO_FATOR", 2.0):  # tudo vira aviso
+            saida = recomendar(ENTRADA, *self.dados)
+        self.assertEqual([(s["id"], s["hoje"]["score"]) for s in saida["sequencias"]],
+                         [(s["id"], s["hoje"]["score"]) for s in self.saida["sequencias"]])  # fmt: skip
+
+    def test_fator_limitante_aponta_o_dado(self):
+        # algodao (limiar de 32 graus C) na safra: o calor e o que mais limita, e piora no futuro
+        avisos = self.avisos("algodao", recomendar({**ENTRADA, "horizonte": 1}, *self.dados), "fator_limitante")
+        self.assertEqual([(a["cultura"], a["cenario"], a["dados"]["fator"]) for a in avisos],
+                         [("algodao", "hoje", "calor"), ("algodao", "futuro", "calor")])  # fmt: skip
+        saida = recomendar({**ENTRADA, "horizonte": 1}, *self.dados)
+        for a in avisos:
+            self.assertEqual(a["dados"]["valor"], cultura_de(saida, "algodao", a["cenario"], 0)["encaixe_calor"])
+            self.assertLess(a["dados"]["valor"], motor.AVISO_FATOR)
+        self.assertLess(avisos[1]["dados"]["valor"], avisos[0]["dados"]["valor"])
+
+    def test_sem_fator_abaixo_do_limite_nao_avisa(self):
+        with mock.patch.object(motor, "AVISO_FATOR", 0.0):
+            saida = recomendar(ENTRADA, *self.dados)
+        self.assertFalse(any(a["codigo"] == "fator_limitante" for s in saida["sequencias"] for a in s["avisos"]))
+
+    def test_queda_no_futuro(self):
+        saida = recomendar({**ENTRADA, "horizonte": 1}, *self.dados)
+        seq = next(s for s in saida["sequencias"] if s["id"] == "algodao")
+        (a,) = self.avisos("algodao", saida, "queda_no_futuro")
+        self.assertAlmostEqual(a["dados"]["queda"], 1 - seq["futuro"]["receita_ha"] / seq["hoje"]["receita_ha"], places=3)
+        self.assertGreater(a["dados"]["queda"], motor.AVISO_QUEDA_FUTURO)
+        self.assertEqual(self.avisos("soja", saida, "queda_no_futuro"), [])
+
+    def test_repeticao(self):
+        # historico soja, milho: o milho na safra repete a cultura anterior
+        (a,) = self.avisos("milho>crotalaria", codigo="repete_a_cultura")
+        self.assertEqual((a["cultura"], a["dados"]["fator_sequencia"]), ("milho", 0.85))
+        self.assertEqual(self.avisos("soja>milho", codigo="repete_a_cultura"), [])
+
+    def test_solo_exposto(self):
+        (a,) = self.avisos("soja>milho", codigo="solo_exposto")  # o milho de teste nao deixa palhada: 115 dias
+        self.assertEqual(a["dados"]["dias_expostos"], 115)
+        self.assertEqual(self.avisos("soja>crotalaria", codigo="solo_exposto"), [])  # 31 dias
+
+    def test_lacunas_da_tabela(self):
+        codigos = lambda cultura: {a["codigo"] for a in self.avisos("soja>crotalaria") if a["cultura"] == cultura}  # noqa: E731
+        self.assertEqual(codigos("crotalaria"), {"sem_limiar_de_calor", "sem_valor_de_mercado"})
+        self.assertEqual(codigos("soja"), set())
+        saida = recomendar({**ENTRADA, "horizonte": 1}, *self.dados)
+        (a,) = self.avisos("algodao", saida, "limiar_de_calor_pouco_confiavel")
+        self.assertEqual(a["dados"], {"temp_calor_c": 32})
+        # preco editado para a crotalaria tira o aviso de preco zero
+        saida = recomendar({**ENTRADA, "precos": {"crotalaria": 500}}, *self.dados)
+        self.assertEqual(self.avisos("soja>crotalaria", saida, "sem_valor_de_mercado"), [])
+
+    def test_sem_historico(self):
+        saida = recomendar({**ENTRADA, "rotacao_atual": []}, *self.dados)
+        for s in saida["sequencias"]:
+            self.assertEqual(len([a for a in s["avisos"] if a["codigo"] == "sem_historico"]), 1)
+        self.assertEqual(self.avisos("soja>milho", codigo="sem_historico"), [])
+
+    def test_coluna_de_status(self):
+        # soja, milho, crotalaria, algodao
+        culturas = self.dados[0].assign(preco_status=[None, "memoria", "", None], temp_calor_c_status=["sem fonte", None, None, None])
+        saida = recomendar(ENTRADA, culturas, *self.dados[1:])
+        avisos = self.avisos("soja>milho", saida, "valor_a_conferir")
+        self.assertEqual([(a["cultura"], a["dados"]) for a in avisos], [
+            ("soja", {"campo": "temp_calor_c", "status": "sem fonte", "valor": 38}),
+            ("milho", {"campo": "preco", "status": "memoria", "valor": 1000.0}),
+        ])  # fmt: skip
+        self.assertEqual(self.avisos("soja>milho", codigo="valor_a_conferir"), [])  # sem as colunas, sem aviso
+
+    def test_avisos_do_modo_diario(self):
+        serie = serie_das_medias(self.dados[1], 2001, 2010)
+        seca = (serie["data"] >= "2003-10-01") & (serie["data"] < "2005-10-01")  # 2 anos secos em 9
+        serie.loc[seca, "chuva_mm"] *= 0.2
+        saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        seq = next(s for s in saida["sequencias"] if s["id"] == "soja>milho")
+        (a,) = [a for a in seq["avisos"] if a["codigo"] == "queda_no_ano_ruim" and a["cenario"] == "hoje"]
+        b = seq["diario"]["hoje"]
+        self.assertAlmostEqual(a["dados"]["queda"], 1 - b["ruim"]["receita_ha"] / b["mediano"]["receita_ha"], places=3)
+        ky = self.avisos("soja>crotalaria", saida, "ky_padrao")
+        self.assertEqual([(a["cultura"], a["dados"]["ky"]) for a in ky], [("crotalaria", motor.KY_PADRAO)])
+        self.assertEqual(self.avisos("soja>milho", saida, "ky_padrao"), [])
+        # sem a serie, esses dois avisos nao existem
+        self.assertEqual(self.avisos("soja>crotalaria", codigo="ky_padrao"), [])
 
 
 class TestDadosReais(unittest.TestCase):

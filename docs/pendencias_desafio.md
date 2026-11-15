@@ -20,7 +20,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 |---|---|---|---|---|---|
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
 | 2 | Solo descoberto e erosão por sequência | Motor feito; faltam API e tela | Gabriel | Não na demonstração | Não |
-| 3 | Lacunas e riscos por estratégia | Incompleto | Pedro, Gabriel | Não | Não |
+| 3 | Lacunas e riscos por estratégia | Motor feito; faltam dados de origem e tela | Brenno, Gabriel | Não | Não |
 | 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
@@ -99,15 +99,29 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "For each strategy, you may explain why it was suggested, what evidence supports it, what benefits it may offer, where information gaps exist, and any risks that would need local review".
 
-**Hoje:** o porquê e a evidência existem (critério do card e números por cultura). Lacunas e riscos são um aviso geral, igual para todos os cards.
+**Hoje (14/11, branch `motor-diario`):** o motor está pronto; faltam os dados de origem e a tela.
+
+- Cada sequência viável devolve `avisos`: uma lista de riscos e lacunas, cada um com `tipo`, `codigo`, `cultura`, `cenario`, `dados` (os números que geraram o aviso) e `texto`. Regra 17 do contrato, com a tabela dos 11 códigos.
+- Riscos: fator que mais limita cada cultura em cada clima, queda de receita no futuro, queda no ano ruim (modo diário), repetição de cultura, solo exposto.
+- Lacunas: sem histórico, cultura sem limiar de calor, limiar de 32 °C, cultura com preço zero, Ky padrão (modo diário), valor marcado a conferir.
+- Não muda score nem rank.
+- Nos dados reais, outubro com histórico soja, milho: de 0 a 11 avisos por sequência. `soja>milho` não tem nenhum; `soja>feijao` tem cinco (calor do feijão hoje e no futuro, queda de 12% no futuro, 160 dias de solo exposto, limiar de 32 °C).
+
+**Feito:**
+
+- [x] Motor: lista `avisos` por sequência, gerada dos próprios dados.
+- [x] Motor: lê colunas opcionais `<campo>_status` de `culturas.csv` e avisa `valor_a_conferir`.
+- [x] `docs/contrato_motor.md` (regra 17 e coluna `<campo>_status`) e fixtures do front regeneradas.
 
 **Falta:**
 
-- [ ] Motor: uma lista `avisos` por sequência, gerada dos próprios dados. Exemplos: cultura com preço marcado "memória"; cultura sem limiar de calor (o motor não penaliza); limiar de 32 °C, o menos confiável; Ky padrão por falta de valor da FAO; fator que mais limita cada cultura; queda forte no ano ruim.
-- [ ] Dados: uma coluna ou tabela que diga a origem de cada valor de `culturas.csv` (hoje só em `docs/culturas_fontes.md`, em texto).
-- [ ] Tela: mostrar os avisos da sequência no card e no detalhe.
+- [ ] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
+- [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
+- [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
+- [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
+- [ ] Benefícios por estratégia: o texto do desafio também pede "what benefits it may offer". Hoje o benefício é o critério do card; não há lista de benefícios gerada pelo motor (fixa nitrogênio, deixa palhada, menor demanda de água).
 
-**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou.
+**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. No motor já mostram; falta a tela.
 
 ## Parte 4 — Geada e chuva extrema
 

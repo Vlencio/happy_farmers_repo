@@ -95,6 +95,7 @@ De `scripts/montar_culturas.py`. Detalhes em `docs/colunas_dados.md`, seção 5,
 | `preco` | R$/t |
 | `produtividade`, `produtividade_safrinha` | t/ha em cada slot. Safrinha vazia = usa a da safra |
 | `temp_calor_c` | Opcional. Máxima diária (°C) que prejudica o florescimento. Vazio = a regra de calor não se aplica à cultura |
+| `<campo>_status` | Opcional, uma coluna por campo (por exemplo `preco_status`, `temp_calor_c_status`). Texto livre, como `memoria` ou `sem fonte`. Se estiver preenchida, a sequência com aquela cultura ganha o aviso `valor_a_conferir`. Vazio = valor conferido. Hoje `culturas.csv` não tem essas colunas |
 
 As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não são lidas.
 
@@ -209,6 +210,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `encaixe` | Pior encaixe de clima (temperatura, chuva ou calor) entre as culturas, de 0 a 1 |
 | `descoberto` | Solo sem cultura nos 365 dias a partir do talhão livre (regra 15). `dias` e `chuva_mm`: dias sem cultura em pé e a chuva que cai neles. `dias_expostos` e `chuva_exposta_mm`: a parte desses dias sem palhada da cultura anterior. `indice_erosao` só existe se a entrada trouxe `declividade_pct`. `meses[]`: os mesmos quatro números por mês, na ordem do calendário a partir do talhão livre; só os meses com algum dia sem cultura |
 | `culturas[]` | Uma entrada por cultura, na ordem de plantio, com os números que explicam o score |
+| `avisos[]` | Em cada item de `sequencias`: lacunas de informação e riscos daquela sequência (regra 17). Não existe em `descartadas` |
 | `encaixe_calor` | 1 = sem dias acima do limiar na fase sensível; cai com a fração desses dias. Sempre 1 em cultura sem limiar |
 | `dias_calor` | Dias esperados acima do limiar da cultura dentro da fase sensível |
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
@@ -238,6 +240,29 @@ Os três cards da tela não são as três primeiras de `sequencias`: cada um esc
 14. **Rotação atual:** são as culturas mais recentes do histórico. O motor supõe uma cultura por slot, sem pular: a última ocupou o slot anterior ao próximo, e a penúltima, o mesmo slot do próximo, um ano antes. Com horizonte 2, a rotação atual é penúltima > última; com horizonte 1, é a penúltima. Com uma cultura só no histórico, ela se repete em todo slot. Exemplo: histórico algodão, soja, milho e talhão livre em outubro dá `soja>milho`. A rotação atual entra no ranking como qualquer outra sequência; se não couber na época de plantio, vai para `descartadas` e o campo `atual` do topo traz o motivo.
 15. **Solo descoberto:** o motor olha os 365 dias a partir do dia em que o talhão fica livre. Dia sem cultura = nenhuma cultura em pé: a espera pelo mês de plantio, os dias de colheita e o tempo depois da última cultura. Dia exposto = dia sem cultura em que a cultura anterior não deixa palhada (`cobre_solo` = 0). Antes da primeira cultura vale a última do histórico; sem histórico, o dia conta como exposto. A chuva de cada dia é a média do mês. Os dias são os mesmos em todos os climas; a chuva muda.
 16. **Índice de erosão** (só com `declividade_pct`): `chuva_exposta_mm` × fator S da RUSLE (McCool et al., 1987). S = 10,8 × sen θ + 0,03 abaixo de 9% de declividade e 16,8 × sen θ − 0,50 a partir de 9%, com θ = ângulo da declividade. S vale 1 em 9% e 0,47 em 4,05%. É um índice para comparar sequências no mesmo talhão, não uma perda de solo em t/ha. Não entra no score.
+17. **Avisos:** cada sequência viável traz a lista `avisos`, gerada dos números dela. A lista explica o resultado; não muda score nem rank.
+
+```json
+{"tipo": "risco", "codigo": "fator_limitante", "cultura": "algodao", "cenario": "hoje",
+ "dados": {"fator": "calor", "valor": 0.744, "slot": "safra"},
+ "texto": "algodao na safra, clima hoje: o calor limita a produtividade a 74%."}
+```
+
+`cultura` e `cenario` são `null` quando o aviso vale para a sequência inteira. `dados` traz os números que geraram o aviso. `texto` é uma frase pronta, com o nome da cultura como está na tabela (sem acento); a tela pode montar a sua a partir de `codigo` e `dados`.
+
+| `codigo` | `tipo` | Quando aparece | `dados` |
+|---|---|---|---|
+| `fator_limitante` | risco | Por cultura e clima: o menor entre encaixe de temperatura, de chuva, de calor e atendimento hídrico está abaixo de 0,8 | `fator` (`temperatura`, `chuva`, `calor` ou `agua`), `valor`, `slot` |
+| `queda_no_futuro` | risco | A receita da sequência cai mais de 10% de hoje para o futuro | `queda`, `receita_hoje`, `receita_futuro` |
+| `queda_no_ano_ruim` | risco | Só no modo diário, por clima: a receita do ano ruim fica mais de 20% abaixo da do ano mediano | `queda`, `receita_mediano`, `receita_ruim` |
+| `repete_a_cultura` | risco | A cultura repete a anterior (fator de sequência 0,85) | `fator_sequencia`, `slot` |
+| `solo_exposto` | risco | 60 dias ou mais sem cultura e sem palhada, no clima de hoje | `dias_expostos`, `chuva_exposta_mm` |
+| `sem_historico` | lacuna | A entrada veio sem histórico: a primeira cultura fica sem as regras de sequência | — |
+| `sem_limiar_de_calor` | lacuna | Cultura sem `temp_calor_c`: o motor não desconta calor dela | — |
+| `limiar_de_calor_pouco_confiavel` | lacuna | Cultura com limiar de 32 °C, em que POWER e NEX mais diferem | `temp_calor_c` |
+| `sem_valor_de_mercado` | lacuna | Cultura com preço zero (as de cobertura), já contando o preço editado | — |
+| `ky_padrao` | lacuna | Só no modo diário: cultura fora da tabela de Ky da FAO | `ky` |
+| `valor_a_conferir` | lacuna | A tabela de culturas tem `<campo>_status` preenchido para a cultura | `campo`, `status`, `valor` |
 
 ## Modo diário (opcional)
 
@@ -343,8 +368,12 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `QUANTIL_RUIM` | 0,2 | Modo diário: posição do "ano ruim" na lista ordenada dos anos |
 | `MIN_ANOS_DIARIO` | 5 | Modo diário: mínimo de anos completos na série |
 | `KY_PADRAO` | 1,0 | Modo diário: Ky das culturas que não estão na tabela da FAO |
+| `AVISO_FATOR` | 0,8 | Fator de clima ou água abaixo disso vira aviso `fator_limitante` |
+| `AVISO_QUEDA_FUTURO` | 0,10 | Queda de receita de hoje para o futuro que vira aviso |
+| `AVISO_QUEDA_ANO_RUIM` | 0,20 | Queda de receita do ano mediano para o ano ruim que vira aviso |
+| `AVISO_DIAS_EXPOSTOS` | 60 | Dias sem cultura e sem palhada que viram aviso |
 
-Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista.
+Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os quatro limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.
 
 ## O que a regra de calor muda (tabelas de 14/11)
 
@@ -433,3 +462,5 @@ Receita em R$/ha, sem histórico:
 14. **Palhada dura até o próximo plantio.** O motor supõe que a palhada de uma cultura com `cobre_solo` = 1 cobre o solo até a cultura seguinte entrar, por mais tempo que leve, e que as outras não deixam nada. Não há taxa de decomposição nem quantidade de palhada por cultura. `cobre_solo` foi preenchido à mão.
 15. **Índice de erosão não é perda de solo.** Usa o total de chuva, não a erosividade (fator R), e deixa de fora o tipo de solo (K), o comprimento da rampa (L) e o manejo (C, P). O fator S linear subestima em declives fortes, além dos dados de origem (até 18%). A declividade é a média do talhão.
 16. **Solo descoberto no modo diário e na API.** O modo diário não devolve a chuva exposta de cada ano. A API rejeita `declividade_pct` (o modelo de entrada em `backend/app.py` não tem o campo); a tela já tem a declividade do talhão de demonstração em `/metadata`. Ligar é com o Gabriel.
+17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Elas ainda não existem: o que está marcado "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de calor de girassol e trigo) só está em texto, em `docs/culturas_fontes.md`. Preencher é em `scripts/montar_culturas.py`, com o dono dos dados.
+18. **`fator_limitante` olha o modo mensal.** No modo diário a água pesa mais (Ky), e uma cultura pode ficar sem aviso de água no mensal e com `fator_agua` baixo no diário: o milho safrinha de `soja>milho` atende 82% no mensal (sem aviso) e fica com 0,70 no ano mediano do diário.

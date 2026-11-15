@@ -970,7 +970,33 @@
             "solo": 0.318
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.53,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima seco: a falta de água limita a produtividade a 53%."
+        }
+      ]
     },
     {
       "id": "soja>sorgo",
@@ -1506,7 +1532,33 @@
             "solo": 0.383
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "sorgo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.639,
+            "slot": "safrinha"
+          },
+          "texto": "sorgo na safrinha, clima seco: a falta de água limita a produtividade a 64%."
+        }
+      ]
     },
     {
       "id": "soja>crotalaria",
@@ -2021,7 +2073,49 @@
             "solo": 0.542
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "crotalaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.542,
+            "slot": "safrinha"
+          },
+          "texto": "crotalaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 54%."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "soja>trigo",
@@ -2536,7 +2630,67 @@
             "solo": 0.237
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.784,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima hoje: a temperatura limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.59,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.395,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima seco: a chuva do ciclo limita a produtividade a 39%."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "soja>feijao",
@@ -3072,7 +3226,90 @@
             "solo": 0.216
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.776,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima hoje: o calor limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.445,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima futuro: o calor limita a produtividade a 45%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.36,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima seco: o calor limita a produtividade a 36%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.116,
+            "receita_hoje": 10877.379,
+            "receita_futuro": 9614.311
+          },
+          "texto": "A receita cai 12% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 160,
+            "chuva_exposta_mm": 190.059
+          },
+          "texto": "O solo fica 160 dias sem cultura e sem palhada, com 190 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "soja>girassol",
@@ -3608,7 +3845,44 @@
             "solo": 0.136
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "girassol",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.68,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha, clima seco: a falta de água limita a produtividade a 68%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 140,
+            "chuva_exposta_mm": 165.75
+          },
+          "texto": "O solo fica 140 dias sem cultura e sem palhada, com 166 mm de chuva nesses dias."
+        }
+      ]
     },
     {
       "id": "soja>milheto",
@@ -4144,7 +4418,49 @@
             "solo": 0.467
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milheto",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.779,
+            "slot": "safrinha"
+          },
+          "texto": "milheto na safrinha, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "soja>braquiaria",
@@ -4683,7 +4999,49 @@
             "solo": 0.285
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.476,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 48%."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "milho>crotalaria",
@@ -5201,7 +5559,48 @@
             "solo": 0.542
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "crotalaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.542,
+            "slot": "safrinha"
+          },
+          "texto": "crotalaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 54%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "milho>feijao",
@@ -5740,7 +6139,77 @@
             "solo": 0.263
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.562,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima futuro: o calor limita a produtividade a 56%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.439,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima seco: a chuva do ciclo limita a produtividade a 44%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.16,
+            "receita_hoje": 8550.449,
+            "receita_futuro": 7183.712
+          },
+          "texto": "A receita cai 16% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 130,
+            "chuva_exposta_mm": 91.494
+          },
+          "texto": "O solo fica 130 dias sem cultura e sem palhada, com 91 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "milho>sorgo",
@@ -6282,7 +6751,32 @@
             "solo": 0.282
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "sorgo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.47,
+            "slot": "safrinha"
+          },
+          "texto": "sorgo na safrinha, clima seco: a chuva do ciclo limita a produtividade a 47%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        }
+      ]
     },
     {
       "id": "milho>trigo",
@@ -6800,7 +7294,78 @@
             "solo": 0.237
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.784,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima hoje: a temperatura limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.59,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.395,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima seco: a chuva do ciclo limita a produtividade a 39%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.142,
+            "receita_hoje": 9237.974,
+            "receita_futuro": 7923.825
+          },
+          "texto": "A receita cai 14% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "sorgo>crotalaria",
@@ -7315,7 +7880,37 @@
             "solo": 0.542
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "crotalaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.542,
+            "slot": "safrinha"
+          },
+          "texto": "crotalaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 54%."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "feijao>sorgo",
@@ -7848,7 +8443,79 @@
             "solo": 0.379
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "sorgo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.631,
+            "slot": "safrinha"
+          },
+          "texto": "sorgo na safrinha, clima seco: a falta de água limita a produtividade a 63%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.22,
+            "receita_hoje": 6058.473,
+            "receita_futuro": 4725.821
+          },
+          "texto": "A receita cai 22% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "feijao>milho",
@@ -8384,7 +9051,103 @@
             "solo": 0.317
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.781,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima hoje: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.774,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima futuro: a falta de água limita a produtividade a 77%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.529,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima seco: a falta de água limita a produtividade a 53%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.151,
+            "receita_hoje": 8394.479,
+            "receita_futuro": 7126.791
+          },
+          "texto": "A receita cai 15% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "milho>milho",
@@ -8929,7 +9692,67 @@
             "solo": 0.15
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.716,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima hoje: a falta de água limita a produtividade a 72%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.709,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima futuro: a falta de água limita a produtividade a 71%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milho",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.376,
+            "slot": "safrinha"
+          },
+          "texto": "milho na safrinha, clima seco: a chuva do ciclo limita a produtividade a 38%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safrinha"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        }
+      ]
     },
     {
       "id": "feijao>crotalaria",
@@ -9441,7 +10264,95 @@
             "solo": 0.542
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "crotalaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.542,
+            "slot": "safrinha"
+          },
+          "texto": "crotalaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 54%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.447,
+            "receita_hoje": 2720.341,
+            "receita_futuro": 1503.56
+          },
+          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "crotalaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "crotalaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "sorgo>trigo",
@@ -9956,7 +10867,67 @@
             "solo": 0.237
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.784,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima hoje: a temperatura limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.59,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.395,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima seco: a chuva do ciclo limita a produtividade a 39%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.154,
+            "receita_hoje": 6478.865,
+            "receita_futuro": 5483.048
+          },
+          "texto": "A receita cai 15% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "milho>girassol",
@@ -10498,7 +11469,43 @@
             "solo": 0.094
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "girassol",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.47,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha, clima seco: a chuva do ciclo limita a produtividade a 47%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 110,
+            "chuva_exposta_mm": 74.062
+          },
+          "texto": "O solo fica 110 dias sem cultura e sem palhada, com 74 mm de chuva nesses dias."
+        }
+      ]
     },
     {
       "id": "milho>milheto",
@@ -11037,7 +12044,48 @@
             "solo": 0.395
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milheto",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.658,
+            "slot": "safrinha"
+          },
+          "texto": "milheto na safrinha, clima seco: a chuva do ciclo limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "feijao>trigo",
@@ -11549,7 +12597,113 @@
             "solo": 0.237
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.784,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima hoje: a temperatura limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "temperatura",
+            "valor": 0.59,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima futuro: a temperatura limita a produtividade a 59%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "trigo",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.395,
+            "slot": "safrinha"
+          },
+          "texto": "trigo na safrinha, clima seco: a chuva do ciclo limita a produtividade a 39%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.329,
+            "receita_hoje": 6616.716,
+            "receita_futuro": 4438.889
+          },
+          "texto": "A receita cai 33% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "trigo",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "trigo usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "milho>braquiaria",
@@ -12091,7 +13245,72 @@
             "solo": 0.175
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.637,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima hoje: a chuva do ciclo limita a produtividade a 64%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.635,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima futuro: a chuva do ciclo limita a produtividade a 64%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.292,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 29%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "milho",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safra"
+          },
+          "texto": "milho repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "feijao>girassol",
@@ -12624,7 +13843,90 @@
             "solo": 0.134
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "girassol",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.669,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha, clima seco: a falta de água limita a produtividade a 67%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.25,
+            "receita_hoje": 6118.045,
+            "receita_futuro": 4590.697
+          },
+          "texto": "A receita cai 25% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 134,
+            "chuva_exposta_mm": 149.798
+          },
+          "texto": "O solo fica 134 dias sem cultura e sem palhada, com 150 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "feijao>feijao",
@@ -13157,7 +14459,125 @@
             "solo": 0.155
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.79,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima hoje: o calor limita a produtividade a 79%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.476,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima futuro: o calor limita a produtividade a 48%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.387,
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha, clima seco: o calor limita a produtividade a 39%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.424,
+            "receita_hoje": 5022.949,
+            "receita_futuro": 2891.514
+          },
+          "texto": "A receita cai 42% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "repete_a_cultura",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.85,
+            "slot": "safrinha"
+          },
+          "texto": "feijao repete a cultura anterior: o motor tira 15% da produtividade (pragas e doenças). O valor é provisório."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 154,
+            "chuva_exposta_mm": 174.108
+          },
+          "texto": "O solo fica 154 dias sem cultura e sem palhada, com 174 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        }
+      ]
     },
     {
       "id": "feijao>milheto",
@@ -13690,7 +15110,95 @@
             "solo": 0.454
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "milheto",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.756,
+            "slot": "safrinha"
+          },
+          "texto": "milheto na safrinha, clima seco: a falta de água limita a produtividade a 76%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.447,
+            "receita_hoje": 2720.341,
+            "receita_futuro": 1503.56
+          },
+          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "milheto",
+          "cenario": null,
+          "dados": {},
+          "texto": "milheto está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     },
     {
       "id": "feijao>braquiaria",
@@ -14226,7 +15734,119 @@
             "solo": 0.252
           }
         ]
-      }
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.664,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima hoje: o calor limita a produtividade a 66%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "hoje",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.794,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima hoje: a chuva do ciclo limita a produtividade a 79%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.367,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima futuro: o calor limita a produtividade a 37%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "futuro",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.795,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima futuro: a chuva do ciclo limita a produtividade a 79%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "feijao",
+          "cenario": "seco",
+          "dados": {
+            "fator": "calor",
+            "valor": 0.457,
+            "slot": "safra"
+          },
+          "texto": "feijao na safra, clima seco: o calor limita a produtividade a 46%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "braquiaria",
+          "cenario": "seco",
+          "dados": {
+            "fator": "chuva",
+            "valor": 0.421,
+            "slot": "safrinha"
+          },
+          "texto": "braquiaria na safrinha, clima seco: a chuva do ciclo limita a produtividade a 42%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "queda_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.447,
+            "receita_hoje": 2720.341,
+            "receita_futuro": 1503.56
+          },
+          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "limiar_de_calor_pouco_confiavel",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "temp_calor_c": 32
+          },
+          "texto": "feijao usa o limiar de 32 °C, em que a contagem de dias quentes é a menos confiável."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_limiar_de_calor",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria não tem limiar de calor na tabela: o motor não desconta calor dela. Isso não comprova tolerância."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "sem_valor_de_mercado",
+          "cultura": "braquiaria",
+          "cenario": null,
+          "dados": {},
+          "texto": "braquiaria está com preço zero: forragem, semente e o benefício ao solo não entram na receita."
+        }
+      ]
     }
   ],
   "descartadas": [
