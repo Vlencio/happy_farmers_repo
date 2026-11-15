@@ -41,7 +41,8 @@ Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diar
   "horizonte": 2,
   "mes_plantio": 10,
   "precos": {"soja": 2300},
-  "declividade_pct": 4.05
+  "declividade_pct": 4.05,
+  "ajuste": {"chuva_pct": -20, "temp_c": 2}
 }
 ```
 
@@ -54,6 +55,7 @@ Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diar
 | `mes_plantio` | não (padrão 10) | Mês em que o talhão fica livre (dia 1). Define o primeiro slot: de julho a dezembro é a safra; de janeiro a junho, a safrinha |
 | `precos` | não | Preço editado pelo usuário, por cultura, em R$/t. Substitui o `preco` da tabela |
 | `declividade_pct` | não | Declividade média do talhão, em %. Se vier, cada sequência ganha `descoberto.indice_erosao`. Não muda score nem rank. Para o talhão de demonstração: 4,05 (`data/talhao/declividade.csv`) |
+| `ajuste` | não | Cenário "e se" (regra 19): `chuva_pct` de −50 a +30 (% sobre a chuva de cada mês) e `temp_c` de 0 a +4 (°C somados à mínima e à máxima). Campo ausente vale 0. Vale para todos os climas e para a série diária. Sem `ajuste`, a saída não muda; com ele, `entrada.ajuste` volta na saída e `clima` traz as tabelas já ajustadas |
 
 Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje sem acento (`feijao`, `crotalaria`). Nome fora da tabela gera `ValueError`.
 
@@ -280,6 +282,14 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 
 "Menor demanda de água" ficou de fora: seria uma comparação entre sequências e precisaria de um limite sem fonte.
 
+19. **Ajuste de cenário** (só com `ajuste`, Parte 6 de `docs/pendencias_desafio.md`): antes de qualquer conta, cada tabela de clima (hoje, futuro e ano seco) muda assim:
+    - `chuva_mm` × (1 + `chuva_pct`/100), em todos os meses.
+    - `tmin_c` e `tmax_c` + `temp_c`, em todos os meses.
+    - `et0_mm`, se vier na tabela, × (T média + `temp_c` + 17,8) / (T média + 17,8). É o que muda no Hargreaves quando as duas temperaturas sobem igual: a amplitude e a radiação ficam as mesmas. Sem a coluna, o Hargreaves do motor já usa as temperaturas novas. +2 °C dá cerca de 5% a mais de ET0.
+    - `dias_acima_NN` (com `temp_c` acima de 0): dias acima de NN com a máxima `temp_c` mais alta = dias acima de NN − `temp_c` na tabela original. A tabela só tem alguns limiares (32, 35, 36 e 38); o motor interpola entre os dois vizinhos e, fora da faixa, estende a reta dos dois mais próximos, entre 0 e os dias do mês. Com +3 °C, o limiar 35 usa a coluna 32 exata.
+    - Modo diário: o mesmo, dia a dia, na série de hoje; o futuro sai das tabelas já ajustadas (regra 7 do modo diário). O limiar de chuva extrema fica o da série observada, para a contagem mostrar a mudança.
+    - É um "e se", não uma previsão: o mesmo ajuste em todos os meses, sem fonte para a combinação escolhida.
+
 ## Modo diário (opcional)
 
 O modo mensal usa a média de 20 anos de cada mês. A média apaga os veranicos: a parte de `agua` fica entre 0,88 e 1,00 em todas as sequências. O modo diário roda a mesma conta com a chuva, o ET0 e as temperaturas de cada dia, um ano de cada vez, e resume o ano mediano e o ano ruim.
@@ -394,6 +404,8 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `AVISO_QUEDA_FUTURO` | 0,10 | Queda de receita de hoje para o futuro que vira aviso |
 | `AVISO_QUEDA_ANO_RUIM` | 0,20 | Queda de receita do ano mediano para o ano ruim que vira aviso |
 | `AVISO_DIAS_EXPOSTOS` | 60 | Dias sem cultura e sem palhada que viram aviso |
+| `AJUSTE_CHUVA_PCT` | −50 a +30 | Faixa aceita de `ajuste.chuva_pct` |
+| `AJUSTE_TEMP_C` | 0 a +4 | Faixa aceita de `ajuste.temp_c` |
 
 Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os quatro limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.
 
@@ -486,3 +498,4 @@ Receita em R$/ha, sem histórico:
 16. **Solo descoberto no modo diário e na API.** O modo diário não devolve a chuva exposta de cada ano. A API aceita `declividade_pct` opcional (0 a 100, finito) e anuncia `capabilities.declividade_pct` em `/metadata`; o front só envia a declividade no contorno do talhão de demonstração.
 17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Elas ainda não existem: o que está marcado "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de calor de girassol e trigo) só está em texto, em `docs/culturas_fontes.md`. Preencher é em `scripts/montar_culturas.py`, com o dono dos dados.
 18. **`fator_limitante` olha o modo mensal.** No modo diário a água pesa mais (Ky), e uma cultura pode ficar sem aviso de água no mensal e com `fator_agua` baixo no diário: o milho safrinha de `soja>milho` atende 82% no mensal (sem aviso) e fica com 0,70 no ano mediano do diário.
+19. **Dias quentes no ajuste de temperatura são estimados.** Entre 32 e 35 °C a tabela não tem coluna, e a contagem cai rápido (janeiro: 9,6 dias acima de 32, 1,85 acima de 35); a reta entre os dois é uma aproximação. Abaixo de 32 °C (feijão, algodão e trigo com qualquer `temp_c` acima de 0) o motor estende a reta, sem dado. Uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py` tornaria exato todo ajuste inteiro, sem mudar o motor. O ajuste também não chega à API nem à tela: falta `backend/app.py` aceitar e validar `ajuste` e anunciar em `/metadata`.

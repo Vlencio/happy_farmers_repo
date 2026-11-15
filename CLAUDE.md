@@ -166,6 +166,9 @@ in `tests/dados/`.
    future. Without `diario` the output is unchanged; the API and the screen
    do not use it yet. Showing "bad year" on screen touches "win rates or
    probabilities" in "Out of scope" and needs the team to reopen it.
+9. **Scenario adjustment (optional)**, `entrada["ajuste"] = {"chuva_pct", "temp_c"}`:
+   a "what if" applied to every climate table and the daily series before the
+   math (rule 19 of the contract). The API and the screen do not use it yet.
 
 ## Stack
 

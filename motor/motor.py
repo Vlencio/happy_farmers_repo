@@ -62,6 +62,10 @@ AVISO_DIAS_EXPOSTOS = 60  # dias sem cultura e sem palhada a partir dos quais av
 LIMIARES_POUCO_CONFIAVEIS = {32}  # graus C: POWER e NEX diferem 20% na contagem (docs/colunas_dados.md)
 NOME_FATOR = {"temperatura": "a temperatura", "chuva": "a chuva do ciclo", "calor": "o calor", "agua": "a falta de água"}
 
+# Ajuste de cenario ("e se"): faixas aceitas na entrada "ajuste". Escolha do time, sem fonte.
+AJUSTE_CHUVA_PCT = (-50.0, 30.0)  # % sobre a chuva de cada mes
+AJUSTE_TEMP_C = (0.0, 4.0)  # graus C somados a minima e a maxima de cada mes
+
 COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e dias_acima_NN sao opcionais
 COLUNAS_NUMERICAS = [
     "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
@@ -155,6 +159,83 @@ def et0_do_clima(clima, lat):
     if all("et0_mm" in m for m in clima):
         return [m["et0_mm"] / DIAS_MES[i] for i, m in enumerate(clima)]
     return et0_hargreaves(clima, lat)
+
+
+def ler_ajuste(ajuste):
+    """Confere a entrada "ajuste" ({"chuva_pct", "temp_c"}). Devolve None se nao veio."""
+    if ajuste is None:
+        return None
+    if not isinstance(ajuste, dict):
+        raise ValueError('ajuste deve ser um objeto com "chuva_pct" e "temp_c"')
+    sobra = sorted(set(ajuste) - {"chuva_pct", "temp_c"})
+    if sobra:
+        raise ValueError(f"ajuste com campos desconhecidos: {sobra}")
+    lido = {}
+    for campo, (menor, maior) in (("chuva_pct", AJUSTE_CHUVA_PCT), ("temp_c", AJUSTE_TEMP_C)):
+        valor = float(ajuste.get(campo) or 0)
+        if not math.isfinite(valor) or not menor <= valor <= maior:
+            raise ValueError(f"ajuste.{campo} deve estar entre {menor:g} e {maior:g}")
+        lido[campo] = valor
+    return lido
+
+
+def fator_et0_temp(tmin, tmax, delta_c):
+    """Quanto a ET0 de Hargreaves muda ao somar delta_c a minima e a maxima.
+
+    A amplitude (tmax - tmin) e a radiacao nao mudam; so o termo (tmed + 17,8).
+    """
+    base = (tmin + tmax) / 2 + 17.8
+    return (base + delta_c) / base if base > 0 else 1.0
+
+
+def dias_acima_deslocado(m, limiar, delta_c, dias_no_mes):
+    """Dias acima de `limiar` depois de somar delta_c a maxima = dias acima de (limiar - delta_c) hoje.
+
+    A tabela so tem alguns limiares (dias_acima_NN): interpola entre os dois vizinhos e, fora da
+    faixa, estende a reta dos dois mais proximos. Fica entre 0 e os dias do mes.
+    """
+    pontos = sorted((int(k[len("dias_acima_") :]), v) for k, v in m.items() if k.startswith("dias_acima_"))
+    if len(pontos) < 2:
+        return m[f"dias_acima_{limiar}"]
+    x = limiar - delta_c
+    i = 1
+    while i < len(pontos) - 1 and pontos[i][0] < x:
+        i += 1
+    (x0, y0), (x1, y1) = pontos[i - 1], pontos[i]
+    y = y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+    return min(max(y, 0.0), float(dias_no_mes))
+
+
+def ajustar_clima(clima, ajuste):
+    """Tabela de clima com o ajuste de cenario: chuva x (1 + pct/100), temperaturas + delta.
+
+    ET0 da tabela (se vier) muda pelo fator de Hargreaves; sem a coluna, o Hargreaves do motor ja
+    usa as temperaturas novas. Dias quentes: dias_acima_deslocado.
+    """
+    k, dt = 1 + ajuste["chuva_pct"] / 100, ajuste["temp_c"]
+    novo = []
+    for i, m in enumerate(clima):
+        n = {**m, "chuva_mm": m["chuva_mm"] * k, "tmin_c": m["tmin_c"] + dt, "tmax_c": m["tmax_c"] + dt}
+        if "et0_mm" in m:
+            n["et0_mm"] = m["et0_mm"] * fator_et0_temp(m["tmin_c"], m["tmax_c"], dt)
+        if dt:
+            for col in m:
+                if col.startswith("dias_acima_"):
+                    n[col] = dias_acima_deslocado(m, int(col[len("dias_acima_") :]), dt, DIAS_MES[i])
+        novo.append(n)
+    return novo
+
+
+def ajustar_serie(serie, ajuste):
+    """Serie diaria com o ajuste de cenario, dia a dia, com a mesma conta de ajustar_clima."""
+    k, dt = 1 + ajuste["chuva_pct"] / 100, ajuste["temp_c"]
+    return {
+        **serie,
+        "chuva": [v * k for v in serie["chuva"]],
+        "tmin": [v + dt for v in serie["tmin"]],
+        "tmax": [v + dt for v in serie["tmax"]],
+        "et0": [v * fator_et0_temp(tn, tx, dt) for v, tn, tx in zip(serie["et0"], serie["tmin"], serie["tmax"])],
+    }
 
 
 def kc_do_dia(c, fracao):
@@ -508,15 +589,21 @@ def _quantil_ruim(valores):
     return v[int(len(v) * QUANTIL_RUIM)]
 
 
-def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos):
+def _modo_diario(
+    diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos, ajuste=None
+):
     """Roda cada sequencia viavel em cada ano da serie diaria, no clima de hoje e no futuro.
 
     Devolve (resumo geral, {sequencia: bloco "diario"}). Por sequencia e clima: ano mediano
     e ano ruim (QUANTIL_RUIM) de agua, solo e receita, cada um com score e rank.
+    Com ajuste, a serie de hoje e ajustada depois do limiar de chuva extrema, que fica o da serie
+    observada; o futuro sai das tabelas ja ajustadas.
     """
     hoje = _serie_diaria(diario, lat)
     com_chuva = [v for v in hoje["chuva"] if v >= DIA_COM_CHUVA_MM]
     hoje["limiar_chuva_extrema"] = _percentil(com_chuva, PERCENTIL_CHUVA_EXTREMA) if com_chuva else None
+    if ajuste is not None:
+        hoje = ajustar_serie(hoje, ajuste)
     series = {"hoje": hoje, "futuro": _serie_futura(hoje, climas["hoje"], climas["futuro"], et0["hoje"], et0["futuro"])}
     esperas = {s: [r["espera_dias"] for r in aval_hoje[s]["culturas"]] for s in sequencias}
     # dias do talhao livre ate o fim do ultimo ciclo, na sequencia mais longa
@@ -786,7 +873,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
     fora da epoca de plantio do slot nao entra no ranking: vai para "descartadas".
 
-    entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos.
+    entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos,
+    declividade_pct e ajuste ({"chuva_pct", "temp_c"}: "e se", aplicado a todos os climas).
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
     clima_seco: opcional, mesma forma das outras duas. Se vier, a saida ganha um
     terceiro cenario ("seco"); sem ele, a saida so tem hoje e futuro.
@@ -803,6 +891,9 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         faltam = sorted({coluna_de_calor(c) for c in tabela.values() if coluna_de_calor(c)} - set(clima[0]))
         if faltam:
             raise ValueError(f"clima {cen} sem as colunas de calor {faltam}: rode scripts/montar_clima.py")
+    ajuste = ler_ajuste(entrada.get("ajuste"))
+    if ajuste is not None:  # "e se": o mesmo ajuste em todos os cenarios, antes da conta
+        climas = {cen: ajustar_clima(clima, ajuste) for cen, clima in climas.items()}
 
     lat = float(entrada["lat"])
     horizonte = int(entrada.get("horizonte", 2))
@@ -864,7 +955,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     geral_diario = blocos_diario = None
     if diario is not None:
         geral_diario, blocos_diario = _modo_diario(
-            diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos
+            diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos, ajuste
         )
 
     campos = ["score", "agua", "solo", "renda", "receita_ha", "encaixe", "descoberto", "culturas"]
@@ -877,6 +968,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             "mes_plantio": mes_plantio,
             "precos": precos,
             "declividade_pct": declividade,
+            **({"ajuste": ajuste} if ajuste is not None else {}),
         },
         "slots": slots,
         # a rotacao atual, para comparar com as outras: os numeros dela estao em "sequencias"

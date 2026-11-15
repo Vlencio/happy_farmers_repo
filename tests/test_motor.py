@@ -388,6 +388,104 @@ class TestAnoSeco(unittest.TestCase):
         self.assertIsNone(carregar_clima_seco(FIXOS))  # tests/dados nao tem a tabela
 
 
+class TestAjuste(unittest.TestCase):
+    """Ajuste de cenario ("e se"): chuva em % e temperatura em graus C, antes da conta."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.sem = recomendar(ENTRADA, *cls.dados)
+
+    def seq(self, saida, seq_id="soja>milho"):
+        return next(s for s in saida["sequencias"] if s["id"] == seq_id)
+
+    def test_sem_ajuste_a_saida_nao_muda(self):
+        self.assertNotIn("ajuste", self.sem["entrada"])
+        self.assertEqual(recomendar({**ENTRADA, "ajuste": None}, *self.dados), self.sem)
+        zero = recomendar({**ENTRADA, "ajuste": {"chuva_pct": 0, "temp_c": 0}}, *self.dados)
+        self.assertEqual(zero["entrada"].pop("ajuste"), {"chuva_pct": 0.0, "temp_c": 0.0})
+        self.assertEqual(zero, self.sem)
+
+    def test_menos_chuva(self):
+        com = recomendar({**ENTRADA, "ajuste": {"chuva_pct": -20}}, *self.dados)
+        self.assertEqual(com["entrada"]["ajuste"], {"chuva_pct": -20.0, "temp_c": 0.0})
+        for cen in ("hoje", "futuro"):
+            for a, b in zip(com["clima"][cen], self.sem["clima"][cen]):
+                self.assertAlmostEqual(a["chuva_mm"], b["chuva_mm"] * 0.8, delta=2e-3)
+                self.assertEqual((a["tmax_c"], a["et0_mm"]), (b["tmax_c"], b["et0_mm"]))
+        self.assertLess(self.seq(com)["hoje"]["agua"], self.seq(self.sem)["hoje"]["agua"])
+        # chuva nao mexe na temperatura: os dias de calor ficam iguais
+        self.assertEqual(
+            cultura_de(com, "soja>milho", "futuro", 1)["dias_calor"],
+            cultura_de(self.sem, "soja>milho", "futuro", 1)["dias_calor"],
+        )
+
+    def test_mais_quente(self):
+        com = recomendar({**ENTRADA, "ajuste": {"temp_c": 3}}, *self.dados)
+        for a, b in zip(com["clima"]["hoje"], self.sem["clima"]["hoje"]):
+            self.assertAlmostEqual(a["tmin_c"], b["tmin_c"] + 3, places=3)
+            self.assertAlmostEqual(a["tmax_c"], b["tmax_c"] + 3, places=3)
+            self.assertGreater(a["et0_mm"], b["et0_mm"])
+            self.assertEqual(a["chuva_mm"], b["chuva_mm"])
+            # +3 graus: acima de 35 passa a ser o que hoje esta acima de 32 (coluna exata)
+            self.assertEqual(a["dias_acima_35"], b["dias_acima_32"])
+            self.assertEqual(a["dias_acima_38"], b["dias_acima_35"])
+        hoje = cultura_de(com, "soja>milho", "hoje", 1)
+        self.assertGreater(hoje["dias_calor"], cultura_de(self.sem, "soja>milho", "hoje", 1)["dias_calor"])
+
+    def test_dias_acima_deslocado(self):
+        m = {"dias_acima_32": 9.0, "dias_acima_35": 3.0, "dias_acima_38": 1.5}
+        f = motor.dias_acima_deslocado
+        self.assertEqual(f(m, 35, 0, 31), 3.0)
+        self.assertEqual(f(m, 35, 3, 31), 9.0)  # coluna exata
+        self.assertAlmostEqual(f(m, 35, 1, 31), 5.0)  # entre 32 e 35
+        self.assertAlmostEqual(f(m, 38, 1, 31), 2.0)  # entre 35 e 38
+        self.assertAlmostEqual(f(m, 32, 2, 31), 13.0)  # abaixo de 32: reta de 32 e 35
+        self.assertEqual(f(m, 32, 4, 10), 10.0)  # nunca mais que os dias do mes
+        self.assertEqual(f(m, 38, -6, 31), 0.0)  # nunca negativo
+        self.assertEqual(f({"dias_acima_35": 2.0}, 35, 2, 31), 2.0)  # uma coluna so: sem como estimar
+
+    def test_et0_segue_hargreaves(self):
+        tabela = motor._tabela_clima(self.dados[1])
+        quente = [{**m, "tmin_c": m["tmin_c"] + 2, "tmax_c": m["tmax_c"] + 2} for m in tabela]
+        base, novo = motor.et0_hargreaves(tabela, -20), motor.et0_hargreaves(quente, -20)
+        for m, b, n in zip(tabela, base, novo):
+            self.assertAlmostEqual(n / b, motor.fator_et0_temp(m["tmin_c"], m["tmax_c"], 2))
+
+    def test_et0_da_tabela_tambem_muda(self):
+        hoje = self.dados[1].assign(et0_mm=[d * 4.0 for d in motor.DIAS_MES])
+        com = recomendar({**ENTRADA, "ajuste": {"temp_c": 2}}, self.dados[0], hoje, self.dados[2])
+        for m, b in zip(com["clima"]["hoje"], motor._tabela_clima(hoje)):
+            esperado = b["et0_mm"] * motor.fator_et0_temp(b["tmin_c"], b["tmax_c"], 2)
+            self.assertAlmostEqual(m["et0_mm"], esperado, places=2)
+
+    def test_vale_para_o_ano_seco(self):
+        seco = self.dados[1].assign(chuva_mm=self.dados[1]["chuva_mm"] * 0.5)
+        sem = recomendar(ENTRADA, *self.dados, seco)
+        com = recomendar({**ENTRADA, "ajuste": {"chuva_pct": -50}}, *self.dados, seco)
+        for a, b in zip(com["clima"]["seco"], sem["clima"]["seco"]):
+            self.assertAlmostEqual(a["chuva_mm"], b["chuva_mm"] * 0.5, delta=2e-3)
+
+    def test_modo_diario(self):
+        serie = serie_das_medias(self.dados[1], 2001, 2010)
+        sem = recomendar(ENTRADA, *self.dados, diario=serie)
+        com = recomendar({**ENTRADA, "ajuste": {"chuva_pct": -30, "temp_c": 2}}, *self.dados, diario=serie)
+        self.assertEqual(com["diario"]["limiar_chuva_extrema_mm"], sem["diario"]["limiar_chuva_extrema_mm"])
+        for cen in ("hoje", "futuro"):
+            self.assertLess(
+                self.seq(com)["diario"][cen]["mediano"]["receita_ha"],
+                self.seq(sem)["diario"][cen]["mediano"]["receita_ha"],
+            )
+
+    def test_ajuste_invalido(self):
+        for ajuste in (
+            {"chuva_pct": -51}, {"chuva_pct": 31}, {"temp_c": -1}, {"temp_c": 4.5},
+            {"chuva_pct": float("nan")}, {"vento": 1}, [10, 2], "menos chuva",
+        ):  # fmt: skip
+            with self.assertRaises(ValueError, msg=ajuste):
+                recomendar({**ENTRADA, "ajuste": ajuste}, *self.dados)
+
+
 class TestPecas(unittest.TestCase):
     C = {"temp_min": 10, "temp_otima_min": 20, "temp_otima_max": 30, "temp_max": 40, "chuva_min": 400, "chuva_max": 1000}
 

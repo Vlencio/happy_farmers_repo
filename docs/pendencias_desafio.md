@@ -23,7 +23,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Motor e API prontos; falta a tela; restrições em aberto | Gabriel | Não | Reaberto (15/11) |
-| 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
+| 6 | Controles de cenário | Motor feito; faltam API e tela | Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
 | 9 | Informação local de solo | Falta | Brenno, Pedro | Sim | Sim (SoilGrids) |
@@ -174,12 +174,21 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "scenario sliders that adjust rainfall or temperature patterns".
 
-**Hoje:** três cenários fixos (hoje, futuro, ano seco).
+**Hoje (15/11, `motor-diario`):** o motor aceita `ajuste: {"chuva_pct", "temp_c"}` (regra 19 do contrato). Chuva de −50% a +30%, temperatura de 0 a +4 °C, o mesmo ajuste em todos os meses e em todos os climas (hoje, futuro, ano seco e série diária). ET0 e dias quentes acompanham a temperatura. Sem `ajuste`, a saída não muda.
+
+- Talhão de demonstração, outubro, histórico soja, milho: com 20% menos chuva, `soja>milho` continua em 1º e cai de R$ 14.171 para R$ 13.385/ha; `soja>feijao` sobe de 5º para 3º. Com +2 °C, `soja>crotalaria` passa `soja>sorgo` no futuro.
+
+**Feito:**
+
+- [x] Motor: entrada opcional de ajuste aplicada às tabelas de clima e à série diária antes da conta.
+- [x] `docs/contrato_motor.md` (entrada `ajuste`, regra 19, "Em aberto" item 19).
 
 **Falta:**
 
-- [ ] Motor: entrada opcional de ajuste (chuva em %, temperatura em °C) aplicada às tabelas de clima e à série diária antes da conta.
-- [ ] API e tela: repassar e oferecer os controles.
+- [ ] API (Gabriel): aceitar e validar `ajuste` em `backend/app.py`, repassar ao motor e anunciar em `/metadata`.
+- [ ] Tela (Gabriel): dois controles (chuva e temperatura), com o texto de que é um "e se", não uma previsão.
+- [ ] Dados (Brenno, opcional): uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py`. Hoje os dias quentes entre os limiares são interpolados, e abaixo de 32 °C, extrapolados.
+- [ ] Chat (Gabriel, opcional): a IA traduz "e se chover menos?" em `ajuste` e chama o motor; o número continua vindo do motor.
 
 **Feito quando:** a tela permite pedir "20% menos chuva" e o resultado muda.
 
