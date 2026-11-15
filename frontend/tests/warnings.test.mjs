@@ -36,7 +36,7 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
 
   const bean = show(find('soja>feijao'));
   assert.equal(bean.risks.length, 4);
-  assert.equal(bean.gaps.length, 1);
+  assert.equal(bean.gaps.length, 2); // 32 °C threshold and the bean price marked "memoria" in culturas.csv
   assert.equal(bean.risks[0].context, 'Feijão · safrinha · clima de hoje');
   assert.equal(bean.risks[1].context, 'Feijão · safrinha · clima futuro');
   assert.equal(bean.risks[0].evidence, 'Fator de calor: 77,6 / 100.');
