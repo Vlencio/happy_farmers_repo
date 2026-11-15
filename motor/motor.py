@@ -59,6 +59,10 @@ PENALIDADE_HOSPEDEIRO = 0.92
 # a 100% do feijao em cultivar suscetivel; 0,75 e provisorio, de memoria da revisao agronomica de 15/11.
 PENALIDADE_MOSCA_BRANCA = 0.75
 PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
+# Fracao de PESO_SOLO["fixa_n"] para leguminosa de grao (fixa N e exporta grao, ver adubo_verde): soja e
+# feijao levam a maior parte do N fixado nos graos. Adubo verde leva o peso inteiro. Provisorio, de memoria
+# (revisoes agronomica e estatistica de 15/11), sem fonte conferida.
+CREDITO_N_LEGUMINOSA_GRAO = 0.5
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
 ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
@@ -510,6 +514,14 @@ def adubo_verde(c):
     return bool(c["fixa_n"]) and c["produtividade"] == 0 and c["produtividade_safrinha"] == 0
 
 
+def credito_n(c):
+    """Fracao do peso de fixa_n na parte solo: 1 para adubo verde, CREDITO_N_LEGUMINOSA_GRAO para
+    leguminosa de grao (fixa_n com produtividade), 0 para nao fixadora."""
+    if not c["fixa_n"]:
+        return 0.0
+    return 1.0 if adubo_verde(c) else CREDITO_N_LEGUMINOSA_GRAO
+
+
 def tem_bonus_de_n(c, anterior, culturas, dias_apos_anterior):
     """Regra 10: nao fixadora plantada ate JANELA_BONUS_N_DIAS depois do fim do ciclo de um adubo verde."""
     return (
@@ -567,7 +579,7 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos, dias_apos_an
     # entra na parte agua e na receita
     clima = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"])
     r["solo"] = clima * (
-        PESO_SOLO["fixa_n"] * c["fixa_n"]
+        PESO_SOLO["fixa_n"] * credito_n(c)
         + PESO_SOLO["cobre_solo"] * c["cobre_solo"]
         + PESO_SOLO["diversidade"] * (nome != anterior)
     )
