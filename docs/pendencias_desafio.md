@@ -19,8 +19,8 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | Parte | Assunto | Situação | Dono | Dado novo | Reabre escopo |
 |---|---|---|---|---|---|
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
-| 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; falta conferir o índice na tela | Gabriel | Não na demonstração | Não |
-| 3 | Lacunas e riscos por estratégia | Motor feito; faltam dados de origem e tela | Brenno, Gabriel | Não | Não |
+| 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
+| 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
@@ -90,41 +90,41 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] Conferir na tela o índice real que chega pela API com a declividade da demonstração.
+- [x] Conferir na tela o índice real que chega pela API com a declividade da demonstração: 4,05% enviados; Soja → Milho exibiu 34,7 / 34,2 / 24 (hoje / futuro / ano seco), após integrar a Main `1519963`.
 - [ ] Para talhões fora da demonstração: declividade depende de SRTM por ponto (ver Parte 14). Sem ela, o motor devolve dias e chuva, sem o índice.
 - [ ] Modo diário: chuva exposta de cada ano (hoje só no modo mensal).
 - [ ] Duração da palhada e quantidade por cultura: hoje é sim ou não, até o próximo plantio ("Em aberto", item 14 do contrato).
 
-**Feito quando:** duas sequências com cultura de cobertura e sem ela mostram números diferentes de solo descoberto e de chuva sobre solo exposto. A tela já mostra essas diferenças; falta conferir na tela o índice ponderado pela declividade.
+**Feito quando:** duas sequências com cultura de cobertura e sem ela mostram números diferentes de solo descoberto e de chuva sobre solo exposto. A tela mostra essas diferenças e o índice ponderado pela declividade foi conferido com a API real na demonstração.
 
 ## Parte 3 — Lacunas e riscos por estratégia
 
 **Texto:** "For each strategy, you may explain why it was suggested, what evidence supports it, what benefits it may offer, where information gaps exist, and any risks that would need local review".
 
-**Hoje (14/11, branch `motor-diario`):** o motor está pronto; faltam os dados de origem e a tela.
+**Hoje (14/11, front integrado à `motor-diario` em `589b16b`):** avisos e benefícios do motor têm apresentação na tela; faltam as marcações de origem dos dados.
 
 - Cada sequência viável devolve `avisos`: uma lista de riscos e lacunas, cada um com `tipo`, `codigo`, `cultura`, `cenario`, `dados` (os números que geraram o aviso) e `texto`. Regra 17 do contrato, com a tabela dos 11 códigos.
 - Riscos: fator que mais limita cada cultura em cada clima, queda de receita no futuro, queda no ano ruim (modo diário), repetição de cultura, solo exposto.
 - Lacunas: sem histórico, cultura sem limiar de calor, limiar de 32 °C, cultura com preço zero, Ky padrão (modo diário), valor marcado a conferir.
 - Não muda score nem rank.
-- Nos dados reais, outubro com histórico soja, milho: de 0 a 11 avisos por sequência. `soja>milho` não tem nenhum; `soja>feijao` tem cinco (calor do feijão hoje e no futuro, queda de 12% no futuro, 160 dias de solo exposto, limiar de 32 °C).
+- O exemplo só com hoje/futuro tem zero avisos para `soja>milho` e cinco para `soja>feijao`. A API atual também inclui o ano seco da demonstração: em outubro com histórico soja, milho, são dois riscos para `soja>milho`, dois riscos e duas lacunas para `soja>crotalaria`, e seis riscos e uma lacuna para `soja>feijao`. O front usa a lista recebida, inclusive os cenários disponíveis.
 
 **Feito:**
 
 - [x] Motor: lista `avisos` por sequência, gerada dos próprios dados.
 - [x] Motor: lê colunas opcionais `<campo>_status` de `culturas.csv` e avisa `valor_a_conferir`.
 - [x] `docs/contrato_motor.md` (regra 17 e coluna `<campo>_status`) e fixtures do front regeneradas.
+- [x] Tela (Gabriel): resumo separado de riscos e lacunas nos cards; lista completa com contexto e evidências no detalhe de cada estratégia, inclusive a rotação atual. Ausência do campo não é tratada como lista vazia.
+- [x] Texto: os 11 códigos têm apresentação em português com os rótulos acentuados das culturas, números e unidades de `dados`. Código novo preserva texto e dados do motor.
 - [x] Motor: lista `beneficios` por sequência (regra 18): fixa nitrogênio, bônus após fixadora, deixa palhada, pouco solo exposto, estável no futuro, clima favorável. Só com o que entra na conta. `culturas[]` traz `fixa_n` e `cobre_solo`.
+- [x] Tela (Gabriel): benefícios junto dos avisos, com resumo nos cards e contexto e evidências no detalhe da estratégia e da rotação atual.
 
 **Falta:**
 
 - [ ] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
-- [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
-- [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
 - [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
-- [ ] Tela (Gabriel): mostrar `beneficios` ao lado de `avisos`.
 
-**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. No motor já mostram; falta a tela.
+**Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front, incluindo benefícios; status dos dados e limitação mensal continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`.
 
 ## Parte 4 — Geada e chuva extrema
 
@@ -295,7 +295,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [ ] Glossário: anomalia de umidade do solo, risco de geada, ano ruim, Ky.
 - [ ] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca.
 - [x] API: `POST /chat` responde dúvidas do produtor sobre a análise na tela, só com os números do motor (`docs/chat.md`).
-- [ ] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat`.
+- [x] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat: true`, com foco dos cards e histórico reenviado. Credencial e teste com a Anthropic real continuam pendentes; ver `docs/chat.md`.
 
 **Feito quando:** todo termo técnico que aparece na tela tem explicação na própria tela.
 

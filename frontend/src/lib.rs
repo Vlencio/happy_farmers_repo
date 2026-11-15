@@ -5,7 +5,9 @@ use std::cell::RefCell;
 mod model;
 mod season;
 mod ui;
-use model::{Analysis, Culture, Farm, FieldContext, HistoryItem, Page, SelectedStrategy, Settings};
+use model::{
+    Analysis, ChatState, Culture, Farm, FieldContext, HistoryItem, Page, SelectedStrategy, Settings,
+};
 
 struct State {
     farm: Option<Farm>,
@@ -35,6 +37,10 @@ struct State {
     loading: bool,
     ready: bool,
     clear_confirm: bool,
+    chat: ChatState,
+    chat_open: bool,
+    chat_question: TextEdit,
+    chat_at_bottom: bool,
 }
 impl Default for State {
     fn default() -> Self {
@@ -66,11 +72,36 @@ impl Default for State {
             loading: false,
             ready: false,
             clear_confirm: false,
+            chat: ChatState::default(),
+            chat_open: false,
+            chat_question: TextEdit::new(""),
+            chat_at_bottom: true,
         }
     }
 }
 impl State {
+    fn reset_chat(&mut self) {
+        self.chat = ChatState {
+            available: self.chat.available,
+            ..ChatState::default()
+        };
+        self.chat_question.clear();
+        self.chat_open = false;
+        self.chat_at_bottom = true;
+    }
+    fn ask_chat(&mut self) {
+        if !self.chat.available || self.chat.busy || self.chat.blocked || self.analysis.is_none() {
+            return;
+        }
+        let question = self.chat_question.text.trim().to_owned();
+        if question.is_empty() || question.chars().count() > 1000 {
+            self.chat.error = "Escreva uma pergunta de até 1.000 caracteres.".into();
+            return;
+        }
+        host(json!({"type":"chat_send", "pergunta":question}));
+    }
     fn invalidate(&mut self) {
+        self.reset_chat();
         self.analysis = None;
         self.page = Page::Setup;
         self.selected = SelectedStrategy::Objective(0);
@@ -134,6 +165,7 @@ impl State {
         self.horizon_open = false;
         self.error.clear();
         self.loading = true;
+        self.reset_chat();
         host(json!({"type":"analyze"}));
     }
     fn select(&mut self, strategy: SelectedStrategy) {
@@ -160,6 +192,10 @@ impl State {
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum Command {
+    Chat {
+        chat: ChatState,
+        clear_question: bool,
+    },
     Config {
         ready: bool,
         cultures: Vec<Culture>,
@@ -193,6 +229,18 @@ enum Command {
 }
 fn apply_command(s: &mut State, command: Command) {
     match command {
+        Command::Chat {
+            chat,
+            clear_question,
+        } => {
+            if clear_question {
+                s.chat_question.clear();
+            }
+            if !chat.available || s.analysis.is_none() {
+                s.chat_open = false;
+            }
+            s.chat = chat;
+        }
         Command::Config {
             ready,
             cultures,
@@ -248,10 +296,12 @@ fn apply_command(s: &mut State, command: Command) {
         }
         Command::Cleared => {
             let ready = s.ready;
+            let chat_available = s.chat.available;
             let cultures = s.cultures.clone();
             let data_notice = s.data_notice.clone();
             *s = State::default();
             s.ready = ready;
+            s.chat.available = chat_available;
             s.cultures = cultures;
             s.data_notice = data_notice;
         }

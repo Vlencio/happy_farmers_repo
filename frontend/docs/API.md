@@ -160,33 +160,25 @@ de chuva aceitam 0,01 mm de diferença pelo arredondamento do motor. Uma respost
 legada sem `descoberto` mantém os cards/calendários, com aviso de indisponibilidade.
 Os limites da hipótese de palhada aparecem no próprio painel.
 
-### Declividade: ponte preparada, API pendente
+### Declividade integrada
 
-A API consultada ainda rejeita `declividade_pct`. Por isso o front **omite** o
-campo com os metadados atuais. `getAnalysisSlope` só habilita o envio quando a API
-anuncia explicitamente a capability proposta abaixo, e o contorno coincide com
-o talhão de demonstração:
+A API integrada na Main `1519963` aceita `declividade_pct` opcional, finita entre
+0 e 100, e repassa o campo ao motor. `getAnalysisSlope` habilita o envio quando
+os metadados anunciam a capability abaixo e o contorno coincide com o talhão de
+demonstração:
 
 ```json
 {"capabilities": {"declividade_pct": true}}
 ```
 
-Esse sinal é uma proposta de integração, ainda não um campo entregue pelo backend.
-Quando estiver presente, o front envia `demo_field.terrain.decl_media_pct` validado
+Com esse sinal, o front envia `demo_field.terrain.decl_media_pct` validado
 entre 0 e 100, preservando zero. Nome, proximidade, centro e área aproximada não
 autorizam reutilizar a declividade. Para outros talhões, o campo continua omitido.
 O front não calcula o índice de erosão nem consulta uma fonte de relevo nova.
 
-**Mensagem para Pedro:**
-
-> Pedro, o front da Parte 2 já mostra dias sem cultura, dias expostos e chuva por
-> sequência e mês, usando `descoberto`. Falta a API aceitar `declividade_pct`
-> opcional, finita entre 0 e 100, e repassá-la ao motor; hoje ela rejeita o campo
-> com 422. Preparei o envio quando `/metadata` anunciar
-> `capabilities: {"declividade_pct": true}`. Ative esse sinal junto com o suporte
-> da entrada. O front enviará `demo_field.terrain.decl_media_pct` somente para o
-> contorno exato da demonstração e omitirá nos demais. O `indice_erosao` retornado
-> já tem apresentação pronta. Não foi necessário mudar o motor nesta etapa.
+Conferência real após essa integração: a tela enviou 4,05% e exibiu, para
+Soja → Milho, os índices 34,7 / 34,2 / 24 (hoje / futuro / ano seco), recebidos
+como 34,681 / 34,164 / 23,968 da API. Não houve simulação nesse teste.
 
 Validação local em 14/11/2026: 61 testes JS, 1 teste Rust, build WASM/web e as
 30 análises HTTP existentes passaram, com conferência dos totais mensais de
@@ -195,7 +187,118 @@ e 4 com suporte futuro explicitamente simulado) e cobre valores diferentes entre
 os 12 meses, seleção de mês, desktop/celular simulado e ausência do campo de
 declividade no POST para a API atual. A simulação confirma o envio de 4,05% no
 contorno exato, sua omissão em outro contorno e a exibição do índice com números
-sintéticos identificados; a API real ainda não fornece o cálculo com declividade.
+sintéticos identificados. Esse registro é anterior à integração da declividade;
+as expectativas antigas de ausência do índice em `browser-exposure.js` precisam
+ser atualizadas antes de reutilizar esse roteiro com a API nova.
+
+## Riscos e lacunas por estratégia — Parte 3
+
+O endpoint já repassa `sequencias[].avisos` (regra 17 do contrato). O adaptador
+`web/warnings.mjs` valida a lista e transforma os dados para `Recommendation.warnings`,
+com grupos `risks` e `gaps`. Não gera avisos por conta própria, altera índices ou
+interfere na escolha dos três objetivos. A referência atual recebe o mesmo tratamento.
+
+- Os cards mostram as contagens separadas, um aviso de cada tipo com contexto e
+  o número de avisos restantes no detalhe. O nome acessível inclui esse resumo.
+- O painel “Riscos e lacunas desta estratégia” mostra a lista inteira, separada
+  por tipo. Cada item identifica cultura/cenário/slot quando aplicável, explica o
+  ponto de atenção e apresenta os dados que o motor usou.
+- Os 11 códigos têm texto em português, com acentos e unidades. Valores monetários
+  são receita bruta por hectare; os fatores são índices, não probabilidades.
+- `avisos: []` significa apenas que as regras não sinalizaram avisos. Campo ausente
+  em uma resposta legada significa indisponibilidade, sem presumir lista vazia.
+- Código novo mantém o texto e os dados fornecidos, dentro do grupo indicado pelo
+  motor. Formato inválido causa erro de contrato, em vez de omitir um aviso.
+
+O ano seco observado (2020/21) é distinto do “ano ruim” do modo diário. O front
+não ativa o modo diário nesta etapa. `fator_limitante` permanece baseado no cálculo
+mensal; a limitação é explicada junto aos avisos. Benefícios específicos não são
+deduzidos pelo front: além do critério do card, a tela usa a lista `beneficios`
+entregue em `motor-diario` (`317f29a`), conforme a regra 18.
+
+`web/benefits.mjs` valida os seis códigos e produz `Recommendation.benefits`.
+Nos cards aparecem a contagem e o primeiro benefício; no detalhe, todos os itens
+com cultura, cenário e dados. Fixação e palhada são atributos/hipóteses do motor,
+não medições no talhão. Queda negativa de receita é apresentada como alta.
+`clima_favoravel` refere-se apenas a hoje/futuro, sem incluir o ano seco. Código
+novo preserva texto e evidências; lista ausente não é convertida em lista vazia.
+
+### Pendências para Pedro e dados
+
+Não falta campo de transporte para mostrar os avisos existentes. As colunas
+`preco_status` e `temp_calor_c_status` ainda não existem em `culturas.csv`, embora
+o motor já leia `<campo>_status`. Sem elas, os valores marcados como “memória” ou
+“sem fonte” na documentação não geram `valor_a_conferir` nos resultados reais.
+A lista estruturada de benefícios já foi entregue e está integrada à tela.
+
+Validação da entrega inicial em 14/11/2026: 72 testes JS (11 de avisos), 1 teste Rust, build
+WASM/web e 30 análises HTTP passaram. `tests/browser-warnings.js` passou 35
+verificações: 31 sem simulação e 4 com respostas explicitamente simuladas para
+campo ausente/lista vazia. O roteiro compara avisos da API real, rotação atual,
+histórico ausente, acentos, dados, teclado (Tab/Enter) e largura móvel de 390 px.
+As capturas `output/playwright/warnings-*.png`, relativas à raiz do repositório,
+foram inspecionadas em desktop e celular simulado. Sem erros de JavaScript;
+celular físico, leitor de tela e deploy não foram verificados nesta rodada.
+
+**Mensagem para Pedro:**
+
+> Pedro, integrei a `motor-diario`: os benefícios agora aparecem junto dos avisos,
+> e o chat está ligado à capability, com foco nos cards e histórico reenviado a
+> cada pergunta. Ainda faltam os status de origem com o Brenno: `preco_status`
+> para feijão, girassol e algodão; `temp_calor_c_status` para girassol e trigo.
+> No chat, precisamos alinhar a resposta ao limite de 4.000 caracteres por
+> mensagem do histórico: hoje uma resposta maior provoca 422 na pergunta seguinte.
+> Também vale rejeitar resposta vazia. O front já protege esses dois casos sem
+> perder a pergunta ou truncar a resposta. Falta testar uma resposta real da
+> Anthropic com credencial no servidor; localmente a capability está false.
+
+## Chat sobre a análise
+
+Contrato do endpoint entregue pelo Pedro: [docs/chat.md](../../docs/chat.md).
+O front não chama o provedor diretamente nem recebe chaves. `web/chat.mjs` envia
+`POST /chat` pelo mesmo endereço-base/proxy da análise. O painel Rune só é exibido
+quando `/metadata.capabilities.chat === true` e existe um resultado de análise.
+
+- `analise`: resposta original e completa do `/analyze`, preservada em memória.
+- `foco`: IDs únicos das três sugestões por objetivo e da rotação atual viável.
+  Referência descartada não é incluída. Não usa top 3 do ranking nem foco vazio;
+  se não há estratégias viáveis, o envio fica bloqueado com explicação.
+- `historico`: todos os pares de perguntas/respostas aceitos nessa conversa,
+  na ordem, com `papel` e `texto`. A pergunta nova vai separada em `pergunta`.
+- A pergunta aceita até 1.000 caracteres Unicode, após remover espaços nas pontas.
+  Envio pelo botão ou Ctrl+Enter; durante a consulta o campo fica desabilitado.
+- Cancelamento e timeout de cinco minutos preservam a pergunta e descartam a
+  resposta tardia. 422, 502, 503, JSON inválido e resposta vazia viram erro local
+  do chat, mantendo os cards e o histórico válido. `recusada: true` aparece com
+  a mensagem recebida e uma indicação de que a pergunta não foi respondida.
+- Sem armazenamento persistente do chat. Troca de área, histórico de culturas,
+  opções ou nova análise cancela a consulta e limpa a conversa. Navegar entre
+  cards/detalhes conserva a conversa da mesma análise; “Nova conversa” a reinicia.
+- Até dez pares completos (20 mensagens). Se uma resposta ultrapassa os 4.000
+  caracteres que o backend aceita no histórico, ela continua visível inteira,
+  mas uma nova pergunta exige “Nova conversa”. Não há truncamento silencioso.
+
+O painel informa antes do envio que pergunta, conversa e dados da análise em foco
+(incluindo coordenadas e histórico de culturas) vão à Anthropic. Texto é renderizado
+diretamente como texto simples pelo Rune, sem interpretar HTML ou Markdown.
+
+Verificação após integrar `589b16b`: 122 testes Python (91 raiz + 31 backend),
+97 JS (incluindo 12 de benefícios e 13 de chat), 1 Rust, 30 análises HTTP e build
+WASM/web passaram. As três fixtures do motor conferem com a saída real. O SDK
+declarado no backend foi instalado na `.venv`; nenhuma credencial foi configurada.
+O servidor local anuncia `chat: false`; a geração real com Anthropic continua
+sem validação. Testes do chat usam respostas de provedor simuladas.
+`tests/browser-benefits.js` passou 36 verificações com a API real, sem simulação:
+quatro cards, seis códigos, dados e escopo de cada benefício, referências distintas
+e tela móvel de 390 px. Capturas desktop/mobile foram inspecionadas; sem erros de
+JavaScript. Não foi necessário modificar o motor ou a API entregues pelo Pedro.
+`tests/browser-chat.js` passou 38 verificações: 33 explicitamente simuladas (22
+POSTs de chat interceptados) e 5 sem simulação, incluindo capability desligada,
+benefícios reais e ausência de erros. Conferiu foco, análise e histórico exatos,
+Ctrl+Enter, recusa, erros, limites, cancelamento, respostas antigas e nova análise.
+Alertas e estados de espera/cancelamento expõem nome e texto acessíveis. As capturas
+`output/playwright/chat-*.png` foram inspecionadas em desktop e 390 px. Nenhuma
+chamada foi feita à Anthropic; celular físico e leitor de tela não foram testados.
 
 ## Contexto do talhão (G2)
 
