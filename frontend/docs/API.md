@@ -152,6 +152,8 @@ pelo motor. Não há seleção por receita, solo ou encaixe, nem desempate no fr
 Se vierem duas, uma ou nenhuma sequência viável, a tela mostra somente as existentes.
 Cada card apresenta `rank_hoje`, `hoje.score`, `rank_futuro` e `futuro.score`, também
 disponíveis no detalhe. O ranking futuro usa os mesmos pesos, mas não muda a ordem dos cards.
+Notas a menos de 2 pontos (do líder, do 3º para a 4ª sequência e entre vizinhas no
+futuro) viram “Technical tie” no card; ver “Empate técnico na comparação”.
 
 Os três controles têm os níveis 0 (sem peso), 1 (baixo), 2 (médio) e 3 (alto).
 Cada critério explica o que favorece: atendimento da necessidade de água,
@@ -586,12 +588,29 @@ restaurada para `hospedeiro_comum`, que agora tem apresentação própria.
 
 ### Empate técnico na comparação
 
-Quando a diferença das duas primeiras notas **de hoje** é menor que 2 pontos,
-os cards próximos ao líder recebem “Empate técnico”. O terceiro só entra se
-também estiver a menos de 2 pontos do primeiro, sem encadear diferenças.
-A mesma sequência na referência recebe a mesma indicação. É uma faixa de
-apresentação solicitada pelo time, não um teste estatístico. Não modifica
-`rank_hoje`, score, ordem, foco do chat ou escolha das três sequências.
+`tie_note` junta até três avisos, todos com o mesmo limite de 2 pontos (estrito):
+
+1. **Líder, hoje** (“Technical tie · today”): quando a diferença das duas primeiras
+   notas de hoje é menor que 2 pontos, os cards próximos ao líder recebem o aviso.
+   O terceiro só entra se também estiver a menos de 2 pontos do primeiro, sem
+   encadear diferenças.
+2. **3º e 4º, hoje** (15/11): se o 3º card está a menos de 2 pontos da 4ª sequência
+   de hoje, ele recebe “Technical tie · today with the next sequence (#4), which is
+   not shown in the cards” (“…, also with…” se já estiver na faixa do líder). É a
+   fronteira que muda os cards. Fevereiro (fixture): 3º 73,55, 4º 73,47.
+3. **Futuro** (15/11): no ranking de `rank_futuro`, se a sequência de um card está a
+   menos de 2 pontos da vizinha de cima ou de baixo, o card recebe “Technical tie ·
+   future with #N in the future ranking” (N = posição futura da vizinha, card ou não).
+   Outubro (fixture): os três cards, 77,5 / 77,0 / 75,6 no futuro.
+
+`ranking_note` explica os avisos presentes, com a mesma ressalva de antes. No detalhe,
+a tela mostra o `tie_note` do card seguido do `ranking_note`. A mesma sequência na
+referência recebe o mesmo `tie_note`; a referência fora dos três cards não recebe.
+Motivo da mudança: revisão estatística de 15/11 mostrou que a regra só do líder marcava
+líderes robustos e não via a fronteira 3º/4º nem os empates no futuro.
+É uma faixa de apresentação solicitada pelo time, não um teste estatístico nem
+probabilidade. Não modifica `rank_hoje`, `rank_futuro`, score, ordem, foco do chat ou
+escolha das três sequências.
 
 ### Faixas futuras por modelo
 

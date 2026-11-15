@@ -486,12 +486,16 @@ test('malformed error bodies and null metadata produce readable errors, not Type
 test('near-leading scores are shown as a technical tie without changing engine ranks, scores, or current reference', () => {
   const view = mapMotorAnalysis(fixture, farm);
   assert.match(view.ranking_note, /Technical tie among the top three.*less than 2 points.*not exact equality/);
-  assert.ok(view.recommendations.every(card => card.tie_note === 'Technical tie · today'));
+  assert.ok(view.recommendations.every(card => card.tie_note.startsWith('Technical tie · today.')));
   assert.equal(view.current_rotation.strategy.tie_note, view.recommendations.find(card => card.sequence_id === view.current_rotation.strategy.sequence_id).tie_note);
   assert.deepEqual(view.recommendations.map(card => card.sequence_id), fixture.sequencias.slice(0, 3).map(seq => seq.id));
   assert.deepEqual(view.recommendations.map(card => card.rank_facts[0].value), ['#1', '#2', '#3']);
   assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['78.2 / 100', '77.9 / 100', '76.5 / 100']);
 });
+
+// Synthetic future scores 3 points apart, so only the today rules are exercised.
+const spreadFuture = data => [...data.sequencias].sort((a, b) => a.rank_futuro - b.rank_futuro)
+  .forEach((seq, i) => { seq.futuro.score = 95 - 3 * i; });
 
 test('tie threshold is strict and measured from the leader rather than chaining adjacent scores', () => {
   // Synthetic scores exercise the display threshold, not a new motor calculation.
@@ -504,8 +508,10 @@ test('tie threshold is strict and measured from the leader rather than chaining 
   ]) {
     const data = copy();
     data.sequencias.slice(0, 3).forEach((seq, i) => { seq.hoje.score = scores[i]; });
+    spreadFuture(data);
     const view = mapMotorAnalysis(data, farm);
     assert.deepEqual(view.recommendations.map(card => Boolean(card.tie_note)), expected);
+    assert.ok(view.recommendations.every(card => !card.tie_note || card.tie_note === 'Technical tie · today'));
     assert.equal(Boolean(view.ranking_note), expected[0]);
     assert.equal(Boolean(view.current_rotation.strategy.tie_note), expected[1]);
     assert.deepEqual(view.recommendations.map(card => card.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
@@ -522,6 +528,7 @@ test('current reference gets a tie only when its own sequence belongs to the lea
   // The third card is close to the second, but outside the strict two-point band of the leader.
   const data = copy();
   data.sequencias.slice(0, 3).forEach((seq, i) => { seq.hoje.score = [90, 89, 87.5][i]; });
+  spreadFuture(data);
   const current = data.sequencias[2];
   data.entrada.rotacao_atual = [...current.culturas];
   data.atual = { id: current.id, culturas: current.culturas, viavel: true, motivo: null };
@@ -531,6 +538,55 @@ test('current reference gets a tie only when its own sequence belongs to the lea
   assert.equal(view.current_rotation.strategy.tie_note, '');
   assert.equal(view.current_rotation.strategy.sequence_id, current.id);
   assert.deepEqual(view.current_rotation.strategy.rank_facts, view.recommendations[2].rank_facts);
+});
+
+test('third card is marked when the hidden fourth sequence of today is less than 2 points below', () => {
+  const note = 'Technical tie · today with the next sequence (#4), which is not shown in the cards';
+  // Real February fixture: #3 feijao>soja 73.55 and #4 crotalaria>milho 73.47.
+  const feb = mapMotorAnalysis(february, farm);
+  assert.ok(feb.recommendations[2].tie_note.startsWith(`${note}.`));
+  assert.match(feb.ranking_note, /top two.*third suggestion is also less than 2 points above the next sequence \(#4\), which is not shown in the cards/);
+  assert.deepEqual(feb.recommendations.map(card => card.sequence_id), february.sequencias.slice(0, 3).map(seq => seq.id));
+  for (const [scores, expected] of [
+    [[90, 85, 80, 78.001], note],
+    [[90, 85, 80, 78], ''],
+    [[90, 89, 88.5, 87], 'Technical tie · today, also with the next sequence (#4), which is not shown in the cards'],
+  ]) {
+    const data = copy();
+    data.sequencias.slice(0, 4).forEach((seq, i) => { seq.hoje.score = scores[i]; });
+    spreadFuture(data);
+    const view = mapMotorAnalysis(data, farm);
+    assert.equal(view.recommendations[2].tie_note, expected);
+    assert.equal(view.recommendations.length, 3);
+    assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), scores.slice(0, 3).map(score => `${score.toLocaleString('en-US', { maximumFractionDigits: 1 })} / 100`));
+  }
+});
+
+test('future ties compare each card with the adjacent sequences of the future ranking', () => {
+  // Real October fixture: future 77.5, 77.0 and 75.6 for the three cards.
+  const oct = mapMotorAnalysis(fixture, farm);
+  assert.deepEqual(oct.recommendations.map(card => card.tie_note.split('. ')[1]), [
+    'Technical tie · future with #2 in the future ranking',
+    'Technical tie · future with #1 and #3 in the future ranking',
+    'Technical tie · future with #2 in the future ranking',
+  ]);
+  assert.match(oct.ranking_note, /Technical tie · future.*adjacent sequence in the future ranking.*not exact equality/);
+  // Today far apart; the third card's future neighbour (#4) is not a card.
+  const data = copy();
+  data.sequencias.forEach((seq, i) => { seq.hoje.score = 95 - 3 * i; });
+  spreadFuture(data);
+  const byFuture = [...data.sequencias].sort((a, b) => a.rank_futuro - b.rank_futuro);
+  byFuture[3].futuro.score = byFuture[2].futuro.score - 1.99;
+  let view = mapMotorAnalysis(data, farm);
+  const third = view.recommendations.find(card => card.sequence_id === byFuture[2].id);
+  assert.equal(third.tie_note, 'Technical tie · future with #4 in the future ranking');
+  assert.deepEqual(view.recommendations.filter(card => card.tie_note).map(card => card.sequence_id), [byFuture[2].id]);
+  assert.match(view.ranking_note, /^Cards marked “Technical tie · future”/);
+  byFuture[3].futuro.score = byFuture[2].futuro.score - 2;
+  view = mapMotorAnalysis(data, farm);
+  assert.ok(view.recommendations.every(card => card.tie_note === ''));
+  assert.equal(view.ranking_note, '');
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[2].value), data.sequencias.slice(0, 3).map(seq => `#${seq.rank_futuro}`));
 });
 
 test('raw sequence water attendance is shown separately from the rescaled water score and is optional on legacy responses', () => {
