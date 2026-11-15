@@ -100,17 +100,22 @@ review", Climatic Change 109:583–598, lido no PDF.
 |---|---|---|---|
 | milho | 35 | acima de 35 °C o pólen perde a viabilidade | conferido |
 | feijão | 32 | produção falha a 32 °C; 32/27 °C (dia/noite) reduz muito a formação de vagens | conferido |
-| algodão | 32 | acima de 32 °C o pólen perde viabilidade; 40/32 °C zera a produção | conferido |
+| algodão | 35 | Luo (2011): acima de 32 °C o pólen perde viabilidade; 40/32 °C zera a produção. Mudado de 32 para 35 em 15/11, a pedido da revisão agronômica; ver abaixo | conferido (Reddy et al. 1992; FAO) |
 | sorgo | 36 | acima de 36/26 °C a emissão da panícula atrasa; a 44/34 °C não forma panícula | conferido |
 | soja | 38 | o regime 38/30 °C reduz a produção de pólen em 34%; média de 39 °C é letal | conferido; é a cultura com o limiar menos direto |
 | girassol | 35 | não aparece na revisão | **sem fonte**: usa o limiar geral |
 | trigo | 32 | | **memória**, não conferido na revisão |
 | milheto, braquiária, crotalária | vazio | culturas de cobertura, sem grãos | a regra de calor não se aplica |
 
+Algodão a 35 °C (15/11). Com 32 °C e a perda 1 para 1 do motor, o encaixe de calor do algodão de dezembro no talhão de demonstração era 0,74 hoje, o que implicaria perda de 26% ou mais também no algodão do MT e da BA, de onde vem a produtividade média da Conab usada na tabela. Fontes do novo valor:
+- Reddy, K. R.; Reddy, V. R.; Hodges, H. F. (1992). Temperature effects on early season cotton growth and development. Agronomy Journal 84(2):229–237, doi:10.2134/agronj1992.00021962008400020021x (resumo lido no AGRIS/FAO). Câmara, dia/noite: a 30/22 °C todos os botões e maçãs ficam; a 35/27 °C cai 10%; a 40/32 °C caem todos os botões. Ou seja, 35 °C de máxima é onde a perda começa a aparecer.
+- FAO, Land & Water, Crop information: cotton (base: Doorenbos e Kassam, FAO Irrigação e Drenagem 33). Para botão e florescimento, máxima diurna até 40 °C e noturna até 27 °C; maçã com ótimo de 27–32 °C e produtividade menor acima de 38 °C. Lido em trechos de busca das versões fr/es; a página retornou 404 em 15/11.
+- Contra: revisões de câmara apontam sensibilidade do pólen a partir de 28–32 °C (Luo 2011; Zahid et al. 2016, Frontiers in Plant Science 7:937). 35 °C é a máxima do ar a 2 m, não a do dossel, e fica no meio entre as duas leituras. Os experimentos são em câmara; a lavoura de MT/BA convive com máximas acima de 32 °C sem perder um quarto da produção.
+
 Cuidados:
 - Os valores vêm de experimentos em câmara, com temperatura do ar no dossel. A Tmax de reanálise corrigida é uma aproximação.
 - O dano acontece no florescimento, não no ciclo todo. As tabelas de clima contam dias por mês; o motor decide em que parte do ciclo aplicar.
-- Dias acima do limiar dentro do ciclo, hoje → 2041–2060: milho safra 18 → 35; milho safrinha 4 → 20; soja 4 → 12; sorgo safrinha 2 → 8; feijão safra 33 → 61; algodão 45 → 99.
+- Dias acima do limiar dentro do ciclo, hoje → 2041–2060: milho safra 18 → 35; milho safrinha 4 → 20; soja 4 → 12; sorgo safrinha 2 → 8; feijão safra 33 → 61; algodão 45 → 99 (com o limiar antigo de 32 °C).
 
 ## Produtividade — Conab, 10º levantamento da safra 2024/25 (jul/2025), média Brasil
 
