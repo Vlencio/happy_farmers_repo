@@ -95,6 +95,7 @@ Script: `scripts/montar_clima.py` · 12 linhas cada, uma por mês
 | `data/clima_futuro.csv` | hoje + (NEX `ssp245` − `historical`), média dos 3 modelos |
 | `data/clima_seco.csv` | o ano agrícola (jul–jun) com menos chuva no POWER 2005–2024: a safra **2020/21** |
 | `data/clima_correcoes.csv` | offsets da A520 e deltas do NEX por mês, para conferência |
+| `data/clima_modelos.csv` | delta do NEX por modelo e mês, antes da média (`modelo`, `mes`, `delta_chuva_mm`, `delta_tmin_c`, `delta_tmax_c`); só o talhão de demonstração. A média dos três é o delta de `clima_futuro` |
 
 **Ano seco.** É um ano real, não uma média, no mesmo formato das outras tabelas, então o motor roda nele sem mudança. O script escolhe sozinho o ano agrícola completo com menos chuva.
 
