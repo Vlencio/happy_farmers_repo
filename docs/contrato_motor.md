@@ -264,6 +264,7 @@ Os três cards da tela não são as três primeiras de `sequencias`: cada um esc
 | `limiar_de_calor_pouco_confiavel` | lacuna | Cultura com limiar de 32 °C, em que POWER e NEX mais diferem | `temp_calor_c` |
 | `sem_valor_de_mercado` | lacuna | Cultura com preço zero (as de cobertura), já contando o preço editado | — |
 | `ky_padrao` | lacuna | Só no modo diário: cultura fora da tabela de Ky da FAO | `ky` |
+| `geada` | risco | Só no modo diário, por cultura e clima: mínima de 3 °C ou menos no ciclo em algum ano | `anos`, `n_anos`, `dias_total`, `max_no_ano`, `limiar_c`, `slot` |
 | `valor_a_conferir` | lacuna | A tabela de culturas tem `<campo>_status` preenchido para a cultura | `campo`, `status`, `valor` |
 
 18. **Benefícios:** cada sequência viável traz a lista `beneficios`, no formato dos avisos sem `tipo`. Cada benefício sai de um atributo ou número que o motor usa: nada de benefício agronômico que não entre na conta. A lista explica o resultado; não muda score nem rank. Uma cultura repetida na sequência conta uma vez em `fixa_nitrogenio` e `deixa_palhada`.
@@ -309,6 +310,7 @@ Um DataFrame com uma linha por dia, sem dias faltando.
 7. **Futuro:** a série de hoje com a mudança mensal entre `clima_futuro` e `clima_hoje`. Nas temperaturas, soma a diferença do mês; na chuva e no ET0, multiplica pela razão do mês (dia sem chuva continua sem chuva). Funciona para qualquer ponto que tenha as duas tabelas.
 8. **Resumo:** para cada sequência e clima, a mediana e o valor do ano ruim de `agua`, `solo` e `receita_ha` entre os anos. O ano ruim é o valor na posição 20% da lista ordenada: com 19 anos, o 4º pior. Cada parte tem o seu ano ruim; não é um único ano.
 9. **Renda, score e rank:** `renda` = receita ÷ a maior receita do ano mediano entre as sequências, hoje e no futuro. O `score` usa os mesmos pesos da entrada. Há um rank para o ano mediano e outro para o ano ruim, em cada clima.
+10. **Geada e chuva extrema (Parte 4):** em cada ano, o motor conta os dias do ciclo de cada cultura com `tmin_c` de 3 °C ou menos (geada) e com chuva acima do limiar de chuva extrema. Geada com mínima no abrigo de até 3 °C é o critério usual no Brasil (Grodzki et al., 1996; Embrapa Trigo): o ar no abrigo fica de 3 a 6 °C mais quente que a superfície das plantas. Chuva extrema é o dia acima do percentil 95 dos dias com pelo menos 1 mm na série de hoje (índice R95p do ETCCDI); o mesmo limiar vale no futuro, para a contagem mostrar a mudança. As contagens não mudam produtividade, score nem rank. Geada em algum ano vira o aviso `geada`; chuva extrema não vira aviso, porque por definição acontece todo ano no período chuvoso, e fica só como número.
 
 Ky por cultura (FAO-56, tabela 24, que repete o FAO Irrigation and Drainage Paper 33), em `KY` no topo de `motor/motor.py`:
 
@@ -330,7 +332,8 @@ Uma coluna `ky` em `culturas.csv`, se existir, vale no lugar da tabela.
 No topo:
 
 ```json
-{"diario": {"anos": [2005, 2006, "...", 2023], "n_anos": 19, "quantil_ruim": 0.2}}
+{"diario": {"anos": [2005, 2006, "...", 2023], "n_anos": 19, "quantil_ruim": 0.2,
+            "limiar_geada_c": 3.0, "limiar_chuva_extrema_mm": 24.67}}
 ```
 
 Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro, histórico soja, milho):
@@ -347,7 +350,9 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
           "cultura": "milho",
           "slot": "safrinha",
           "mediano": {"atendimento_hidrico": 0.777, "fator_agua": 0.721, "encaixe_calor": 1.0, "fator": 0.613, "receita_ha": 4050.442},
-          "ruim":    {"atendimento_hidrico": 0.625, "fator_agua": 0.532, "encaixe_calor": 1.0, "fator": 0.452, "receita_ha": 2984.592}
+          "ruim":    {"atendimento_hidrico": 0.625, "fator_agua": 0.532, "encaixe_calor": 1.0, "fator": 0.452, "receita_ha": 2984.592},
+          "eventos": {"geada": {"anos": 0, "dias_total": 0.0, "max_no_ano": 0.0},
+                      "chuva_extrema": {"anos": 15, "dias_total": 45.0, "max_no_ano": 9.0}}
         },
         { "...": "soja, na safra" }
       ],
@@ -363,6 +368,8 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
 | `mediano`, `ruim` | Mediana e ano ruim de cada parte entre os anos, com `renda`, `score` e `rank` próprios |
 | `pior_ano` | O ano de menor receita da sequência (em empate, o de menos água) |
 | `culturas[]` | Por cultura: mediana e ano ruim do atendimento hídrico, do `fator_agua`, do encaixe de calor, do `fator` e da receita |
+| `culturas[].eventos` | Por cultura, `geada` e `chuva_extrema` no ciclo (regra 10 do modo diário): `anos` com pelo menos um dia, `dias_total` somando os anos e `max_no_ano`. Os números da `eventos` acima são ilustrativos |
+| `limiar_geada_c`, `limiar_chuva_extrema_mm` | No topo de `diario`: os limiares usados. O de chuva sai da série de hoje (24,67 mm no talhão de demonstração) |
 | `anos[]` | `agua`, `solo` e `receita_ha` de cada ano. Serve para um gráfico |
 
 Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (2020).

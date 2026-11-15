@@ -466,7 +466,7 @@ class TestDiario(unittest.TestCase):
         self.assertNotIn("diario", sem["sequencias"][0])
         com = json.loads(json.dumps(self.saida))
         com.pop("diario")
-        so_no_diario = ("ky_padrao", "queda_no_ano_ruim")  # avisos que dependem da serie
+        so_no_diario = ("ky_padrao", "queda_no_ano_ruim", "geada")  # avisos que dependem da serie
         for s in com["sequencias"]:
             s.pop("diario")
             s["avisos"] = [a for a in s["avisos"] if a["codigo"] not in so_no_diario]
@@ -739,6 +739,64 @@ class TestAvisos(unittest.TestCase):
         self.assertEqual(self.avisos("soja>milho", saida, "ky_padrao"), [])
         # sem a serie, esses dois avisos nao existem
         self.assertEqual(self.avisos("soja>crotalaria", codigo="ky_padrao"), [])
+
+
+class TestEventos(unittest.TestCase):
+    """Modo diario: dias de geada e de chuva extrema no ciclo de cada cultura (Parte 4)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.base = serie_das_medias(cls.dados[1], 2001, 2010)
+
+    def rodar(self, serie):
+        return recomendar(ENTRADA, *self.dados, diario=serie)
+
+    def culturas(self, saida, seq_id, cenario):
+        return next(s for s in saida["sequencias"] if s["id"] == seq_id)["diario"][cenario]["culturas"]
+
+    def test_sem_frio_nao_ha_geada(self):
+        saida = self.rodar(self.base)
+        self.assertEqual(saida["diario"]["limiar_geada_c"], motor.LIMIAR_GEADA_C)
+        for c in self.culturas(saida, "soja>milho", "hoje"):
+            self.assertEqual(c["eventos"]["geada"], {"anos": 0, "dias_total": 0.0, "max_no_ano": 0.0})
+        self.assertFalse(any(a["codigo"] == "geada" for s in saida["sequencias"] for a in s["avisos"]))
+
+    def test_geada_no_ciclo_vira_aviso(self):
+        serie = self.base.copy()
+        # dois dias frios em mar/2004, no milho safrinha de soja>milho (plantio em fevereiro)
+        frio = serie["data"].isin(pd.to_datetime(["2004-03-10", "2004-03-11"]))
+        serie.loc[frio, "tmin_c"] = motor.LIMIAR_GEADA_C
+        saida = self.rodar(serie)
+        soja, milho = self.culturas(saida, "soja>milho", "hoje")
+        self.assertEqual(milho["eventos"]["geada"], {"anos": 1, "dias_total": 2.0, "max_no_ano": 2.0})
+        self.assertEqual(soja["eventos"]["geada"]["anos"], 0)
+        seq = next(s for s in saida["sequencias"] if s["id"] == "soja>milho")
+        (a,) = [a for a in seq["avisos"] if a["codigo"] == "geada" and a["cenario"] == "hoje"]
+        self.assertEqual((a["cultura"], a["dados"]["anos"], a["dados"]["n_anos"]), ("milho", 1, saida["diario"]["n_anos"]))
+        # o aviso nao muda score nem ordem
+        sem = self.rodar(self.base)
+        self.assertEqual([s["id"] for s in saida["sequencias"]], [s["id"] for s in sem["sequencias"]])
+
+    def test_chuva_extrema_usa_o_percentil_da_serie_de_hoje(self):
+        serie = self.base.copy()
+        dia = serie["data"] == pd.Timestamp("2003-11-15")  # soja de 2003/04, em pe
+        serie.loc[dia, "chuva_mm"] = 200.0
+        saida = self.rodar(serie)
+        com_chuva = serie.loc[serie["chuva_mm"] >= motor.DIA_COM_CHUVA_MM, "chuva_mm"]
+        self.assertAlmostEqual(
+            saida["diario"]["limiar_chuva_extrema_mm"], float(com_chuva.quantile(0.95)), places=2
+        )
+        soja = self.culturas(saida, "soja>milho", "hoje")[0]["eventos"]["chuva_extrema"]
+        base = self.culturas(self.rodar(self.base), "soja>milho", "hoje")[0]["eventos"]["chuva_extrema"]
+        self.assertEqual(soja["dias_total"] - base["dias_total"], 1.0)
+
+    def test_futuro_usa_o_mesmo_limiar(self):
+        saida = self.rodar(self.base)
+        hoje = self.culturas(saida, "soja>milho", "hoje")[0]["eventos"]["chuva_extrema"]
+        futuro = self.culturas(saida, "soja>milho", "futuro")[0]["eventos"]["chuva_extrema"]
+        self.assertIn("limiar_chuva_extrema_mm", saida["diario"])
+        self.assertEqual(set(hoje), set(futuro))
 
 
 class TestBeneficios(unittest.TestCase):

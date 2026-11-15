@@ -21,7 +21,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
-| 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
+| 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
@@ -130,16 +130,25 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "frost risk, extreme precipitation".
 
-**Hoje:** nada. A conferência do plano anterior deu zero dia de geada no talhão de demonstração (menor mínima de 2005 a 2024: 4,2 °C, sem a correção da estação). A chuva só entra como total do ciclo.
+**Hoje (15/11, `motor-diario`):** o modo diário conta, por cultura, ano e clima, os dias do ciclo com geada e com chuva extrema (regra 10 do modo diário no contrato). Não muda score nem rank.
+
+- Geada: mínima no abrigo de 3 °C ou menos (Grodzki et al., 1996; Embrapa Trigo). Vira o aviso `geada`.
+- Chuva extrema: acima do percentil 95 dos dias com chuva da série de hoje (R95p do ETCCDI), 24,7 mm no talhão de demonstração. Fica só como número: por definição acontece todo ano no período chuvoso.
+- Talhão de demonstração, com a correção da A520: um dia de geada em 19 anos, 1/jul/2021 (2,2 °C), a onda de frio de 2021. Só o milho safrinha de `milho>milho` pega esse dia. Soja na safra: chuva extrema em 18 de 19 anos, 69 dias no total; no futuro, 64.
+
+**Feito:**
+
+- [x] Motor, modo diário: dias de geada e de chuva extrema por cultura e ano, com `anos`, `dias_total` e `max_no_ano`.
+- [x] Limiares com fonte.
+- [x] Decidido: só aviso, sem desconto na produtividade.
 
 **Falta:**
 
-- [ ] Motor, modo diário: contar por cultura e ano os dias do ciclo com mínima abaixo de um limiar de geada e os dias com chuva acima de um limiar de chuva extrema. A série diária já tem as duas colunas.
-- [ ] Definir os dois limiares com fonte (de memória: geada com mínima no abrigo abaixo de uns 3 °C; conferir).
-- [ ] Decidir se viram desconto na produtividade ou só aviso (Parte 3).
-- [ ] Para o sul de Minas a geada pode não ser zero: depende da Parte 8 (série diária por ponto).
+- [ ] API e tela: dependem do modo diário na API (Parte 8). Sem ele, os números não chegam à tela.
+- [ ] Para o sul de Minas a geada pode não ser zero: depende da série diária por ponto (Parte 8).
+- [ ] POWER é grade de cerca de 50 km; a mínima real no talhão pode ser mais baixa em baixadas.
 
-**Feito quando:** a saída do modo diário traz dias de geada e de chuva extrema por cultura, e a tela mostra a frase correspondente, mesmo que seja "nenhum dia em 19 anos".
+**Feito quando:** a saída do modo diário traz dias de geada e de chuva extrema por cultura (feito), e a tela mostra a frase correspondente, mesmo que seja "nenhum dia em 19 anos".
 
 ## Parte 5 — Prioridades e restrições do agricultor
 
