@@ -367,10 +367,15 @@ function closeLeaders(sequences) {
   return new Set(sequences.slice(0, 3).filter(close).map(seq => seq.id));
 }
 
-function discardedReason(seq) {
+// The API sends the demo field's SRTM elevation whenever it uses the demo climate,
+// including boundaries drawn within 25 km. Only the exact demo boundary is "this field".
+function discardedReason(seq, demoBoundary = false) {
   const r = seq.motivo;
   if (Object.hasOwn(r, 'altitude_min_m')) {
-    return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) requires a minimum elevation of ${number(r.altitude_min_m, 2)} m; this field is at ${number(r.altitude_m, 2)} m. Excluded by the engine due to elevation.`;
+    const where = demoBoundary
+      ? `this field is at ${number(r.altitude_m, 2)} m`
+      : `the demonstration field, whose climate is used here, is at ${number(r.altitude_m, 2)} m; this boundary has no elevation data of its own`;
+    return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) requires a minimum elevation of ${number(r.altitude_min_m, 2)} m; ${where}. Excluded by the engine due to elevation.`;
   }
   return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) ${r.mes_plantio === null ? `has no planting window in the ${seasonLabel(r.slot).toLowerCase()}` : `is planted in ${MONTHS[r.mes_plantio - 1]}, but the field is only available in ${MONTHS[r.mes_livre - 1]}`}.`;
 }
@@ -418,7 +423,7 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
   };
 }
 
-function currentRotation(value, farm, priorityNote, tied) {
+function currentRotation(value, farm, priorityNote, tied, demoBoundary = false) {
   const state = (status, description, strategy = null) => ({ status, title: 'Current rotation', description, strategy });
   const history = value.entrada.rotacao_atual;
   if (!history.length) return state('no_history', 'Add your crop history to compare the current rotation with the alternatives.');
@@ -439,7 +444,7 @@ function currentRotation(value, farm, priorityNote, tied) {
   const discarded = hasReference
     ? value.atual?.viavel === false && value.atual
     : value.descartadas.find((item) => item.atual);
-  if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'The reference rotation was excluded due to elevation.' : 'The reference rotation does not fit the selected calendar.'} ${discardedReason(discarded)}${repetition}`);
+  if (discarded) return state('discarded', `${Object.hasOwn(discarded.motivo, 'altitude_min_m') ? 'The reference rotation was excluded due to elevation.' : 'The reference rotation does not fit the selected calendar.'} ${discardedReason(discarded, demoBoundary)}${repetition}`);
   return state('unavailable', 'The current rotation could not be identified in this result. Available alternatives are shown below.');
 }
 
@@ -479,7 +484,7 @@ function climateSources(origin, dataNotice, demo) {
   };
 }
 
-export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
+export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '', demoBoundary = false } = {}) {
   const value = validateMotorOutput(raw);
   const adjustment_note = adjustmentNote(validateOutputAdjustment(value.entrada));
   const priorities = value.entrada.prioridades;
@@ -489,7 +494,7 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
   const ranking_note = tied.size
     ? `Technical tie among the top ${tied.size === 2 ? 'two' : 'three'} suggestions: their scores are less than 2 points below the leader. This is a comparison band, not exact equality or a statistical guarantee. Compare the other indicators too.`
     : '';
-  const current_rotation = currentRotation(value, farm, priority_note, tied);
+  const current_rotation = currentRotation(value, farm, priority_note, tied, demoBoundary);
   // The engine owns ranking and tie-breaking. Keep its order, including cover crops.
   const recommendations = value.sequencias.slice(0, 3).map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
     category: CATEGORIES[i], metric: `${number(seq.hoje.score)} / 100`,
@@ -503,7 +508,7 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
         ? 'Dry year: a what-if scenario applied to the 2020/21 baseline. The displayed values have been adjusted by the engine; they are not the original observations. Details compare it with the same adjustment as the other scenarios.'
         : 'Dry year: observations from 2020/21, not an average or a forecast. Details include this comparison; cards show today’s highest-ranked options using your priorities.'
       : 'Dry-year comparison is not available in this engine response.',
-    priority_note, adjustment_note, current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
+    priority_note, adjustment_note, current_rotation, recommendations, discarded: value.descartadas.map((seq) => discardedReason(seq, demoBoundary)) };
 }
 
 async function readResponse(response) {

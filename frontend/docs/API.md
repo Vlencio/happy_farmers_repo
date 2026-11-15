@@ -136,6 +136,14 @@ altitude do talhão e mês de plantio preenchido. Apresenta a mínima exigida e
 a altitude informada, inclusive na referência atual, sem atribuir o descarte
 ao calendário. Motivos antigos sem esses campos mantêm o texto de época.
 
+A altitude é sempre a média SRTM do talhão de demonstração, também para um
+contorno desenhado a até 25 km que recebe o clima da demonstração. Por isso a
+tela só diz "this field is at …" quando o contorno é exatamente o da
+demonstração (`matchesDemoBoundary`, o mesmo critério da declividade); nos
+outros casos diz "the demonstration field, whose climate is used here, is at
+… m; this boundary has no elevation data of its own". `main.mjs` passa
+`demoBoundary` para `mapMotorAnalysis`; o padrão é o texto da demonstração.
+
 No clima de demonstração, o trigo deixa de ser viável abaixo de 800 m; segue
 no catálogo para histórico e para pontos onde a API não informou altitude.
 As fixtures canônicas de `backend.export_fixture` continuam sendo chamadas

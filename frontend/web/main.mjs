@@ -3,7 +3,7 @@ import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings, supportsAdjustment, assertAdjustmentApplied } from './api.mjs';
 import { englishApiError } from './external-text.mjs';
-import { buildFieldContext, getAnalysisSlope } from './field.mjs';
+import { buildFieldContext, getAnalysisSlope, matchesDemoBoundary } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
 import { createChatSession } from './chat.mjs';
@@ -164,7 +164,8 @@ async function dispatch(action) {
         if (id !== requestId) return;
         assertAdjustmentApplied(raw, request);
         assertSoilApplied(raw, request);
-        const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
+        const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice,
+          demoBoundary: matchesDemoBoundary(farm, metadata.demo_field?.boundary) });
         send({ type: 'analysis', analysis: result });
         chat.setAnalysis(raw, result);
       } catch (error) {
