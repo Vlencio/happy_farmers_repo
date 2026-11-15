@@ -110,7 +110,7 @@ Escolhemos regras por três motivos:
 
 1. **Não há dado para treinar.** Seria preciso produtividade por talhão e por ano. Temos 20 anos de clima diário num ponto e a produtividade do IBGE só de 2025, no nível do estado.
 2. **O futuro está fora do passado.** Um modelo treinado com 2005–2024 teria de extrapolar para 2041–2060. As regras aplicam a mesma física (evapotranspiração, balanço de água) ao clima projetado.
-3. **Dá para conferir e discordar.** Se um valor da tabela estiver errado, troca-se o valor e o efeito é previsível. Valores ainda sem fonte aparecem como aviso na própria recomendação.
+3. **Dá para conferir e discordar.** Se um valor da tabela estiver errado, troca-se o valor e o efeito é previsível. Valores da tabela de culturas ainda sem fonte aparecem como aviso na própria recomendação.
 
 O que essa escolha perde:
 
