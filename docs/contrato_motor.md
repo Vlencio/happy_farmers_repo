@@ -233,7 +233,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 
 `rank_hoje`, `rank_futuro`, `hoje`, `futuro`, a ordem de `sequencias` e `descartadas` não mudam com o ano seco.
 
-`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam N com horizonte 1 e N² com horizonte 2, sendo N o número de culturas da tabela. Com a tabela atual (10 culturas, com o trigo) e talhão livre em outubro, são 26 viáveis e 74 descartadas. `sequencias` pode vir vazia.
+`sequencias` vem ordenada por `rank_hoje` e só tem as sequências viáveis. As outras vão para `descartadas`, sem score nem rank. Juntas somam N com horizonte 1 e N² com horizonte 2, sendo N o número de culturas da tabela. Com a tabela atual (10 culturas, com o trigo), histórico soja, milho e talhão livre em outubro, são 32 viáveis e 68 descartadas sem `altitude_m` (desde a janela de plantio, regra 3). `sequencias` pode vir vazia.
 
 | Campo | Significado |
 |---|---|
@@ -258,7 +258,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
 | `dias_apos_anterior` | Dias do fim do ciclo da cultura anterior até o plantio desta (regra 10). Para a 1ª cultura, conta a partir do fim suposto da última do histórico (10 dias antes do talhão livre); `null` sem histórico |
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
-| `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. Sem `altitude_min_m` (fora da época): `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês. Com `altitude_min_m` e `altitude_m` (fora da altitude, regra 21): a sequência cabe no calendário, mas a cultura pede altitude maior que a do talhão; `mes_plantio` e `mes_livre` são os do calendário, sem conflito entre eles. A presença de `altitude_min_m` é o que distingue os dois casos |
+| `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. Sem `altitude_min_m` (fora da época): `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês e da janela de plantio (regra 3). Com `altitude_min_m` e `altitude_m` (fora da altitude, regra 21): a sequência cabe no calendário, mas a cultura pede altitude maior que a do talhão; `mes_plantio` e `mes_livre` são os do calendário, sem conflito entre eles. A presença de `altitude_min_m` é o que distingue os dois casos |
 
 ### Futuro por modelo (só com `clima_modelos`)
 
@@ -294,8 +294,9 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 ## Regras
 
 1. **ET0:** a coluna `et0_mm` da tabela de clima; sem ela, Hargreaves.
-2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte. Se nenhuma sequência cabe nessa ordem, o motor tenta a outra, começando pelo outro slot, e `slots` mostra a ordem usada. Com as tabelas de 14/11, isso vale para maio e junho (a safrinha de fevereiro e março já passou; a safra de outubro cabe) e para dezembro com duas culturas (depois do algodão, único de safra em dezembro, a safrinha já passou). Abril continua sem sequência: a safrinha passou e a safra de outubro fica a 183 dias, um a mais que o limite de meio ano (regra 3).
-3. **Época de plantio:** a cultura entra no mês de plantio dela naquele slot: no dia em que o talhão fica livre, se cair dentro do mês, ou no dia 1 do mês, se ainda não chegou. Enquanto espera, o solo só acumula chuva. A sequência é descartada se a cultura não tem mês naquele slot ou se o talhão só fica livre depois do mês (espera de mais de meio ano).
+2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte. Se nenhuma sequência cabe nessa ordem, o motor tenta a outra, começando pelo outro slot, e `slots` mostra a ordem usada. Com as tabelas de 15/11 e a janela de plantio (regra 3), isso vale para maio e junho (a safrinha de fevereiro e março e a janela de um mês já passaram; a safra de outubro cabe). Dezembro com duas culturas deixou de cair aqui com a janela: sorgo e feijão (novembro) entram na safra de dezembro e o sorgo libera o talhão a tempo da janela da safrinha (março). Abril, com a altitude do talhão de demonstração, continua sem sequência: só o trigo (março) ainda está na janela, e ele sai pela altitude (regra 21); a safra de outubro fica a 183 dias, um a mais que o limite de meio ano.
+3. **Época de plantio:** a cultura entra no mês de plantio dela naquele slot ou nos `JANELA_PLANTIO_MESES` (1) meses seguintes: no dia em que o talhão fica livre, se cair dentro dessa janela, ou no dia 1 do mês de plantio, se ainda não chegou. Enquanto espera, o solo só acumula chuva. A sequência é descartada se a cultura não tem mês naquele slot ou se o talhão só fica livre depois da janela (espera de mais de meio ano). Plantio dentro da janela, depois do mês da tabela, é **plantio tardio**: clima, encaixe, calor e balanço hídrico correm a partir da data real (`mes_plantio` da cultura é o mês real), sem penalidade de produtividade pelo atraso, e a sequência ganha o aviso `plantio_tardio` (regra 17). A janela de dezembro vai até janeiro. Desde 15/11; antes, só o mês da tabela.
+    - Efeito (talhão de demonstração, histórico soja, milho, pesos iguais, 484,41 m, com ano seco e modelos; top 3 de hoje, futuro entre parênteses). **Outubro:** 21 → 28 viáveis (entram as 7 `sorgo>X`, com safrinha em março); top 3 igual, `soja>crotalaria` 78,2, `soja>milho` 77,9, `soja>sorgo` 76,5 (os mesmos no futuro); os números das 21 que já cabiam não mudam. **Novembro:** 7 → 28; antes `feijao>crotalaria` 62,2, `feijao>milho` 60,5, `feijao>sorgo` 59,8; agora `soja>crotalaria` 76,2, `soja>sorgo` 71,5, `soja>feijao` 71,5 (`soja>crotalaria`, `soja>sorgo`, `soja>milho`). **Dezembro:** a ordem passa de safrinha>safra (30 viáveis, `crotalaria>soja` 75,5, `sorgo>soja` 73,1, `crotalaria>milho` 71,5) para safra>safrinha (14 viáveis, `feijao>crotalaria` 60,5, `sorgo>crotalaria` 56,7, `feijao>sorgo` 54,7; futuro `sorgo>crotalaria`, `feijao>crotalaria`, `sorgo>milheto`): o talhão planta a safra tardia em vez de esperar fevereiro, e os scores caem (ver "Em aberto", item 1). **Fevereiro:** igual (30 viáveis, `crotalaria>soja` 78,1, `sorgo>soja` 76,7, `feijao>soja` 73,6). **Março:** 0 → 35; `crotalaria>soja` 76,5, `crotalaria>milho` 72,7, `sorgo>soja` 72,7 (`crotalaria>soja`, `sorgo>soja`, `crotalaria>milho`).
 4. **Tempo de colheita:** o talhão fica livre 10 dias depois do fim do ciclo.
 5. **Kc** ao longo do ciclo: `kc_ini` nos primeiros 20%, sobe até `kc_med` aos 45%, fica até 80%, desce até `kc_fim`.
 6. **Balanço hídrico** dia a dia: demanda = Kc × ET0. A cultura usa a chuva do dia e a água guardada no solo (até `CAD_MM`, 60 mm, ou o valor de `CAD_POR_TEXTURA` quando a entrada traz `solo_textura`). `deficit_mm` é a demanda não atendida; `atendimento_hidrico` = 1 − déficit / demanda.
@@ -351,6 +352,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `sem_valor_de_mercado` | lacuna | Cultura com preço zero (as de cobertura), já contando o preço editado | — |
 | `ky_padrao` | lacuna | Só no modo diário: cultura fora da tabela de Ky da FAO | `ky` |
 | `rank_varia_entre_modelos` | risco | Só com `clima_modelos`: o rank do futuro varia mais de 5 posições entre os modelos (`AVISO_FAIXA_RANK`, provisório) | `rank_min`, `rank_max`, `por_modelo` (`{modelo: rank}`), `limite` |
+| `plantio_tardio` | lacuna | A cultura entra depois do mês de plantio da tabela no slot, dentro da janela (regra 3). O motor não desconta produtividade pelo atraso. Calendário igual em todos os climas | `slot`, `mes_nominal` (o da tabela), `mes_real` |
 | `geada` | risco | Só no modo diário, por cultura e clima: mínima de 3 °C ou menos no ciclo em algum ano | `anos`, `n_anos`, `dias_total`, `max_no_ano`, `limiar_c`, `slot` |
 | `valor_a_conferir` | lacuna | A tabela de culturas tem `<campo>_status` preenchido para a cultura | `campo`, `status`, `valor` |
 
@@ -507,6 +509,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `FASES_KC` | 20% / 45% / 80% | Fases do Kc no ciclo |
 | `DIAS_COLHEITA` | 10 | Dias entre o fim do ciclo e o talhão livre, igual para todas as culturas |
 | `ESPERA_MAX_DIAS` | 182 | Espera máxima pelo mês de plantio; mais que isso, a época do slot já passou |
+| `JANELA_PLANTIO_MESES` | 1 | Meses depois do mês de plantio do slot em que a cultura ainda entra (regra 3). De memória: as janelas do ZARC/Embrapa para o Cerrado mineiro passam de um mês (soja até dezembro, sorgo safrinha até 20/3); não conferido |
 | `FASE_SENSIVEL` | 45% a 80% | Parte do ciclo em que o calor conta |
 | `PERDA_CALOR` | 1,0 | Fração da produtividade perdida se todos os dias da fase sensível passam do limiar |
 | `AGUA_REF_MIN` | 0 | Piso da faixa fixa da parte `agua` (regra 12). Com 0, a parte `agua` é o atendimento hídrico. Foi 0,6 por algumas horas de 15/11 e voltou a 0 (ver a regra 12) |
@@ -653,7 +656,7 @@ Receita em R$/ha, sem histórico:
 
 ## Em aberto
 
-1. **Mês de plantio é um mês só.** Uma cultura de safra que libera o talhão no dia 1 de março já não deixa plantar nada de fevereiro. Hoje isso acontece com o sorgo de safra: só a crotalária (março) cabe depois dele.
+1. **Janela de plantio fixa e sem perda.** Desde 15/11 a cultura entra no mês da tabela ou no seguinte (`JANELA_PLANTIO_MESES` = 1, de memória, regra 3), sem perda de produtividade pelo atraso; só o aviso `plantio_tardio`. Falta: a janela por cultura e slot do ZARC (por exemplo, sorgo safrinha até 20/3, não 31/3), a perda de produtividade do plantio tardio e o risco climático da janela. Efeito colateral em dezembro: com a safra tardia (sorgo, feijão) cabendo, o motor não cai mais na ordem safrinha>safra (regra 2), e os três primeiros caem de cerca de 75 para cerca de 60 pontos; esperar fevereiro (`crotalaria>soja`) não é mais comparado.
 2. **Limiar de 32 °C.** O feijão e o algodão são os que mais caem, e é nesse limiar que POWER e NEX mais diferem (20%, ver `docs/colunas_dados.md`). A troca de vencedor no caso de fevereiro depende dele.
 3. **Perda de 1 para 1.** Cada dia de calor na fase sensível tira a mesma fração da produtividade. É um valor provisório (`PERDA_CALOR`), sem fonte.
 4. **Calor de hoje pode estar contado duas vezes.** A produtividade da Conab já reflete o calor atual do Brasil; a regra desconta o calor de hoje de novo. O que a regra mostra bem é a diferença entre hoje e futuro.

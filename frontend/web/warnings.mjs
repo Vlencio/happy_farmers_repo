@@ -10,7 +10,9 @@ const TYPES = {
   sem_limiar_de_calor: 'lacuna', limiar_de_calor_pouco_confiavel: 'lacuna',
   sem_valor_de_mercado: 'lacuna', ky_padrao: 'lacuna', valor_a_conferir: 'lacuna',
   hospedeiro_comum: 'risco', fator_agua_diario: 'risco', rank_varia_entre_modelos: 'risco',
+  plantio_tardio: 'lacuna',
 };
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const FIELDS = { preco: 'Price', temp_calor_c: 'Heat threshold', produtividade: 'Main-season yield',
   produtividade_safrinha: 'Second-season yield', ky: 'Yield response to water shortage (Ky)' };
 const STATUSES = { memoria: 'from memory', 'sem fonte': 'no source', 'a conferir': 'needs verification', 'provisório': 'provisional' };
@@ -51,11 +53,11 @@ export function validateSequenceWarnings(seq, scenarios) {
     const d = warning.dados;
     const amount = (key, min = 0, max = Infinity) => finite(d[key], `${path}.dados.${key}`, min, max);
     const needsCrop = ['fator_limitante', 'fator_agua_diario', 'repete_a_cultura', 'hospedeiro_comum', 'sem_limiar_de_calor',
-      'limiar_de_calor_pouco_confiavel', 'sem_valor_de_mercado', 'ky_padrao', 'valor_a_conferir'].includes(warning.codigo);
+      'limiar_de_calor_pouco_confiavel', 'sem_valor_de_mercado', 'ky_padrao', 'valor_a_conferir', 'plantio_tardio'].includes(warning.codigo);
     if (needsCrop !== (warning.cultura !== null)) invalid(`${path}.cultura`);
     const needsScenario = ['fator_limitante', 'fator_agua_diario', 'queda_no_futuro', 'queda_no_ano_ruim', 'rank_varia_entre_modelos'].includes(warning.codigo);
     if (needsScenario !== (warning.cenario !== null)) invalid(`${path}.cenario`);
-    if (['fator_limitante', 'fator_agua_diario', 'repete_a_cultura', 'hospedeiro_comum'].includes(warning.codigo) && !['safra', 'safrinha'].includes(d.slot)) invalid(`${path}.dados.slot`);
+    if (['fator_limitante', 'fator_agua_diario', 'repete_a_cultura', 'hospedeiro_comum', 'plantio_tardio'].includes(warning.codigo) && !['safra', 'safrinha'].includes(d.slot)) invalid(`${path}.dados.slot`);
     switch (warning.codigo) {
       case 'fator_limitante':
         if (!Object.hasOwn(FACTORS, d.fator)) invalid(`${path}.dados.fator`);
@@ -93,6 +95,13 @@ export function validateSequenceWarnings(seq, scenarios) {
         if (!Number.isInteger(d.dias_expostos)) invalid(`${path}.dados.dias_expostos`);
         amount('chuva_exposta_mm'); break;
       case 'limiar_de_calor_pouco_confiavel': amount('temp_calor_c', -Infinity); break;
+      case 'plantio_tardio':
+        for (const key of ['mes_nominal', 'mes_real']) {
+          amount(key, 1, 12);
+          if (!Number.isInteger(d[key])) invalid(`${path}.dados.${key}`);
+        }
+        if (d.mes_nominal === d.mes_real) invalid(`${path}.dados.mes_real`);
+        break;
       case 'ky_padrao': amount('ky'); break;
       case 'valor_a_conferir':
         string(d.campo, `${path}.dados.campo`, 100); string(d.status, `${path}.dados.status`, 200);
@@ -193,6 +202,11 @@ function present(warning, cropLabel) {
     case 'sem_valor_de_mercado':
       return item('Market value not included', 'A sales value is not included for this crop. This is a limit of the calculation, not evidence that the crop has no value on the farm. Soil benefits are not converted into income.',
         'Sales revenue is excluded by the price used in this analysis.', `${crop}: market revenue is not included.`);
+    case 'plantio_tardio':
+      return item('Late planting',
+        'The field becomes free after the crop\'s usual planting month, so the engine plants it on the day the field is free, within the planting window that follows. Climate and water balance use that real date, but the engine applies no yield reduction for late planting; check the local zoning calendar.',
+        `Usual planting month: ${MONTHS[d.mes_nominal - 1]}. Planted in: ${MONTHS[d.mes_real - 1]}.`,
+        `${crop} · ${SLOTS[d.slot]}: late planting in ${MONTHS[d.mes_real - 1]} (usual: ${MONTHS[d.mes_nominal - 1]}).`);
     case 'ky_padrao':
       return item('No crop-specific water-response value', 'In daily mode, the engine uses a default Ky value (yield sensitivity to water shortage) because the FAO table has no crop-specific value.',
         `Ky used: ${number(d.ky, 3)}.`, `${crop}: default Ky of ${number(d.ky, 3)}.`);

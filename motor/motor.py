@@ -62,6 +62,10 @@ PESO_SOLO = {"fixa_n": 0.4, "cobre_solo": 0.4, "diversidade": 0.2}
 FASES_KC = (0.20, 0.45, 0.80)  # fracoes do ciclo: fim do Kc inicial, inicio e fim do Kc medio
 DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
 ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
+# Meses depois do mes de plantio do slot em que a cultura ainda entra (plantio tardio, sem perda de
+# produtividade; sai o aviso plantio_tardio). Provisorio, de memoria: as janelas do ZARC/Embrapa
+# para o Cerrado mineiro passam de um mes (soja ate dezembro, sorgo safrinha ate 20/3). Nao conferido.
+JANELA_PLANTIO_MESES = 1
 FASE_SENSIVEL = FASES_KC[1:]  # florescimento e enchimento de graos: a fase de Kc medio
 PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase sensivel passam do limiar
 # Escala da parte agua do score: o atendimento hidrico da sequencia (1 - deficit / demanda) vai da
@@ -434,13 +438,15 @@ def rotacao_atual(historico, horizonte):
 def dia_de_plantio(mes, dia_livre):
     """Dia em que a cultura entra, dado o mes tipico de plantio dela no slot.
 
-    E o proprio dia livre, se cair dentro do mes, ou o dia 1 da proxima vez que o mes chegar.
+    E o proprio dia livre, se cair dentro do mes ou dos JANELA_PLANTIO_MESES seguintes (plantio
+    tardio), ou o dia 1 da proxima vez que o mes chegar.
     None se a cultura nao tem mes naquele slot ou se a espera passa de ESPERA_MAX_DIAS.
     """
     if mes is None:
         return None
-    inicio = sum(DIAS_MES[: mes - 1])
-    while inicio + DIAS_MES[mes - 1] - 1 < dia_livre:  # esse mes ja acabou: so no ano seguinte
+    janela = sum(DIAS_MES[(mes - 1 + k) % 12] for k in range(JANELA_PLANTIO_MESES + 1))  # dias da janela
+    inicio = sum(DIAS_MES[: mes - 1]) - 365  # comeca um ano antes: a janela de dezembro entra em janeiro
+    while inicio + janela - 1 < dia_livre:  # essa janela ja acabou: so a do ano seguinte
         inicio += 365
     plantio = max(inicio, dia_livre)
     return plantio if plantio - dia_livre <= ESPERA_MAX_DIAS else None
@@ -1137,6 +1143,14 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
                 f"{com_bonus} O valor é provisório.",
                 r["cultura"], fator_sequencia=r["fator_sequencia"], penalidade=r["penalidade_hospedeiro"],
                 anterior=hosp["anterior"], pragas=list(hosp["pragas"]), slot=r["slot"],
+            )  # fmt: skip
+        nominal = tabela[r["cultura"]][f"mes_plantio_{r['slot']}"]
+        if r["mes_plantio"] != nominal:  # entrou depois do mes do slot, dentro da janela (regra 3)
+            aviso(
+                "lacuna", "plantio_tardio",
+                f"{r['cultura']} na {r['slot']} entra no mês {r['mes_plantio']}, depois do mês de plantio da tabela "
+                f"({nominal}): o motor não desconta produtividade pelo plantio tardio.",
+                r["cultura"], slot=r["slot"], mes_nominal=nominal, mes_real=r["mes_plantio"],
             )  # fmt: skip
     expostos = hoje["descoberto"]["dias_expostos"]
     if expostos >= AVISO_DIAS_EXPOSTOS:
