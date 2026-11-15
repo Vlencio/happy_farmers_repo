@@ -81,6 +81,25 @@ class TestClimaPorPonto(unittest.TestCase):
         self.assertIsNone(r["origem"]["aviso"])
         self.assertTrue(((r["clima_futuro"]["tmax_c"] - r["clima_hoje"]["tmax_c"]).round(2) == 5.0).all())
 
+    def test_chuva_por_razao_ou_delta_somado(self):
+        r = cp.clima_por_ponto(*LONGE, puxar=diario_demo)
+        self.assertEqual(r["origem"]["chuva_futuro"], "razao")
+        razao = cp.deltas_demo()["razao_chuva"].to_numpy()
+        self.assertLess(abs(r["clima_hoje"]["chuva_mm"] * razao - r["clima_futuro"]["chuva_mm"]).max(), 0.02)
+        self.cache.unlink()
+        sem = cp.deltas_demo().drop(columns=["razao_chuva"]).reset_index()  # como o delta regional de hoje
+        r = cp.clima_por_ponto(*LONGE, puxar=diario_demo, deltas=sem, origem_delta="nex_regional")
+        self.assertEqual(r["origem"]["chuva_futuro"], "delta_somado")
+        soma = (r["clima_hoje"]["chuva_mm"] + sem["delta_chuva_mm"]).clip(lower=0)
+        self.assertLess(abs(soma - r["clima_futuro"]["chuva_mm"]).max(), 0.02)
+
+    def test_dias_quentes_do_futuro_pela_tmax_deslocada(self):
+        r = cp.clima_por_ponto(*LONGE, puxar=diario_demo)
+        esperado = mc.contar_dias_quentes(diario_demo(), cp.deltas_demo()["delta_tmax_c"], [35])[35].to_numpy()
+        self.assertLess(abs(r["clima_futuro"]["dias_acima_35"] - esperado).max(), 0.01)
+        self.assertIn("dias_acima_26", r["clima_hoje"].columns)
+        self.assertIn("dias_acima_40", r["clima_futuro"].columns)
+
     def test_coordenada_invalida(self):
         with self.assertRaises(ValueError):
             cp.clima_por_ponto(-95, 0)
