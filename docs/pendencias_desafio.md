@@ -264,7 +264,8 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] Sem dado novo: comparar, ano a ano, o índice de água do modo diário com o NDVI do talhão (`data/talhao/ndvi_mensal.csv`, 2014 a 2024). Se andam juntos, o NDVI vira evidência observada do que o motor calcula.
+- [x] Sem dado novo: comparar, ano a ano, o índice de água do modo diário com o NDVI do talhão (`data/talhao/ndvi_mensal.csv`, 2014 a 2024). Se andam juntos, o NDVI vira evidência observada do que o motor calcula.
+  Feito em 15/11 (`scripts/comparar_ndvi_agua.py`, `docs/ndvi_vs_agua.md`): **não andam juntos.** Em 10 safras (2014/15 a 2023/24), o atendimento hídrico da soja tem correlação −0,13 (Spearman −0,25, p = 0,49) com o NDVI de dezembro a março; nenhum par passa de 0,25. O NDVI segue a data de plantio e colheita, e o motor planta sempre em 1º de outubro. Não usar o NDVI como confirmação do balanço.
 - [ ] Time: reabrir SMAP (está em "Out of scope").
 - [ ] Dados: série de umidade do solo do SMAP para o talhão, para conferir o balde e mostrar anomalias.
 
