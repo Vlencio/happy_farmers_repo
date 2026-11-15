@@ -27,8 +27,13 @@ SLOTS = ("safra", "safrinha")
 
 # Agua que o solo guarda de um dia para o outro (mm). ZARC da soja: profundidade efetiva de raiz
 # de 60 cm x agua disponivel de latossolo (classes AD3 e AD4 da IN SPA/MAPA 1/2022, 0,61 a
-# 1,06 mm/cm) = 37 a 64 mm. 60 = AD4, latossolo argiloso. Classe real do talhao: sem dado.
+# 1,06 mm/cm) = 37 a 64 mm. 60 = AD4, latossolo argiloso. Vale quando a entrada nao traz solo_textura.
 CAD_MM = 60
+# Com solo_textura na entrada: a mesma raiz de 60 cm x a agua disponivel da classe do ZARC que
+# corresponde a textura. Arenoso ~ AD2 (0,46-0,61 mm/cm: 28-37 mm), medio ~ AD3 (0,61-0,80: 37-48 mm),
+# argiloso ~ AD4 (0,80-1,06: 48-64 mm). AD3 e AD4 conferidas pelo resumo da IN SPA/MAPA 1/2022;
+# a faixa de AD2 e a correspondencia textura -> classe sao de memoria, a conferir.
+CAD_POR_TEXTURA = {"arenoso": 30, "medio": 45, "argiloso": 60}
 # Renda: receita por ano de talhao ocupado, dividida pela receita potencial (preco x produtividade,
 # sem perda) do sistema de referencia: soja na safra e milho na safrinha. Nao depende das outras
 # sequencias avaliadas. Sem essas culturas na tabela, o teto e a maior receita por ano avaliada.
@@ -319,12 +324,13 @@ def dia_de_plantio(mes, dia_livre):
     return plantio if plantio - dia_livre <= ESPERA_MAX_DIAS else None
 
 
-def simular_cultura(c, dia_inicio, clima, et0, agua):
+def simular_cultura(c, dia_inicio, clima, et0, agua, cad=None):
     """Roda o ciclo de uma cultura dia a dia, com chuva e ET0 do mes.
 
-    Devolve (resultado, agua que sobra no solo). O solo guarda ate CAD_MM.
+    Devolve (resultado, agua que sobra no solo). O solo guarda ate `cad` mm (padrao CAD_MM).
     Calor: soma os dias acima do limiar da cultura que caem na fase sensivel do ciclo.
     """
+    cad = CAD_MM if cad is None else cad
     ciclo = c["ciclo_dias"]
     meses = {}  # mes -> acumulados, na ordem do ciclo
     soma_temp = 0.0
@@ -337,7 +343,7 @@ def simular_cultura(c, dia_inicio, clima, et0, agua):
         kc = kc_do_dia(c, i / ciclo)
         etc = kc * et0[mes - 1]
         eta = min(etc, agua + chuva)  # a cultura so usa a agua que existe
-        agua = min(CAD_MM, agua + chuva - eta)
+        agua = min(cad, agua + chuva - eta)
         soma_temp += encaixe_temperatura((m["tmin_c"] + m["tmax_c"]) / 2, c)
         if calor and FASE_SENSIVEL[0] <= i / ciclo < FASE_SENSIVEL[1]:
             dias_sensiveis += 1
@@ -395,11 +401,12 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos):
     )
 
 
-def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos):
+def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio, precos, cad=None):
     """Simula as culturas em fila, uma por slot, com o talhao livre no dia 1 de mes_plantio.
 
     Se uma cultura nao pode ser plantada no slot dela, devolve so {"fora_de_epoca": motivo}.
     """
+    cad = CAD_MM if cad is None else cad
     dia = dia_livre = sum(DIAS_MES[: mes_plantio - 1])  # dia em que o talhao fica livre
     sem_cultura = dia  # desde quando o solo esta sem cultura
     agua = 0.0  # o solo comeca vazio
@@ -422,8 +429,8 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
             }
         for d in range(sem_cultura, plantio):  # colheita e espera: solo sem cultura so acumula chuva
             m = MES_DO_DIA[d % 365]
-            agua = min(CAD_MM, agua + clima[m - 1]["chuva_mm"] / DIAS_MES[m - 1])
-        r, agua = simular_cultura(c, plantio, clima, et0, agua)
+            agua = min(cad, agua + clima[m - 1]["chuva_mm"] / DIAS_MES[m - 1])
+        r, agua = simular_cultura(c, plantio, clima, et0, agua, cad)
         r["slot"] = slot
         r["espera_dias"] = plantio - dia
         sem_cultura = plantio + c["ciclo_dias"]
@@ -521,12 +528,13 @@ def fator_declividade(declividade_pct):
     return 10.8 * seno + 0.03 if declividade_pct < 9 else 16.8 * seno - 0.50
 
 
-def simular_cultura_diaria(c, inicio, serie, agua):
+def simular_cultura_diaria(c, inicio, serie, agua, cad=None):
     """Como simular_cultura, com a chuva, o ET0 e as temperaturas de cada dia de um ano real.
 
     inicio: posicao do dia do plantio na serie. Calor: conta os dias da fase sensivel com
     maxima acima do limiar da cultura. fator_agua: 1 - Ky x (1 - atendimento hidrico).
     """
+    cad = CAD_MM if cad is None else cad
     ciclo = c["ciclo_dias"]
     limiar = c["temp_calor_c"]
     chuvas, et0s, tmins, tmaxs = serie["chuva"], serie["et0"], serie["tmin"], serie["tmax"]
@@ -539,7 +547,7 @@ def simular_cultura_diaria(c, inicio, serie, agua):
         chuva = chuvas[d]
         etc = kc_do_dia(c, fracao) * et0s[d]
         eta = min(etc, agua + chuva)  # a cultura so usa a agua que existe
-        agua = min(CAD_MM, agua + chuva - eta)
+        agua = min(cad, agua + chuva - eta)
         soma_temp += encaixe_temperatura((tmins[d] + tmaxs[d]) / 2, c)
         if limiar is not None and FASE_SENSIVEL[0] <= fracao < FASE_SENSIVEL[1]:
             dias_sensiveis += 1
@@ -566,12 +574,13 @@ def simular_cultura_diaria(c, inicio, serie, agua):
     return resultado, agua
 
 
-def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, serie, precos, cache):
+def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, serie, precos, cache, cad=None):
     """A sequencia em um ano da serie diaria, com o talhao livre na posicao `inicio`.
 
     esperas: dias de espera de cada cultura, os mesmos do modo mensal. O calendario
     (epocas de plantio, colheita) nao muda de um ano para o outro.
     """
+    cad = CAD_MM if cad is None else cad
     dia = sem_cultura = inicio
     agua = 0.0  # o solo comeca vazio
     resultados = []
@@ -579,10 +588,10 @@ def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, 
         c = culturas[nome]
         plantio = dia + espera
         for d in range(sem_cultura, plantio):  # solo sem cultura so acumula chuva
-            agua = min(CAD_MM, agua + serie["chuva"][d])
+            agua = min(cad, agua + serie["chuva"][d])
         chave = (nome, plantio, agua)  # a 1a cultura se repete em varias sequencias
         if chave not in cache:
-            cache[chave] = simular_cultura_diaria(c, plantio, serie, agua)
+            cache[chave] = simular_cultura_diaria(c, plantio, serie, agua, cad)
         r, agua = cache[chave]
         r = {"cultura": nome, "slot": slot, **r}
         sem_cultura = plantio + c["ciclo_dias"]
@@ -669,7 +678,7 @@ def _descoberto_diario(dias, inicios, chuvas, fator_erosao):
 
 def _modo_diario(
     diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos, ajuste=None,
-    declividade=None, teto=1.0,
+    declividade=None, teto=1.0, cad=None,
 ):
     """Roda cada sequencia viavel em cada ano da serie diaria, no clima de hoje e no futuro.
 
@@ -710,7 +719,7 @@ def _modo_diario(
         cache = {}
         por_ano[cen] = {
             s: {
-                ano: avaliar_sequencia_diaria(s, slots, anterior, tabela, esperas[s], i, serie, precos, cache)
+                ano: avaliar_sequencia_diaria(s, slots, anterior, tabela, esperas[s], i, serie, precos, cache, cad)
                 for ano, i in inicios.items()
             }
             for s in sequencias
@@ -985,7 +994,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     fora da epoca de plantio do slot nao entra no ranking: vai para "descartadas".
 
     entrada: dict com lat, rotacao_atual, prioridades, horizonte, mes_plantio, precos,
-    declividade_pct e ajuste ({"chuva_pct", "temp_c"}: "e se", aplicado a todos os climas).
+    declividade_pct, ajuste ({"chuva_pct", "temp_c"}: "e se", aplicado a todos os climas) e
+    solo_textura ("arenoso", "medio" ou "argiloso": agua que o solo guarda, CAD_POR_TEXTURA).
     culturas, clima_hoje, clima_futuro: DataFrames (ver docs/contrato_motor.md).
     clima_seco: opcional, mesma forma das outras duas. Se vier, a saida ganha um
     terceiro cenario ("seco"); sem ele, a saida so tem hoje e futuro.
@@ -1005,6 +1015,11 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     ajuste = ler_ajuste(entrada.get("ajuste"))
     if ajuste is not None:  # "e se": o mesmo ajuste em todos os cenarios, antes da conta
         climas = {cen: ajustar_clima(clima, ajuste) for cen, clima in climas.items()}
+
+    textura = entrada.get("solo_textura")
+    if textura is not None and (not isinstance(textura, str) or textura not in CAD_POR_TEXTURA):
+        raise ValueError(f"solo_textura deve ser um de {sorted(CAD_POR_TEXTURA)}")
+    cad = CAD_MM if textura is None else CAD_POR_TEXTURA[textura]
 
     lat = float(entrada["lat"])
     horizonte = int(entrada.get("horizonte", 2))
@@ -1034,7 +1049,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
 
     def avaliar(slots):
         return {
-            cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
+            cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos, cad) for s in todas}
             for cen, clima in climas.items()
         }
 
@@ -1068,7 +1083,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     if diario is not None:
         geral_diario, blocos_diario = _modo_diario(
             diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos, ajuste,
-            declividade, teto,
+            declividade, teto, cad,
         )
 
     campos = [
@@ -1085,6 +1100,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             "precos": precos,
             "declividade_pct": declividade,
             **({"ajuste": ajuste} if ajuste is not None else {}),
+            **({"solo_textura": textura, "cad_mm": cad} if textura is not None else {}),
         },
         "slots": slots,
         # a rotacao atual, para comparar com as outras: os numeros dela estao em "sequencias"

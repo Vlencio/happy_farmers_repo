@@ -178,6 +178,9 @@ in `tests/dados/`.
    a "what if" applied to every climate table and the daily series before the
    math (rule 19 of the contract). The API accepts it and announces
    `capabilities.ajuste` (15 Nov); the screen shows the two controls when it does.
+10. **Soil texture (optional)**, `entrada["solo_textura"]` = `arenoso`, `medio` or
+    `argiloso`: soil water storage of 30, 45 or 60 mm (ZARC classes) instead of 60 mm.
+    A suggested texture per point (GLDAS or HWSD/GAEZ) is pending; the farmer confirms it.
 
 ## Stack
 

@@ -525,6 +525,50 @@ class TestAjuste(unittest.TestCase):
                 recomendar({**ENTRADA, "ajuste": ajuste}, *self.dados)
 
 
+class TestSolo(unittest.TestCase):
+    """Textura do solo informada: muda so a agua que o solo guarda (CAD_POR_TEXTURA)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.sem = recomendar(ENTRADA, *cls.dados)
+
+    def com(self, textura, **kw):
+        return recomendar({**ENTRADA, "solo_textura": textura}, *self.dados, **kw)
+
+    def test_sem_textura_a_saida_nao_muda(self):
+        self.assertNotIn("solo_textura", self.sem["entrada"])
+        self.assertNotIn("cad_mm", self.sem["entrada"])
+        self.assertEqual(recomendar({**ENTRADA, "solo_textura": None}, *self.dados), self.sem)
+
+    def test_argiloso_e_o_padrao(self):
+        argiloso = self.com("argiloso")
+        self.assertEqual(motor.CAD_POR_TEXTURA["argiloso"], motor.CAD_MM)
+        self.assertEqual((argiloso["entrada"].pop("solo_textura"), argiloso["entrada"].pop("cad_mm")), ("argiloso", 60))
+        self.assertEqual(argiloso, self.sem)
+
+    def test_solo_arenoso_guarda_menos_agua(self):
+        arenoso, argiloso = self.com("arenoso"), self.com("argiloso")
+        self.assertEqual(arenoso["entrada"]["cad_mm"], 30)
+        agua = lambda saida: {s["id"]: s["hoje"]["agua"] for s in saida["sequencias"]}
+        a, b = agua(arenoso), agua(argiloso)
+        self.assertTrue(all(a[k] <= b[k] + 1e-9 for k in a))
+        self.assertTrue(any(a[k] < b[k] - 0.01 for k in a))
+        medio = agua(self.com("medio"))
+        self.assertTrue(all(a[k] <= medio[k] + 1e-9 <= b[k] + 2e-9 for k in a))
+
+    def test_vale_no_modo_diario(self):
+        serie = serie_das_medias(self.dados[1], 2001, 2010)
+        arenoso, argiloso = self.com("arenoso", diario=serie), self.com("argiloso", diario=serie)
+        bloco = lambda saida: next(s for s in saida["sequencias"] if s["id"] == "soja>milho")["diario"]["hoje"]["mediano"]
+        self.assertLess(bloco(arenoso)["agua"], bloco(argiloso)["agua"])
+
+    def test_textura_invalida(self):
+        for textura in ("argila", "", "ARENOSO", 30, ["medio"]):
+            with self.assertRaises(ValueError, msg=textura):
+                self.com(textura)
+
+
 class TestPecas(unittest.TestCase):
     C = {"temp_min": 10, "temp_otima_min": 20, "temp_otima_max": 30, "temp_max": 40, "chuva_min": 400, "chuva_max": 1000}
 

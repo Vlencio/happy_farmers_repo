@@ -42,7 +42,8 @@ Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diar
   "mes_plantio": 10,
   "precos": {"soja": 2300},
   "declividade_pct": 4.05,
-  "ajuste": {"chuva_pct": -20, "temp_c": 2}
+  "ajuste": {"chuva_pct": -20, "temp_c": 2},
+  "solo_textura": "argiloso"
 }
 ```
 
@@ -56,6 +57,7 @@ Sem `diario` (ou com `None`), nada muda. Com ele, a saída ganha os campos `diar
 | `precos` | não | Preço editado pelo usuário, por cultura, em R$/t. Substitui o `preco` da tabela na receita (não no teto da `renda`, regra 12). Negativo ou não finito gera `ValueError` |
 | `declividade_pct` | não | Declividade média do talhão, em %. Se vier, cada sequência ganha `descoberto.indice_erosao`. Não muda score nem rank. Para o talhão de demonstração: 4,05 (`data/talhao/declividade.csv`) |
 | `ajuste` | não | Cenário "e se" (regra 19): `chuva_pct` de −50 a +30 (% sobre a chuva de cada mês) e `temp_c` de 0 a +4 (°C somados à mínima e à máxima). Campo ausente vale 0. Vale para todos os climas e para a série diária. Sem `ajuste`, a saída não muda; com ele, `entrada.ajuste` volta na saída e `clima` traz as tabelas já ajustadas |
+| `solo_textura` | não | `arenoso`, `medio` ou `argiloso` (sem acento). Define a água que o solo guarda (`CAD_POR_TEXTURA`: 30, 45 e 60 mm). Vale para todos os climas e para o modo diário. Sem o campo, 60 mm (`CAD_MM`), igual a `argiloso`. Com ele, `entrada.solo_textura` e `entrada.cad_mm` voltam na saída. Outro valor gera `ValueError` |
 
 Nomes de cultura são exatamente os da coluna `cultura` do `culturas.csv`, hoje sem acento (`feijao`, `crotalaria`). Nome fora da tabela gera `ValueError`.
 
@@ -234,7 +236,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 3. **Época de plantio:** a cultura entra no mês de plantio dela naquele slot: no dia em que o talhão fica livre, se cair dentro do mês, ou no dia 1 do mês, se ainda não chegou. Enquanto espera, o solo só acumula chuva. A sequência é descartada se a cultura não tem mês naquele slot ou se o talhão só fica livre depois do mês (espera de mais de meio ano).
 4. **Tempo de colheita:** o talhão fica livre 10 dias depois do fim do ciclo.
 5. **Kc** ao longo do ciclo: `kc_ini` nos primeiros 20%, sobe até `kc_med` aos 45%, fica até 80%, desce até `kc_fim`.
-6. **Balanço hídrico** dia a dia: demanda = Kc × ET0. A cultura usa a chuva do dia e a água guardada no solo (até `CAD_MM`, 60 mm). `deficit_mm` é a demanda não atendida; `atendimento_hidrico` = 1 − déficit / demanda.
+6. **Balanço hídrico** dia a dia: demanda = Kc × ET0. A cultura usa a chuva do dia e a água guardada no solo (até `CAD_MM`, 60 mm, ou o valor de `CAD_POR_TEXTURA` quando a entrada traz `solo_textura`). `deficit_mm` é a demanda não atendida; `atendimento_hidrico` = 1 − déficit / demanda.
 7. **Encaixe de temperatura:** 1 dentro da faixa ótima, 0 fora dos limites absolutos, linear entre os dois. Média sobre os dias do ciclo, com a temperatura média do mês.
 8. **Encaixe de chuva:** chuva do ciclo contra `chuva_min` e `chuva_max`. Cai em proporção à falta ou ao excesso.
 9. **Calor:** a fase sensível é o meio do ciclo, de 45% a 80% (florescimento e enchimento de grãos, a mesma fase do Kc médio). O motor soma os dias acima do limiar da cultura (`dias_acima_<temp_calor_c>`) que caem nessa fase. `encaixe_calor` = 1 − dias de calor / dias da fase. Exemplo: 10 dias de calor em 40 dias de fase dá 0,75.
@@ -403,6 +405,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | Constante | Valor | Fonte |
 |---|---|---|
 | `CAD_MM` | 60 | Água que o solo guarda (mm). ZARC da soja: profundidade efetiva de raiz de 60 cm × água disponível de latossolo (classes AD3 e AD4 da IN SPA/MAPA 1/2022, 0,61 a 1,06 mm/cm) = 37 a 64 mm; 60 corresponde a AD4 (latossolo argiloso). A classe real do talhão não é conhecida. Fonte conferida pelo resumo da busca, PDF não aberto. Era 100 mm, sem fonte, até 15/11 |
+| `CAD_POR_TEXTURA` | arenoso 30, médio 45, argiloso 60 | Mesma raiz de 60 cm × água disponível da classe do ZARC correspondente à textura: arenoso ~ AD2 (0,46 a 0,61 mm/cm = 28 a 37 mm), médio ~ AD3 (0,61 a 0,80 = 37 a 48 mm), argiloso ~ AD4 (0,80 a 1,06 = 48 a 64 mm). AD3 e AD4 conferidas pelo resumo da IN SPA/MAPA 1/2022; a faixa de AD2 e a correspondência textura → classe são de memória, a conferir |
 | `SISTEMA_REFERENCIA` | soja safra + milho safrinha | Teto da `renda` (regra 12): o sistema dominante da região. Preço e produtividade da tabela de culturas |
 
 ## Constantes provisórias (sem fonte, no topo de `motor/motor.py`)
@@ -534,3 +537,4 @@ Receita em R$/ha, sem histórico:
 18. ~~**`fator_limitante` olha o modo mensal.**~~ Resolvido em 15/11 com um código à parte, `fator_agua_diario` (regra 17), em vez de mudar `fator_limitante`: sem o modo diário a saída não muda, e o texto da tela para `fator_limitante` ("usa a avaliação mensal") continua certo. Com `diario=`, o milho safrinha de `soja>milho` (outubro, histórico soja, milho) atende 82% no mensal (sem aviso) e ganha o aviso com `fator_agua` 0,696 hoje e 0,693 no futuro (atendimento 0,757 e 0,755, Ky 1,25); `clima_favoravel` sai dessa sequência. No talhão de demonstração, em outubro: 14 avisos em 7 das 26 sequências, 10 deles sem aviso de água no mensal (milho safrinha de `soja>milho`, trigo safrinha), e `clima_favoravel` passa de 11 para 10 sequências. Em fevereiro: 20 avisos em 10 das 36 (milho safrinha 0,72, trigo safrinha 0,73), nenhum com aviso de água no mensal, e `clima_favoravel` passa de 18 para 15. Fica em aberto: o aviso olha só a água do ano mediano; o ano ruim e o calor do diário não viram aviso por cultura (o ano ruim já entra em `queda_no_ano_ruim`).
 19. **Dias quentes no ajuste de temperatura.** Desde 15/11 as tabelas têm uma coluna `dias_acima_NN` por grau, de 26 a 40 °C (`scripts/montar_clima.py`). Com os limiares das culturas (32 a 38 °C) e `temp_c` até 4, todo ajuste inteiro cai numa coluna e é exato. Ajuste fracionário (por exemplo, +0,5 °C) interpola entre dois graus vizinhos, um erro pequeno. Antes, só havia 32/35/36/38, e a interpolação errava de −31% a +20% (revisão estatística). A API aceita `ajuste` desde 15/11 e anuncia `capabilities.ajuste` em `/metadata`.
 20. **Pesos efetivos não são os nominais.** Com pesos iguais, a dispersão entre as sequências é de cerca de 0,04 em `agua`, 0,13 em `solo` e 0,22 em `renda` (revisão estatística, 15/11, antes da renda por ano ocupado): a prioridade água quase não move o ranking. A água também entra três vezes (em `agua`, na receita e na parte `solo`). Os pesos não podem ser lidos como "importância". Equalizar as escalas (cada parte sobre uma faixa de referência fixa) ainda não foi feito.
+21. **Textura do solo vem do produtor.** O motor recebe `solo_textura` pronta. A sugestão por ponto (GLDAS da NASA, 0,25°, ou HWSD/GAEZ da FAO, ~1 km) ainda não existe: é dado novo, com o dono dos dados. A célula é muito maior que o talhão, então a tela deve tratar a fonte como sugestão e deixar o produtor trocar. No talhão de demonstração, outubro, histórico soja, milho: em solo argiloso `soja>milho` fica em 1º hoje e no futuro; em solo arenoso ou médio `soja>feijao` fica em 1º hoje e cai para 6º no futuro, e `soja>milho` sobe de 3º para 1º. A queda do feijão vem do limiar de calor de 32 °C (item 2).

@@ -26,7 +26,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 6 | Controles de cenário | Motor, API e front feitos; falta testar a tela contra a API real | Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
-| 9 | Informação local de solo | Falta | Brenno, Pedro | Sim | Sim (SoilGrids) |
+| 9 | Informação local de solo | Motor feito (textura → água do solo); faltam a textura sugerida por ponto, a API e a tela | Brenno, Gabriel | Sim (GLDAS ou HWSD/GAEZ) | Não |
 | 10 | Atributos de cultura que faltam | Falta | Brenno, Pedro | Fontes a levantar | Não |
 | 11 | Umidade do solo e vegetação observadas | Falta e incompleto | Brenno, Pedro | Sim (SMAP) | Sim (SMAP) |
 | 12 | Tendência de água de longo prazo | Falta | Brenno | Talvez (GRACE) | Não |
@@ -257,10 +257,11 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] Time: reabrir SoilGrids (está em "Out of scope") ou escolher outra fonte de textura do solo.
-- [ ] Dados: água disponível do solo por ponto, a partir da textura.
-- [ ] Motor: receber a capacidade do solo por talhão no lugar da constante.
-- [ ] Alternativa sem dado novo: o agricultor informa o tipo de solo (arenoso, médio, argiloso) e o motor usa três valores com fonte.
+- [x] Time (15/11): fonte de textura escolhida entre as da lista do desafio, sem reabrir SoilGrids: GLDAS (NASA, 0,25°) ou HWSD/GAEZ (FAO, ~1 km). A textura do ponto é sugestão; o produtor confirma ou troca.
+- [x] Motor (15/11, branch `motor-solo`): entrada `solo_textura` (`arenoso`, `medio`, `argiloso`) → água que o solo guarda de 30, 45 ou 60 mm (classes do ZARC; regra 6 e `CAD_POR_TEXTURA` no contrato). Sem o campo, 60 mm, como antes.
+- [ ] Dados (Brenno): textura sugerida por ponto em Minas Gerais, a partir do GLDAS ou do HWSD/GAEZ, num arquivo que a API leia (como `delta_mensal.csv`). Download com o aval de quem cuida dos dados.
+- [ ] API (Gabriel): aceitar `solo_textura`, anunciar `capabilities.solo_textura`, e devolver a textura sugerida do ponto com a fonte.
+- [ ] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), pré-preenchido com a sugestão e a fonte, que o produtor pode trocar.
 
 **Feito quando:** dois talhões com solos diferentes dão balanços hídricos diferentes com o mesmo clima.
 
