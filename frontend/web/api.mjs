@@ -2,10 +2,12 @@ import { bbox } from '@turf/turf';
 import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
 import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
+import { DEFAULT_ADJUSTMENT, validateAdjustment, validateOutputAdjustment, supportsAdjustment, hasAdjustment, adjustmentNote } from './scenario.mjs';
+export { assertAdjustmentApplied, supportsAdjustment } from './scenario.mjs';
 
 export const CATEGORIES = ['rank1', 'rank2', 'rank3'];
 export const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } };
+export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { ...DEFAULT_ADJUSTMENT } };
 // POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
 export const ANALYSIS_TIMEOUT_MS = 360_000;
 const accents = { feijao: 'Feijão', algodao: 'Algodão', braquiaria: 'Braquiária', crotalaria: 'Crotalária' };
@@ -44,9 +46,10 @@ export function validateSettings(value) {
     throw new Error('Escolha uma prioridade de 0 a 3 para água, solo e renda.');
   }
   return { mes_plantio: value.mes_plantio, horizonte: value.horizonte,
-    prioridades: { agua: priorities.agua, solo: priorities.solo, renda: priorities.renda } };
+    prioridades: { agua: priorities.agua, solo: priorities.solo, renda: priorities.renda },
+    ajuste: validateAdjustment(value.ajuste) };
 }
-export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, cultures = []) {
+export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, cultures = [], metadata = {}) {
   if (!farm?.geojson || !Number.isFinite(farm.area_ha) || farm.area_ha <= 0) throw new Error('Defina uma área válida antes de analisar.');
   const bounds = bbox(farm.geojson);
   const lat = (bounds[1] + bounds[3]) / 2;
@@ -59,8 +62,12 @@ export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, culture
     if (!match) throw new Error(`A cultura “${crop}” não está no catálogo do motor. Remova ou corrija esse registro para continuar.`);
     return match.id;
   });
+  const { ajuste, ...options } = validateSettings(settings);
+  if (hasAdjustment(ajuste) && !supportsAdjustment(metadata)) {
+    throw new Error('Os ajustes de cenário ainda não estão disponíveis neste servidor. Volte ao clima sem ajuste para analisar.');
+  }
   // Seasons and notes remain in the browser: the engine accepts only ordered crop IDs.
-  return { lat, lon, rotacao_atual, ...validateSettings(settings), precos: {} };
+  return { lat, lon, rotacao_atual, ...options, precos: {}, ...(hasAdjustment(ajuste) ? { ajuste } : {}) };
 }
 
 export function validateMotorOutput(value) {
@@ -71,6 +78,7 @@ export function validateMotorOutput(value) {
   }
   integer(value?.entrada?.mes_plantio, 'entrada.mes_plantio', 1, 12);
   integer(value?.entrada?.horizonte, 'entrada.horizonte', 1, 2);
+  validateOutputAdjustment(value.entrada);
   for (const key of ['agua', 'solo', 'renda']) finite(value.entrada.prioridades?.[key], `entrada.prioridades.${key}`, 0, 1);
   if (Object.values(value.entrada.prioridades).every(weight => weight === 0)) invalid('entrada.prioridades: pesos não normalizados');
   list(value.entrada.rotacao_atual, 'entrada.rotacao_atual', 0, 12);
@@ -262,6 +270,7 @@ function currentRotation(value, farm, priorityNote) {
 
 export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
   const value = validateMotorOutput(raw);
+  const adjustment_note = adjustmentNote(validateOutputAdjustment(value.entrada));
   const priorities = value.entrada.prioridades;
   const equal = priorities.agua === priorities.solo && priorities.solo === priorities.renda;
   const priority_note = `Prioridades aplicadas pelo motor: água ${number(priorities.agua * 100)}%, solo ${number(priorities.solo * 100)}% e renda ${number(priorities.renda * 100)}%.${equal ? ' Pesos iguais entre as três prioridades.' : ''}`;
@@ -274,8 +283,12 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = 
   }, priority_note, current_rotation.strategy?.sequence_id === seq.id));
   return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
     source_warning: value.origem?.aviso || '',
-    scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os cards mostram as melhores posições de hoje com as prioridades aplicadas.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
-    priority_note, current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
+    scenario_note: value.clima.seco
+      ? adjustment_note
+        ? 'Ano seco: cenário “e se” aplicado sobre a base de 2020/21. Os valores exibidos foram ajustados pelo motor; não são as observações originais. Ele é comparado nos detalhes com o mesmo ajuste dos demais cenários.'
+        : 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os cards mostram as melhores posições de hoje com as prioridades aplicadas.'
+      : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
+    priority_note, adjustment_note, current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
 }
 
 async function readResponse(response) {

@@ -5,7 +5,7 @@ import { restoreDraft, validSeason } from '../web/draft.mjs';
 
 const geojson = JSON.parse(readFileSync(new URL('../public/demo-farm.geojson', import.meta.url)));
 const entry = { crop: 'soja', season: '2025/26', notes: 'Plantio anterior' };
-const draft = () => ({ version: 2, farm: { geojson, name: 'Talhão', source: 'sample' }, history: [entry], settings: { mes_plantio: 2, horizonte: 1, prioridades: { agua: 3, solo: 1, renda: 0 } } });
+const draft = () => ({ version: 2, farm: { geojson, name: 'Talhão', source: 'sample' }, history: [entry], settings: { mes_plantio: 2, horizonte: 1, prioridades: { agua: 3, solo: 1, renda: 0 }, ajuste: { chuva_pct: 0, temp_c: 0 } } });
 const restore = value => restoreDraft(JSON.stringify(value));
 
 test('restores the field, ordered records and settings independently', () => {
@@ -39,7 +39,7 @@ test('handles old drafts, invalid settings and corrupt or unknown formats', () =
   assert.equal(restoreDraft(null), null);
   assert.equal(restore(draft()).repaired, false);
   const old = draft(); old.version = 1; delete old.settings;
-  assert.deepEqual(restore(old).settings, { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } });
+  assert.deepEqual(restore(old).settings, { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { chuva_pct: 0, temp_c: 0 } });
   const bad = draft(); bad.settings.horizonte = 3;
   assert.equal(restore(bad).repaired, true);
   for (const text of ['{', 'null', '{}', '{"version":99}']) assert.throws(() => restoreDraft(text));
@@ -49,7 +49,7 @@ test('migrates legacy priority settings without losing the field, history or cal
   for (const version of [1, 2]) {
     const value = draft(); value.version = version; delete value.settings.prioridades;
     const restored = restore(value);
-    assert.deepEqual(restored.settings, { mes_plantio: 2, horizonte: 1, prioridades: { agua: 1, solo: 1, renda: 1 } });
+    assert.deepEqual(restored.settings, { mes_plantio: 2, horizonte: 1, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { chuva_pct: 0, temp_c: 0 } });
     assert.deepEqual(restored.farm, restore(draft()).farm);
     assert.deepEqual(restored.history, [entry]);
     assert.equal(restored.repaired, false);
@@ -63,9 +63,40 @@ test('retains all-zero priorities and repairs malformed priorities independently
   for (const prioridades of [null, { agua: 4, solo: 1, renda: 1 }, { agua: 1, solo: 1 }]) {
     value.settings.prioridades = prioridades;
     const restored = restore(value);
-    assert.deepEqual(restored.settings, { mes_plantio: 2, horizonte: 1, prioridades: { agua: 1, solo: 1, renda: 1 } });
+    assert.deepEqual(restored.settings, { mes_plantio: 2, horizonte: 1, prioridades: { agua: 1, solo: 1, renda: 1 }, ajuste: { chuva_pct: 0, temp_c: 0 } });
     assert.deepEqual(restored.history, [entry]);
     assert.deepEqual(restored.farm, restore(draft()).farm);
+    assert.equal(restored.repaired, true);
+  }
+});
+
+test('migrates drafts without scenario controls and preserves explicitly saved adjustments', () => {
+  const old = draft(); delete old.settings.ajuste;
+  const migrated = restore(old);
+  assert.deepEqual(migrated.settings, draft().settings);
+  assert.equal(migrated.repaired, false);
+  assert.deepEqual(migrated.history, [entry]);
+  const current = draft(); current.settings.ajuste = { chuva_pct: -20, temp_c: 1.5 };
+  assert.deepEqual(restore(current).settings, current.settings);
+  assert.equal(restore(current).repaired, false);
+});
+
+test('a damaged adjustment preserves the calendar, priorities, field and history', () => {
+  for (const ajuste of [null, [], { chuva_pct: -60, temp_c: 2 }, { chuva_pct: -20 }, { chuva_pct: 0, temp_c: '2' }]) {
+    const value = draft(); value.settings.ajuste = ajuste;
+    const restored = restore(value);
+    assert.deepEqual(restored.settings, draft().settings);
+    assert.deepEqual(restored.farm, restore(draft()).farm);
+    assert.deepEqual(restored.history, [entry]);
+    assert.equal(restored.repaired, true);
+  }
+});
+
+test('a damaged calendar or priority does not erase a valid saved adjustment', () => {
+  for (const damage of [value => value.settings.mes_plantio = 13, value => value.settings.prioridades = null]) {
+    const value = draft(); value.settings.ajuste = { chuva_pct: -20, temp_c: 2 }; damage(value);
+    const restored = restore(value);
+    assert.deepEqual(restored.settings.ajuste, value.settings.ajuste);
     assert.equal(restored.repaired, true);
   }
 });
