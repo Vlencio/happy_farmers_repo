@@ -99,9 +99,11 @@ async (originalPage) => {
     const labels = await rankedCards().allTextContents();
     check(labels.length === 3 && analysis.view.recommendations.every((rec, i) => rec.sequence_id === analysis.raw.sequencias[i].id
       && labels[i].startsWith(`${['1ST', '2ND', '3RD'][i]} TODAY`) && labels[i].includes(rec.crop)), name + ': real engine order and rank numbers remain intact');
-    check(analysis.view.recommendations.filter(rec => rec.tie_note).length === tiedCount, name + ': only close leaders receive the technical-tie note');
+    // The leader band; the #4 and future notes are extra, checked separately.
+    const leaderTie = rec => /^Technical tie · today(\.|$)/.test(rec.tie_note);
+    check(analysis.view.recommendations.filter(leaderTie).length === tiedCount, name + ': only close leaders receive the leader technical-tie note');
     // Rune exposes each rendered card as one accessible button, not its individual badges.
-    check(labels.filter(label => label.includes('Technical tie · today')).length === tiedCount, name + ': accessible tie labels match the ranked cards');
+    check(labels.filter((label, i) => leaderTie(analysis.view.recommendations[i]) && label.includes('Technical tie · today')).length === tiedCount, name + ': accessible tie labels match the ranked cards');
     check(analysis.view.ranking_note && (await text()).includes(analysis.view.ranking_note), name + ': the approximate tie criterion is explained');
     check(analysis.view.recommendations.every((rec, i) => {
       const source = analysis.raw.sequencias[i];
@@ -156,7 +158,7 @@ async (originalPage) => {
     await page.setViewportSize({ width: 1440, height: 1100 }); await page.waitForTimeout(300);
     const february = await analyze('february');
     await verifyCards(february, 2, 'February with only the first two close');
-    check(february.view.recommendations[2].tie_note === '', 'The third February sequence does not inherit the leaders tie');
+    check(february.view.recommendations[2].tie_note.startsWith('Technical tie · today with the next sequence (#4)'), 'The third February sequence is tied with the hidden #4, not with the leaders');
     const daily = await analyze('daily_hosts');
     const current = await openCurrent(daily);
     screen = await text();

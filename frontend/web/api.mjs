@@ -365,6 +365,37 @@ function closeLeaders(sequences) {
   return new Set(sequences.slice(0, 3).filter(close).map(seq => seq.id));
 }
 
+// Display band only (2 points, same as the leader band); engine ranks and scores stay untouched.
+const TIE_POINTS = 2;
+function technicalTies(sequences) {
+  const leaders = closeLeaders(sequences);
+  const byFuture = [...sequences].sort((a, b) => a.rank_futuro - b.rank_futuro);
+  const notes = new Map();
+  let withNext = false, future = false;
+  sequences.slice(0, 3).forEach((seq, i) => {
+    // Only the third card borders a sequence that is not shown: the #4 of today.
+    const next = i === 2 ? sequences[3] : undefined;
+    const nextTie = Boolean(next) && seq.hoje.score >= next.hoje.score && seq.hoje.score - next.hoje.score < TIE_POINTS;
+    const j = byFuture.indexOf(seq);
+    const neighbors = [byFuture[j - 1], byFuture[j + 1]].filter(other => other && Math.abs(seq.futuro.score - other.futuro.score) < TIE_POINTS);
+    const today = leaders.has(seq.id) || nextTie
+      ? `Technical tie · today${nextTie ? `${leaders.has(seq.id) ? ', also' : ''} with the next sequence (#${next.rank_hoje}), which is not shown in the cards` : ''}`
+      : '';
+    const ahead = neighbors.length
+      ? `Technical tie · future with ${neighbors.map(other => `#${other.rank_futuro}`).join(' and ')} in the future ranking`
+      : '';
+    withNext ||= nextTie; future ||= Boolean(ahead);
+    const note = [today, ahead].filter(Boolean).join('. ');
+    if (note) notes.set(seq.id, note);
+  });
+  const ranking_note = [
+    leaders.size ? `Technical tie among the top ${leaders.size === 2 ? 'two' : 'three'} suggestions: their scores are less than 2 points below the leader.` : '',
+    withNext ? 'The third suggestion is also less than 2 points above the next sequence (#4), which is not shown in the cards.' : '',
+    future ? 'Cards marked “Technical tie · future” are less than 2 points from an adjacent sequence in the future ranking.' : '',
+  ].filter(Boolean).join(' ');
+  return { notes, ranking_note: ranking_note && `${ranking_note} This is a comparison band, not exact equality or a statistical guarantee. Compare the other indicators too.` };
+}
+
 // The API sends the demo field's SRTM elevation whenever it uses the demo climate,
 // including boundaries drawn within 25 km. Only the exact demo boundary is "this field".
 function discardedReason(seq, demoBoundary = false) {
@@ -378,11 +409,11 @@ function discardedReason(seq, demoBoundary = false) {
   return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${seasonLabel(r.slot)}, position ${r.posicao}) ${r.mes_plantio === null ? `has no planting window in the ${seasonLabel(r.slot).toLowerCase()}` : `is planted in ${MONTHS[r.mes_plantio - 1]}, but the field is only available in ${MONTHS[r.mes_livre - 1]}`}.`;
 }
 
-function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false, tied = new Set(), models = null) {
+function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false, ties = new Map(), models = null) {
   const soilOnly = isSoilOnlyPlan(seq);
   return {
     ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
-    tie_note: tied.has(seq.id) ? 'Technical tie · today' : '',
+    tie_note: ties.get(seq.id) ?? '',
     model_note: modelNote(seq, models),
     revenue_note: sequenceRevenueNote(seq, cropLabel),
     comparison_facts: comparisonFacts(seq),
@@ -421,7 +452,7 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
   };
 }
 
-function currentRotation(value, farm, priorityNote, tied, demoBoundary = false) {
+function currentRotation(value, farm, priorityNote, ties, demoBoundary = false) {
   const state = (status, description, strategy = null) => ({ status, title: 'Current rotation', description, strategy });
   const history = value.entrada.rotacao_atual;
   if (!history.length) return state('no_history', 'Add your crop history to compare the current rotation with the alternatives.');
@@ -437,7 +468,7 @@ function currentRotation(value, farm, priorityNote, tied, demoBoundary = false) 
     const description = `Reference identified from your crop history, using the same indicators as the alternatives.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
       category: 'current', metric: isSoilOnlyPlan(seq) ? soilPlanRole(seq) : sequenceRevenueAmount(seq, seq.hoje.receita_ha), metric_label: isSoilOnlyPlan(seq) ? 'primary role' : 'gross revenue / ha · full rotation · today’s climate', reason: description,
-    }, priorityNote, true, tied, value.modelos));
+    }, priorityNote, true, ties, value.modelos));
   }
   const discarded = hasReference
     ? value.atual?.viavel === false && value.atual
@@ -488,17 +519,14 @@ export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '', dem
   const priorities = value.entrada.prioridades;
   const equal = priorities.agua === priorities.solo && priorities.solo === priorities.renda;
   const priority_note = `Priorities applied by the engine: water ${number(priorities.agua * 100)}%, soil ${number(priorities.solo * 100)}% and income ${number(priorities.renda * 100)}%.${equal ? ' Equal weights across all three priorities.' : ''}`;
-  const tied = closeLeaders(value.sequencias);
-  const ranking_note = tied.size
-    ? `Technical tie among the top ${tied.size === 2 ? 'two' : 'three'} suggestions: their scores are less than 2 points below the leader. This is a comparison band, not exact equality or a statistical guarantee. Compare the other indicators too.`
-    : '';
-  const current_rotation = currentRotation(value, farm, priority_note, tied, demoBoundary);
+  const { notes: ties, ranking_note } = technicalTies(value.sequencias);
+  const current_rotation = currentRotation(value, farm, priority_note, ties, demoBoundary);
   // The engine owns ranking and tie-breaking. Keep its order, including cover crops.
   const recommendations = value.sequencias.slice(0, 3).map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
     category: CATEGORIES[i], metric: `${number(seq.hoje.score)} / 100`,
     metric_label: 'weighted score · today’s climate',
     reason: `Rank #${seq.rank_hoje} among viable sequences in today’s climate. ${priority_note} Future ranking uses the same weights and may change.`,
-  }, priority_note, current_rotation.strategy?.sequence_id === seq.id, tied, value.modelos));
+  }, priority_note, current_rotation.strategy?.sequence_id === seq.id, ties, value.modelos));
   return { demo, summary: `${value.sequencias.length} viable ${value.sequencias.length === 1 ? 'rotation' : 'rotations'} · field available from ${MONTH_NAMES[value.entrada.mes_plantio - 1]} · planning ${value.entrada.horizonte} ${value.entrada.horizonte === 1 ? 'crop' : 'crops'}`,
     ...climateSources(value.origem, dataNotice, demo), ranking_note, soil_note: soilNote(value),
     scenario_note: value.clima.seco

@@ -1105,7 +1105,7 @@ fn glossary(s: &State, k: &Kit) -> El {
             ),
             (
                 "Technical tie",
-                "On this screen, options less than 2 points behind the leader in today's score. This margin accounts for natural year-to-year variation: it flags close results while preserving the engine's scores and order.",
+                "On this screen, options less than 2 points behind the leader in today's score; the third option when the next sequence (#4), not shown in the cards, is less than 2 points below it; and, in the future ranking, options less than 2 points from the sequence just above or below. This margin accounts for natural year-to-year variation: it flags close results while preserving the engine's scores and order.",
             ),
             (
                 "NDVI",
@@ -1839,6 +1839,10 @@ fn recommendation_card(
             label(
                 if rec.tie_note.is_empty() {
                     tagline
+                } else if !rec.tie_note.contains("· today") {
+                    "Close scores in the future climate"
+                } else if rec.tie_note.contains("· future") {
+                    "Close scores today and in the future"
                 } else {
                     "Close scores in today's climate"
                 },
@@ -2918,7 +2922,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note))
         .child(revenue_context("REVENUE CONTEXT", &rec.revenue_note, false))
         .child(if rec.tie_note.is_empty() { el() } else {
-            paragraph(if analysis.ranking_note.is_empty() { &rec.tie_note } else { &analysis.ranking_note })
+            // Card-specific tie first; the shared criterion follows when the engine output has one.
+            paragraph(if analysis.ranking_note.is_empty() { rec.tie_note.clone() } else { format!("{}. {}", rec.tie_note, analysis.ranking_note) })
         })
         .child(if rec.model_note.is_empty() { el() } else { paragraph(&rec.model_note) })
         .child(col().gap(13.0).child(label("Your crop cycle, step by step", 22.0, 600.0, INK).wrap())
