@@ -81,6 +81,11 @@ async function dispatch(action) {
     case 'download': if (farm) downloadGeoJSON(farm); break;
     case 'history': invalidate(); history = action.history; saveDraft(); break;
     case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
+    case 'priorities': {
+      invalidate(); settings = validateSettings(action.settings); saveDraft();
+      if (action.analyze) await dispatch({ type: 'analyze' });
+      break;
+    }
     case 'connect': await connect(); break;
     case 'chat_send': await chat.ask(action.pergunta); break;
     case 'chat_cancel': chat.cancel(); break;

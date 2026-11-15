@@ -1,7 +1,7 @@
 # Integração Rune ↔ FastAPI ↔ motor
 
 O contrato vigente é [docs/contrato_motor.md](../../docs/contrato_motor.md), de
-14/11/2026, incluindo P1 de `motor-dev2` (`82cabe8`) e D1 de `dados-calor` (`87cd7ec`). Ele substitui a proposta anterior deste
+15/11/2026, incluindo a decisão de prioridades da Parte 5 (`2413f15`). Ele substitui a proposta anterior deste
 arquivo (`schema_version`, `farm`, `recommendations`, `horizon_months`).
 
 `backend/app.py` valida a entrada HTTP, seleciona as tabelas do ponto e chama
@@ -44,7 +44,8 @@ por vírgulas quando necessário. Os servidores locais escutam apenas em loopbac
 | Histórico, na ordem mostrada | `rotacao_atual`: IDs canônicos do catálogo; a última cultura é a anterior |
 | Mês em que o talhão fica livre | `mes_plantio`, 1–12, padrão outubro |
 | Próxima cultura / próximas duas | `horizonte`, 1 ou 2, padrão 2 |
-| Pesos e preços | Pesos iguais, sem substituição dos preços da tabela |
+| Suas prioridades: água, solo e renda | `prioridades`: cada controle de 0 a 3, padrão 1/1/1 |
+| Preços | Sem substituição dos preços da tabela |
 | Área em hectares | Uso local: `receita_ha × area_ha` |
 | Safra/ano e observações | Rascunho local; não são campos aceitos pelo motor |
 
@@ -58,32 +59,50 @@ anteriores. Não vai para `motor.recomendar`: a API usa latitude e longitude par
 chamar a função entregue em `scripts/clima_ponto.py`. Sem longitude, mantém as
 tabelas de demonstração, incluindo o ano seco opcional, sem consulta externa.
 
-## Saída e três objetivos
+## Prioridades e três melhores pontuações — Parte 5
 
 `web/api.mjs` valida `entrada`, `slots`, `clima`, `sequencias` e `descartadas`, então
 converte os números para o modelo de apresentação consumido pelo Rune.
 
-Os três cards seguem os objetivos pedidos por Gabriel. A sugestão “três primeiras”
-no contrato do motor não é adotada: essas seriam as três melhores no score geral.
+Os cards são `sequencias.slice(0, 3)`, preservando a ordem de `rank_hoje` devolvida
+pelo motor. Não há seleção por receita, solo ou encaixe, nem desempate no front.
+Se vierem duas, uma ou nenhuma sequência viável, a tela mostra somente as existentes.
+Cada card apresenta `rank_hoje`, `hoje.score`, `rank_futuro` e `futuro.score`, também
+disponíveis no detalhe. O ranking futuro usa os mesmos pesos, mas não muda a ordem dos cards.
 
-| Card | Seleção entre sequências viáveis | Empate |
-|---|---|---|
-| Maior renda | Maior `hoje.receita_ha` | Melhor `rank_hoje`, depois ID |
-| Saúde do solo | Maior `hoje.solo` | Melhor `rank_hoje`, depois ID |
-| Resiliência climática | Maior `futuro.encaixe` entre sequências em que **cada** `futuro.culturas[].receita_ha > 0`; se nenhuma passar, usa todas | Maior `futuro.agua`, depois ID |
+Os três controles têm os níveis 0 (nada), 1 (pouco), 2 (médio) e 3 (muito).
+`buildRequest` envia os valores escolhidos, sem normalizar. A API aceita quaisquer
+números não negativos; o motor normaliza e, para 0/0/0, aplica pesos iguais.
+A explicação do resultado usa os pesos normalizados de `entrada.prioridades`.
+Em empate de score, o motor considera a média simples de água, solo e renda.
+Peso zero não exclui culturas nem representa uma restrição de irrigação.
 
-Uma sequência pode aparecer em vários cards. `encaixe` expressa adequação de
-temperatura/chuva/calor no motor; não é probabilidade nem avaliação completa de eventos extremos.
-Solo e encaixe são exibidos na escala 0–100. Receita é **bruta**, sem custos.
-Os scores/ranks gerais permanecem visíveis nos detalhes de cada alternativa.
+No planejamento, alterar prioridades salva o rascunho; a consulta começa em
+“Analisar”. Nos resultados, cada mudança refaz `/analyze`, cancela a consulta
+anterior e reinicia o chat. Respostas antigas não substituem o resultado novo.
+Rascunhos anteriores sem `prioridades` são migrados para 1/1/1.
+
+Exemplos reais do talhão de demonstração, livre em outubro, horizonte 2 e histórico
+Soja → Milho (o histórico participa do índice de solo):
+
+| Pesos água/solo/renda | Cards, na ordem |
+|---|---|
+| 1/1/1 ou 0/0/0 | Soja → Milho; Soja → Sorgo; Soja → Crotalária |
+| 0/0/1 | Soja → Milho; Soja → Trigo; Soja → Girassol |
+| 0/1/0 | Soja → Crotalária; Sorgo → Crotalária; Feijão → Crotalária |
+
+Em fevereiro, com pesos iguais, Crotalária → Algodão é a 1ª de hoje (79,218)
+e a 12ª no futuro (64,583). A tela formata os números recebidos, sem recalculá-los.
+`encaixe` expressa adequação de temperatura/chuva/calor no motor; não é probabilidade
+nem avaliação completa de eventos extremos. Receita é **bruta**, sem custos.
 
 ### Referência da rotação atual — Parte 1
 
-A tela acrescenta a **rotação atual** aos três objetivos, sem alterar a seleção dos
-vencedores. Os quatro cards mostram os mesmos indicadores: receita bruta por hectare
+A tela acrescenta a **rotação atual** às até três sugestões, sem alterar sua ordem.
+Os cards mostram os mesmos indicadores: receita bruta por hectare
 de hoje, índice de solo de hoje e encaixe climático futuro. A referência tem calendário,
 detalhes e ano seco quando esses dados existem na resposta. Ela permanece separada
-mesmo quando a mesma sequência vence um objetivo.
+mesmo quando a mesma sequência está entre as três primeiras.
 
 O adaptador produz `current_rotation: {status, title, description, strategy}` e
 `comparison_facts` em cada estratégia. Esses são modelos locais de apresentação,
@@ -120,10 +139,6 @@ não foram verificados nesta rodada.
 
 ### Calendário e detalhes
 
-Com as tabelas da Main em `c54fe17`, o card climático é Soja → Sorgo em outubro
-e Sorgo → Soja em fevereiro. A regra evita escolher cobertura sem receita apenas
-porque não há limiar de calor cadastrado; não altera o motor nem cria limites de calor.
-
 Cada cultura gera uma etapa com plantio, colheita, espera e balanço mensal retornados
 pelo motor. Os meses são desenrolados na ordem da sequência, preservando a passagem
 por dezembro; “ano 1” é o ano inicial sem vincular a um ano civil específico.
@@ -140,7 +155,7 @@ expansíveis, tanto para ausência de plantio naquela safra quanto para época p
 ## Solo entre as culturas — Parte 2
 
 A Main `ff2e22c` já entrega `sequencias[].hoje/futuro/seco.descoberto`.
-O front valida e apresenta esses números sem alterar os três objetivos, o score
+O front valida e apresenta esses números sem alterar as três sugestões, o score
 ou o ranking. A rotação atual usa a mesma apresentação das sugestões.
 
 - Nos cards: dias expostos nos primeiros 365 dias e chuva em solo exposto hoje.
@@ -196,7 +211,7 @@ ser atualizadas antes de reutilizar esse roteiro com a API nova.
 O endpoint já repassa `sequencias[].avisos` (regra 17 do contrato). O adaptador
 `web/warnings.mjs` valida a lista e transforma os dados para `Recommendation.warnings`,
 com grupos `risks` e `gaps`. Não gera avisos por conta própria, altera índices ou
-interfere na escolha dos três objetivos. A referência atual recebe o mesmo tratamento.
+interfere na ordem das três sugestões. A referência atual recebe o mesmo tratamento.
 
 - Os cards mostram as contagens separadas, um aviso de cada tipo com contexto e
   o número de avisos restantes no detalhe. O nome acessível inclui esse resumo.
@@ -260,8 +275,8 @@ O front não chama o provedor diretamente nem recebe chaves. `web/chat.mjs` envi
 quando `/metadata.capabilities.chat === true` e existe um resultado de análise.
 
 - `analise`: resposta original e completa do `/analyze`, preservada em memória.
-- `foco`: IDs únicos das três sugestões por objetivo e da rotação atual viável.
-  Referência descartada não é incluída. Não usa top 3 do ranking nem foco vazio;
+- `foco`: IDs únicos das até três primeiras do ranking e da rotação atual viável.
+  Referência descartada não é incluída. Não envia foco vazio;
   se não há estratégias viáveis, o envio fica bloqueado com explicação.
 - `historico`: todos os pares de perguntas/respostas aceitos nessa conversa,
   na ordem, com `papel` e `texto`. A pergunta nova vai separada em `pergunta`.
@@ -272,10 +287,11 @@ quando `/metadata.capabilities.chat === true` e existe um resultado de análise.
   do chat, mantendo os cards e o histórico válido. `recusada: true` aparece com
   a mensagem recebida e uma indicação de que a pergunta não foi respondida.
 - Sem armazenamento persistente do chat. Troca de área, histórico de culturas,
-  opções ou nova análise cancela a consulta e limpa a conversa. Navegar entre
+  opções, prioridades ou nova análise cancela a consulta e limpa a conversa. Navegar entre
   cards/detalhes conserva a conversa da mesma análise; “Nova conversa” a reinicia.
-- Até dez pares completos (20 mensagens). Se uma resposta ultrapassa os 4.000
-  caracteres que o backend aceita no histórico, ela continua visível inteira,
+- Até dez pares completos (20 mensagens). O front ainda limita cada mensagem do
+  histórico a 4.000 caracteres, embora o backend aceite 16.000 desde `dc841a1`.
+  Se uma resposta ultrapassa o limite local, ela continua visível inteira,
   mas uma nova pergunta exige “Nova conversa”. Não há truncamento silencioso.
 
 O painel informa antes do envio que pergunta, conversa e dados da análise em foco
@@ -334,7 +350,8 @@ recusadas. Sem o cenário, a tela mantém hoje/futuro e informa sua indisponibil
 Quando recebido, adiciona fatos de receita por hectare/área e ranking/score, além do
 terceiro valor na tabela mensal e nos detalhes. Legenda explícita: **hoje / futuro /
 ano seco**. O ano observado é 2020/21, conforme `docs/plano_gap.md`; não é média nem
-previsão. Os vencedores dos três objetivos continuam calculados em hoje/futuro.
+previsão. A seleção dos cards continua baseada no ranking de hoje; os números
+futuros são comparações com os mesmos pesos.
 O front não executa uma segunda análise com a tabela seca no lugar do futuro.
 `carregar_dados()` continua retornando três tabelas. A API carrega o ano seco por
 `carregar_clima_seco()` e passa como quinto argumento a `recomendar` apenas no fluxo

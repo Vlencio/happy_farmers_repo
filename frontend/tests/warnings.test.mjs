@@ -47,15 +47,15 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
   assert.ok(!JSON.stringify(bean).includes('feijao'));
 });
 
-test('adapter preserves objective selection and gives current rotation the same sequence warnings', () => {
+test('adapter preserves engine ranking and gives current rotation the same sequence warnings', () => {
   const raw = structuredClone(fixtures[2]);
   const view = mapMotorAnalysis(raw, { area_ha: 2 });
-  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>crotalaria', 'soja>sorgo']);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
   for (const rec of [...view.recommendations, view.current_rotation.strategy]) {
     assert.deepEqual(rec.warnings, show(find(rec.sequence_id, raw)));
   }
   const corn = view.current_rotation.strategy.warnings;
-  const cover = view.recommendations[1].warnings;
+  const cover = view.recommendations.find(rec => rec.sequence_id === 'soja>crotalaria').warnings;
   assert.equal(corn.risks.length, 2); // The dry-year water limitations are absent from the two-climate fixture.
   assert.equal(corn.gaps.length, 0);
   assert.equal(cover.risks.length, 2);

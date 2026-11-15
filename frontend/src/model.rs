@@ -24,12 +24,30 @@ pub struct Culture {
 pub struct Settings {
     pub mes_plantio: u8,
     pub horizonte: u8,
+    #[serde(default)]
+    pub prioridades: Priorities,
+}
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct Priorities {
+    pub agua: u8,
+    pub solo: u8,
+    pub renda: u8,
+}
+impl Default for Priorities {
+    fn default() -> Self {
+        Self {
+            agua: 1,
+            solo: 1,
+            renda: 1,
+        }
+    }
 }
 impl Default for Settings {
     fn default() -> Self {
         Self {
             mes_plantio: 10,
             horizonte: 2,
+            prioridades: Priorities::default(),
         }
     }
 }
@@ -41,7 +59,7 @@ pub enum Page {
 }
 #[derive(Clone, Copy, Debug)]
 pub enum SelectedStrategy {
-    Objective(usize),
+    Ranked(usize),
     Current,
 }
 #[derive(Clone, Debug, Deserialize)]
@@ -50,6 +68,7 @@ pub struct Analysis {
     pub summary: String,
     pub source_warning: String,
     pub scenario_note: String,
+    pub priority_note: String,
     pub recommendations: Vec<Recommendation>,
     pub current_rotation: CurrentRotation,
     pub discarded: Vec<String>,
@@ -69,6 +88,7 @@ pub struct Recommendation {
     pub tradeoff: String,
     pub facts: Vec<Fact>,
     pub comparison_facts: Vec<Fact>,
+    pub rank_facts: Vec<Fact>,
     pub timeline: Vec<Stage>,
     pub month_labels: Vec<String>,
     pub water_caption: String,

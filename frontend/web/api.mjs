@@ -3,9 +3,9 @@ import { buildExposure, validateSequenceExposure } from './exposure.mjs';
 import { buildWarnings, validateSequenceWarnings } from './warnings.mjs';
 import { buildBenefits, validateSequenceBenefits } from './benefits.mjs';
 
-export const CATEGORIES = ['income', 'soil', 'climate'];
+export const CATEGORIES = ['rank1', 'rank2', 'rank3'];
 export const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2 };
+export const DEFAULT_SETTINGS = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } };
 // POWER can take up to 300 s on a first lookup; leave time for scoring and transport.
 export const ANALYSIS_TIMEOUT_MS = 360_000;
 const accents = { feijao: 'Feijão', algodao: 'Algodão', braquiaria: 'Braquiária', crotalaria: 'Crotalária' };
@@ -38,7 +38,13 @@ export function validateSettings(value) {
   if (!Number.isInteger(value?.mes_plantio) || value.mes_plantio < 1 || value.mes_plantio > 12 || ![1, 2].includes(value.horizonte)) {
     throw new Error('Escolha o mês em que o talhão fica livre e uma ou duas culturas.');
   }
-  return { mes_plantio: value.mes_plantio, horizonte: value.horizonte };
+  // Drafts saved before priority controls used equal weights.
+  const priorities = value.prioridades === undefined ? DEFAULT_SETTINGS.prioridades : value.prioridades;
+  if (!priorities || ['agua', 'solo', 'renda'].some(key => !Number.isInteger(priorities[key]) || priorities[key] < 0 || priorities[key] > 3)) {
+    throw new Error('Escolha uma prioridade de 0 a 3 para água, solo e renda.');
+  }
+  return { mes_plantio: value.mes_plantio, horizonte: value.horizonte,
+    prioridades: { agua: priorities.agua, solo: priorities.solo, renda: priorities.renda } };
 }
 export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, cultures = []) {
   if (!farm?.geojson || !Number.isFinite(farm.area_ha) || farm.area_ha <= 0) throw new Error('Defina uma área válida antes de analisar.');
@@ -54,7 +60,7 @@ export function buildRequest(farm, history, settings = DEFAULT_SETTINGS, culture
     return match.id;
   });
   // Seasons and notes remain in the browser: the engine accepts only ordered crop IDs.
-  return { lat, lon, rotacao_atual, prioridades: { agua: 1, solo: 1, renda: 1 }, ...validateSettings(settings), precos: {} };
+  return { lat, lon, rotacao_atual, ...validateSettings(settings), precos: {} };
 }
 
 export function validateMotorOutput(value) {
@@ -65,6 +71,8 @@ export function validateMotorOutput(value) {
   }
   integer(value?.entrada?.mes_plantio, 'entrada.mes_plantio', 1, 12);
   integer(value?.entrada?.horizonte, 'entrada.horizonte', 1, 2);
+  for (const key of ['agua', 'solo', 'renda']) finite(value.entrada.prioridades?.[key], `entrada.prioridades.${key}`, 0, 1);
+  if (Object.values(value.entrada.prioridades).every(weight => weight === 0)) invalid('entrada.prioridades: pesos não normalizados');
   list(value.entrada.rotacao_atual, 'entrada.rotacao_atual', 0, 12);
   value.entrada.rotacao_atual.forEach((crop) => string(crop, 'entrada.rotacao_atual.cultura'));
   list(value.slots, 'slots', value.entrada.horizonte, value.entrada.horizonte);
@@ -197,14 +205,20 @@ function discardedReason(seq) {
   return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
 }
 
-function strategy(seq, farm, firstMonth, presentation, isCurrent = false) {
+function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent = false) {
   return {
     ...presentation, sequence_id: seq.id, crop: seq.culturas.map(cropLabel).join(' → '),
     comparison_facts: comparisonFacts(seq),
+    rank_facts: [
+      { label: 'Posição · hoje', value: `#${seq.rank_hoje}` },
+      { label: 'Score · hoje', value: `${number(seq.hoje.score)} / 100` },
+      { label: 'Posição · futuro', value: `#${seq.rank_futuro}` },
+      { label: 'Score · futuro', value: `${number(seq.futuro.score)} / 100` },
+    ],
     exposure: buildExposure(seq, firstMonth),
     warnings: buildWarnings(seq, cropLabel),
     benefits: buildBenefits(seq, cropLabel),
-    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. O ranking combina água, solo e renda com pesos iguais; cada card usa seu próprio objetivo. ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
+    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. ${priorityNote} ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
     facts: [
       { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
       { label: 'Receita / ha · futuro', value: money(seq.futuro.receita_ha) },
@@ -221,7 +235,7 @@ function strategy(seq, farm, firstMonth, presentation, isCurrent = false) {
   };
 }
 
-function currentRotation(value, farm) {
+function currentRotation(value, farm, priorityNote) {
   const state = (status, description, strategy = null) => ({ status, title: 'Rotação atual', description, strategy });
   const history = value.entrada.rotacao_atual;
   if (!history.length) return state('no_history', 'Adicione seu histórico de plantio para comparar a rotação atual com as alternativas.');
@@ -237,7 +251,7 @@ function currentRotation(value, farm) {
     const description = `Referência identificada a partir do histórico informado, com os mesmos indicadores das alternativas.${repetition}`;
     return state('ready', description, strategy(seq, farm, value.entrada.mes_plantio, {
       category: 'current', metric: money(seq.hoje.receita_ha), metric_label: 'receita bruta / ha · clima de hoje', reason: description,
-    }, true));
+    }, priorityNote, true));
   }
   const discarded = hasReference
     ? value.atual?.viavel === false && value.atual
@@ -248,23 +262,20 @@ function currentRotation(value, farm) {
 
 export function mapMotorAnalysis(raw, farm, { demo = false, dataNotice = '' } = {}) {
   const value = validateMotorOutput(raw);
-  const current_rotation = currentRotation(value, farm);
-  const choose = (score, tie = (seq) => -seq.rank_hoje, pool = value.sequencias) => [...pool].sort((a, b) => score(b) - score(a) || tie(b) - tie(a) || a.id.localeCompare(b.id))[0];
-  const commercial = value.sequencias.filter((seq) => seq.futuro.culturas.every((crop) => crop.receita_ha > 0));
-  const winners = [choose((s) => s.hoje.receita_ha), choose((s) => s.hoje.solo), choose((s) => s.futuro.encaixe, (s) => s.futuro.agua, commercial.length ? commercial : value.sequencias)];
-  const criteria = [
-    ['receita bruta / ha · clima de hoje', 'Maior receita bruta por hectare entre as sequências viáveis no clima de hoje. Custos de produção não entram neste valor.'],
-    ['índice de solo · clima de hoje', 'Maior índice de solo entre as sequências viáveis no clima de hoje, conforme os fatores de cobertura, fixação de nitrogênio e diversidade do motor.'],
-    ['encaixe climático · cenário futuro', `Maior encaixe climático futuro ${commercial.length ? 'entre sequências em que todas as culturas geram receita no futuro' : 'entre todas as sequências, pois nenhuma tem receita positiva em todas as culturas no futuro'}. Considera temperatura, chuva e penalização de calor. Empate: maior atendimento hídrico futuro. Não é probabilidade de resistir a eventos extremos.`],
-  ];
-  const recommendations = value.sequencias.length ? winners.map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
-    category: CATEGORIES[i], metric: i === 0 ? money(seq.hoje.receita_ha) : index(i === 1 ? seq.hoje.solo : seq.futuro.encaixe),
-    metric_label: criteria[i][0], reason: criteria[i][1],
-  }, current_rotation.strategy?.sequence_id === seq.id)) : [];
+  const priorities = value.entrada.prioridades;
+  const equal = priorities.agua === priorities.solo && priorities.solo === priorities.renda;
+  const priority_note = `Prioridades aplicadas pelo motor: água ${number(priorities.agua * 100)}%, solo ${number(priorities.solo * 100)}% e renda ${number(priorities.renda * 100)}%.${equal ? ' Pesos iguais entre as três prioridades.' : ''}`;
+  const current_rotation = currentRotation(value, farm, priority_note);
+  // The engine owns ranking and tie-breaking. Keep its order, including cover crops.
+  const recommendations = value.sequencias.slice(0, 3).map((seq, i) => strategy(seq, farm, value.entrada.mes_plantio, {
+    category: CATEGORIES[i], metric: `${number(seq.hoje.score)} / 100`,
+    metric_label: 'score ponderado · clima de hoje',
+    reason: `${seq.rank_hoje}ª posição entre as sequências viáveis no clima de hoje. ${priority_note} A posição no futuro usa os mesmos pesos e pode mudar.`,
+  }, priority_note, current_rotation.strategy?.sequence_id === seq.id));
   return { demo, summary: `${value.sequencias.length} sequências viáveis e ${value.descartadas.length} descartadas por calendário. Talhão livre em ${MONTHS[value.entrada.mes_plantio - 1]}; ${value.entrada.horizonte} cultura(s). ${demo ? 'Exemplo fixo: não utiliza seu histórico nem suas opções. ' : ''}${dataNotice}`,
     source_warning: value.origem?.aviso || '',
-    scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os três cards mantêm seus critérios de hoje e futuro.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
-    current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
+    scenario_note: value.clima.seco ? 'Ano seco: observações de 2020/21, não uma média nem uma previsão. Ele é comparado nos detalhes; os cards mostram as melhores posições de hoje com as prioridades aplicadas.' : 'A comparação com o ano seco ainda não está disponível nesta resposta do motor.',
+    priority_note, current_rotation, recommendations, discarded: value.descartadas.map(discardedReason) };
 }
 
 async function readResponse(response) {

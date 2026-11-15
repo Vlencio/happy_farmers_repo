@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { validateMotorOutput, buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis } from '../web/api.mjs';
+import { DEFAULT_SETTINGS, validateSettings, validateMotorOutput, buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis } from '../web/api.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/motor.json', import.meta.url)));
@@ -11,13 +11,19 @@ const metadata = JSON.parse(readFileSync(new URL('./fixtures/metadata.json', imp
 const farm = normalizeFarm({ type: 'Polygon', coordinates: [[[-49,-21],[-48,-21],[-48,-20],[-49,-20],[-49,-21]]] });
 const copy = () => structuredClone(fixture);
 
-test('consumes the actual engine contract and keeps three objective winners', () => {
+test('consumes the actual engine contract and keeps its first three ranked sequences', () => {
   validateMotorOutput(fixture);
   const result = mapMotorAnalysis(fixture, farm);
   assert.equal(result.demo, false);
-  assert.deepEqual(result.recommendations.map((r) => r.category), ['income', 'soil', 'climate']);
-  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>crotalaria', 'soja>sorgo']);
-  assert.equal(mapMotorAnalysis(february, farm).recommendations[2].sequence_id, 'sorgo>soja');
+  assert.deepEqual(result.recommendations.map((r) => r.category), ['rank1', 'rank2', 'rank3']);
+  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  assert.match(result.priority_note, /água 33,3%, solo 33,3% e renda 33,3%.*Pesos iguais/);
+  const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
+  assert.equal(februaryWinner.sequence_id, 'crotalaria>algodao');
+  assert.deepEqual(februaryWinner.rank_facts, [
+    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '79,2 / 100' },
+    { label: 'Posição · futuro', value: '#12' }, { label: 'Score · futuro', value: '64,6 / 100' },
+  ]);
   assert.equal(result.discarded.length, 74);
 });
 test('current rotation stays beside the three winners with comparable actual engine metrics', () => {
@@ -27,11 +33,12 @@ test('current rotation stays beside the three winners with comparable actual eng
   assert.equal(current.title, 'Rotação atual');
   assert.equal(current.strategy.category, 'current');
   assert.equal(current.strategy.sequence_id, 'soja>milho');
-  // This reference also wins income; both roles must remain visible.
+  // This reference is also ranked first; both roles must remain visible.
   assert.equal(view.recommendations.length, 3);
   assert.equal(current.strategy.sequence_id, view.recommendations[0].sequence_id);
   assert.deepEqual(current.strategy.timeline, view.recommendations[0].timeline);
   assert.deepEqual(current.strategy.facts, view.recommendations[0].facts);
+  assert.deepEqual(current.strategy.rank_facts, view.recommendations[0].rank_facts);
   const money = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
   const index = (v) => `${(v * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} / 100`;
   for (const card of [current.strategy, ...view.recommendations]) {
@@ -152,7 +159,7 @@ test('unsupported restored crops block submission rather than silently losing hi
   assert.throws(() => buildRequest(farm, [{ crop: 'Café' }], undefined, metadata.cultures), /Café.*catálogo/);
   assert.throws(() => buildRequest(farm, [], { mes_plantio: 0, horizonte: 2 }), /mês/);
 });
-test('uses objective metrics even when the engine overall ranks disagree', () => {
+test('preserves engine order despite individual revenue, soil and future metrics', () => {
   const data = copy();
   const target = data.sequencias.find((s) => s.futuro.culturas.every((c) => c.receita_ha > 0) && s.rank_hoje > 1);
   target.hoje.receita_ha = 999999;
@@ -160,27 +167,60 @@ test('uses objective metrics even when the engine overall ranks disagree', () =>
   target.futuro.encaixe = 1;
   target.futuro.agua = 1;
   const mapped = mapMotorAnalysis(data, farm);
-  assert.ok(mapped.recommendations.every((r) => r.sequence_id === target.id));
+  assert.deepEqual(mapped.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
 });
-test('compares future climate and uses future water to break climate ties', () => {
+test('does not re-sort or break ties in the engine ranking', () => {
   const data = copy();
-  for (const seq of data.sequencias) { seq.futuro.encaixe = 0.5; seq.futuro.agua = 0.5; }
-  const target = data.sequencias.findLast((s) => s.futuro.culturas.every((c) => c.receita_ha > 0));
-  target.futuro.agua = 0.8;
-  assert.equal(mapMotorAnalysis(data, farm).recommendations[2].sequence_id, target.id);
+  data.entrada.prioridades = { agua: 1, solo: 0, renda: 0 };
+  for (const seq of data.sequencias) { seq.hoje.score = 100; seq.hoje.agua = 1; }
+  data.sequencias.reverse(); // Adapter-only case: the response order is authoritative.
+  const view = mapMotorAnalysis(data, farm);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
+  assert.match(view.priority_note, /água 100%, solo 0% e renda 0%/);
+  assert.doesNotMatch(view.priority_note, /Pesos iguais/);
 });
-test('climate excludes a zero-revenue crop even when its sequence has income; falls back only if none qualify', () => {
+test('keeps cover crops ranked by the engine without a commercial filter', () => {
   const data = copy();
   const cover = data.sequencias.find((s) => s.id === 'soja>milheto');
   assert.ok(cover.futuro.receita_ha > 0);
   assert.ok(cover.futuro.culturas.some((c) => c.receita_ha === 0));
-  cover.futuro.encaixe = 1; cover.futuro.agua = 1;
-  assert.notEqual(mapMotorAnalysis(data, farm).recommendations[2].sequence_id, cover.id);
-  for (const seq of data.sequencias) seq.futuro.culturas[0].receita_ha = 0;
-  const rec = mapMotorAnalysis(data, farm).recommendations[2];
+  data.sequencias = [cover, ...data.sequencias.filter(seq => seq !== cover)];
+  const rec = mapMotorAnalysis(data, farm).recommendations[0];
   assert.equal(rec.sequence_id, cover.id);
-  assert.match(rec.reason, /nenhuma tem receita positiva/);
+  assert.match(rec.reason, /posição entre as sequências viáveis.*prioridades/i);
+  assert.doesNotMatch(rec.reason, /todas as culturas geram receita|objetivo/);
 });
+test('sends every UI priority exactly, including all zeros, and rejects invalid controls', () => {
+  for (const prioridades of [{ agua: 3, solo: 2, renda: 0 }, { agua: 0, solo: 0, renda: 3 }, { agua: 0, solo: 0, renda: 0 }]) {
+    const request = buildRequest(farm, [], { ...DEFAULT_SETTINGS, prioridades });
+    assert.deepEqual(request.prioridades, prioridades);
+    assert.notEqual(request.prioridades, prioridades);
+  }
+  assert.deepEqual(validateSettings({ mes_plantio: 2, horizonte: 1 }).prioridades, { agua: 1, solo: 1, renda: 1 });
+  for (const invalid of [null, {}, { agua: 1, solo: 1 }, { agua: -1, solo: 1, renda: 1 }, { agua: 4, solo: 1, renda: 1 },
+    { agua: 0.5, solo: 1, renda: 1 }, { agua: '1', solo: 1, renda: 1 }, { agua: NaN, solo: 1, renda: 1 }]) {
+    assert.throws(() => validateSettings({ ...DEFAULT_SETTINGS, prioridades: invalid }), /prioridade de 0 a 3/);
+  }
+});
+
+test('rejects missing, nonfinite or unnormalized effective response priorities', () => {
+  for (const prioridades of [undefined, null, { agua: 0, solo: 0, renda: 0 }, { agua: 3, solo: 0, renda: 0 }, { agua: NaN, solo: 0, renda: 1 }]) {
+    const data = copy(); data.entrada.prioridades = prioridades;
+    assert.throws(() => mapMotorAnalysis(data, farm), /entrada.prioridades/);
+  }
+});
+
+test('one or two viable sequences produce exactly that many distinct cards', () => {
+  for (const count of [1, 2]) {
+    const data = copy(); data.sequencias = data.sequencias.slice(0, count);
+    // These selected fixture entries have matching ranks 1 and 2 in both climates.
+    const view = mapMotorAnalysis(data, farm);
+    assert.equal(view.recommendations.length, count);
+    assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.map(seq => seq.id));
+    assert.deepEqual(view.recommendations.map(rec => rec.category), ['rank1', 'rank2'].slice(0, count));
+  }
+});
+
 test('multiplies gross revenue by farm hectares without changing engine metrics', () => {
   const result = mapMotorAnalysis(fixture, { area_ha: 2 });
   const facts = result.recommendations[0].facts;

@@ -60,12 +60,12 @@ Cada pergunta manda à API da Anthropic a pergunta, o histórico e a parte da an
 
 O painel está implementado no front em `web/chat.mjs`, `web/main.mjs` e na UI Rune.
 Aparece nos resultados e no detalhe somente com a capability booleana `true`.
-Envia a análise original, os IDs únicos dos três cards por objetivo e da referência
-atual viável, sem substituir pelos primeiros do ranking. Sem estratégia viável,
+Envia a análise original, os IDs únicos dos até três cards do ranking de hoje e da
+referência atual viável. Sem estratégia viável,
 o envio fica indisponível.
 
 A conversa fica só em memória e é reenviada inteira a cada pergunta. Nova análise,
-mudança de área, histórico ou opções limpa a conversa e cancela a resposta pendente.
+mudança de área, histórico, opções ou prioridades limpa a conversa e cancela a resposta pendente.
 Trocar entre os detalhes dos cards mantém a conversa da mesma análise. Falha,
 cancelamento ou resposta inválida preserva a pergunta para nova tentativa.
 O painel permite no máximo dez pares de pergunta/resposta e oferece “Nova conversa”;
