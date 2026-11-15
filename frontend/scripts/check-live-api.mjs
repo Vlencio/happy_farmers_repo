@@ -96,11 +96,11 @@ console.log(`${currentCases.length} casos de rotação atual passaram na API rea
 // history contributes to soil diversity, so empty history can change tied scores.
 const weightedHistory = ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' }));
 const weightedCases = [
-  { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>milho', 'soja>sorgo', 'soja>feijao'] },
-  { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>trigo', 'soja>girassol'] },
+  { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
+  { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>trigo', 'soja>sorgo'] },
   { name: 'só solo', prioridades: { agua: 0, solo: 3, renda: 0 }, ids: ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'] },
   { name: 'só água e desempate do motor', prioridades: { agua: 3, solo: 0, renda: 0 }, ids: ['soja>feijao', 'soja>milheto', 'feijao>milheto'] },
-  { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>milho', 'soja>sorgo', 'soja>feijao'] },
+  { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
 ];
 let weightedBaseline;
 for (const { name, prioridades, ids } of weightedCases) {
@@ -121,14 +121,17 @@ const futureShift = await requestAnalysis(baseUrl, buildRequest(farm, weightedHi
 assert.equal(futureShift.sequencias[0].id, 'sorgo>soja');
 assert.equal(futureShift.sequencias[0].rank_hoje, 1);
 assert.equal(futureShift.sequencias[0].rank_futuro, 1);
-assert.equal(futureShift.sequencias[0].hoje.score, 75.987);
-assert.equal(futureShift.sequencias[0].futuro.score, 75.139);
+assert.equal(futureShift.sequencias[0].hoje.score, 76.654);
+assert.equal(futureShift.sequencias[0].futuro.score, 75.72);
 const februaryView = mapMotorAnalysis(futureShift, farm);
 assert.equal(februaryView.recommendations[0].rank_facts[2].value, '#1');
-assert.equal(futureShift.sequencias[1].id, 'feijao>soja');
-assert.equal(futureShift.sequencias[1].rank_futuro, 7);
-assert.equal(februaryView.recommendations[1].rank_facts[2].value, '#7');
-console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro tem sorgo>soja em 1º e feijao>soja muda de 2º hoje para 7º no futuro.`);
+assert.equal(futureShift.sequencias[1].id, 'crotalaria>soja');
+assert.equal(futureShift.sequencias[1].rank_futuro, 2);
+assert.equal(februaryView.recommendations[1].rank_facts[2].value, '#2');
+assert.equal(futureShift.sequencias[2].id, 'feijao>soja');
+assert.equal(futureShift.sequencias[2].rank_futuro, 10);
+assert.equal(februaryView.recommendations[2].rank_facts[2].value, '#10');
+console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro tem sorgo>soja e crotalaria>soja nas duas primeiras posições, e feijao>soja muda de 3º hoje para 10º no futuro.`);
 
 // The actual API now owns what-if calculations. Exercise the browser request
 // builder, effective echo and presentation, without reproducing climate formulas.

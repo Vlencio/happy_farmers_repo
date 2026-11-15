@@ -8,6 +8,7 @@ const TYPES = {
   repete_a_cultura: 'risco', solo_exposto: 'risco', sem_historico: 'lacuna',
   sem_limiar_de_calor: 'lacuna', limiar_de_calor_pouco_confiavel: 'lacuna',
   sem_valor_de_mercado: 'lacuna', ky_padrao: 'lacuna', valor_a_conferir: 'lacuna',
+  hospedeiro_comum: 'risco', fator_agua_diario: 'risco', rank_varia_entre_modelos: 'risco',
 };
 const FIELDS = { preco: 'Preço', temp_calor_c: 'Limiar de calor', produtividade: 'Produtividade da safra',
   produtividade_safrinha: 'Produtividade da safrinha', ky: 'Resposta à falta de água (Ky)' };
@@ -48,16 +49,38 @@ export function validateSequenceWarnings(seq, scenarios) {
     if (warning.tipo !== type) invalid(`${path}.tipo`);
     const d = warning.dados;
     const amount = (key, min = 0, max = Infinity) => finite(d[key], `${path}.dados.${key}`, min, max);
-    const needsCrop = ['fator_limitante', 'repete_a_cultura', 'sem_limiar_de_calor',
+    const needsCrop = ['fator_limitante', 'fator_agua_diario', 'repete_a_cultura', 'hospedeiro_comum', 'sem_limiar_de_calor',
       'limiar_de_calor_pouco_confiavel', 'sem_valor_de_mercado', 'ky_padrao', 'valor_a_conferir'].includes(warning.codigo);
     if (needsCrop !== (warning.cultura !== null)) invalid(`${path}.cultura`);
-    const needsScenario = ['fator_limitante', 'queda_no_futuro', 'queda_no_ano_ruim'].includes(warning.codigo);
+    const needsScenario = ['fator_limitante', 'fator_agua_diario', 'queda_no_futuro', 'queda_no_ano_ruim', 'rank_varia_entre_modelos'].includes(warning.codigo);
     if (needsScenario !== (warning.cenario !== null)) invalid(`${path}.cenario`);
-    if (['fator_limitante', 'repete_a_cultura'].includes(warning.codigo) && !['safra', 'safrinha'].includes(d.slot)) invalid(`${path}.dados.slot`);
+    if (['fator_limitante', 'fator_agua_diario', 'repete_a_cultura', 'hospedeiro_comum'].includes(warning.codigo) && !['safra', 'safrinha'].includes(d.slot)) invalid(`${path}.dados.slot`);
     switch (warning.codigo) {
       case 'fator_limitante':
         if (!Object.hasOwn(FACTORS, d.fator)) invalid(`${path}.dados.fator`);
         amount('valor', 0, 1); break;
+      case 'fator_agua_diario':
+        amount('fator_agua', 0, 1); amount('atendimento_hidrico', 0, 1); amount('ky'); break;
+      case 'hospedeiro_comum':
+        amount('penalidade', 0, 1); amount('fator_sequencia');
+        string(d.anterior, `${path}.dados.anterior`, 100);
+        if (!Array.isArray(d.pragas) || !d.pragas.length) invalid(`${path}.dados.pragas`);
+        for (const [index, pest] of d.pragas.entries()) string(pest, `${path}.dados.pragas.${index}`);
+        break;
+      case 'rank_varia_entre_modelos': {
+        if (warning.cenario !== 'futuro') invalid(`${path}.cenario`);
+        amount('rank_min', 1); amount('rank_max', d.rank_min); amount('limite');
+        for (const key of ['rank_min', 'rank_max', 'limite']) {
+          if (!Number.isInteger(d[key])) invalid(`${path}.dados.${key}`);
+        }
+        if (!object(d.por_modelo) || !Object.keys(d.por_modelo).length) invalid(`${path}.dados.por_modelo`);
+        for (const [model, rank] of Object.entries(d.por_modelo)) {
+          string(model, `${path}.dados.por_modelo`, 100);
+          finite(rank, `${path}.dados.por_modelo.${model}`, d.rank_min, d.rank_max);
+          if (!Number.isInteger(rank)) invalid(`${path}.dados.por_modelo.${model}`);
+        }
+        break;
+      }
       case 'queda_no_futuro':
         if (warning.cenario !== 'futuro') invalid(`${path}.cenario`);
         amount('queda', 0, 1); amount('receita_hoje'); amount('receita_futuro'); break;
@@ -107,7 +130,8 @@ function present(warning, cropLabel) {
   const d = warning.dados;
   const crop = warning.cultura === null ? null : cropLabel(warning.cultura);
   const scenario = warning.cenario === null ? null : SCENARIOS[warning.cenario];
-  const context = [crop || 'Sequência inteira', typeof d.slot === 'string' ? d.slot : null, scenario].filter(Boolean).join(' · ');
+  const context = [crop || 'Sequência inteira', typeof d.slot === 'string' ? d.slot : null, scenario,
+    warning.codigo === 'fator_agua_diario' ? 'modo diário · ano mediano' : null].filter(Boolean).join(' · ');
   const item = (title, description, evidence, card_summary) => ({ title, context, description, evidence, card_summary });
   switch (warning.codigo) {
     case 'fator_limitante': {
@@ -129,12 +153,27 @@ function present(warning, cropLabel) {
       return item('Repetição de cultura', 'A cultura repete a anterior. O motor aplica uma penalidade provisória associada a pragas e doenças; a ocorrência local não foi medida.',
         `Fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
         `${crop} · ${d.slot}: repetição, fator ${number(d.fator_sequencia, 3)}×.`);
+    case 'hospedeiro_comum':
+      return item('Praga ou doença em comum com a cultura anterior',
+        `Esta cultura e ${cropLabel(d.anterior)} são hospedeiras de pragas ou doenças em comum consideradas pelo motor. A penalidade é provisória; não indica uma ocorrência medida no talhão. O fator de sequência também pode incluir um bônus após adubo verde.`,
+        `Cultura anterior: ${cropLabel(d.anterior)}. Pragas ou doenças: ${d.pragas.join('; ')}. Fator por hospedeiro comum: ${number(d.penalidade, 3)}×; fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
+        `${crop} após ${cropLabel(d.anterior)}: praga ou doença em comum; fator ${number(d.penalidade, 3)}×.`);
+    case 'fator_agua_diario':
+      return item('Limitação por água no modo diário',
+        'No ano mediano do modo diário, a falta de água reduz a produtividade pelo fator informado. O cálculo considera Ky, a sensibilidade da cultura à falta de água. Esta avaliação é diferente do balanço mensal.',
+        `Fator por falta de água: ${number(d.fator_agua * 100)} / 100. Atendimento hídrico: ${number(d.atendimento_hidrico * 100)} / 100. Ky: ${number(d.ky, 3)}.`,
+        `${crop} · ${scenario}, modo diário: fator por falta de água em ${number(d.fator_agua * 100)} / 100 no ano mediano.`);
+    case 'rank_varia_entre_modelos':
+      return item('Posição varia entre modelos climáticos',
+        'A posição desta sequência no futuro muda conforme o modelo climático. A faixa compara os modelos disponíveis; não é um intervalo de confiança nem uma probabilidade.',
+        `Posição no futuro: ${d.rank_min}ª a ${d.rank_max}ª. ${Object.entries(d.por_modelo).map(([model, rank]) => `${model}: ${rank}ª`).join('; ')}. Limite de variação usado no aviso: ${d.limite} posições.`,
+        `No futuro, posição de ${d.rank_min}ª a ${d.rank_max}ª entre modelos.`);
     case 'solo_exposto':
       return item('Solo exposto', 'Dias sem cultura em pé e sem palhada nos primeiros 365 dias. A chuva corresponde ao clima de hoje.',
         `${d.dias_expostos} dias expostos; ${number(d.chuva_exposta_mm)} mm de chuva sobre o solo exposto.`,
         `${d.dias_expostos} dias expostos, com ${number(d.chuva_exposta_mm)} mm de chuva hoje.`);
     case 'sem_historico':
-      return item('Histórico não informado', 'Sem histórico, a primeira cultura não recebe a penalidade por repetição nem o bônus após uma fixadora de nitrogênio.',
+      return item('Histórico não informado', 'Sem histórico, a primeira cultura não recebe a penalidade por repetição, a de hospedeiro comum de pragas ou doenças, nem o bônus após adubo verde que fixa nitrogênio.',
         'Histórico de plantio ausente nesta análise.', 'Histórico ausente: efeito da cultura anterior não avaliado.');
     case 'sem_limiar_de_calor':
       return item('Limiar de calor ausente', 'O motor não desconta o efeito do calor desta cultura. A ausência de desconto não comprova tolerância ao calor.',

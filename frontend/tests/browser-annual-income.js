@@ -73,14 +73,16 @@ async (originalPage) => {
     await page.reload(); await waitText('Motor conectado');
     await choose('Mês em que o talhão fica livre', 'Fevereiro');
     check(await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')).settings.mes_plantio) === 2, 'The visible month control saves February');
-    check((await text()).includes('Receita bruta por ano de ocupação, sem descontar custos'), 'Income priority explains annual field occupancy');
+    check((await text()).includes('receita bruta por hectare e por ano de ocupação. Os custos não são descontados.'), 'Income priority explains annual field occupancy');
     check((await text()).includes('por volta de 2060') && !/2041[–-]2060|2050/.test(await text()), 'Setup shows the corrected future label without the old date');
     if (await button('Mostrar observações do talhão').count()) await click('Mostrar observações do talhão');
     check((await text()).includes('+1,34 a +2,31 °C; chuva anual de -79,6 a +32,7 mm.'), 'D2 range is visible from the integrated real metadata');
     await click('Entenda os termos · abrir');
-    check((await text()).includes('reserva de água do solo usada pelo motor é de 60 mm') && !(await text()).includes('100 mm'), 'Glossary uses the new 60 mm soil reserve');
-    check((await text()).includes('não uma medição deste talhão'), 'Soil reserve is distinguished from a field measurement');
-    await capture('context-desktop', page.getByText(/^A reserva de água do solo usada pelo motor é de 60 mm/));
+    const glossaryText = await text();
+    check(['30 mm para solo arenoso', '45 mm para médio', '60 mm para argiloso', 'Sem textura informada, a referência é 60 mm', 'não medições deste talhão']
+      .every(value => glossaryText.includes(value)), 'Glossary uses soil texture references and preserves the default');
+    check(glossaryText.includes('São referências por classe, não medições deste talhão'), 'Soil reserve is distinguished from a field measurement');
+    await capture('context-desktop', page.getByText(/^A reserva de água usada no cálculo é de 30 mm/));
     const pendingAnalysis = page.waitForResponse(response => response.request().method() === 'POST' && new URL(response.url()).pathname.endsWith('/analyze'));
     await click('Analisar fazenda →');
     const analysisResponse = await pendingAnalysis;
@@ -92,7 +94,7 @@ async (originalPage) => {
     const cards = page.getByRole('button', { name: /^[123]ª DE HOJE.*Abrir linha do tempo$/ });
     check(await cards.count() === 3, 'Three ranked cards remain visible');
     const labels = await cards.allTextContents();
-    check(['Sorgo → Soja', 'Feijão → Soja', 'Crotalária → Soja'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
+    check(['Sorgo → Soja', 'Crotalária → Soja', 'Feijão → Soja'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
     check((await text()).includes('receita dos cards soma toda a sequência; a prioridade renda considera a receita por ano'), 'Results distinguish sequence revenue from the annual ranking basis');
     check((await text()).includes('por volta de 2060') && !/2041[–-]2060|2050/.test(await text()), 'Results retain the corrected future date');
     await capture('cards-desktop', cards.first());

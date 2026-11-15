@@ -275,13 +275,13 @@ function withDryScenario() {
 }
 test('dry scenario is optional and supplies a third set of facts and monthly numbers when complete', () => {
   const current = mapMotorAnalysis(fixture, farm);
-  assert.equal(current.recommendations[0].facts.length, 10);
+  assert.equal(current.recommendations[0].facts.length, 12);
   assert.match(current.scenario_note, /ainda não está disponível/);
   const data = withDryScenario();
   const view = mapMotorAnalysis(data, { area_ha: 2 });
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), current.recommendations.map((r) => r.sequence_id));
   const rec = view.recommendations[0];
-  assert.equal(rec.facts.length, 15);
+  assert.equal(rec.facts.length, 18);
   assert.equal(rec.facts[7].value.replace(/\s/g, ''), 'R$2.468');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').at(-1), '7');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').length, 3);
@@ -303,7 +303,7 @@ test('actual P1 dry-year output is shown without changing the three winners', ()
   const view = mapMotorAnalysis(dryYear, farm);
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), mapMotorAnalysis(fixture, farm).recommendations.map((r) => r.sequence_id));
   assert.match(view.scenario_note, /2020\/21/);
-  assert.equal(view.recommendations[0].facts.length, 15);
+  assert.equal(view.recommendations[0].facts.length, 18);
   assert.equal(view.recommendations[0].timeline[0].monthly[0].rain.split(' / ').length, 3);
   assert.equal(view.current_rotation.status, 'ready');
   assert.deepEqual(view.current_rotation.strategy.facts, view.recommendations[0].facts);
@@ -341,4 +341,161 @@ test('malformed error bodies and null metadata produce readable errors, not Type
   for (const value of [null, { cultures: [null] }]) {
     await assert.rejects(requestMetadata('/api', { fetcher: async () => ({ ok: true, json: async () => value }) }), /contrato/);
   }
+});
+
+test('near-leading scores are shown as a technical tie without changing engine ranks, scores, or current reference', () => {
+  const view = mapMotorAnalysis(fixture, farm);
+  assert.match(view.ranking_note, /Empate técnico entre as três.*menos de 2 pontos.*não igualdade exata/);
+  assert.ok(view.recommendations.every(card => card.tie_note === 'Empate técnico · hoje'));
+  assert.equal(view.current_rotation.strategy.tie_note, view.recommendations[0].tie_note);
+  assert.deepEqual(view.recommendations.map(card => card.sequence_id), fixture.sequencias.slice(0, 3).map(seq => seq.id));
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[0].value), ['#1', '#2', '#3']);
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['77,9 / 100', '76,5 / 100', '76,5 / 100']);
+});
+
+test('tie threshold is strict and measured from the leader rather than chaining adjacent scores', () => {
+  // Synthetic scores exercise the display threshold, not a new motor calculation.
+  for (const [scores, expected] of [
+    [[90, 88, 87], [false, false, false]],
+    [[90, 88.001, 87], [true, true, false]],
+    [[90, 89, 87.5], [true, true, false]],
+    [[90, 89, 88.001], [true, true, true]],
+    [[90, 90, 90], [true, true, true]],
+  ]) {
+    const data = copy();
+    data.sequencias.slice(0, 3).forEach((seq, i) => { seq.hoje.score = scores[i]; });
+    const view = mapMotorAnalysis(data, farm);
+    assert.deepEqual(view.recommendations.map(card => Boolean(card.tie_note)), expected);
+    assert.equal(Boolean(view.ranking_note), expected[0]);
+    assert.equal(Boolean(view.current_rotation.strategy.tie_note), expected[0]);
+    assert.deepEqual(view.recommendations.map(card => card.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
+  }
+  const one = copy(); one.sequencias = [one.sequencias[0]];
+  assert.equal(mapMotorAnalysis(one, farm).ranking_note, '');
+  const empty = copy(); empty.sequencias = []; empty.atual = null; empty.entrada.rotacao_atual = [];
+  assert.equal(mapMotorAnalysis(empty, farm).ranking_note, '');
+});
+
+test('raw sequence water attendance is shown separately from the rescaled water score and is optional on legacy responses', () => {
+  const data = copy();
+  data.sequencias[0].hoje.atendimento_hidrico = .875;
+  data.sequencias[0].hoje.agua = .4; // These fields may differ; the UI must not equate them.
+  const card = mapMotorAnalysis(data, farm).recommendations[0];
+  assert.equal(card.facts.find(fact => fact.label === 'Atendimento de água · hoje').value, '87,5% da demanda');
+  for (const seq of data.sequencias) for (const scenario of ['hoje', 'futuro']) delete seq[scenario].atendimento_hidrico;
+  assert.ok(mapMotorAnalysis(data, farm).recommendations.every(rec => rec.facts.every(fact => !fact.label.startsWith('Atendimento de água'))));
+  for (const value of [null, '0.5', -.01, 1.01, NaN, Infinity]) {
+    const invalid = copy(); invalid.sequencias[0].hoje.atendimento_hidrico = value;
+    assert.throws(() => validateMotorOutput(invalid), /atendimento_hidrico/);
+  }
+});
+
+test('crop sequence factors explain supplied repetition, green-manure bonus and shared hosts while preserving their precision', () => {
+  const data = copy();
+  const host = data.sequencias.find(seq => seq.id === 'soja>feijao');
+  data.atual = { id: host.id, culturas: host.culturas, viavel: true, motivo: null };
+  const hostView = mapMotorAnalysis(data, farm).current_rotation.strategy;
+  assert.match(hostView.timeline[1].soil, /Compartilha praga ou doença com Soja.*0,75×/);
+  assert.match(hostView.timeline[1].description, /10 dias entre o fim da cultura anterior/);
+  // Presentation-only extension exercises a combined 1.1 × .92 factor supplied by the engine.
+  const crop = data.sequencias[0].hoje.culturas[0];
+  crop.bonus_n = true; crop.fator_sequencia = 1.012; crop.dias_apos_anterior = 60;
+  const bonus = mapMotorAnalysis(data, farm).recommendations[0].timeline[0];
+  assert.match(bonus.soil, /1,012×.*bônus após adubo verde.*60 dias/);
+  assert.match(bonus.description, /60 dias.*suposição do cálculo/);
+  crop.bonus_n = false; crop.repete = true;
+  assert.match(mapMotorAnalysis(data, farm).recommendations[0].timeline[0].soil, /Repete a cultura anterior/);
+  for (const seq of data.sequencias) for (const scenario of ['hoje', 'futuro']) for (const item of seq[scenario].culturas) {
+    for (const key of ['repete', 'bonus_n', 'penalidade_hospedeiro', 'dias_apos_anterior', 'hospedeiro_comum']) delete item[key];
+  }
+  assert.doesNotThrow(() => mapMotorAnalysis(data, farm));
+});
+
+test('new optional crop factors reject invalid flags, intervals and host details', () => {
+  for (const [key, values] of Object.entries({
+    repete: ['true', null, 0], bonus_n: ['false', null, 1],
+    penalidade_hospedeiro: [null, '0.92', -.01, 1.01, NaN, Infinity],
+    dias_apos_anterior: ['10', -1, .5, Infinity],
+    hospedeiro_comum: [false, [], {}, { anterior: 'soja', pragas: [] }, { anterior: null, pragas: ['mofo-branco'] }, { anterior: 'soja', pragas: [1] }],
+  })) for (const value of values) {
+    const data = copy(); data.sequencias[0].hoje.culturas[0][key] = value;
+    assert.throws(() => validateMotorOutput(data), /culturas/);
+  }
+  const withoutPrevious = copy();
+  withoutPrevious.sequencias[0].hoje.culturas[0].dias_apos_anterior = null;
+  assert.doesNotThrow(() => validateMotorOutput(withoutPrevious));
+});
+
+// Synthetic model extension checks presentation/validation; it is not a claim
+// about the delivered climate models or a regeneration of motor fixtures.
+function withModelRanges() {
+  const data = copy();
+  const names = ['Modelo A', 'Modelo B'];
+  data.modelos = { nomes: names, chuva: 'aproximada', et0_sem_correcao: true,
+    aviso_faixa_rank: 5, primeiro: {}, clima: {} };
+  for (const [m, name] of names.entries()) {
+    data.modelos.clima[name] = structuredClone(data.clima.futuro);
+    for (const [i, seq] of data.sequencias.entries()) {
+      if (m === 0) seq.modelos = { por_modelo: [] };
+      const rank = (i + m + 1) % data.sequencias.length + 1;
+      seq.modelos.por_modelo.push({ modelo: name, rank, score: 70 - i,
+        receita_ano_ha: 1000 + i * 100 + m * 50 });
+      if (rank === 1) data.modelos.primeiro[name] = seq.id;
+    }
+  }
+  for (const seq of data.sequencias) {
+    const ranks = seq.modelos.por_modelo.map(model => model.rank);
+    const revenues = seq.modelos.por_modelo.map(model => model.receita_ano_ha);
+    Object.assign(seq.modelos, { rank_min: Math.min(...ranks), rank_max: Math.max(...ranks),
+      receita_ano_ha_min: Math.min(...revenues), receita_ano_ha_max: Math.max(...revenues) });
+  }
+  return data;
+}
+
+test('future model ranges use only per-model ranks and annual revenues, keeping the mean future distinct', () => {
+  const data = withModelRanges();
+  const view = mapMotorAnalysis(data, farm);
+  const card = view.recommendations[0];
+  assert.match(card.model_note, /2ª–3ª posição \(2 modelos\).*não intervalo de confiança.*Chuva por aproximação/);
+  assert.equal(card.rank_facts[2].value, '#1'); // Mean future can lie outside the individual-model rank range.
+  assert.deepEqual(card.facts.slice(-2), [
+    { label: 'Posição · futuro entre modelos', value: '#2–#3' },
+    { label: 'Receita / ha / ano · futuro entre modelos', value: 'R$\u00a01.000 a R$\u00a01.050' },
+  ]);
+  assert.equal(view.current_rotation.strategy.model_note, card.model_note);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.slice(0, 3).map(seq => seq.id));
+  assert.ok(mapMotorAnalysis(fixture, farm).recommendations.every(rec => rec.model_note === ''));
+  data.modelos.chuva = 'razao';
+  assert.doesNotMatch(mapMotorAnalysis(data, farm).recommendations[0].model_note, /aproximação/);
+});
+
+test('model ranges reject incomplete sets, malformed climates and inconsistent ranges instead of showing invented uncertainty', () => {
+  for (const mutate of [
+    data => delete data.modelos,
+    data => { data.modelos = null; },
+    data => delete data.sequencias[0].modelos,
+    data => { data.modelos.nomes[1] = data.modelos.nomes[0]; },
+    data => { data.modelos.chuva = 'previsao'; },
+    data => { data.modelos.et0_sem_correcao = 'true'; },
+    data => { data.modelos.aviso_faixa_rank = -1; },
+    data => { data.modelos.primeiro['Modelo A'] = 'desconhecida'; },
+    data => { data.modelos.clima['Modelo A'][0].mes = 2; },
+    data => { data.modelos.clima['Modelo A'][0].chuva_mm = NaN; },
+    data => data.modelos.clima['Modelo A'].pop(),
+    data => data.sequencias[0].modelos.por_modelo.pop(),
+    data => { data.sequencias[0].modelos.por_modelo[0].modelo = 'Outro'; },
+    data => { data.sequencias[0].modelos.por_modelo[0].rank = 0; },
+    data => { data.sequencias[0].modelos.por_modelo[0].score = 101; },
+    data => { data.sequencias[0].modelos.por_modelo[0].receita_ano_ha = -1; },
+    data => { data.sequencias[0].modelos.rank_min = 1; },
+    data => { data.sequencias[0].modelos.rank_max = 2.5; },
+    data => { data.sequencias[0].modelos.receita_ano_ha_min = 0; },
+    data => { data.sequencias[0].modelos.receita_ano_ha_max = Infinity; },
+  ]) {
+    const data = withModelRanges(); mutate(data);
+    assert.throws(() => validateMotorOutput(data), /modelos/);
+  }
+  const empty = withModelRanges(); empty.sequencias = []; empty.atual = null; empty.entrada.rotacao_atual = [];
+  for (const name of empty.modelos.nomes) empty.modelos.primeiro[name] = null;
+  assert.deepEqual(mapMotorAnalysis(empty, farm).recommendations, []);
 });

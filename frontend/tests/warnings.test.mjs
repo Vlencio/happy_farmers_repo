@@ -43,12 +43,11 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
   assert.equal(bean.risks[1].context, 'Feijão · safrinha · clima futuro');
   assert.equal(bean.risks[0].evidence, 'Fator de calor: 77,6 / 100.');
   assert.equal(bean.risks[1].evidence, 'Fator de calor: 46,1 / 100.');
-  assert.match(bean.risks[2].evidence, /penalidade: 0,75.*mosca-branca/); // common-host warning (engine rule 10)
+  assert.equal(bean.risks[2].title, 'Praga ou doença em comum com a cultura anterior');
+  assert.match(bean.risks[2].evidence, /Cultura anterior: Soja.*mosca-branca.*Fator por hospedeiro comum: 0,75×; fator de sequência aplicado: 0,75×/);
   assert.equal(bean.risks[3].evidence, '160 dias expostos; 190,1 mm de chuva sobre o solo exposto.');
   assert.equal(bean.gaps[0].evidence, 'Limiar usado: 32 °C.');
-  // Known codes use accented labels; the new hospedeiro_comum code still shows the engine text (front label pending).
-  assert.ok(!JSON.stringify(bean.risks.filter(risk => risk.title !== 'Outro risco informado')).includes('feijao'));
-  assert.ok(!JSON.stringify(bean.gaps).includes('feijao'));
+  assert.ok(!JSON.stringify(bean).includes('feijao'));
 });
 
 test('adapter preserves engine ranking and gives current rotation the same sequence warnings', () => {
@@ -89,7 +88,7 @@ test('actual cover crop gaps do not misrepresent absent heat penalties or zero p
   assert.ok(!view.gaps[0].card_summary.includes('crotalaria'));
 });
 
-test('all eleven warning codes have specific labels, evidence and concise summaries', () => {
+test('all fourteen supported warning codes have specific labels, evidence and concise summaries', () => {
   // Synthetic contract examples cover the daily-only and pending data-status fields.
   const seq = withWarnings(
     warning('fator_limitante', 'risco', { fator: 'agua', valor: 0.42, slot: 'safra' }, 'soja', 'hoje'),
@@ -103,16 +102,90 @@ test('all eleven warning codes have specific labels, evidence and concise summar
     warning('sem_valor_de_mercado', 'lacuna', {}, 'feijao'),
     warning('ky_padrao', 'lacuna', { ky: 1.05 }, 'feijao'),
     warning('valor_a_conferir', 'lacuna', { campo: 'preco', status: 'memoria', valor: 3400 }, 'feijao'),
+    warning('hospedeiro_comum', 'risco', { fator_sequencia: 0.75, penalidade: 0.75, anterior: 'soja', pragas: ['mosca-branca'], slot: 'safrinha' }, 'feijao'),
+    warning('fator_agua_diario', 'risco', { fator_agua: 0.696, atendimento_hidrico: 0.757, ky: 1.25, slot: 'safrinha' }, 'feijao', 'hoje'),
+    warning('rank_varia_entre_modelos', 'risco', { rank_min: 2, rank_max: 10, por_modelo: { MIROC6: 2, 'ACCESS-CM2': 10 }, limite: 5 }, null, 'futuro'),
   );
   const view = show(seq);
-  assert.equal(view.risks.length, 5);
+  assert.equal(view.risks.length, 8);
   assert.equal(view.gaps.length, 6);
-  assert.equal(new Set([...view.risks, ...view.gaps].map(item => item.title)).size, 11);
+  assert.equal(new Set([...view.risks, ...view.gaps].map(item => item.title)).size, 14);
   assert.match(view.risks[0].evidence, /atendimento hídrico: 42 \/ 100/);
   assert.equal(view.risks[3].evidence, 'Fator de sequência aplicado: 0,85×.');
   assert.match(view.gaps[4].evidence, /1,05/);
   assert.match(view.gaps[5].evidence, /Preço: R\$\s*3\.400\/t. Situação: memória/);
   assert.ok(!JSON.stringify(view).includes('Texto de teste'));
+});
+
+test('common hosts retain previous-crop evidence and distinguish pest penalty from the combined factor', () => {
+  const original = withWarnings(warning('hospedeiro_comum', 'risco', {
+    penalidade: 0.92, fator_sequencia: 1.012, anterior: 'crotalaria',
+    pragas: ['mofo-branco (Sclerotinia sclerotiorum)'], slot: 'safra',
+  }, 'feijao'));
+  const before = structuredClone(original);
+  const item = show(original).risks[0];
+  assert.equal(item.context, 'Feijão · safra');
+  assert.match(item.description, /Crotalária.*provisória.*não indica uma ocorrência medida/);
+  assert.match(item.evidence, /Cultura anterior: Crotalária.*mofo-branco.*0,92×.*1,012×/);
+  assert.match(item.card_summary, /Feijão após Crotalária/);
+  assert.doesNotMatch(JSON.stringify(item), /feijao|crotalaria|Outro risco informado/);
+  assert.deepEqual(original, before);
+});
+
+test('daily water warns with the median-year factor, raw water attendance and Ky without merging monthly evidence', () => {
+  const seq = withWarnings(
+    warning('fator_limitante', 'risco', { fator: 'agua', valor: 0.75, slot: 'safrinha' }, 'feijao', 'hoje'),
+    warning('fator_agua_diario', 'risco', { fator_agua: 0.696, atendimento_hidrico: 0.757, ky: 1.25, slot: 'safrinha' }, 'feijao', 'hoje'),
+  );
+  const [monthly, daily] = show(seq).risks;
+  assert.equal(daily.title, 'Limitação por água no modo diário');
+  assert.equal(daily.context, 'Feijão · safrinha · clima de hoje · modo diário · ano mediano');
+  assert.equal(daily.evidence, 'Fator por falta de água: 69,6 / 100. Atendimento hídrico: 75,7 / 100. Ky: 1,25.');
+  assert.match(monthly.description, /avaliação mensal/);
+  assert.match(daily.description, /ano mediano.*Ky.*diferente do balanço mensal/);
+  assert.doesNotMatch(daily.card_summary, /75,7|probabilidade/);
+});
+
+test('model rank warnings show source positions and model names without treating the range as probability', () => {
+  const seq = withWarnings(warning('rank_varia_entre_modelos', 'risco', {
+    rank_min: 1, rank_max: 12, por_modelo: { MIROC6: 1, 'ACCESS-CM2': 12, 'MRI-ESM2-0': 4 }, limite: 5,
+  }, null, 'futuro'));
+  const before = structuredClone(seq);
+  const item = show(seq).risks[0];
+  assert.equal(item.context, 'Sequência inteira · clima futuro');
+  assert.equal(item.card_summary, 'No futuro, posição de 1ª a 12ª entre modelos.');
+  assert.match(item.evidence, /1ª a 12ª.*MIROC6: 1ª; ACCESS-CM2: 12ª; MRI-ESM2-0: 4ª.*5 posições/);
+  assert.match(item.description, /não é um intervalo de confiança nem uma probabilidade/);
+  assert.deepEqual(seq, before);
+});
+
+test('new warning contracts reject malformed evidence and scope but do not repeat the engine trigger thresholds', () => {
+  const host = warning('hospedeiro_comum', 'risco', { fator_sequencia: 1.012, penalidade: 0.92, anterior: 'crotalaria', pragas: ['mofo-branco'], slot: 'safra' }, 'soja');
+  const daily = warning('fator_agua_diario', 'risco', { fator_agua: 0.69, atendimento_hidrico: 0.75, ky: 1.25, slot: 'safrinha' }, 'feijao', 'hoje');
+  const models = warning('rank_varia_entre_modelos', 'risco', { rank_min: 1, rank_max: 10, por_modelo: { MIROC6: 1, 'ACCESS-CM2': 10 }, limite: 5 }, null, 'futuro');
+  const cases = [
+    [host, w => { w.cultura = null; }], [host, w => { w.cenario = 'hoje'; }],
+    [host, w => { w.dados.penalidade = 1.1; }], [host, w => { w.dados.fator_sequencia = -1; }],
+    [host, w => { delete w.dados.fator_sequencia; }], [host, w => { w.dados.anterior = ''; }],
+    [host, w => { w.dados.pragas = 'mofo-branco'; }], [host, w => { w.dados.pragas = []; }],
+    [host, w => { w.dados.pragas = [null]; }], [host, w => { w.dados.pragas = ['']; }],
+    [daily, w => { w.dados.ky = -1; }], [daily, w => { w.dados.atendimento_hidrico = 1.01; }],
+    [daily, w => { w.dados.fator_agua = Infinity; }], [daily, w => { w.dados.slot = 'inverno'; }],
+    [daily, w => { w.cenario = null; }], [daily, w => { w.tipo = 'lacuna'; }],
+    [models, w => { w.cenario = 'hoje'; }], [models, w => { w.cultura = 'soja'; }],
+    [models, w => { w.dados.rank_min = 0; }], [models, w => { w.dados.rank_max = 0.5; }],
+    [models, w => { w.dados.por_modelo = []; }], [models, w => { w.dados.por_modelo = {}; }],
+    [models, w => { w.dados.por_modelo.MIROC6 = 11; }], [models, w => { w.dados.por_modelo.MIROC6 = 1.5; }],
+    [models, w => { w.dados.por_modelo.MIROC6 = '1'; }], [models, w => { w.dados.limite = -1; }],
+  ];
+  for (const [original, mutate] of cases) {
+    const item = structuredClone(original); mutate(item);
+    assert.throws(() => show(withWarnings(item)), /contrato do motor: avisos/);
+  }
+  daily.dados.fator_agua = 1;
+  models.dados.rank_max = 1;
+  models.dados.por_modelo['ACCESS-CM2'] = 1;
+  assert.equal(show(withWarnings(daily, models)).risks.length, 2);
 });
 
 test('dry-year warning context remains distinct from daily bad-year comparison', () => {

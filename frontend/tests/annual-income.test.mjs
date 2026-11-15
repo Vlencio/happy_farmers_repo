@@ -44,7 +44,7 @@ test('legacy responses omit annual facts instead of deriving an annual amount in
   }
   const view = mapMotorAnalysis(raw, farm);
   for (const card of view.recommendations) {
-    assert.equal(card.facts.length, 9);
+    assert.equal(card.facts.length, 12);
     assert.ok(card.facts.every(fact => !fact.label.includes('/ ano') && !fact.label.includes('Anos considerados')));
     assert.match(card.tradeoff, /não informa receita anual nem anos de ocupação/);
   }

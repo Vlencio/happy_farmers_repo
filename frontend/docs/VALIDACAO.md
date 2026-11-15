@@ -1,5 +1,55 @@
 # Verificação da integração · 14/11/2026
 
+## Revisão integrada da main `7d8c1fe` · 15/11/2026
+
+Trabalho do front na `front-dev3`, após atualizar a main e preservar `28c8a9c`.
+Backend, motor, dados e fixtures canônicas não foram alterados nesta integração.
+
+- **141 testes JS**, **201 Python** (167 motor/dados + 34 API), um teste Rust,
+  `cargo fmt --check` e build Rune/WASM + Vite passaram. Permanecem os avisos de
+  compilação do Rune e de tamanho do bundle já conhecidos.
+- **44 análises HTTP válidas** e rejeição do ajuste inválido passaram contra a
+  API reiniciada com o motor novo. A expectativa antiga do terceiro card que
+  quebrou o CI foi atualizada; os números vêm do motor, sem alterar o ranking.
+- **333 verificações de navegador**: 85 cenários na API real, 37 renda anual
+  na API real, 97 prioridades (8 verificações de chat simulado), 50 modelos/novos
+  avisos e 64 solo. Não houve chamadas ao LLM nem downloads POWER.
+- Nos testes de modelos e solo, os resultados são gerados pelo motor real;
+  o **transporte é simulado**, pois a API de `7d8c1fe` ainda não passa os campos.
+  Também são simuladas falhas, capability, sugestões regionais e respostas tardias.
+  Isso valida a preparação do front, não uma integração HTTP já entregue.
+- Empates: três primeiros em outubro e dois em fevereiro, sem alterar ranks e
+  scores. Faixas por modelo nos cards e receita anual nos detalhes. Aviso real de
+  faixa 14ª–21ª com histórico Crotalária → Algodão em fevereiro. Água diária e
+  hospedeiros foram conferidos com avaliações reais, mantendo modos distintos.
+- Solo: sugestão, manual, 30/45/60 mm, persistência, reset explícito preservado
+  após reload, falta de capability/cobertura, eco ausente/divergente, descarte de
+  respostas tardias após escolha/análise/troca de contorno. Rascunhos anteriores
+  continuam válidos; `solo_padrao` é local e não entra no pedido HTTP.
+- Capturas desktop 1440 px e celular simulado 390 px inspecionadas: cards,
+  detalhes, novos avisos e seletor de solo legíveis, sem estouro horizontal.
+  Exemplos: `output/playwright/reviewed-models-*.png`,
+  `reviewed-host-warnings-desktop.png`, `soil-desktop.png` e `soil-mobile.png`.
+
+Reprodução das entradas específicas de QA (arquivos gerados ignorados pelo Git):
+
+```powershell
+.\.venv\Scripts\python.exe frontend/scripts/export-reviewed-models.py
+.\.venv\Scripts\python.exe frontend/scripts/export-soil-fixtures.py
+.\.venv\Scripts\python.exe frontend/scripts/export-scenario-fixtures.py
+```
+
+Com o servidor local na porta 4173, executar os scripts de navegador via
+`playwright-cli run-code --filename=frontend/tests/browser-<nome>.js`:
+`reviewed-models`, `soil`, `priorities`, `annual-income` e `scenario-api`.
+
+O [CI da main `7d8c1fe`](https://github.com/Vlencio/happy_farmers_repo/actions/runs/43743587386)
+passou Python, fixtures, JavaScript, Rust e formatação; falhou na expectativa
+antiga do teste HTTP. Docker foi pulado. A correção passou localmente, mas uma
+nova execução remota depende de publicar este trabalho. O status de deploy
+Railway separado não comprova que o CI completo passou. Não foi executado Docker
+local, leitor de tela ou validação de produção nesta rodada.
+
 ## Integração final na motor-renda-anual · 15/11/2026
 
 Base `2a60d9b`, que reúne a API da Main `0ec5f06`, as correções do motor e os

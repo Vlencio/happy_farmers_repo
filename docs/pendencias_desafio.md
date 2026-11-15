@@ -237,7 +237,8 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Integração: D2 na `main`, API local reiniciada e fixture canônica regenerada. A fixture `metadata-d2.json` preserva a validação anterior ao merge.
 - [x] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank. Feito em 15/11 (branch `motor-modelos`): `recomendar(..., clima_modelos=carregar_clima_modelos())` dá a cada sequência viável `modelos` (score, rank e receita por ano de cada modelo, mín/máx de rank e de receita) e o aviso `rank_varia_entre_modelos` (faixa acima de 5 posições, provisório). Regra 20 e "Em aberto" 22 do contrato. Sem o argumento, a saída não muda. Outubro: o 1º do futuro é `soja>milho` em MIROC6 e MRI-ESM2-0 e `soja>sorgo` em ACCESS-CM2 (0,5 ponto). Fevereiro: `sorgo>soja` em 1º nos três modelos.
 - [ ] Dados: acrescentar `razao_chuva` (ssp245 ÷ historical, por modelo e mês) a `clima_modelos.csv`. Sem ela, o motor aproxima a chuva de cada modelo (até 6 mm num mês; o ranking com pesos iguais não muda).
-- [ ] API e tela: passar `clima_modelos` ao motor só no talhão de demonstração (onde `clima_futuro` é a média dos mesmos modelos), copiar `data/clima_modelos.csv` e `data/clima_correcoes.csv` na imagem, e mostrar `modelos.rank_min`–`rank_max` e a faixa de receita em cada card. O motor já entrega.
+- [ ] API: passar `clima_modelos` ao motor só no talhão de demonstração (onde `clima_futuro` é a média dos mesmos modelos). A imagem já copia `data/clima_modelos.csv` e `data/clima_correcoes.csv` pelo glob `data/clima_*.csv`.
+- [x] Tela: consumo opcional de `modelos.rank_min`–`rank_max` nos cards e faixa de receita anual nos detalhes; identificação de aproximação na chuva e aviso próprio `rank_varia_entre_modelos`. Integração com a API publicada ainda pendente; contrato em `frontend/docs/API.md`.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 
 **Feito quando:** cada estratégia mostra a faixa entre os três modelos, e não só a média.
@@ -270,8 +271,8 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Time (15/11): fonte de textura escolhida entre as da lista do desafio, sem reabrir SoilGrids: GLDAS (NASA, 0,25°) ou HWSD/GAEZ (FAO, ~1 km). A textura do ponto é sugestão; o produtor confirma ou troca.
 - [x] Motor (15/11, branch `motor-solo`): entrada `solo_textura` (`arenoso`, `medio`, `argiloso`) → água que o solo guarda de 30, 45 ou 60 mm (classes do ZARC; regra 6 e `CAD_POR_TEXTURA` no contrato). Sem o campo, 60 mm, como antes.
 - [x] Dados (Brenno, 15/11): textura sugerida por quadrado de 0,25° a partir do GLDAS2/Noah (NASA), em `data/solo/regiao_mg/textura.csv`, nos mesmos centros de `delta_mensal.csv` (`scripts/puxar_solo.py`, `scripts/montar_solo_mg.py`; colunas em `docs/colunas_dados.md`, seção 9). Quadrado do talhão de demonstração: argiloso (51,8% de argila), igual ao padrão do motor.
-- [ ] API (Gabriel): aceitar `solo_textura`, anunciar `capabilities.solo_textura`, e devolver a textura sugerida do ponto com a fonte.
-- [ ] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), pré-preenchido com a sugestão e a fonte, que o produtor pode trocar.
+- [ ] API: aceitar `solo_textura`, anunciar `capabilities.solo_textura`, e devolver a textura sugerida do ponto com a fonte. Proposta de transporte `GET /metadata?lat&lon` em `frontend/docs/API.md`; falta também copiar a tabela de solo no Docker.
+- [x] Tela (Gabriel): seletor de solo (arenoso, médio, argiloso), sugestão/fonte, escolha manual, persistência, reset e validação do eco preparados sob capability explícita. A API atual ainda não ativa o seletor; confirmação do contrato e teste ponta a ponta com ela continuam pendentes.
 
 **Feito quando:** dois talhões com solos diferentes dão balanços hídricos diferentes com o mesmo clima.
 
