@@ -457,10 +457,17 @@ def anos_ocupados(dias):
     return max(dias, 365) / 365
 
 
-def teto_de_renda(culturas, precos, receitas_ano):
-    """Receita potencial por ano do sistema de referencia (SISTEMA_REFERENCIA), em R$/ha/ano."""
+def teto_de_renda(culturas, receitas_ano):
+    """Receita potencial por ano do sistema de referencia (SISTEMA_REFERENCIA), em R$/ha/ano.
+
+    Usa o preco da tabela, nao o editado em `precos`: a referencia nao muda com o que o usuario
+    digita (preco zero de soja e milho zeraria o teto). Sem as culturas, ou com teto zero, vale a
+    maior receita por ano avaliada.
+    """
     if all(nome in culturas for nome, _ in SISTEMA_REFERENCIA):
-        return sum(precos.get(nome, culturas[nome]["preco"]) * culturas[nome][campo] for nome, campo in SISTEMA_REFERENCIA)
+        teto = sum(culturas[nome]["preco"] * culturas[nome][campo] for nome, campo in SISTEMA_REFERENCIA)
+        if teto > 0:
+            return teto
     return max(receitas_ano, default=0.0) or 1.0
 
 
@@ -1004,6 +1011,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     mes_plantio = int(entrada.get("mes_plantio", 10))
     historico = list(entrada.get("rotacao_atual") or [])
     precos = {k: float(v) for k, v in (entrada.get("precos") or {}).items()}
+    if any(not math.isfinite(v) or v < 0 for v in precos.values()):
+        raise ValueError("precos devem ser numeros finitos, zero ou positivos")
     declividade = entrada.get("declividade_pct")
     declividade = None if declividade is None else float(declividade)
     if declividade is not None and not 0 <= declividade <= 100:
@@ -1043,7 +1052,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
     # renda de 0 a 1: receita por ano ocupado / receita potencial do sistema de referencia (regra 12)
-    teto = teto_de_renda(tabela, precos, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias])
+    teto = teto_de_renda(tabela, [aval[cen][s]["receita_ano_ha"] for cen in aval for s in sequencias])
     rank = {}
     for cen, porseq in aval.items():
         for s in sequencias:

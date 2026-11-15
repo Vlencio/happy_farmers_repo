@@ -336,10 +336,22 @@ class TestRecomendar(unittest.TestCase):
 
     def test_teto_sem_o_sistema_de_referencia(self):
         culturas = {"crotalaria": {"preco": 0}}
-        self.assertEqual(motor.teto_de_renda(culturas, {}, [3.0, 5.0]), 5.0)
-        self.assertEqual(motor.teto_de_renda(culturas, {}, []), 1.0)
+        self.assertEqual(motor.teto_de_renda(culturas, [3.0, 5.0]), 5.0)
+        self.assertEqual(motor.teto_de_renda(culturas, []), 1.0)
         tabela = motor._tabela_culturas(self.dados[0])
-        self.assertEqual(motor.teto_de_renda(tabela, {"soja": 3000}, []), 3000 * 3.6 + 1000 * 5.0)
+        self.assertEqual(motor.teto_de_renda(tabela, []), 2100 * 3.6 + 1000 * 5.0)
+        zerada = {n: {**c, "preco": 0.0} for n, c in tabela.items()}
+        self.assertEqual(motor.teto_de_renda(zerada, [4.0, 7.0]), 7.0)  # teto zero: maior receita avaliada
+
+    def test_preco_editado_nao_muda_o_teto(self):
+        # soja e milho a preco zero: o teto continua o da tabela (antes dava divisao por zero)
+        saida = recomendar({**ENTRADA, "precos": {"soja": 0, "milho": 0}}, *self.dados)
+        teto = 2100 * 3.6 + 1000 * 5.0
+        for s in saida["sequencias"]:
+            a = s["hoje"]
+            self.assertAlmostEqual(a["renda"], min(1.0, a["receita_ano_ha"] / teto), delta=2e-3)
+        zero = next(s for s in saida["sequencias"] if s["id"] == "soja>milho")
+        self.assertEqual(zero["hoje"]["receita_ha"], 0.0)
 
     def test_entradas_invalidas(self):
         with self.assertRaises(ValueError):
@@ -349,6 +361,9 @@ class TestRecomendar(unittest.TestCase):
                 recomendar({**ENTRADA, "declividade_pct": declividade}, *self.dados)
         with self.assertRaises(ValueError):
             recomendar({**ENTRADA, "rotacao_atual": ["abacaxi"]}, *self.dados)
+        for preco in (-1, float("nan"), float("inf")):
+            with self.assertRaises(ValueError):
+                recomendar({**ENTRADA, "precos": {"soja": preco}}, *self.dados)
         with self.assertRaises(ValueError):
             recomendar(ENTRADA, self.dados[0], self.dados[1].head(11), self.dados[2])
         with self.assertRaises(ValueError):
