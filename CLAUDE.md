@@ -76,6 +76,7 @@ AppEEARS request is only named "Uberlandia"; it uses the field polygon.
 | SRTMGL1 (AppEEARS) | Elevation | Same request | `data/appeears/` | Downloaded |
 | Crop table | Crop requirements, Kc, planting month, price, yield | `scripts/montar_culturas.py` | `data/culturas.csv`, `data/culturas_candidatas.csv` | Done; values marked "memória" in `docs/culturas_fontes.md` still to check |
 | Climate tables | Today / future / dry year (2020/21), 12 months each, with ET0 and `dias_quentes` (days above 35 °C) | `scripts/montar_clima.py` | `data/clima_hoje.csv`, `data/clima_futuro.csv`, `data/clima_seco.csv` | Done; the engine reads the per-threshold `dias_acima_NN` columns for the heat rule. The dry year is an optional third scenario in the engine (`carregar_clima_seco`, fifth argument of `recomendar`); the API and the screen do not use it yet |
+| Per-model climate deltas (D2) | NEX-GDDP `ssp245` − `historical` per model and month, before the average | `scripts/montar_clima.py` (`deltas_por_modelo`) | `data/clima_modelos.csv` | Done 15 Nov; demo field only. Read by `backend/field_context.py` (`load_model_spread`) for the model-spread text. Annual: MIROC6 −80 mm / +1.3 °C Tmax, ACCESS-CM2 +8 mm / +2.3 °C, MRI-ESM2-0 +33 mm / +1.5 °C. Test: `tests/test_clima_modelos.py` |
 | NDVI + slope | Monthly NDVI, bare-soil months, slope | `scripts/processar_appeears.py` | `data/talhao/` | Done |
 | IBGE PAM (SIDRA) | Area, yield and farm-gate price per crop in Minas Gerais, 2025 | `scripts/puxar_pam.py`, `scripts/montar_culturas_mg.py` | `data/ibge/`, `data/culturas_mg.csv` | Done; the engine does not read these files |
 
@@ -215,7 +216,8 @@ integrated with the 14 Nov engine contract.
    weighted scores of today (Part 5, `docs/pendencias_desafio.md`).
    It includes demo-boundary-only NDVI/slope/station context and a glossary.
    P1's dry year is enabled for demo climate, not reused for other points. The
-   per-model CSV still awaits D2. D1 and Pedro's regional delta are integrated;
+   per-model CSV (D2, `data/clima_modelos.csv`) was delivered on 15 Nov; the
+   engine still runs only the model average. D1 and Pedro's regional delta are integrated;
    metadata reports point_climate_available: true. The IBGE simplified state mask
    is bundled in backend/geo for scope notices, not cadastral boundary validation.
    See `frontend/docs/API.md` and `frontend/docs/PLANO_GAP.md` for integration status.
