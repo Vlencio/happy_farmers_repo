@@ -83,7 +83,14 @@ Se vierem duas, uma ou nenhuma sequência viável, a tela mostra somente as exis
 Cada card apresenta `rank_hoje`, `hoje.score`, `rank_futuro` e `futuro.score`, também
 disponíveis no detalhe. O ranking futuro usa os mesmos pesos, mas não muda a ordem dos cards.
 
-Os três controles têm os níveis 0 (nada), 1 (pouco), 2 (médio) e 3 (muito).
+Os três controles têm os níveis 0 (sem peso), 1 (baixo), 2 (médio) e 3 (alto).
+Cada critério explica o que favorece: atendimento da necessidade de água,
+cobertura/fixação de nitrogênio/diversidade ou receita bruta anual por hectare.
+O resumo “Pesos no cálculo” mostra a divisão relativa da escolha atual, inclusive
+o equilíbrio de 0/0/0. É uma prévia dos coeficientes, não da contribuição efetiva
+de cada critério na nota nem da influência sobre o ranking. A tela explica que
+alterar pesos pode manter as mesmas sugestões. Essa prévia não calcula scores
+nem ordena sequências.
 `buildRequest` envia os valores escolhidos, sem normalizar. A API aceita quaisquer
 números não negativos; o motor normaliza e, para 0/0/0, aplica pesos iguais.
 A explicação do resultado usa os pesos normalizados de `entrada.prioridades`.
