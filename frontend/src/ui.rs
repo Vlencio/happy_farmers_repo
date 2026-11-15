@@ -98,6 +98,26 @@ fn column_width(node: El, narrow: bool, fraction: f32) -> El {
     }
 }
 
+fn presentation_context(include_revenue: bool) -> El {
+    let mut view = col()
+        .w_full()
+        .gap(8.0)
+        .padding(16.0)
+        .radius(12.0)
+        .fill(color("#edf2e5"))
+        .child(eyebrow("ABOUT THIS DEMONSTRATION"))
+        .child(paragraph("Demonstration in Minas Gerais, Brazil. Planting calendars follow the Triângulo Mineiro region; crop prices reflect Brazilian conditions."))
+        .child(label("Metric units: hectares (ha), millimeters (mm), degrees Celsius (°C) and meters (m). Currency: Brazilian reais (BRL).", 12.0, 400.0, MUTED).wrap().w_full());
+    if include_revenue {
+        view = view
+            .child(rule())
+            .child(label("READING REVENUE", 11.0, 600.0, INK))
+            .child(paragraph("Full rotation covers all crops in the planned sequence. Per year means revenue per year of field occupancy and is used by the income priority. Values labeled / ha are per hectare; field totals cover the whole boundary."))
+            .child(label("Revenue is gross, before costs. It is not profit.", 12.0, 500.0, INK).wrap().w_full());
+    }
+    view
+}
+
 fn logo(compact: bool) -> El {
     row()
         .gap(10.0)
@@ -449,7 +469,7 @@ fn farm_panel(s: &State, k: &Kit, narrow: bool) -> El {
         content = content.child(responsive_row(stacked).gap(14.0).center_y().justify_between()
             .child(column_width(col().gap(5.0).child(label(&farm.name, 19.0, 600.0, INK).wrap().w_full())
                 .child(label(format!("{} vertices · {}", farm.point_count, match farm.source.as_str() { "sample" => "sample field", "import" => "imported GeoJSON", _ => "drawn boundary" }), 11.0, 400.0, MUTED).wrap().w_full()), stacked, 1.0))
-            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).to_owned(), 26.0, 500.0, INK)).child(label("approximate area", 10.0, 400.0, MUTED))))
+            .child(col().gap(3.0).child(label(format!("{:.2} ha", farm.area_ha).to_owned(), 26.0, 500.0, INK)).child(label("approximate area · hectares", 10.0, 400.0, MUTED))))
             .child(paragraph("The boundary center provides the latitude and longitude for the analysis. Area converts revenue per hectare into total revenue."))
             .child(responsive_row(narrow)
                 .child(column_width(button(k, "edit-map", "View and edit on map", false, |_| host(json!({"type":"map"}))), narrow, 1.0))
@@ -650,6 +670,7 @@ fn history_panel(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El
 fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     let mut view = col().w_full().gap(25.0)
         .child(heading("What will your next crop cycle be?", "Start with your farm. Then explore ways to grow crops, care for the soil and adapt to a changing climate.", narrow))
+        .child(presentation_context(false))
         .child(steps(s, narrow))
         .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
@@ -2269,12 +2290,13 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
         .child(if analysis.ranking_note.is_empty() { el() } else { panel().child(paragraph(&analysis.ranking_note)) })
         .child(chat_panel(s, k, narrow))
+        .child(presentation_context(true))
         .child(cards);
     if analysis.recommendations.is_empty() {
         view = view.child(panel().child(label("No feasible sequence", 22.0, 600.0, INK).wrap())
             .child(paragraph("No sequence meets the selected planning options and applicable field restrictions. Review the discard reasons, the month when the field becomes available and the number of crops to plan.")));
     } else {
-        view = view.child(label("Your current rotation is a reference and may also appear as a suggestion. Cards follow today's scores; future positions may change. Revenue on each card covers the whole sequence; the income priority uses revenue per year of occupancy. Revenue is gross, before costs. Indices are not probabilities.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("Your current rotation is a reference and may also appear as a suggestion. Cards follow today's scores; future positions may change. Indices are not probabilities.", 11.0, 400.0, MUTED).wrap().w_full());
     }
     if !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(
@@ -2460,7 +2482,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
     col().w_full().gap(22.0).child(button(k, "back-results", "← Compare strategies", false, |s| s.page = Page::Results))
         .child(col().gap(10.0).child(pill(name, tint, accent)).child(label(&rec.crop, if narrow { 33.0 } else { 42.0 }, 600.0, INK).role("heading").level(1).wrap().w_full())
             .child(paragraph(format!("{tagline}. {}", rec.reason))))
-        .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
+        .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note))
+        .child(presentation_context(true)).child(facts)
         .child(paragraph(&analysis.priority_note))
         .child(chat_panel(s, k, narrow))
         .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })

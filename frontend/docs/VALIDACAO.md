@@ -1,5 +1,21 @@
 # Verificação da integração · 14/11/2026
 
+## Contexto brasileiro, moeda e período da receita · 15/11/2026
+
+- Contexto visível de Minas Gerais/Brasil, calendário do Triângulo Mineiro,
+  unidades métricas e moeda Brazilian reais (BRL), com explicação antes dos cards.
+- Rótulos distinguem receita bruta da rotação inteira, receita por ano de
+  ocupação e total do talhão. Valores, unidades, API e ranking foram preservados.
+- **153 testes JavaScript**, **1 Rust**, `cargo fmt --check`, `git diff --check`
+  e build Rune/WASM + Vite passaram; continuam os avisos conhecidos do Rune/bundle.
+- **110 verificações de navegador**: inglês/contexto 41, renda anual 43 e
+  referência atual 26. Usam API local real; a revisão de inglês também simula
+  uma falha de metadata para validar a restauração offline. Sem chamadas à IA.
+- Desktop de 1440 px e celular simulado de 390 px revisados visualmente:
+  contexto, explicação da receita, cards e detalhes legíveis, sem corte horizontal.
+- Alterações somente no front, testes e documentação; sem nova validação do
+  backend/motor nem teste em aparelho móvel físico nesta rodada.
+
 ## Interface em inglês para apresentação · 15/11/2026
 
 Trabalho local na `front-dev3`, atualizada por fast-forward até `2787fb9`, com

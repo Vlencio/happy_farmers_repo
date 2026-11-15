@@ -87,8 +87,8 @@ async (originalPage) => {
     await click(await cards().first().textContent()); await waitText('Your crop cycle, step by step');
     const screen = normalized(await text()), first = analysis.raw.sequencias[0];
     for (const [key, label] of [['hoje', 'TODAY'], ['futuro', 'FUTURE'], ['seco', 'DRY YEAR']]) {
-      check(screen.includes(normalized(`REVENUE / HA · ${label}${money(first[key].receita_ha)}`)), 'Adjusted detail uses actual total revenue for ' + key);
-      check(screen.includes(normalized(`REVENUE / HA / YEAR · ${label}${money(first[key].receita_ano_ha)}`)), 'Adjusted detail uses actual annual revenue for ' + key);
+      check(screen.includes(normalized(`GROSS REVENUE / HA · FULL ROTATION · ${label}${money(first[key].receita_ha)}`)), 'Adjusted detail uses actual total revenue for ' + key);
+      check(screen.includes(normalized(`GROSS REVENUE / HA / YEAR · ${label}${money(first[key].receita_ano_ha)}`)), 'Adjusted detail uses actual annual revenue for ' + key);
     }
     check((await text()).includes(analysis.view.adjustment_note), 'Hypothetical warning remains in the detail');
     check((await text()).includes('not the original observations'), 'Adjusted dry year is explicitly distinguished from observations');

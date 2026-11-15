@@ -46,7 +46,7 @@ test('current rotation stays beside the three winners with comparable actual eng
   for (const card of [current.strategy, ...view.recommendations]) {
     const source = fixture.sequencias.find((seq) => seq.id === card.sequence_id);
     assert.deepEqual(card.comparison_facts, [
-      { label: 'Revenue / ha · today', value: money(source.hoje.receita_ha) },
+      { label: 'Gross revenue / ha · full rotation · today', value: money(source.hoje.receita_ha) },
       { label: 'Soil · today', value: index(source.hoje.solo) },
       { label: 'Suitability · future', value: index(source.futuro.encaixe) },
     ]);
@@ -569,7 +569,7 @@ test('future model ranges use only per-model ranks and annual revenues, keeping 
   assert.equal(card.rank_facts[2].value, '#1'); // Mean future can lie outside the individual-model rank range.
   assert.deepEqual(card.facts.slice(-2), [
     { label: 'Rank · future across models', value: '#2–#3' },
-    { label: 'Revenue / ha / year · future across models', value: 'BRL\u00a01,000 to BRL\u00a01,050' },
+    { label: 'Gross revenue / ha / year · future across models', value: 'BRL\u00a01,000 to BRL\u00a01,050' },
   ]);
   const rankedCurrent = view.recommendations.find(rec => rec.sequence_id === view.current_rotation.strategy.sequence_id);
   assert.equal(view.current_rotation.strategy.model_note, rankedCurrent.model_note);

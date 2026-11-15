@@ -142,7 +142,7 @@ async (originalPage) => {
     let screen = await text();
     check(screen.includes(october.view.recommendations[1].model_note) && screen.includes('#1–#2'), 'Detail exposes the same real model rank range as the card');
     check(normalized(screen).includes(normalized(`RANK · FUTURE ACROSS MODELS#${corn.modelos.rank_min}–#${corn.modelos.rank_max}`)), 'Model rank fact preserves both supplied endpoints');
-    check(normalized(screen).includes(normalized(`REVENUE / HA / YEAR · FUTURE ACROSS MODELS${money(corn.modelos.receita_ano_ha_min)} to ${money(corn.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
+    check(normalized(screen).includes(normalized(`GROSS REVENUE / HA / YEAR · FUTURE ACROSS MODELS${money(corn.modelos.receita_ano_ha_min)} to ${money(corn.modelos.receita_ano_ha_max)}`)), 'Annual revenue range uses the supplied per-model endpoints');
     await align(page.getByText(october.view.recommendations[1].model_note, { exact: true }));
     await page.screenshot({ path: 'output/playwright/reviewed-models-detail-desktop.png' });
     await click('← Compare strategies');

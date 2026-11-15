@@ -49,6 +49,16 @@ as regras existentes. Nenhum cálculo ou moeda é convertido pela tradução.
 Avisos conhecidos da API são localizados em `web/external-text.mjs`; fontes e
 cobertura conservam seus significados. Texto autoral do usuário é preservado.
 
+A apresentação identifica a demonstração em Minas Gerais, Brasil, o calendário
+do Triângulo Mineiro e a moeda **Brazilian reais (BRL)**. As medidas permanecem
+em hectares (ha), milímetros (mm), graus Celsius (°C) e metros (m).
+Os rótulos **Gross revenue / ha · full rotation** representam `receita_ha`
+da sequência inteira; **Gross field revenue · full rotation** multiplica esse
+valor pela área em hectares. **Gross revenue / ha / year** apresenta
+`receita_ano_ha` do motor, por ano de ocupação do talhão, usado na prioridade
+renda. Todos são receita bruta antes dos custos. A UI não converte moeda,
+anualiza valores ausentes nem muda o ranking.
+
 O chat mantém o protocolo, o foco e o histórico originais. A interface e a
 recusa fixa conhecida são apresentadas em inglês; respostas livres da IA
 dependem da instrução do servidor, ainda em português nesta base. Pendência

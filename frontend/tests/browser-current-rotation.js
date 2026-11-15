@@ -50,7 +50,7 @@ async (originalPage) => {
     const names = await cards().allTextContents();
     check(names[0].startsWith('CURRENT ROTATION: Soybean → Corn'), 'Current reference remains separate from ranked options');
     const screen = await text();
-    for (const metric of ['Revenue / ha · today', 'Soil · today', 'Suitability · future']) {
+    for (const metric of ['Gross revenue / ha · full rotation · today', 'Soil · today', 'Suitability · future']) {
       check(screen.split(metric).length - 1 === 4, 'All four cards show ' + metric);
     }
     const boxes = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));

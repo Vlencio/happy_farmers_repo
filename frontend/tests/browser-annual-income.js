@@ -100,28 +100,34 @@ async (originalPage) => {
     check(await cards.count() === 3, 'Three ranked cards remain visible');
     const labels = await cards.allTextContents();
     check(['Sunn hemp → Soybean', 'Sorghum → Soybean', 'Common bean → Soybean'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
-    check((await text()).includes('Revenue on each card covers the whole sequence; the income priority uses revenue per year'), 'Results distinguish sequence revenue from the annual ranking basis');
+    check((await text()).includes('Full rotation covers all crops in the planned sequence. Per year means revenue per year of field occupancy and is used by the income priority.'), 'Results distinguish sequence revenue from the annual ranking basis');
+    check((await text()).includes('Currency: Brazilian reais (BRL).') && (await text()).includes('Revenue is gross, before costs. It is not profit.'), 'Results identify the original currency and gross revenue');
+    check(labels.every(label => label.includes('Gross revenue / ha · full rotation · today')), 'Each ranked card identifies the full rotation and per-hectare basis');
     check((await text()).includes('around 2060') && !/2041[–-]2060|2050/.test(await text()), 'Results retain the corrected future date');
+    await capture('revenue-guide-desktop', page.getByText(/^Full rotation covers all crops/));
     await capture('cards-desktop', cards.first());
     await click(labels[0]);
     await waitText('Your crop cycle, step by step');
     const detail = normalized(await text());
     for (const [scenario, label] of [['hoje', 'TODAY'], ['futuro', 'FUTURE'], ['seco', 'DRY YEAR']]) {
       const expected = raw.sequencias[0][scenario];
-      check(detail.includes(normalized(`REVENUE / HA / YEAR · ${label}${money(expected.receita_ano_ha)}`)), `Detail shows supplied annual revenue for ${scenario}`);
+      check(detail.includes(normalized(`GROSS REVENUE / HA / YEAR · ${label}${money(expected.receita_ano_ha)}`)), `Detail shows supplied annual revenue for ${scenario}`);
       check(detail.includes(normalized(`YEARS ACCOUNTED FOR · ${label}${number(expected.anos_ocupados)} ${expected.anos_ocupados === 1 ? 'year' : 'years'}`)), `Detail shows supplied occupied years for ${scenario}`);
-      check(detail.includes(normalized(`REVENUE / HA · ${label}${money(expected.receita_ha)}`)), `Detail preserves full-sequence revenue for ${scenario}`);
+      check(detail.includes(normalized(`GROSS REVENUE / HA · FULL ROTATION · ${label}${money(expected.receita_ha)}`)), `Detail preserves full-sequence revenue for ${scenario}`);
     }
     check(money(raw.sequencias[0].hoje.receita_ha) !== money(raw.sequencias[0].hoje.receita_ano_ha), 'The tested February amounts distinguish annual and total revenue');
     check((await text()).includes('minimum of one year; a shorter sequence is not multiplied'), 'Detail explains the annual occupancy floor');
-    const annualHeading = () => page.getByText('REVENUE / HA / YEAR · TODAY', { exact: true });
+    const annualHeading = () => page.getByText('GROSS REVENUE / HA / YEAR · TODAY', { exact: true });
     await capture('detail-desktop', annualHeading());
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
     // The API now adds a fourth annual-revenue fact for the model range; this
     // assertion compares only the three complete climate scenarios above.
-    const annualLabels = await Promise.all((await page.getByText(/^REVENUE \/ HA \/ YEAR · (TODAY|FUTURE|DRY YEAR)$/).all()).map(label => label.boundingBox()));
+    const annualLabels = await Promise.all((await page.getByText(/^GROSS REVENUE \/ HA \/ YEAR · (TODAY|FUTURE|DRY YEAR)$/).all()).map(label => label.boundingBox()));
     check(annualLabels.length === 3 && annualLabels.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'All three annual labels fit the mobile viewport');
+    const rotationLabels = await Promise.all((await page.getByText(/^GROSS REVENUE \/ HA · FULL ROTATION · (TODAY|FUTURE|DRY YEAR)$/).all()).map(label => label.boundingBox()));
+    check(rotationLabels.length === 3 && rotationLabels.every(box => box && box.x >= 0 && box.x + box.width <= 391), 'All three full-rotation labels fit the mobile viewport');
     await capture('detail-mobile', annualHeading());
+    await capture('revenue-guide-mobile', page.getByText(/^Full rotation covers all crops/));
     await click('← Compare strategies');
     const mobileCards = await Promise.all((await cards.all()).map(card => card.boundingBox()));
     check(mobileCards.length === 3 && mobileCards.every((box, i) => box && box.x >= 0 && box.x + box.width <= 391 && (i === 0 || box.y > mobileCards[i - 1].y)), 'Mobile stacks all ranked cards within the viewport');

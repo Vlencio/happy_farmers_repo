@@ -20,18 +20,21 @@ test('annual income and occupied years come from each actual scenario while full
       const seq = raw.sequencias.find(item => item.id === card.sequence_id);
       for (const [scenario, label] of [['hoje', 'today'], ['futuro', 'future'], ['seco', 'dry year']]) {
         if (!seq[scenario]) continue;
-        const annual = card.facts.find(fact => fact.label === `Revenue / ha / year · ${label}`);
+        const annual = card.facts.find(fact => fact.label === `Gross revenue / ha / year · ${label}`);
         const years = card.facts.find(fact => fact.label === `Years accounted for · ${label}`);
         assert.equal(annual.value, money(seq[scenario].receita_ano_ha));
         assert.equal(years.value, `${number(seq[scenario].anos_ocupados)} ${seq[scenario].anos_ocupados === 1 ? 'year' : 'years'}`);
-        assert.equal(card.facts.find(fact => fact.label === `Revenue / ha · ${label}`).value, money(seq[scenario].receita_ha));
+        assert.equal(card.facts.find(fact => fact.label === `Gross revenue / ha · full rotation · ${label}`).value, money(seq[scenario].receita_ha));
+        assert.equal(card.facts.find(fact => fact.label === `Gross field revenue · full rotation · ${label}`).value,
+          money(seq[scenario].receita_ha * farm.area_ha));
       }
+      assert.match(card.tradeoff, /Brazilian reais \(BRL\).*before costs, not profit/);
       assert.match(card.tradeoff, /cover the entire sequence.*revenue per year of field occupancy.*minimum of one year/);
     }
   }
   const winner = mapMotorAnalysis(february, farm).recommendations[0];
-  assert.notEqual(winner.facts.find(fact => fact.label === 'Revenue / ha / year · today').value,
-    winner.facts.find(fact => fact.label === 'Revenue / ha · today').value);
+  assert.notEqual(winner.facts.find(fact => fact.label === 'Gross revenue / ha / year · today').value,
+    winner.facts.find(fact => fact.label === 'Gross revenue / ha · full rotation · today').value);
 });
 
 test('legacy responses omit annual facts instead of deriving an annual amount in the front', () => {
@@ -68,6 +71,6 @@ test('annual income accepts zero but rejects missing partners, nonfinite numbers
   raw.sequencias[0].hoje.receita_ano_ha = 0;
   raw.sequencias[0].hoje.anos_ocupados = 1;
   const facts = mapMotorAnalysis(raw, farm).recommendations[0].facts;
-  assert.equal(facts.find(fact => fact.label === 'Revenue / ha / year · today').value, money(0));
+  assert.equal(facts.find(fact => fact.label === 'Gross revenue / ha / year · today').value, money(0));
   assert.equal(facts.find(fact => fact.label === 'Years accounted for · today').value, '1 year');
 });
