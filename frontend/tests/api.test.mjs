@@ -16,13 +16,13 @@ test('consumes the actual engine contract and keeps its first three ranked seque
   const result = mapMotorAnalysis(fixture, farm);
   assert.equal(result.demo, false);
   assert.deepEqual(result.recommendations.map((r) => r.category), ['rank1', 'rank2', 'rank3']);
-  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>feijao']);
+  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
   assert.match(result.priority_note, /água 33,3%, solo 33,3% e renda 33,3%.*Pesos iguais/);
   const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
   assert.equal(februaryWinner.sequence_id, 'sorgo>soja');
   assert.deepEqual(februaryWinner.rank_facts, [
-    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '76 / 100' },
-    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '75,1 / 100' },
+    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '76,7 / 100' },
+    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '75,7 / 100' },
   ]);
   assert.equal(result.discarded.length, 74);
 });
@@ -212,8 +212,9 @@ test('rejects missing, nonfinite or unnormalized effective response priorities',
 
 test('one or two viable sequences produce exactly that many distinct cards', () => {
   for (const count of [1, 2]) {
-    const data = copy(); data.sequencias = data.sequencias.slice(0, count);
-    // These selected fixture entries have matching ranks 1 and 2 in both climates.
+    const data = copy();
+    // Keep the first entries and renumber the future rank so the reduced response stays a valid ranking.
+    data.sequencias = data.sequencias.slice(0, count).map((seq, i) => ({ ...seq, rank_futuro: i + 1 }));
     const view = mapMotorAnalysis(data, farm);
     assert.equal(view.recommendations.length, count);
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), data.sequencias.map(seq => seq.id));

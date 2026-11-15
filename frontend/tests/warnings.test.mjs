@@ -43,25 +43,27 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
   assert.equal(bean.risks[1].context, 'Feijão · safrinha · clima futuro');
   assert.equal(bean.risks[0].evidence, 'Fator de calor: 77,6 / 100.');
   assert.equal(bean.risks[1].evidence, 'Fator de calor: 46,1 / 100.');
-  assert.match(bean.risks[2].evidence, /11,5%.*10\.877.*9\.623/);
+  assert.match(bean.risks[2].evidence, /penalidade: 0,75.*mosca-branca/); // common-host warning (engine rule 10)
   assert.equal(bean.risks[3].evidence, '160 dias expostos; 190,1 mm de chuva sobre o solo exposto.');
   assert.equal(bean.gaps[0].evidence, 'Limiar usado: 32 °C.');
-  assert.ok(!JSON.stringify(bean).includes('feijao'));
+  // Known codes use accented labels; the new hospedeiro_comum code still shows the engine text (front label pending).
+  assert.ok(!JSON.stringify(bean.risks.filter(risk => risk.title !== 'Outro risco informado')).includes('feijao'));
+  assert.ok(!JSON.stringify(bean.gaps).includes('feijao'));
 });
 
 test('adapter preserves engine ranking and gives current rotation the same sequence warnings', () => {
   const raw = structuredClone(fixtures[2]);
   const view = mapMotorAnalysis(raw, { area_ha: 2 });
-  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>feijao']);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
   for (const rec of [...view.recommendations, view.current_rotation.strategy]) {
     assert.deepEqual(rec.warnings, show(find(rec.sequence_id, raw)));
   }
   const corn = view.current_rotation.strategy.warnings;
-  const bean = view.recommendations.find(rec => rec.sequence_id === 'soja>feijao').warnings;
+  const cover = view.recommendations.find(rec => rec.sequence_id === 'soja>crotalaria').warnings;
   assert.equal(corn.risks.length, 4); // Two water limitations today/future and two in the dry year.
   assert.equal(corn.gaps.length, 0);
-  assert.equal(bean.risks.length, 6);
-  assert.equal(bean.gaps.length, 2);
+  assert.equal(cover.risks.length, 2);
+  assert.equal(cover.gaps.length, 2);
   const dryRisks = corn.risks.filter(risk => risk.context.includes('ano seco'));
   assert.equal(dryRisks.length, 2);
   assert.match(dryRisks[0].evidence, /77,8/);

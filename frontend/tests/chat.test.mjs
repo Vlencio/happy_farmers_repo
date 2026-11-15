@@ -23,9 +23,9 @@ function session(fetcher = async () => response(reply()), options = {}) {
 }
 
 test('focus follows visible ranked cards and viable reference, deduplicating shared sequences', () => {
-  assert.deepEqual(buildChatFocus(raw, view), ['soja>milho', 'soja>sorgo', 'soja>feijao']);
-  const distinct = { ...view, current_rotation: { status: 'ready', strategy: { sequence_id: 'soja>crotalaria' } } };
-  assert.deepEqual(buildChatFocus(raw, distinct), ['soja>milho', 'soja>sorgo', 'soja>feijao', 'soja>crotalaria']);
+  assert.deepEqual(buildChatFocus(raw, view), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  const distinct = { ...view, current_rotation: { status: 'ready', strategy: { sequence_id: 'soja>feijao' } } };
+  assert.deepEqual(buildChatFocus(raw, distinct), ['soja>milho', 'soja>sorgo', 'soja>crotalaria', 'soja>feijao']);
   for (const status of ['discarded', 'no_history', 'unavailable']) {
     assert.deepEqual(buildChatFocus(raw, { ...distinct, current_rotation: { ...distinct.current_rotation, status } }), buildChatFocus(raw, view));
   }

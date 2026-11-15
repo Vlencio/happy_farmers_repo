@@ -28,27 +28,27 @@ test('all real benefits validate and keep the supplied order and evidence unchan
   }
 });
 
-test('soybean-corn displays its five delivered benefits and exact source values without inventing favorable climate', () => {
+test('soybean-corn displays its four delivered benefits and exact source values without inventing favorable climate', () => {
   const corn = find('soja>milho');
   assert.deepEqual(corn.beneficios.map(item => item.codigo), [
-    'fixa_nitrogenio', 'bonus_apos_fixadora', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro',
-  ]);
+    'fixa_nitrogenio', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro',
+  ]); // the nitrogen bonus now follows only a green manure (engine rule 10), not soybean
   const view = show(corn);
-  assert.equal(view.summary, '5 benefícios apontados pelo motor.');
+  assert.equal(view.summary, '4 benefícios apontados pelo motor.');
   assert.equal(view.items[0].context, 'Soja');
-  assert.equal(view.items[1].context, 'Milho · safrinha');
-  assert.equal(view.items[1].evidence, 'Fator de sequência aplicado: 1,1×.');
-  assert.equal(view.items[3].evidence, '10 dias expostos; 74,3 mm de chuva sobre o solo exposto.');
-  assert.match(view.items[4].evidence, /queda de 1,5%.*13\.481.*13\.284/);
+  assert.equal(view.items[1].context, 'Milho');
+  assert.equal(view.items[2].evidence, '10 dias expostos; 74,3 mm de chuva sobre o solo exposto.');
+  assert.match(view.items[3].evidence, /queda de 1,5%.*13\.003.*12\.808/);
   assert.ok(view.items.every(item => item.title !== 'Fatores favoráveis hoje e no futuro'));
 });
 
 test('benefits remain strategy-specific and use accented crop names', () => {
   const bean = show(find('soja>feijao'));
   const cover = show(find('soja>crotalaria'));
-  assert.equal(bean.items.length, 2);
+  assert.equal(bean.items.length, 3);
   assert.equal(bean.items[1].context, 'Feijão');
-  assert.ok(bean.items.every(item => item.title === 'Fixação de nitrogênio'));
+  assert.ok(bean.items.slice(0, 2).every(item => item.title === 'Fixação de nitrogênio'));
+  assert.equal(bean.items[2].title, 'Estabilidade de receita no futuro');
   assert.equal(cover.items[1].context, 'Crotalária');
   assert.match(cover.items[3].evidence, /36 dias.*237,3 mm/);
   assert.ok(!JSON.stringify(bean).includes('feijao'));
@@ -60,8 +60,7 @@ test('fixation and mulch are explicitly table attributes and model assumptions',
   assert.equal(find('soja>milho').hoje.culturas[0].fixa_n, true);
   assert.equal(find('soja>milho').hoje.culturas[1].cobre_solo, true);
   assert.match(view.items[0].description, /tabela.*atributo.*não é uma medição/);
-  assert.match(view.items[2].description, /supõe.*próximo plantio.*sem medir quantidade ou duração/);
-  assert.match(view.items[1].description, /provisório/);
+  assert.match(view.items[1].description, /supõe.*próximo plantio.*sem medir quantidade ou duração/);
   assert.match(view.note, /não comprovam um resultado no talhão/);
 });
 
