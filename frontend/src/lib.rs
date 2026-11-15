@@ -19,6 +19,7 @@ struct State {
     analysis: Option<Analysis>,
     selected: SelectedStrategy,
     stage: usize,
+    exposure_month: usize,
     crop: Option<String>,
     crop_open: bool,
     cultures: Vec<Culture>,
@@ -49,6 +50,7 @@ impl Default for State {
             analysis: None,
             selected: SelectedStrategy::Objective(0),
             stage: 0,
+            exposure_month: 0,
             crop: None,
             crop_open: false,
             cultures: vec![],
@@ -73,6 +75,7 @@ impl State {
         self.page = Page::Setup;
         self.selected = SelectedStrategy::Objective(0);
         self.stage = 0;
+        self.exposure_month = 0;
         self.loading = false;
         self.discarded_open = false;
         self.error.clear();
@@ -136,6 +139,7 @@ impl State {
     fn select(&mut self, strategy: SelectedStrategy) {
         self.selected = strategy;
         self.stage = 0;
+        self.exposure_month = 0;
         self.page = Page::Timeline;
     }
     fn save_settings(&mut self) {

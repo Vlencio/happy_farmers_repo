@@ -889,6 +889,11 @@ fn recommendation_card(
     let comparison_label = rec
         .comparison_facts
         .iter()
+        .chain(
+            rec.exposure
+                .iter()
+                .flat_map(|exposure| exposure.card_facts.iter()),
+        )
         .map(|fact| format!("{}: {}", fact.label, fact.value))
         .collect::<Vec<_>>()
         .join("; ");
@@ -920,6 +925,33 @@ fn recommendation_card(
                 ),
         );
     }
+    let mut exposure_summary = col()
+        .gap(9.0)
+        .padding(12.0)
+        .radius(9.0)
+        .fill(color("#f6f0e6"));
+    if let Some(exposure) = &rec.exposure {
+        for fact in &exposure.card_facts {
+            exposure_summary = exposure_summary.child(
+                col()
+                    .gap(3.0)
+                    .w_full()
+                    .child(label(&fact.label, 10.0, 400.0, MUTED).wrap().w_full())
+                    .child(label(&fact.value, 17.0, 600.0, "#855535").wrap().w_full()),
+            );
+        }
+    } else {
+        exposure_summary = exposure_summary.child(
+            label(
+                "Solo entre culturas: dados indisponíveis nesta análise.",
+                11.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+    }
     let body = col()
         .gap(18.0)
         .child(
@@ -932,6 +964,7 @@ fn recommendation_card(
         .child(label(tagline, 12.0, 400.0, MUTED))
         .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full())
         .child(metrics)
+        .child(exposure_summary)
         .child(rule())
         .child(paragraph(&rec.reason))
         .child(label(
@@ -972,6 +1005,129 @@ fn recommendation_card(
         narrow,
         1.0,
     )
+}
+fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
+    let mut view = panel().gap(16.0).w_full().child(
+        label("Solo entre as culturas", 22.0, 600.0, INK)
+            .role("heading")
+            .level(2)
+            .wrap()
+            .w_full(),
+    );
+    let Some(exposure) = &rec.exposure else {
+        return view.child(paragraph("Os dados de dias sem cultura e de chuva sobre solo exposto não estão disponíveis nesta análise."));
+    };
+    view = view.child(paragraph(&exposure.period));
+    for chunk in exposure.facts.chunks(2) {
+        let mut line = responsive_row(narrow);
+        for fact in chunk {
+            line = line.child(column_width(
+                col()
+                    .gap(5.0)
+                    .padding(14.0)
+                    .radius(10.0)
+                    .fill(color("#f6f7f0"))
+                    .child(label(&fact.label, 11.0, 500.0, MUTED).wrap().w_full())
+                    .child(label(&fact.value, 19.0, 600.0, INK).wrap().w_full()),
+                narrow,
+                1.0,
+            ));
+        }
+        view = view.child(line);
+    }
+    let mut legend = responsive_row(narrow);
+    for (title, fill) in [
+        ("Com cultura em pé", "#6f8e50"),
+        ("Sem cultura · com palhada", "#c8a866"),
+        ("Exposto · sem palhada", "#b26a43"),
+    ] {
+        legend = legend.child(
+            row()
+                .gap(7.0)
+                .center_y()
+                .child(el().size(12.0, 12.0).radius(3.0).fill(color(fill)))
+                .child(label(title, 11.0, 500.0, MUTED).wrap()),
+        );
+    }
+    let mut calendar = row().gap(6.0).w_full().min_w(1170.0);
+    for (i, month) in exposure.months.iter().enumerate() {
+        let mut bar = row().w_full().h(14.0).radius(3.0);
+        for (days, fill) in [
+            (month.month_days - month.days, "#6f8e50"),
+            (month.days - month.exposed_days, "#c8a866"),
+            (month.exposed_days, "#b26a43"),
+        ] {
+            if days > 0 {
+                bar = bar.child(
+                    el().w(0.0)
+                        .min_w(0.0)
+                        .grow(days as f32)
+                        .h_full()
+                        .fill(color(fill)),
+                );
+            }
+        }
+        calendar = calendar.child(
+            col()
+                .key(format!("exposure-month-{i}"))
+                .w(0.0)
+                .min_w(0.0)
+                .grow(1.0)
+                .padding(8.0)
+                .gap(9.0)
+                .radius(8.0)
+                .fill(color(if i == s.exposure_month {
+                    "#f4eadd"
+                } else {
+                    "#f8f9f5"
+                }))
+                .border(
+                    1.0,
+                    color(if i == s.exposure_month {
+                        "#855535"
+                    } else {
+                        LINE
+                    }),
+                )
+                .child(label(&month.label, 11.0, 600.0, INK).wrap().w_full())
+                .child(bar)
+                .child(
+                    label(format!("{} d sem cultura", month.days), 10.0, 400.0, MUTED)
+                        .wrap()
+                        .w_full(),
+                )
+                .child(
+                    label(
+                        format!("{} d expostos", month.exposed_days),
+                        10.0,
+                        600.0,
+                        "#855535",
+                    )
+                    .wrap()
+                    .w_full(),
+                )
+                .role("button")
+                .label(format!(
+                    "Solo em {}: {} dias sem cultura, {} dias expostos",
+                    month.label, month.days, month.exposed_days
+                ))
+                .focusable(true)
+                .on_press(move |s: &mut State| s.exposure_month = i),
+        );
+    }
+    view = view.child(legend)
+        .child(paragraph("Selecione um mês para conferir a chuva. Deslize o calendário para ver os 12 meses; as barras mostram proporções de dias, não a data exata de cada intervalo."))
+        .child(el().key("exposure-calendar").w_full().scroll_x().child(calendar));
+    if let Some(month) = exposure.months.get(s.exposure_month) {
+        view = view.child(col().key("exposure-month-detail").gap(10.0).padding(16.0)
+            .radius(10.0).fill(color("#f6f0e6"))
+            .child(label(format!("Solo em {}", month.label), 18.0, 600.0, INK).role("heading").level(3).wrap().w_full())
+            .child(paragraph(format!("{} dias sem cultura em pé; desses, {} dias expostos sem palhada e {} dias com palhada estimada.", month.days, month.exposed_days, month.days - month.exposed_days)))
+            .child(paragraph(format!("Chuva nos dias sem cultura: {}. Chuva nos dias expostos: {}.", month.rain, month.exposed_rain)))
+            .child(label(&exposure.caption, 11.0, 500.0, MUTED).wrap().w_full()));
+    }
+    view.child(paragraph(&exposure.erosion_note))
+        .child(label(&exposure.note, 11.0, 400.0, MUTED).wrap().w_full())
 }
 fn current_rotation_card(current: &CurrentRotation, k: &Kit, narrow: bool, demo: bool) -> El {
     if let Some(rec) = &current.strategy {
@@ -1303,6 +1459,7 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())
             .child(paragraph("Selecione uma cultura para ver os detalhes. Ano 1 é o ano inicial do planejamento; o calendário pode atravessar dezembro."))
             .child(el().w_full().scroll_x().child(months.min_w(rec.month_labels.len() as f32 * 83.0))))
+        .child(exposure_panel(s, rec, narrow))
         .child(responsive_row(narrow).child(column_width(stages, narrow, 0.8)).child(column_width(detail, narrow, 1.2)))
         .child(panel().child(label("Água, mês a mês", 22.0, 600.0, INK))
             .child(paragraph(&rec.water_caption))

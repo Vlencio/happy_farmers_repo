@@ -87,40 +87,36 @@ mesmo quando a mesma sequência vence um objetivo.
 
 O adaptador produz `current_rotation: {status, title, description, strategy}` e
 `comparison_facts` em cada estratégia. Esses são modelos locais de apresentação,
-não novos campos exigidos da API. A referência usa o marcador `atual` existente:
+não novos campos exigidos da API. Após integrar a Main `ff2e22c`, a referência
+consome o campo `atual` do topo da resposta do motor:
 
-- `ready`: um único marcador em `sequencias`; usa os números recebidos.
-- `discarded`: marcador em `descartadas`; mostra o motivo, sem números ou timeline.
-- `no_history`: histórico vazio; oferece acesso à edição do histórico.
-- `ambiguous`: histórico maior que o horizonte; não apresenta o marcador antigo
-  como se identificasse as culturas mais recentes.
-- `unavailable`: histórico informado sem marcador; informa a indisponibilidade.
+- `ready`: `atual.viavel: true`; busca os números em `sequencias` pelo `atual.id`.
+- `discarded`: `atual.viavel: false`; mostra `atual.motivo`, sem números ou timeline.
+- `no_history`: histórico vazio e `atual: null`; oferece acesso ao histórico.
+- `unavailable`: resposta legada sem referência identificável com segurança.
 
 O histórico de uma cultura pode ser repetido pelo motor em um horizonte de duas;
-a tela explica essa repetição. O front não escolhe outras culturas, alinha slots
-nem calcula uma referência substituta. A identificação definitiva ainda depende
-das duas primeiras pendências da Parte 1. As fixtures reais atuais já cobrem
-referência viável em outubro e descartada em fevereiro e foram preservadas.
+a tela explica essa repetição. Históricos maiores que o horizonte são aceitos:
+`algodao, soja, milho` produz a referência `soja>milho`; com horizonte 1, o motor
+devolve `soja`, por ser a cultura do slot equivalente. O front não refaz essa
+escolha, alinha slots nem calcula uma referência substituta. O motor ainda supõe
+uma cultura por slot, sem pousio ou safras puladas; safra/ano permanece local.
 
-**Mensagem para o responsável pelo motor/API:**
+Respostas antigas sem o campo do topo continuam usando os marcadores das listas.
+Somente nesse formato legado, um histórico maior que o horizonte permanece
+indisponível, pois o motor antigo marcava as culturas mais antigas. Uma resposta
+nova inconsistente (por exemplo, referência viável sem a sequência correspondente)
+é rejeitada em vez de exibir números de outra estratégia.
 
-> Pedro, o front já mostra a referência da rotação atual junto dos três objetivos,
-> usando `atual: true` em `sequencias` ou o motivo em `descartadas`. Para fechar a
-> Parte 1, falta identificar a rotação pelas culturas mais recentes respeitando
-> safra/safrinha e devolvê-la em campo próprio, com os mesmos indicadores das
-> estratégias viáveis ou o motivo quando não couber no calendário. Hoje o marcador
-> pega o começo do histórico; por isso o front informa comparação indisponível
-> quando o histórico é maior que o horizonte. Quando definir o formato, atualize
-> `docs/contrato_motor.md` e encaminhe uma resposta de exemplo para eu adaptar o
-> consumo e as fixtures do front.
-
-Verificação em 14/11/2026: `npm test` (45 testes), `npm run test:rust` (1 teste),
-build WASM e build web aprovados. `tests/browser-current-rotation.js` passou 23
-verificações contra a API local com o contorno de demonstração: quatro detalhes,
-grade em 1440/1024/390 px, ausência de histórico, descarte, histórico longo e
-resultado vazio. Capturas em `../output/playwright/current-rotation-*.png`
-(a partir da raiz `frontend/`). A largura móvel foi simulada no navegador;
-não houve teste em celular físico ou leitor de tela.
+Verificação após a integração em 14/11/2026: 73 testes do conjunto Python raiz,
+20 do backend, 47 do front e 1 Rust aprovados, além do build WASM/web. As fixtures
+regeneradas coincidem com as entregues na Main. A integração HTTP confere as 24
+combinações de mês/horizonte e 6 casos de referência, incluindo histórico longo,
+slot equivalente, descarte e ausência de histórico. As 26 verificações de navegador
+em `tests/browser-current-rotation.js` passaram, com capturas em
+`../output/playwright/current-rotation-*.png` (a partir da raiz `frontend/`).
+A largura móvel é simulada; celular físico, leitor de tela e deploy do Railway
+não foram verificados nesta rodada.
 
 ### Calendário e detalhes
 
@@ -140,6 +136,66 @@ Não são inventadas etapas de preparo ou regras agronômicas pelo front-end.
 `sequencias: []` é um resultado válido: mostra ausência de alternativa viável e
 oferece ajuste do calendário. `descartadas[].motivo` é convertido em explicações
 expansíveis, tanto para ausência de plantio naquela safra quanto para época perdida.
+
+## Solo entre as culturas — Parte 2
+
+A Main `ff2e22c` já entrega `sequencias[].hoje/futuro/seco.descoberto`.
+O front valida e apresenta esses números sem alterar os três objetivos, o score
+ou o ranking. A rotação atual usa a mesma apresentação das sugestões.
+
+- Nos cards: dias expostos nos primeiros 365 dias e chuva em solo exposto hoje.
+- No detalhe: totais sem cultura e expostos, chuva de hoje/futuro/ano seco e um
+  calendário de 12 meses com seleção para consultar a chuva de cada mês.
+- As barras mostram proporções de dias com cultura, sem cultura com palhada e
+  expostos sem palhada. Não representam a posição exata dos intervalos no mês.
+- A janela começa no mês em que o talhão fica livre e termina após 365 dias.
+  A timeline das culturas pode continuar além dela; não se extrapola a exposição.
+- `indice_erosao`, quando recebido, aparece com sua comparação entre cenários e a
+  explicação de que não representa perda de solo em t/ha. Ausência é diferente de zero.
+
+`web/exposure.mjs` faz a validação e monta `Recommendation.exposure` para o Rune.
+Meses omitidos no contrato têm zero dias sem cultura dentro da janela de 12 meses.
+Dias, totais, ordem dos meses e consistência entre cenários são conferidos; somas
+de chuva aceitam 0,01 mm de diferença pelo arredondamento do motor. Uma resposta
+legada sem `descoberto` mantém os cards/calendários, com aviso de indisponibilidade.
+Os limites da hipótese de palhada aparecem no próprio painel.
+
+### Declividade: ponte preparada, API pendente
+
+A API consultada ainda rejeita `declividade_pct`. Por isso o front **omite** o
+campo com os metadados atuais. `getAnalysisSlope` só habilita o envio quando a API
+anuncia explicitamente a capability proposta abaixo, e o contorno coincide com
+o talhão de demonstração:
+
+```json
+{"capabilities": {"declividade_pct": true}}
+```
+
+Esse sinal é uma proposta de integração, ainda não um campo entregue pelo backend.
+Quando estiver presente, o front envia `demo_field.terrain.decl_media_pct` validado
+entre 0 e 100, preservando zero. Nome, proximidade, centro e área aproximada não
+autorizam reutilizar a declividade. Para outros talhões, o campo continua omitido.
+O front não calcula o índice de erosão nem consulta uma fonte de relevo nova.
+
+**Mensagem para Pedro:**
+
+> Pedro, o front da Parte 2 já mostra dias sem cultura, dias expostos e chuva por
+> sequência e mês, usando `descoberto`. Falta a API aceitar `declividade_pct`
+> opcional, finita entre 0 e 100, e repassá-la ao motor; hoje ela rejeita o campo
+> com 422. Preparei o envio quando `/metadata` anunciar
+> `capabilities: {"declividade_pct": true}`. Ative esse sinal junto com o suporte
+> da entrada. O front enviará `demo_field.terrain.decl_media_pct` somente para o
+> contorno exato da demonstração e omitirá nos demais. O `indice_erosao` retornado
+> já tem apresentação pronta. Não foi necessário mudar o motor nesta etapa.
+
+Validação local em 14/11/2026: 61 testes JS, 1 teste Rust, build WASM/web e as
+30 análises HTTP existentes passaram, com conferência dos totais mensais de
+exposição. `tests/browser-exposure.js` passou 25 verificações (21 com a API atual
+e 4 com suporte futuro explicitamente simulado) e cobre valores diferentes entre estratégias,
+os 12 meses, seleção de mês, desktop/celular simulado e ausência do campo de
+declividade no POST para a API atual. A simulação confirma o envio de 4,05% no
+contorno exato, sua omissão em outro contorno e a exibição do índice com números
+sintéticos identificados; a API real ainda não fornece o cálculo com declividade.
 
 ## Contexto do talhão (G2)
 

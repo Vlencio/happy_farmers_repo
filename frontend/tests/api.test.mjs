@@ -56,31 +56,70 @@ test('current rotation outside the calendar explains the actual discard without 
 // Derived cases below exercise presentation states, not fresh engine calculations.
 test('missing history and a missing current marker have distinct states without replacing the winners', () => {
   const data = copy();
+  delete data.atual; // Legacy response without the dedicated reference.
   for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
   const missing = mapMotorAnalysis(data, farm);
   assert.equal(missing.current_rotation.status, 'unavailable');
   assert.equal(missing.current_rotation.strategy, null);
   data.entrada.rotacao_atual = [];
+  data.atual = null;
   const noHistory = mapMotorAnalysis(data, farm);
   assert.equal(noHistory.current_rotation.status, 'no_history');
   assert.equal(noHistory.current_rotation.strategy, null);
   assert.match(noHistory.current_rotation.description, /Adicione seu histórico/);
   assert.deepEqual(noHistory.recommendations.map((r) => r.sequence_id), missing.recommendations.map((r) => r.sequence_id));
 });
-test('long history never labels the engine oldest-crop marker as the current reference', () => {
+test('long history uses the corrected engine reference without a horizon-length block', () => {
   const data = copy();
-  // The legacy marker remains soja>milho, although algodao is the newest crop.
-  data.entrada.rotacao_atual = ['soja', 'milho', 'algodao'];
+  data.entrada.rotacao_atual = ['algodao', 'soja', 'milho'];
   const view = mapMotorAnalysis(data, farm);
-  assert.equal(view.current_rotation.status, 'ambiguous');
-  assert.equal(view.current_rotation.strategy, null);
-  assert.match(view.current_rotation.description, /mais safras/);
+  assert.equal(view.current_rotation.status, 'ready');
+  assert.equal(view.current_rotation.strategy.sequence_id, 'soja>milho');
+  assert.deepEqual(view.current_rotation.strategy.comparison_facts, view.recommendations[0].comparison_facts);
   assert.equal(view.recommendations[0].sequence_id, 'soja>milho');
-  for (const rec of view.recommendations) assert.doesNotMatch(rec.tradeoff, /referência do histórico|repete o histórico/);
+  assert.match(view.recommendations[0].tradeoff, /referência do histórico/);
+});
+test('dedicated reference supplies identity and discard reason while markers remain a legacy fallback', () => {
+  const data = copy();
+  for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = false;
+  const current = mapMotorAnalysis(data, farm).current_rotation;
+  assert.equal(current.strategy.sequence_id, data.atual.id);
+  assert.match(mapMotorAnalysis(data, farm).recommendations[0].tradeoff, /referência do histórico/);
+
+  const discarded = structuredClone(february);
+  discarded.descartadas = [];
+  for (const seq of discarded.sequencias) seq.atual = false;
+  assert.equal(mapMotorAnalysis(discarded, farm).current_rotation.status, 'discarded');
+  assert.match(mapMotorAnalysis(discarded, farm).current_rotation.description, /não tem plantio previsto na safrinha/);
+
+  const legacy = copy(); delete legacy.atual;
+  assert.deepEqual(mapMotorAnalysis(legacy, farm).current_rotation, mapMotorAnalysis(fixture, farm).current_rotation);
+  const legacyDiscarded = structuredClone(february); delete legacyDiscarded.atual;
+  assert.equal(mapMotorAnalysis(legacyDiscarded, farm).current_rotation.status, 'discarded');
+
+  // An older deployed API can still mark the first crops, so its long history is unsafe.
+  legacy.entrada.rotacao_atual = ['soja', 'milho', 'algodao'];
+  const oldView = mapMotorAnalysis(legacy, farm);
+  assert.equal(oldView.current_rotation.status, 'unavailable');
+  assert.equal(oldView.current_rotation.strategy, null);
+  assert.doesNotMatch(oldView.recommendations[0].tradeoff, /referência do histórico/);
+});
+test('rejects malformed dedicated references rather than displaying another sequence or empty metrics', () => {
+  for (const change of [
+    (v) => v.atual = null,
+    (v) => v.atual = 'soja>milho',
+    (v) => v.entrada.rotacao_atual = [],
+    (v) => v.atual.viavel = 'true',
+    (v) => v.atual.culturas = ['milho', 'soja'],
+    (v) => v.atual.motivo = {},
+    (v) => { v.atual.id = 'desconhecida>milho'; v.atual.culturas[0] = 'desconhecida'; },
+    (v) => { v.atual.viavel = false; v.atual.motivo = null; },
+  ]) { const data = copy(); change(data); assert.throws(() => validateMotorOutput(data), /contrato/); }
 });
 test('a one-crop history uses the repeated sequence supplied by the engine and explains it', () => {
   const data = copy();
   data.entrada.rotacao_atual = ['milho'];
+  data.atual = { id: 'milho>milho', culturas: ['milho', 'milho'], viavel: true, motivo: null };
   for (const seq of [...data.sequencias, ...data.descartadas]) seq.atual = seq.id === 'milho>milho';
   const view = mapMotorAnalysis(data, farm);
   assert.equal(view.current_rotation.status, 'ready');
@@ -162,6 +201,7 @@ test('timeline crosses December and preserves monthly actual/future water figure
 });
 test('empty viable sequences remain empty, with reasons from the engine', () => {
   const data = copy(); data.sequencias = [];
+  delete data.atual; // This synthetic legacy result has no current reference.
   const result = mapMotorAnalysis(data, farm);
   assert.deepEqual(result.recommendations, []);
   assert.equal(result.discarded.length, 74);

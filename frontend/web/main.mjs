@@ -2,7 +2,7 @@ import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
 import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings } from './api.mjs';
-import { buildFieldContext } from './field.mjs';
+import { buildFieldContext, getAnalysisSlope } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
 
@@ -94,7 +94,10 @@ async function dispatch(action) {
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
       const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
       try {
-        const raw = await requestAnalysis(baseUrl, buildRequest(farm, history, settings, metadata.cultures), { signal: pending.signal });
+        const request = buildRequest(farm, history, settings, metadata.cultures);
+        const slope = getAnalysisSlope(farm, metadata);
+        if (slope !== null) request.declividade_pct = slope;
+        const raw = await requestAnalysis(baseUrl, request, { signal: pending.signal });
         if (id !== requestId) return;
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         send({ type: 'analysis', analysis: result });
