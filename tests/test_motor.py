@@ -1057,6 +1057,34 @@ class TestPrioridades(unittest.TestCase):
         self.assertEqual(scores, sorted(scores, reverse=True))
         self.assertEqual([s["rank_hoje"] for s in saida["sequencias"]], list(range(1, len(ids) + 1)))
 
+    def test_parte_agua_na_faixa_fixa(self):
+        ref = motor.AGUA_REF_MIN
+        self.assertEqual(motor.parte_agua(1.0), 1.0)
+        self.assertEqual(motor.parte_agua(ref), 0.0)
+        self.assertEqual(motor.parte_agua(ref - 0.1), 0.0)  # abaixo da faixa vale 0
+        self.assertAlmostEqual(motor.parte_agua((1 + ref) / 2), 0.5)
+
+    def test_agua_e_o_atendimento_na_faixa_fixa(self):
+        # agua do score = parte_agua(atendimento hidrico da sequencia), em todos os climas
+        seco = self.dados[1].assign(chuva_mm=self.dados[1]["chuva_mm"] * 0.5)  # como em TestAnoSeco
+        saida = recomendar(ENTRADA, *self.dados, seco)
+        for s in saida["sequencias"]:
+            for cen in ("hoje", "futuro", "seco"):
+                a = s[cen]
+                self.assertAlmostEqual(a["agua"], motor.parte_agua(a["atendimento_hidrico"]), delta=0.002)
+                etc = sum(c["etc_mm"] for c in a["culturas"])
+                deficit = sum(c["deficit_mm"] for c in a["culturas"])
+                self.assertAlmostEqual(a["atendimento_hidrico"], 1 - deficit / etc, delta=0.002)
+
+    def test_agua_nao_depende_das_outras_sequencias(self):
+        # a faixa e fixa: tirar culturas da tabela nao muda a agua das sequencias que ficam
+        culturas, hoje, futuro = self.dados
+        menor = culturas[culturas["cultura"] != culturas["cultura"].iloc[-1]]
+        agua = lambda saida: {s["id"]: s["hoje"]["agua"] for s in saida["sequencias"]}  # noqa: E731
+        com, sem = agua(recomendar(ENTRADA, *self.dados)), agua(recomendar(ENTRADA, menor, hoje, futuro))
+        self.assertTrue(sem)
+        self.assertEqual({k: com[k] for k in sem}, sem)
+
     def test_empate_desempata_pela_media_das_partes(self):
         saida, _ = self.ranking(1, 0, 0)
         seqs = saida["sequencias"]
@@ -1239,6 +1267,20 @@ class TestDadosReais(unittest.TestCase):
                     self.assertTrue(0 <= b["ruim"]["score"] <= b["mediano"]["score"] + 100)
                     self.assertTrue(0 <= b["ruim"]["agua"] <= b["mediano"]["agua"] <= 1)
                     self.assertLessEqual(b["ruim"]["receita_ha"], b["mediano"]["receita_ha"])
+                    for nivel in ("mediano", "ruim"):  # a mesma escala de agua do modo mensal
+                        self.assertAlmostEqual(
+                            b[nivel]["agua"], motor.parte_agua(b[nivel]["atendimento_hidrico"]), delta=0.002
+                        )
+
+    def test_prioridade_agua_muda_os_cards(self):
+        # com a escala fixa da agua (AGUA_REF_MIN), agua 3, solo 1, renda 1 tem que mexer nos tres
+        # primeiros de hoje em pelo menos um dos dois meses do talhao de demonstracao
+        dados = carregar_dados()
+        mudou = []
+        for mes in (10, 2):
+            topo = lambda pesos: ids(recomendar({**ENTRADA, "mes_plantio": mes, "prioridades": pesos}, *dados)["sequencias"])[:3]  # noqa: E731
+            mudou.append(topo({"agua": 3, "solo": 1, "renda": 1}) != topo({"agua": 1, "solo": 1, "renda": 1}))
+        self.assertTrue(any(mudou))
 
 
 if __name__ == "__main__":
