@@ -439,15 +439,15 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
     }
 
 
-def solo_descoberto(dia_livre, ciclos, palhada_inicial, clima):
-    """Dias sem cultura e chuva que cai neles, nos 365 dias a partir do talhao livre.
+def dias_sem_cultura(dia_livre, ciclos, palhada_inicial):
+    """Dias sem cultura nos 365 dias a partir do talhao livre: lista de (dia, exposto?).
 
     ciclos: (dia do plantio, dia do fim do ciclo, deixa palhada?) de cada cultura, na ordem.
     Dia sem cultura = nenhuma cultura em pe (espera pelo plantio, colheita, depois da ultima).
     Dia exposto = dia sem cultura em que a cultura anterior nao deixa palhada (cobre_solo = 0).
     Antes da 1a cultura vale a ultima do historico; sem historico, conta como exposto.
     """
-    meses = {}  # mes -> acumulados, na ordem do calendario a partir do talhao livre
+    dias = []
     for d in range(dia_livre, dia_livre + 365):
         palhada = palhada_inicial
         em_pe = False
@@ -456,14 +456,21 @@ def solo_descoberto(dia_livre, ciclos, palhada_inicial, clima):
                 em_pe = True
             elif fim <= d:
                 palhada = deixa_palhada
-        if em_pe:
-            continue
+        if not em_pe:
+            dias.append((d, not palhada))
+    return dias
+
+
+def solo_descoberto(dia_livre, ciclos, palhada_inicial, clima):
+    """Dias sem cultura (dias_sem_cultura) e a chuva media do mes que cai neles, por mes e no total."""
+    meses = {}  # mes -> acumulados, na ordem do calendario a partir do talhao livre
+    for d, exposto in dias_sem_cultura(dia_livre, ciclos, palhada_inicial):
         mes = MES_DO_DIA[d % 365]
         chuva = clima[mes - 1]["chuva_mm"] / DIAS_MES[mes - 1]
         a = meses.setdefault(mes, {"mes": mes, "dias": 0, "dias_expostos": 0, "chuva_mm": 0.0, "chuva_exposta_mm": 0.0})
         a["dias"] += 1
         a["chuva_mm"] += chuva
-        if not palhada:
+        if exposto:
             a["dias_expostos"] += 1
             a["chuva_exposta_mm"] += chuva
     lista = list(meses.values())
@@ -584,20 +591,61 @@ def _chave_rank(a):
     return (-round(a["score"], 9), -round(a["agua"] + a["solo"] + a["renda"], 9))
 
 
-def _quantil_ruim(valores):
-    v = sorted(valores)
+def _quantil_ruim(valores, maior_e_pior=False):
+    """Valor do ano ruim: na posicao QUANTIL_RUIM da lista ordenada do pior para o melhor."""
+    v = sorted(valores, reverse=maior_e_pior)
     return v[int(len(v) * QUANTIL_RUIM)]
 
 
+def _ciclos_da_sequencia(nomes, culturas, esperas):
+    """(plantio, fim do ciclo, deixa palhada?) de cada cultura, em dias a partir do talhao livre."""
+    dia, ciclos = 0, []
+    for nome, espera in zip(nomes, esperas):
+        c = culturas[nome]
+        plantio = dia + espera
+        ciclos.append((plantio, plantio + c["ciclo_dias"], bool(c["cobre_solo"])))
+        dia = plantio + c["ciclo_dias"] + DIAS_COLHEITA
+    return ciclos
+
+
+def _descoberto_diario(dias, inicios, chuvas, fator_erosao):
+    """Chuva sobre os dias sem cultura em cada ano da serie, com mediana e ano ruim.
+
+    dias: (dia, exposto?) de dias_sem_cultura, contados a partir do talhao livre; sao os mesmos
+    todo ano. O ano ruim e o de MAIS chuva sobre solo sem cultura: a posicao QUANTIL_RUIM da
+    lista ordenada do mais chuvoso para o menos. indice_erosao so com fator_erosao.
+    """
+    anos = []
+    for ano, i in inicios.items():
+        a = {"ano": ano, "chuva_mm": 0.0, "chuva_exposta_mm": 0.0}
+        for d, exposto in dias:
+            a["chuva_mm"] += chuvas[i + d]
+            if exposto:
+                a["chuva_exposta_mm"] += chuvas[i + d]
+        if fator_erosao is not None:
+            a["indice_erosao"] = a["chuva_exposta_mm"] * fator_erosao
+        anos.append(a)
+    chaves = [k for k in anos[0] if k != "ano"]
+    return {
+        "dias": len(dias),
+        "dias_expostos": sum(exposto for _, exposto in dias),
+        "mediano": {k: statistics.median([a[k] for a in anos]) for k in chaves},
+        "ruim": {k: _quantil_ruim([a[k] for a in anos], maior_e_pior=True) for k in chaves},
+        "anos": anos,
+    }
+
+
 def _modo_diario(
-    diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos, ajuste=None
+    diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots, anterior, mes_plantio, precos, pesos, ajuste=None,
+    declividade=None,
 ):
     """Roda cada sequencia viavel em cada ano da serie diaria, no clima de hoje e no futuro.
 
     Devolve (resumo geral, {sequencia: bloco "diario"}). Por sequencia e clima: ano mediano
     e ano ruim (QUANTIL_RUIM) de agua, solo e receita, cada um com score e rank.
     Com ajuste, a serie de hoje e ajustada depois do limiar de chuva extrema, que fica o da serie
-    observada; o futuro sai das tabelas ja ajustadas.
+    observada; o futuro sai das tabelas ja ajustadas. Solo descoberto: os mesmos dias do modo
+    mensal, com a chuva de cada ano; com declividade, tambem o indice de erosao.
     """
     hoje = _serie_diaria(diario, lat)
     com_chuva = [v for v in hoje["chuva"] if v >= DIA_COM_CHUVA_MM]
@@ -606,11 +654,14 @@ def _modo_diario(
         hoje = ajustar_serie(hoje, ajuste)
     series = {"hoje": hoje, "futuro": _serie_futura(hoje, climas["hoje"], climas["futuro"], et0["hoje"], et0["futuro"])}
     esperas = {s: [r["espera_dias"] for r in aval_hoje[s]["culturas"]] for s in sequencias}
-    # dias do talhao livre ate o fim do ultimo ciclo, na sequencia mais longa
+    # dias do talhao livre ate o fim do ultimo ciclo, na sequencia mais longa; no minimo os
+    # 365 dias do solo descoberto
     duracao = max(
         (sum(e + tabela[n]["ciclo_dias"] for e, n in zip(esperas[s], s)) + DIAS_COLHEITA * (len(s) - 1) for s in sequencias),
         default=0,
     )
+    if sequencias:
+        duracao = max(duracao, 365)
     datas = hoje["datas"]
     inicios = {}  # ano em que o talhao fica livre -> posicao desse dia na serie
     for ano in range(datas[0].year, datas[-1].year + 1):
@@ -654,9 +705,12 @@ def _modo_diario(
                 resumo[cen][s][nivel]["rank"] = i + 1
 
     campos_cultura = ("atendimento_hidrico", "fator_agua", "encaixe_calor", "fator", "receita_ha")
+    palhada_inicial = anterior in tabela and bool(tabela[anterior]["cobre_solo"])
+    fator_erosao = None if declividade is None else fator_declividade(declividade)
     blocos = {}
     for s in sequencias:
         blocos[s] = {}
+        dias = dias_sem_cultura(0, _ciclos_da_sequencia(s, tabela, esperas[s]), palhada_inicial)
         for cen in por_ano:
             anos = por_ano[cen][s]
             pior = min(anos, key=lambda ano: (anos[ano]["receita_ha"], anos[ano]["agua"]))
@@ -679,6 +733,7 @@ def _modo_diario(
                     for i, (nome, slot) in enumerate(zip(s, slots))
                 ],
                 "anos": [{"ano": ano, **{p: a[p] for p in partes}} for ano, a in anos.items()],
+                "descoberto": _descoberto_diario(dias, inicios, series[cen]["chuva"], fator_erosao),
             }
     geral = {
         "anos": list(inicios),
@@ -955,7 +1010,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     geral_diario = blocos_diario = None
     if diario is not None:
         geral_diario, blocos_diario = _modo_diario(
-            diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos, ajuste
+            diario, lat, climas, et0, tabela, sequencias, aval["hoje"], slots, anterior, mes_plantio, precos, pesos, ajuste,
+            declividade,
         )
 
     campos = ["score", "agua", "solo", "renda", "receita_ha", "encaixe", "descoberto", "culturas"]

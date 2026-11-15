@@ -597,6 +597,50 @@ class TestDiario(unittest.TestCase):
             for mensal, diaria in zip(s["hoje"]["culturas"], b["culturas"]):
                 self.assertAlmostEqual(diaria["mediano"]["atendimento_hidrico"], mensal["atendimento_hidrico"], places=3)
 
+    def test_solo_descoberto_repete_o_modo_mensal(self):
+        serie = serie_das_medias(self.dados[1], 2001, 2003)  # sem 29 de fevereiro
+        with mock.patch.object(motor, "MIN_ANOS_DIARIO", 1):
+            saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        for s in saida["sequencias"]:
+            for cen in ("hoje", "futuro"):
+                mensal, d = s[cen]["descoberto"], s["diario"][cen]["descoberto"]
+                self.assertEqual((d["dias"], d["dias_expostos"]), (mensal["dias"], mensal["dias_expostos"]))
+                self.assertEqual([a["ano"] for a in d["anos"]], [2001, 2002])
+                for nivel in ("mediano", "ruim"):
+                    for k in ("chuva_mm", "chuva_exposta_mm"):
+                        self.assertAlmostEqual(d[nivel][k], mensal[k], delta=0.01, msg=(s["id"], cen, nivel, k))
+                self.assertNotIn("indice_erosao", d["mediano"])
+
+    def test_solo_descoberto_ano_ruim_e_o_mais_chuvoso(self):
+        # soja>milho com o talhao livre em outubro: julho fica sem cultura e exposto
+        serie = self.serie.copy()
+        for ano, fator in [(2006, 5.0), (2008, 3.0)]:  # julho das safras 2005 e 2007
+            serie.loc[(serie["data"] >= f"{ano}-07-01") & (serie["data"] < f"{ano}-08-01"), "chuva_mm"] *= fator
+        saida = recomendar(ENTRADA, *self.dados, diario=serie)
+        d = self.bloco("soja>milho", saida=saida)["descoberto"]
+        normal = self.bloco("soja>milho")["descoberto"]
+        anos = {a["ano"]: a["chuva_exposta_mm"] for a in d["anos"]}
+        self.assertEqual(max(anos, key=anos.get), 2005)
+        # 9 anos: o ano ruim e o 2o mais chuvoso (posicao 20% do mais chuvoso para o menos)
+        self.assertAlmostEqual(d["ruim"]["chuva_exposta_mm"], anos[2007], places=3)
+        self.assertGreater(d["ruim"]["chuva_exposta_mm"], d["mediano"]["chuva_exposta_mm"])
+        self.assertAlmostEqual(d["mediano"]["chuva_exposta_mm"], normal["mediano"]["chuva_exposta_mm"], places=3)
+        # a chuva so muda a agua das culturas; os dias e o calendario nao mudam
+        self.assertEqual((d["dias"], d["dias_expostos"]), (normal["dias"], normal["dias_expostos"]))
+
+    def test_solo_descoberto_com_declividade(self):
+        saida = recomendar({**ENTRADA, "declividade_pct": 4.05}, *self.dados, diario=self.serie)
+        f = motor.fator_declividade(4.05)
+        for s in saida["sequencias"]:
+            d = s["diario"]["futuro"]["descoberto"]
+            for a in [*d["anos"], d["mediano"], d["ruim"]]:
+                self.assertAlmostEqual(a["indice_erosao"], a["chuva_exposta_mm"] * f, delta=0.01)
+        # fora do score e do rank
+        self.assertEqual(
+            [(s["id"], s["diario"]["hoje"]["mediano"]["rank"], s["diario"]["hoje"]["ruim"]["score"]) for s in saida["sequencias"]],
+            [(s["id"], s["diario"]["hoje"]["mediano"]["rank"], s["diario"]["hoje"]["ruim"]["score"]) for s in self.saida["sequencias"]],
+        )  # fmt: skip
+
     def test_ky_na_perda_por_falta_de_agua(self):
         milho = self.bloco("soja>milho")["culturas"][1]["mediano"]  # milho safrinha: falta agua no fim do ciclo
         self.assertLess(milho["atendimento_hidrico"], 0.95)
