@@ -76,13 +76,13 @@ async (originalPage) => {
     const first = await analyze();
     const recs = [first.view.current_rotation.strategy, ...first.view.recommendations];
     const names = await cards().allTextContents();
-    check(names.length === 4, 'The reference and all three objective cards remain available');
+    check(names.length === 4, 'The reference and all three ranked cards remain available');
     check(recs.every((rec, i) => names[i].includes(rec.benefits.summary) && names[i].includes(rec.benefits.items[0].card_summary)),
       'All four accessible card names include their own benefit summaries');
     check(recs[0].sequence_id === recs[1].sequence_id && names[0] !== names[1],
-      'A duplicated winning sequence keeps both reference and income cards');
-    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>milho|soja>crotalaria|soja>sorgo',
-      'Benefit presentation preserves all three objective winners');
+      'A duplicated winning sequence keeps both reference and first-ranked cards');
+    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>milho|soja>sorgo|soja>feijao',
+      'Benefit presentation preserves the three weighted winners');
     await align(cards().first());
     await page.screenshot({ path: 'output/playwright/benefits-cards-desktop.png' });
     for (const [i, rec] of recs.entries()) {
@@ -91,25 +91,31 @@ async (originalPage) => {
       await verifyDetail(rec, first.raw.sequencias.find(seq => seq.id === rec.sequence_id));
       if (i === 0) {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
-        check(new Set(source.beneficios.map(item => item.codigo)).size === 6, 'The real current rotation exercises all six benefit codes');
-        check((await text()).includes('queda de 1,3%') && (await text()).includes('14.171') && (await text()).includes('13.989'),
+        check(new Set(source.beneficios.map(item => item.codigo)).size === 5, 'The real current rotation has five benefits after the soil-capacity revision');
+        check((await text()).includes('queda de 1,5%') && (await text()).includes('13.481') && (await text()).includes('13.284'),
           'The real future-revenue decline and both revenues reach the detail');
-        check((await text()).includes('não inclui o ano seco') && source.avisos.some(item => item.cenario === 'seco'),
-          'Favorable climate benefit explicitly excludes the dry-year risks present in the response');
+        check(!(await text()).includes('Fatores favoráveis hoje e no futuro'),
+          'The UI does not invent the favorable-climate benefit removed by the engine');
         await align(benefitsHeading());
         await page.screenshot({ path: 'output/playwright/benefits-current-desktop.png' });
         await align(page.getByRole('heading', { name: 'Estabilidade de receita no futuro', exact: true }));
         await page.screenshot({ path: 'output/playwright/benefits-evidence-desktop.png' });
       }
       if (i === 2) {
-        check((await text()).includes('Crotalária') && !(await text()).includes('crotalaria'), 'Cover-crop benefit labels preserve Portuguese accents');
+        const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
+        check(rec.sequence_id === 'soja>sorgo' && source.beneficios.some(item => item.codigo === 'clima_favoravel')
+          && (await text()).includes('não inclui o ano seco') && source.avisos.some(item => item.cenario === 'seco'),
+          'Favorable climate benefit for soybean-sorghum excludes its dry-year risks');
+      }
+      if (i === 3) {
+        check((await text()).includes('Feijão') && !(await text()).includes('feijao'), 'Bean benefit labels preserve Portuguese accents');
       }
       await click('← Comparar estratégias');
     }
     const bean = await analyze(['soja', 'feijao']);
     const current = bean.view.current_rotation.strategy;
-    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 6,
-      'Changing the real current rotation changes six benefits to two');
+    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 5,
+      'Changing the real current rotation changes five benefits to two');
     await click(await cards().first().textContent());
     await waitText('Benefícios considerados pelo motor');
     await verifyDetail(current, bean.raw.sequencias.find(seq => seq.id === current.sequence_id));

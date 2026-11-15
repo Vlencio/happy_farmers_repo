@@ -1,9 +1,11 @@
 // Run with playwright-cli run-code --filename=frontend/tests/browser-scenarios.js.
 // Prepare fixtures from the repository root with:
 // .venv/Scripts/python.exe frontend/scripts/export-scenario-fixtures.py
-// Baseline analyses use the live API. Scenario support is SIMULATED at transport
-// level using output/playwright/scenario-fixtures.json from the real Python engine.
-// Chat replies are SIMULATED; the test never calls a model provider.
+// Resilience/legacy checks: the advertised capability is SIMULATED on/off.
+// Baseline analyses use the live API; adjusted transport uses local-engine fixtures
+// from output/playwright/scenario-fixtures.json. Echo errors, delayed replies and
+// chat replies are SIMULATED. No model provider is called. The current API already
+// supports adjustments; browser-scenario-api.js verifies that real end-to-end flow.
 async (originalPage) => {
   const context = await originalPage.context().browser().newContext({ viewport: { width: 1440, height: 1100 } });
   const page = await context.newPage();
@@ -156,8 +158,7 @@ async (originalPage) => {
   await page.route('**/qa-scenario-fixtures', route => route.fulfill({ path: 'output/playwright/scenario-fixtures.json', contentType: 'application/json' }));
   await page.route('**/api/metadata', async route => {
     const response = await route.fetch(), body = await response.json();
-    if (support) body.capabilities = { ...body.capabilities, ajuste: true };
-    if (chatSupport) body.capabilities = { ...body.capabilities, chat: true };
+    body.capabilities = { ...body.capabilities, ajuste: support, chat: chatSupport };
     await route.fulfill({ response, json: body });
   });
   await page.route('**/api/analyze', async route => {
@@ -181,16 +182,16 @@ async (originalPage) => {
     await page.goto(originalPage.url()); await waitConnected();
     fixtureCases = await page.evaluate(async () => (await fetch('/qa-scenario-fixtures')).json());
     const realMetadata = await (await page.request.get(new URL('/api/metadata', originalPage.url()).href)).json();
-    check(realMetadata.capabilities?.ajuste !== true, 'Real API does not yet advertise scenario adjustment');
+    check(typeof realMetadata.capabilities?.ajuste === 'boolean', 'Actual API capability is read separately from simulated legacy support');
     await seed();
     check(await scenarioHeading().count() === 1, 'Scenario controls have an accessible heading');
     check((await text()).includes('Os ajustes de cenário ainda não estão disponíveis neste servidor.'),
-      'Unavailable server support has a clear explanation');
+      'SIMULATED legacy server: unavailable support has a clear explanation');
     check((await Promise.all(controlNames.map(name => button(name).isDisabled()))).every(Boolean),
       'Unsupported scenario controls are disabled');
     const baseline = await submit();
     check(!Object.hasOwn(baseline.request, 'ajuste'), 'Legacy draft uses baseline and sends no unsupported adjustment field');
-    await verifyCards(baseline, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'Real baseline');
+    await verifyCards(baseline, fixtureCases.baseline.result.sequencias.slice(0, 3).map(seq => seq.id), 'Real baseline');
     check(!baseline.view.adjustment_note, 'Baseline is not labeled as an adjusted scenario');
 
     await seed({ chuva_pct: -20, temp_c: 0 });
@@ -210,9 +211,10 @@ async (originalPage) => {
       'SIMULATED support: Setup controls save -20% rain without analyzing before the producer submits');
     const rain = await submit();
     check(same(rain.request.ajuste, { chuva_pct: -20, temp_c: 0 }), 'SIMULATED support: exact selected adjustment reaches the API');
-    await verifyCards(rain, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'Real engine fixture with 20% less rain');
-    check(rain.raw.sequencias[0].hoje.receita_ha === 13385.033 && baseline.raw.sequencias[0].hoje.receita_ha === 14170.702,
-      'Real engine rainfall change reduces soybean-corn income and changes the third card');
+    await verifyCards(rain, fixtureCases['rain-20'].result.sequencias.slice(0, 3).map(seq => seq.id), 'Real engine fixture with 20% less rain');
+    check(rain.raw.sequencias.find(seq => seq.id === 'soja>milho').hoje.receita_ha
+      < baseline.raw.sequencias.find(seq => seq.id === 'soja>milho').hoje.receita_ha,
+      'Real engine rainfall fixture reduces soybean-corn income');
     check(rain.view.adjustment_note && (await text()).includes(rain.view.adjustment_note), 'Adjusted result has a visible scenario note');
     check(/não.*previsão/i.test(rain.view.adjustment_note) && /hoje|todos/i.test(rain.view.adjustment_note),
       'Scenario note identifies the what-if and its scope');
@@ -249,7 +251,7 @@ async (originalPage) => {
     check(same((await draft()).settings.ajuste, { chuva_pct: -20, temp_c: 2 }), 'Combined draft preserves rain while editing temperature');
     const combined = await apply();
     check(same(combined.request.ajuste, { chuva_pct: -20, temp_c: 2 }), 'Combined values are sent without browser climate calculations');
-    check(combined.raw.sequencias.find(seq => seq.id === 'soja>milho').hoje.receita_ha === 12930.909,
+    check(same(combined.raw, fixtureCases.combined.result),
       'Combined scenario displays the actual engine response');
     check(/estimad|aproxima|interpol/i.test(combined.view.adjustment_note), 'Temperature what-if explains estimated heat-day counts');
     check(!combined.view.scenario_note.includes('Ano seco: observações de 2020/21'), 'Adjusted dry year is not mislabeled as unchanged observed weather');
@@ -257,12 +259,12 @@ async (originalPage) => {
     check(await cards().count() === 0, 'Reset invalidates adjusted cards before the next analysis');
     const reset = await apply();
     check(!Object.hasOwn(reset.request, 'ajuste') && !reset.view.adjustment_note, 'Reset returns to unadjusted data and clears scenario labeling');
-    await verifyCards(reset, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'Reset baseline');
+    await verifyCards(reset, fixtureCases.baseline.result.sequencias.slice(0, 3).map(seq => seq.id), 'Reset baseline');
     await changeTemperature(4);
     const hot = await apply();
     await verifyCards(hot, hot.raw.sequencias.slice(0, 3).map(seq => seq.id), 'Real engine fixture with 2 degrees warming');
-    check(hot.raw.sequencias.find(seq => seq.id === 'soja>crotalaria').rank_futuro
-      < hot.raw.sequencias.find(seq => seq.id === 'soja>sorgo').rank_futuro, 'Warming moves crotalaria ahead of sorghum in the future');
+    check(same(hot.raw, fixtureCases.temp2.result),
+      'Warming preserves the complete supplied engine result and future ranking');
     await page.reload(); await waitConnected();
     const reloaded = await submit();
     check(same(reloaded.request.ajuste, { chuva_pct: 0, temp_c: 2 }), 'Scenario survives reload through the existing local draft');
@@ -333,7 +335,8 @@ async (originalPage) => {
       && chatPosts.at(-1).historico.length === 0 && same(chatPosts.at(-1).foco, expectedFocus(chatRain)),
       'New chat sends adjusted raw analysis, new focus, and an empty history');
     check(errors.length === 0, 'No uncaught JavaScript errors');
-    return { passed: checks.length, scenario_transport: 'simulated with real engine fixtures', chat_requests_simulated: chatPosts.length, checks };
+    return { passed: checks.length, actual_api_scenario_capability: realMetadata.capabilities.ajuste,
+      scenario_transport: 'simulated with real engine fixtures', chat_requests_simulated: chatPosts.length, checks };
   } catch (error) {
     await page.screenshot({ path: 'output/playwright/scenarios-failure.png' });
     throw new Error(JSON.stringify({ checks, failure: error.message, errors, requests: analyzePosts.map(item => item.ajuste ?? null),

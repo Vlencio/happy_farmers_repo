@@ -10,7 +10,7 @@ responsáveis foram preservados; Gabriel implementou o transporte e a apresenta�
 | G1 | Card climático filtra sequências com receita positiva em cada cultura futura; fallback e desempate documentados e testados | Concluído |
 | G2 | Painel “Seu talhão”, NDVI mensal, cobertura/palhada, declividade, A520; metadados e arquivos no pacote Docker | Concluído |
 | G3 | Glossário, resolução das fontes e avisos sobre preços, calor e constantes provisórias | Concluído |
-| G4 | Ano seco real da demonstração ligado à API e à tela; apresentação da faixa climática dos modelos | Ano seco concluído; D2 entregue em `dados-calor` (`5deed52`), pendente de merge |
+| G4 | Ano seco real da demonstração ligado à API e à tela; apresentação da faixa climática dos modelos | Ano seco e D2 integrados; atualização até Main `8049494` |
 | G5 | POWER por ponto + delta regional; origem, avisos e cache; deploy e espera ampliada | Concluído e testado em três pontos de Minas |
 | G6 | Teste do botão por teclado e árvore de acessibilidade; Enter no foco Rune corrigido | Fluxo verificado; leitura com NVDA/Narrador ainda não auditada |
 
@@ -39,12 +39,13 @@ série local. A grade regional entregue é selecionada pela API e usada por D1.
 
 **D2 — Breno: recebido em `dados-calor`, commit `5deed52` (15/11/2026).**
 `data/clima_modelos.csv` contém os deltas mensais dos três modelos para o talhão
-de demonstração. Ainda falta integrar essa entrega à `main` e à `front-dev3`.
+de demonstração. Entrega integrada à `main` e recebida na `front-dev3` pela
+atualização até `8049494`.
 O leitor calcula chuva anual e média dos 12 deltas de máxima; a interface deriva
 os extremos e a discordância do sinal da chuva. A faixa entregue é de +1,34 a
-+2,31 °C e −79,6 a +32,7 mm/ano, sem valores fixados na tela. Reiniciar a API e
-regenerar as fixtures após o merge. Até lá, `metadata-d2.json` cobre a entrega
-isolada e `metadata.json` continua refletindo os dados desta branch.
++2,31 °C e −79,6 a +32,7 mm/ano, sem valores fixados na tela. A fixture canônica
+`metadata.json` já contém D2; `metadata-d2.json` preserva a validação anterior
+ao merge. Reiniciar a API após atualizar os arquivos de dados.
 
 **Parte 7 — Pedro:** a faixa climática do talhão não conclui as faixas por
 estratégia. Ainda faltam o cálculo por modelo e o contrato da API para receita e

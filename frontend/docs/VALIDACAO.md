@@ -1,5 +1,97 @@
 # Verificação da integração · 14/11/2026
 
+## Integração final na motor-renda-anual · 15/11/2026
+
+Base `2a60d9b`, que reúne a API da Main `0ec5f06`, as correções do motor e os
+dados `8a90877` de Brenno. Os ajustes anteriores do front foram preservados e
+adaptados às fixtures novas de `835f84d`. A publicação é na `motor-renda-anual`;
+o merge na `main` fica com Pedro. Motor, dados e seus testes não foram alterados
+por esta integração do front.
+
+- 117 testes JS e 163 Python (129 raiz + 34 backend) passaram.
+- Oito verificações adicionais cobriram preços de referência/todos os preços
+  zero, peso renda 0/1 e modos mensal/diário. O caso que retornava 500 agora
+  retorna 200. O teto usa preços da tabela, conforme a correção de Pedro.
+- 44 análises HTTP válidas passaram: 36 casos de calendário/referência/prioridades,
+  seis ajustes reais, ajuste zero e reset. Uma entrada fora da faixa deu 422.
+- `tests/browser-scenario-api.js`: 85 verificações no Chromium com oito análises
+  reais, sem substituir metadados nem resultados. Cobriu chuva, temperatura,
+  combinação, todos os meses dos três climas, receita/rank na tela, detalhes
+  anuais, persistência, reset, limites e avisos de hipótese/ano seco ajustado.
+  Todas as consultas usaram a demonstração; zero chamadas ao chat, zero consultas
+  externas ao POWER e zero erros JavaScript.
+- Capturas `output/playwright/real-scenarios-{desktop,mobile,cards-mobile}.png`
+  inspecionadas em 1440 px e 390 px: controles e dados legíveis, sem overflow.
+- `tests/browser-scenarios.js`: 77 verificações de resiliência passaram, com
+  capability ausente, ecos incorretos, respostas atrasadas e chat explicitamente
+  simulados. Três POSTs de chat foram interceptados; nenhum provedor foi chamado.
+- Teste Rust, `cargo fmt --check` e build Rune/WASM + Vite passaram. Os avisos
+  da dependência Rune permanecem sem mudança.
+- Quatro fixtures canônicas conferem com o exportador; só o rótulo de futuro
+  em `metadata.json` muda em relação à branch recebida. As seis fixtures ignoradas
+  de cenários foram regeneradas com os dados novos, sem download.
+
+A Parte 6 está integrada pela API real. Tradução de pergunta do chat em ajuste
+continua opcional e não foi implementada. Chat com provedor real, leitores de
+tela, celular físico e deploy não foram testados. Partes 7/8 mantêm suas
+dependências. Rótulos antigos em `origem.periodos` e num aviso do provedor de
+dados estão registrados em [API.md](API.md), sem mudar os campos de proveniência.
+
+## Histórico — renda anual antes das correções de Pedro · 15/11/2026
+
+O registro abaixo descreve a rodada anterior (`195bf1a`). O teto zero e a API
+de ajuste pendentes nessa rodada foram resolvidos na integração acima.
+
+Checkout atualizado até a Main `8049494`. Integração local de
+`motor-renda-anual` (`195bf1a`) preparada em `front-dev3`, **sem concluir o merge
+nem publicar**, por decisão de Gabriel: o caso de teto zero fica com Pedro.
+O motor e seus testes permanecem exatamente como nessa branch.
+
+- 117 testes JS passaram, incluindo os sete testes atualizados e três novos
+  testes para renda anual, respostas antigas e campos anuais inválidos.
+- 121 testes Python da raiz e 33 do backend passaram. Os 33 do backend foram
+  repetidos após a correção textual de futuro nos metadados e no prompt do chat.
+- Teste Rust e `cargo fmt --check` passaram; build Rune/WASM e Vite passou,
+  com avisos existentes da dependência Rune e tamanho do bundle.
+- 36 análises HTTP reais passaram: 24 calendários, 6 referências, 5 conjuntos
+  de prioridades e fevereiro. Outubro começa com Soja → Milho, Soja → Sorgo,
+  Soja → Feijão; fevereiro, com Sorgo → Soja, Feijão → Soja, Crotalária → Soja.
+- As quatro fixtures canônicas foram conferidas contra o exportador; depois
+  do ajuste do rótulo, `metadata.json` foi regenerada. Os três arquivos do motor
+  continuaram idênticos aos da branch do Pedro.
+- `tests/browser-annual-income.js`: 37 verificações no Chromium com respostas
+  reais, cobrindo seletor de fevereiro, ranking, receita total/anual e ocupação
+  nos três cenários, mínimo de um ano, rótulo 2060, solo 60 mm e D2.
+  Uma análise da demonstração (`origem.hoje=tabela_demo`), nenhuma chamada
+  ao chat ou consulta externa ao POWER, e nenhum erro de JavaScript.
+- Capturas `output/playwright/annual-{cards,detail}-*.png` inspecionadas em
+  1440 px e 390 px, com dados legíveis e sem overflow horizontal.
+- Roteiros anteriores de prioridades, cenários, benefícios e avisos tiveram
+  suas expectativas atualizadas e a sintaxe conferida; não foram reexecutados
+  integralmente nesta rodada. As seis fixtures ignoradas de cenários foram
+  regeneradas com o motor atual, sem download.
+
+### Pendência de Pedro antes do merge
+
+Uma verificação adicional encontrou uma entrada válida que os testes existentes
+não cobrem. `POST /analyze` retorna **500** por `ZeroDivisionError` com:
+
+```json
+{"lat":-20.032,"mes_plantio":2,"horizonte":2,"precos":{"soja":0,"milho":0},"prioridades":{"agua":1,"solo":1,"renda":0}}
+```
+
+`teto_de_renda` devolve zero para o sistema de referência; a divisão ocorre
+mesmo com peso de renda zero. O front não permite editar preços e envia `{}`,
+por isso o fluxo normal passa. Pedro precisa tratar teto nulo e testar preços
+de referência zero e todos os preços zero, nos modos mensal e diário.
+O merge aguarda essa correção; nenhum conserto foi aplicado ao motor aqui.
+
+Os textos brutos de avisos/benefícios do motor ainda citam `2041-2060`, para
+Pedro alinhar. Metadados HTTP, prompt do chat e apresentação usam “por volta
+de 2060”; o chat real não foi chamado. Parte 6 ainda precisa da API aceitar
+`ajuste` e anunciar a capability; Partes 7/8 continuam com as dependências
+registradas nas pendências. Deploy e celular físico não foram testados.
+
 ## D2 — faixa climática entre modelos · 15/11/2026
 
 Front na `front-dev3` (`a7bf90e` como base), com a entrega de Breno `5deed52`

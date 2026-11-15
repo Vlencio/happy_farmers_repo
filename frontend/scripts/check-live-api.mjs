@@ -1,6 +1,6 @@
 // Run while npm run dev/preview is active. Exercises the proxy and real Python engine.
 import assert from 'node:assert/strict';
-import { buildRequest, mapMotorAnalysis, requestAnalysis, requestMetadata } from '../web/api.mjs';
+import { buildRequest, mapMotorAnalysis, requestAnalysis, requestMetadata, assertAdjustmentApplied } from '../web/api.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
 import { buildFieldContext } from '../web/field.mjs';
 import { readFileSync } from 'node:fs';
@@ -27,7 +27,7 @@ for (const horizonte of [1, 2]) {
     assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id));
     assert.equal(view.recommendations.length, Math.min(3, raw.sequencias.length));
     if (horizonte === 1 && [3, 4, 5, 12].includes(mes_plantio)) {
-      const expected = { 3: ['trigo', 'crotalaria'], 4: [], 5: ['soja', 'milho'], 12: ['algodao'] };
+      const expected = { 3: ['crotalaria', 'trigo'], 4: [], 5: ['soja', 'milho'], 12: ['algodao'] };
       assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), expected[mes_plantio]);
     }
     if (!raw.sequencias.length) empty++;
@@ -96,16 +96,18 @@ console.log(`${currentCases.length} casos de rotação atual passaram na API rea
 // history contributes to soil diversity, so empty history can change tied scores.
 const weightedHistory = ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' }));
 const weightedCases = [
-  { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
+  { name: 'pesos iguais', prioridades: { agua: 1, solo: 1, renda: 1 }, ids: ['soja>milho', 'soja>sorgo', 'soja>feijao'] },
   { name: 'só renda', prioridades: { agua: 0, solo: 0, renda: 3 }, ids: ['soja>milho', 'soja>trigo', 'soja>girassol'] },
   { name: 'só solo', prioridades: { agua: 0, solo: 3, renda: 0 }, ids: ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'] },
-  { name: 'só água e desempate do motor', prioridades: { agua: 3, solo: 0, renda: 0 }, ids: ['soja>sorgo', 'soja>feijao', 'soja>girassol'] },
-  { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>milho', 'soja>sorgo', 'soja>crotalaria'] },
+  { name: 'só água e desempate do motor', prioridades: { agua: 3, solo: 0, renda: 0 }, ids: ['soja>feijao', 'soja>milheto', 'feijao>milheto'] },
+  { name: 'todos zero usam pesos iguais', prioridades: { agua: 0, solo: 0, renda: 0 }, ids: ['soja>milho', 'soja>sorgo', 'soja>feijao'] },
 ];
+let weightedBaseline;
 for (const { name, prioridades, ids } of weightedCases) {
   const request = buildRequest(farm, weightedHistory, { mes_plantio: 10, horizonte: 2, prioridades }, metadata.cultures);
   assert.deepEqual(request.prioridades, prioridades, name);
   const raw = await requestAnalysis(baseUrl, request);
+  if (name === 'pesos iguais') weightedBaseline = raw;
   const view = mapMotorAnalysis(raw, farm);
   assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ids, name);
   assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id), name);
@@ -116,10 +118,47 @@ for (const { name, prioridades, ids } of weightedCases) {
   if (name.includes('iguais')) assert.deepEqual(raw.entrada.prioridades, { agua: 0.333, solo: 0.333, renda: 0.333 });
 }
 const futureShift = await requestAnalysis(baseUrl, buildRequest(farm, weightedHistory, { mes_plantio: 2, horizonte: 2 }, metadata.cultures));
-assert.equal(futureShift.sequencias[0].id, 'crotalaria>algodao');
+assert.equal(futureShift.sequencias[0].id, 'sorgo>soja');
 assert.equal(futureShift.sequencias[0].rank_hoje, 1);
-assert.equal(futureShift.sequencias[0].rank_futuro, 12);
-assert.equal(futureShift.sequencias[0].hoje.score, 79.218);
-assert.equal(futureShift.sequencias[0].futuro.score, 64.583);
-assert.equal(mapMotorAnalysis(futureShift, farm).recommendations[0].rank_facts[2].value, '#12');
-console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro mantém a 1ª de hoje com 12ª posição no futuro.`);
+assert.equal(futureShift.sequencias[0].rank_futuro, 1);
+assert.equal(futureShift.sequencias[0].hoje.score, 75.987);
+assert.equal(futureShift.sequencias[0].futuro.score, 75.139);
+const februaryView = mapMotorAnalysis(futureShift, farm);
+assert.equal(februaryView.recommendations[0].rank_facts[2].value, '#1');
+assert.equal(futureShift.sequencias[1].id, 'feijao>soja');
+assert.equal(futureShift.sequencias[1].rank_futuro, 7);
+assert.equal(februaryView.recommendations[1].rank_facts[2].value, '#7');
+console.log(`${weightedCases.length} cenários de prioridades passaram na API real; fevereiro tem sorgo>soja em 1º e feijao>soja muda de 2º hoje para 7º no futuro.`);
+
+// The actual API now owns what-if calculations. Exercise the browser request
+// builder, effective echo and presentation, without reproducing climate formulas.
+assert.equal(metadata.capabilities.ajuste, true, 'Reinicie a API com o suporte real a ajustes.');
+const normalRequest = buildRequest(farm, weightedHistory, { mes_plantio: 10, horizonte: 2 }, metadata.cultures, metadata);
+assert.ok(!Object.hasOwn(normalRequest, 'ajuste'));
+assert.ok(!Object.hasOwn(weightedBaseline.entrada, 'ajuste'));
+const adjustmentCases = [
+  { chuva_pct: -20, temp_c: 0 }, { chuva_pct: 0, temp_c: 2 },
+  { chuva_pct: -20, temp_c: 2 }, { chuva_pct: -50, temp_c: 4 },
+  { chuva_pct: 30, temp_c: 0 }, { chuva_pct: -12.5, temp_c: 0.5 },
+];
+for (const ajuste of adjustmentCases) {
+  const request = buildRequest(farm, weightedHistory, { mes_plantio: 10, horizonte: 2, ajuste }, metadata.cultures, metadata);
+  assert.deepEqual(request.ajuste, ajuste);
+  const raw = await requestAnalysis(baseUrl, request);
+  assertAdjustmentApplied(raw, request);
+  assert.equal(raw.origem.hoje, 'tabela_demo');
+  const view = mapMotorAnalysis(raw, farm);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), raw.sequencias.slice(0, 3).map(seq => seq.id));
+  assert.match(view.adjustment_note, /simulação, não.*previsão/);
+  assert.match(view.scenario_note, /2020\/21.*não são as observações originais/);
+  assert.notDeepEqual(raw.clima, weightedBaseline.clima);
+  assert.ok(raw.sequencias.some(seq => seq.hoje.receita_ha !== weightedBaseline.sequencias.find(other => other.id === seq.id).hoje.receita_ha));
+}
+const zero = await requestAnalysis(baseUrl, { ...normalRequest, ajuste: { chuva_pct: 0, temp_c: 0 } });
+assertAdjustmentApplied(zero, { ...normalRequest, ajuste: { chuva_pct: 0, temp_c: 0 } });
+assert.deepEqual(zero.clima, weightedBaseline.clima);
+assert.deepEqual(zero.sequencias, weightedBaseline.sequencias);
+const reset = await requestAnalysis(baseUrl, normalRequest);
+assert.deepEqual(reset, weightedBaseline);
+await assert.rejects(requestAnalysis(baseUrl, { ...normalRequest, ajuste: { chuva_pct: -51, temp_c: 0 } }), /HTTP 422/);
+console.log(`${adjustmentCases.length} ajustes reais passaram, incluindo limites e frações; ajuste zero e reset preservam a análise normal e entrada fora da faixa é recusada.`);

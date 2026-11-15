@@ -28,19 +28,19 @@ test('all real benefits validate and keep the supplied order and evidence unchan
   }
 });
 
-test('soybean-corn displays all six delivered benefit codes and exact source values', () => {
+test('soybean-corn displays its five delivered benefits and exact source values without inventing favorable climate', () => {
   const corn = find('soja>milho');
   assert.deepEqual(corn.beneficios.map(item => item.codigo), [
-    'fixa_nitrogenio', 'bonus_apos_fixadora', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro', 'clima_favoravel',
+    'fixa_nitrogenio', 'bonus_apos_fixadora', 'deixa_palhada', 'pouco_solo_exposto', 'estavel_no_futuro',
   ]);
   const view = show(corn);
-  assert.equal(view.summary, '6 benefícios apontados pelo motor.');
+  assert.equal(view.summary, '5 benefícios apontados pelo motor.');
   assert.equal(view.items[0].context, 'Soja');
   assert.equal(view.items[1].context, 'Milho · safrinha');
   assert.equal(view.items[1].evidence, 'Fator de sequência aplicado: 1,1×.');
   assert.equal(view.items[3].evidence, '10 dias expostos; 74,3 mm de chuva sobre o solo exposto.');
-  assert.match(view.items[4].evidence, /queda de 1,3%.*14\.171.*13\.989/);
-  assert.equal(view.items[5].evidence, 'Menor fator entre as culturas, hoje e no futuro: 81,2 / 100.');
+  assert.match(view.items[4].evidence, /queda de 1,5%.*13\.481.*13\.284/);
+  assert.ok(view.items.every(item => item.title !== 'Fatores favoráveis hoje e no futuro'));
 });
 
 test('benefits remain strategy-specific and use accented crop names', () => {
@@ -66,11 +66,12 @@ test('fixation and mulch are explicitly table attributes and model assumptions',
 });
 
 test('climate benefit covers today and future even when dry-year risks exist', () => {
-  const corn = find('soja>milho', fixtures[2]);
-  assert.ok(corn.avisos.some(item => item.codigo === 'fator_limitante' && item.cenario === 'seco'));
-  const climate = show(corn).items.at(-1);
+  const sorghum = find('soja>sorgo', fixtures[2]);
+  assert.ok(sorghum.avisos.some(item => item.codigo === 'fator_limitante' && item.cenario === 'seco'));
+  const climate = show(sorghum).items[sorghum.beneficios.findIndex(item => item.codigo === 'clima_favoravel')];
   assert.equal(climate.title, 'Fatores favoráveis hoje e no futuro');
   assert.equal(climate.context, 'Sequência inteira · clima de hoje e futuro');
+  assert.equal(climate.evidence, 'Menor fator entre as culturas, hoje e no futuro: 90,2 / 100.');
   assert.match(climate.description, /avaliação mensal.*não inclui o ano seco.*nem comprova resistência/);
   assert.ok(!climate.card_summary.includes('ano seco'));
 });

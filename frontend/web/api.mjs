@@ -115,6 +115,12 @@ export function validateMotorOutput(value) {
       finite(result?.score, 'score', 0, 100);
       for (const key of ['agua', 'solo', 'renda', 'encaixe']) finite(result[key], key, 0, 1);
       finite(result.receita_ha, 'receita_ha', 0);
+      // Older servers omit both annual-income fields. A partial or invalid pair
+      // must not become a plausible annual amount in the interface.
+      if (Object.hasOwn(result, 'anos_ocupados') || Object.hasOwn(result, 'receita_ano_ha')) {
+        finite(result.anos_ocupados, `${scenario}.anos_ocupados`, 1);
+        finite(result.receita_ano_ha, `${scenario}.receita_ano_ha`, 0);
+      }
       list(result.culturas, 'culturas', seq.culturas.length, seq.culturas.length);
       for (const [i, crop] of result.culturas.entries()) {
         if (crop.cultura !== seq.culturas[i] || crop.slot !== value.slots[i]) invalid('ordem das culturas/slots');
@@ -208,6 +214,17 @@ function comparisonFacts(seq) {
   ];
 }
 
+function annualIncomeFacts(seq) {
+  return [['hoje', 'hoje'], ['futuro', 'futuro'], ['seco', 'ano seco']].flatMap(([key, label]) => {
+    const result = seq[key];
+    if (!result || result.receita_ano_ha === undefined) return [];
+    return [
+      { label: `Receita / ha / ano · ${label}`, value: money(result.receita_ano_ha) },
+      { label: `Anos considerados · ${label}`, value: `${number(result.anos_ocupados, 2)} ${result.anos_ocupados === 1 ? 'ano' : 'anos'}` },
+    ];
+  });
+}
+
 function discardedReason(seq) {
   const r = seq.motivo;
   return `${seq.culturas.map(cropLabel).join(' → ')}: ${cropLabel(r.cultura)} (${r.slot}, posição ${r.posicao}) ${r.mes_plantio === null ? `não tem plantio previsto na ${r.slot}` : `tem plantio em ${MONTHS[r.mes_plantio - 1]}, mas a área só fica livre em ${MONTHS[r.mes_livre - 1]}`}.`;
@@ -226,7 +243,7 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
     exposure: buildExposure(seq, firstMonth),
     warnings: buildWarnings(seq, cropLabel),
     benefits: buildBenefits(seq, cropLabel),
-    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. ${priorityNote} ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
+    tradeoff: `Ranking geral: #${seq.rank_hoje} hoje e #${seq.rank_futuro} no futuro${seq.seco ? `; #${seq.rank_seco} no ano seco` : ''}. ${priorityNote} ${isCurrent ? 'Esta sequência é a referência do histórico informado. ' : ''}Receita é bruta, sem descontar custos. As receitas por hectare e da área somam toda a sequência. ${seq.hoje.receita_ano_ha !== undefined ? 'A prioridade renda usa a receita por ano de ocupação, comparada ao sistema de referência do motor. Os anos considerados vão do talhão livre ao fim da última colheita, com mínimo de 1 ano; uma sequência mais curta não é multiplicada para simular novas safras. ' : 'Esta resposta não informa receita anual nem anos de ocupação. '}Valide preços, limites de calor e constantes provisórias do motor com seu agrônomo. Preços históricos não são uma previsão de venda.`,
     facts: [
       { label: 'Receita / ha · hoje', value: money(seq.hoje.receita_ha) },
       { label: 'Receita / ha · futuro', value: money(seq.futuro.receita_ha) },
@@ -239,6 +256,7 @@ function strategy(seq, farm, firstMonth, presentation, priorityNote, isCurrent =
         { label: 'Receita da área · ano seco', value: money(seq.seco.receita_ha * farm.area_ha) },
         { label: 'Ranking / score · ano seco', value: `#${seq.rank_seco} / ${number(seq.seco.score)}` },
       ] : []),
+      ...annualIncomeFacts(seq),
     ], ...timeline(seq, firstMonth),
   };
 }

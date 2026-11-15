@@ -37,5 +37,5 @@ export function adjustmentNote(ajuste) {
   const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
   const rain = ajuste.chuva_pct === 0 ? 'chuva sem alteração' : `${number(Math.abs(ajuste.chuva_pct))}% ${ajuste.chuva_pct < 0 ? 'menos' : 'mais'} chuva`;
   const heat = ajuste.temp_c === 0 ? 'temperatura sem alteração' : `temperatura +${number(ajuste.temp_c)} °C`;
-  return `Cenário “e se”: ${rain}; ${heat}. É uma simulação, não uma previsão. O mesmo ajuste vale para todos os meses e cenários exibidos, incluindo o ano seco quando disponível.${ajuste.temp_c > 0 ? ' Os dias quentes são estimados por interpolação ou extrapolação dos limiares disponíveis.' : ''}`;
+  return `Cenário “e se”: ${rain}; ${heat}. É uma simulação, não uma previsão. O mesmo ajuste vale para todos os meses e cenários exibidos, incluindo o ano seco quando disponível.${ajuste.temp_c > 0 ? ' Os dias quentes usam os limiares disponíveis; valores intermediários são estimados por interpolação. Extrapolação só é usada fora da faixa desses dados.' : ''}`;
 }

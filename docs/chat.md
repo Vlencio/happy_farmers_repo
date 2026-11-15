@@ -23,7 +23,7 @@ Modelo: `claude-opus-5-5`, com esforço baixo (é uma conversa curta). `HAPPY_FA
     {"papel": "produtor", "texto": "Por que soja e milho?"},
     {"papel": "assistente", "texto": "..."}
   ],
-  "pergunta": "E no clima de 2050?"
+  "pergunta": "E no clima por volta de 2060?"
 }
 ```
 

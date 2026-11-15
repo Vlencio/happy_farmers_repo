@@ -812,7 +812,7 @@ fn glossary(s: &State, k: &Kit) -> El {
         view = view.child(rule())
             .child(label("Valide com seu agrônomo", 17.0, 600.0, INK))
             .child(paragraph("Receitas são brutas, sem custos; preços históricos e valores ainda marcados para conferência precisam de validação local. Limites de calor variam com cultivar e fase da planta. Sem limiar cadastrado, o motor não penaliza o calor; isso não comprova tolerância."))
-            .child(paragraph("As constantes ainda são provisórias: reserva de água do solo de 100 mm, fator 0,85 para repetição e 1,10 após fixadora de nitrogênio, pesos de solo 0,4/0,4/0,2, fases de Kc em 20%/45%/80% do ciclo, intervalo de colheita de 10 dias, espera máxima de 182 dias e perda proporcional de 1 para 1 pelos dias de calor na fase de 45% a 80% do ciclo. Elas não substituem medições nem recomendação agronômica."));
+            .child(paragraph("A reserva de água do solo usada pelo motor é de 60 mm, uma referência provisória para o cálculo, não uma medição deste talhão. Outras constantes ainda são provisórias: fator 0,85 para repetição e 1,10 após fixadora de nitrogênio, pesos de solo 0,4/0,4/0,2, fases de Kc em 20%/45%/80% do ciclo, intervalo de colheita de 10 dias, espera máxima de 182 dias e perda proporcional de 1 para 1 pelos dias de calor na fase de 45% a 80% do ciclo. Elas não substituem medições nem recomendação agronômica."));
     }
     view
 }
@@ -837,7 +837,7 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
         (
             2,
             "Renda",
-            "Receita bruta estimada, sem descontar custos",
+            "Receita bruta por ano de ocupação, sem descontar custos",
             weights.renda,
         ),
     ] {
@@ -2059,7 +2059,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         view = view.child(panel().child(label("Nenhuma sequência viável", 22.0, 600.0, INK).wrap())
             .child(paragraph("As épocas de plantio não couberam nas opções informadas. Revise o mês em que o talhão fica livre e a quantidade de culturas no planejamento.")));
     } else {
-        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Os cards seguem a pontuação de hoje; a posição no futuro pode mudar. Receita é bruta, sem custos. Os índices não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(label("A rotação atual é uma referência e pode coincidir com uma sugestão. Os cards seguem a pontuação de hoje; a posição no futuro pode mudar. A receita dos cards soma toda a sequência; a prioridade renda considera a receita por ano de ocupação. Receitas são brutas, sem custos. Os índices não representam probabilidades.", 11.0, 400.0, MUTED).wrap().w_full());
     }
     if !analysis.discarded.is_empty() {
         let mut discarded = panel().gap(12.0).child(button(

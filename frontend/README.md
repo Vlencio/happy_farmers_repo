@@ -65,8 +65,8 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Prévia de satélite no cartão “A sua fazenda”, com o contorno confirmado sobre a mesma imagem Esri do editor. Atualiza ao desenhar/importar outra área, restaurar o rascunho ou redimensionar a tela; a edição continua no mapa completo.
 - Histórico opcional com catálogo do motor, safra/ano e observação. Até 12 registros, com inclusão, remoção e reordenação.
 - Mês em que o talhão fica livre e horizonte de uma ou duas culturas.
-- Prioridades de água, solo e renda entre 0 e 3, iniciando em 1/1/1; tudo em zero usa pesos iguais. Nos resultados, mudar uma prioridade refaz a análise e reinicia o chat.
-- Controles “Simule outro clima”: chuva de −50% a +30% e temperatura de 0 a +4 °C, com persistência, aplicação e reset. Aguardam a API anunciar `capabilities.ajuste: true`; hoje ficam indisponíveis. Resultados ajustados são identificados como hipóteses (Parte 6 em `docs/API.md`).
+- Prioridades de água, solo e renda entre 0 e 3, iniciando em 1/1/1; tudo em zero usa pesos iguais. Renda considera receita por ano de ocupação, conforme o motor; os detalhes distinguem esse valor do total da sequência. Nos resultados, mudar uma prioridade refaz a análise e reinicia o chat.
+- Controles “Simule outro clima”: chuva de −50% a +30% e temperatura de 0 a +4 °C, com persistência, aplicação e reset. Integrados à API da Main `0ec5f06`, que anuncia `capabilities.ajuste: true`. Resultados ajustados são identificados como hipóteses (Parte 6 em `docs/API.md`); servidores anteriores continuam com os controles indisponíveis.
 - Até três cards na ordem do ranking de hoje devolvido pelo motor, com posição e score de hoje/futuro. Não escolhe vencedores por objetivo nem recalcula o ranking (Parte 5 em `docs/API.md`).
 - Referência da rotação atual junto dos três cards, com receita, solo e encaixe comparáveis e acesso ao calendário. Consome o campo `atual` do motor, inclusive com histórico maior que o horizonte; sem histórico ou fora do calendário, mostra a explicação correspondente (Parte 1 em `docs/API.md`).
 - Solo entre as culturas: dias expostos e chuva nos cards, calendário mensal com cultura/palhada/exposição e comparação de chuva hoje/futuro/ano seco nos primeiros 365 dias. O índice de erosão é exibido quando recebido; a API aceita a declividade enviada para o contorno exato da demonstração (Parte 2 em `docs/API.md`).
@@ -79,7 +79,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 - Layouts para desktop e tela pequena. A edição no mapa só altera o planejamento quando confirmada.
 - Painel “Seu talhão”: NDVI mensal, frequência de solo descoberto/palhada, declividade e correções da INMET A520, exclusivamente para o contorno de demonstração.
 - Glossário e avisos sobre preços, calor, constantes provisórias e resolução das fontes.
-- Ano seco real (2020/21) ligado para a demonstração. D2 foi entregue em `dados-calor` (`5deed52`), ainda pendente de merge: o painel consome a faixa climática dos modelos para o contorno de demonstração. Faixas de receita e rank por estratégia continuam dependendo do motor/API da Parte 7.
+- Ano seco real (2020/21) ligado para a demonstração. D2 (`5deed52`) integrado pela Main `8049494`: o painel consome a faixa climática dos modelos para o contorno de demonstração. Faixas de receita e rank por estratégia continuam dependendo do motor/API da Parte 7. O futuro é apresentado como “por volta de 2060”.
 - POWER por ponto com delta regional de Minas, cache diário e avisos de origem/fallback/cobertura; veja o [estado do plano](docs/PLANO_GAP.md).
 
 ## Motor e API

@@ -97,15 +97,15 @@ async (originalPage) => {
   }
   try {
     const first = await analyze();
-    check(await cards().count() === 4, 'Warnings preserve the current reference and three objective cards');
+    check(await cards().count() === 4, 'Warnings preserve the current reference and three ranked cards');
     const names = await cards().allTextContents();
     const recs = [first.view.current_rotation.strategy, ...first.view.recommendations];
     check(recs.every((rec, i) => names[i].includes(rec.warnings.summary)), 'All card accessible names include their own warning counts');
     check(recs.every((rec, i) => [rec.warnings.risks[0], rec.warnings.gaps[0]].filter(Boolean).every(item => names[i].includes(item.card_summary))),
       'Each card exposes its first risk and gap to assistive technology');
-    const income = first.view.recommendations.find(rec => rec.category === 'income');
-    const soil = first.view.recommendations.find(rec => rec.category === 'soil');
-    check(JSON.stringify(income.warnings) !== JSON.stringify(soil.warnings), 'Different strategies show distinct real warnings');
+    const firstRanked = first.view.recommendations[0];
+    const thirdRanked = first.view.recommendations[2];
+    check(JSON.stringify(firstRanked.warnings) !== JSON.stringify(thirdRanked.warnings), 'Different strategies show distinct real warnings');
     const boxes = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));
     check(boxes.every(box => Math.abs(box.y - boxes[0].y) < 2), 'Desktop retains four cards side by side');
     await align(cards().first());
@@ -114,9 +114,9 @@ async (originalPage) => {
     check(true, 'Tab and Enter open current-rotation warning details');
     await verifyDetail(first.view.current_rotation.strategy, first.raw.sequencias.find(seq => seq.id === first.view.current_rotation.strategy.sequence_id));
     await click('← Comparar estratégias');
-    await click(names.find(name => name.startsWith('SAÚDE DO SOLO:')));
+    await click(names[3]);
     await waitText('Riscos e lacunas desta estratégia');
-    await verifyDetail(soil, first.raw.sequencias.find(seq => seq.id === soil.sequence_id));
+    await verifyDetail(thirdRanked, first.raw.sequencias.find(seq => seq.id === thirdRanked.sequence_id));
     await align(warningsHeading());
     await page.screenshot({ path: 'output/playwright/warnings-soil-desktop.png' });
 
@@ -153,7 +153,7 @@ async (originalPage) => {
     await page.setViewportSize({ width: 1440, height: 1100 });
     const noHistory = await analyze([]);
     check(await cards().count() === 3 && noHistory.raw.sequencias.every(seq => seq.avisos.some(item => item.codigo === 'sem_historico')),
-      'Empty history preserves three objectives and real missing-history gaps');
+      'Empty history preserves three ranked cards and real missing-history gaps');
     await click(await cards().first().textContent());
     await waitText('Riscos e lacunas desta estratégia');
     const noHistoryRec = noHistory.view.recommendations[0];

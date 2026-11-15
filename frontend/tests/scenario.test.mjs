@@ -68,7 +68,7 @@ test('adjusted results explicitly label the what-if and the adjusted dry-year ba
   const result = mapMotorAnalysis(raw, farm);
   assert.match(result.adjustment_note, /Cenário “e se”: 20% menos chuva; temperatura \+2 °C/);
   assert.match(result.adjustment_note, /não uma previsão.*todos os meses e cenários.*ano seco/);
-  assert.match(result.adjustment_note, /dias quentes.*interpolação ou extrapolação/);
+  assert.match(result.adjustment_note, /dias quentes.*limiares disponíveis.*interpolação.*Extrapolação só.*fora da faixa/);
   assert.match(result.scenario_note, /base de 2020\/21.*ajustados.*não são as observações originais/);
   assert.deepEqual(raw, before);
   assert.deepEqual(result.recommendations, mapMotorAnalysis(baseline, farm).recommendations);

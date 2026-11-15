@@ -178,22 +178,22 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "scenario sliders that adjust rainfall or temperature patterns".
 
-**Hoje (15/11, `motor-diario`):** o motor aceita `ajuste: {"chuva_pct", "temp_c"}` (regra 19 do contrato). Chuva de −50% a +30%, temperatura de 0 a +4 °C, o mesmo ajuste em todos os meses e em todos os climas (hoje, futuro, ano seco e série diária). ET0 e dias quentes acompanham a temperatura. Sem `ajuste`, a saída não muda.
+**Hoje (15/11):** motor, API (`0ec5f06`) e front aceitam `ajuste: {"chuva_pct", "temp_c"}` (regra 19 do contrato). Chuva de −50% a +30%, temperatura de 0 a +4 °C, o mesmo ajuste em todos os meses e em todos os climas (hoje, futuro, ano seco e série diária). ET0 e dias quentes acompanham a temperatura. Sem `ajuste`, a saída não muda.
 
-- Talhão de demonstração, outubro, histórico soja, milho: com 20% menos chuva, `soja>milho` continua em 1º e cai de R$ 14.171 para R$ 13.385/ha; `soja>feijao` sobe de 5º para 3º. Com +2 °C, `soja>crotalaria` passa `soja>sorgo` no futuro.
+- Exemplo com `2a60d9b` e dados `8a90877`, talhão de demonstração, outubro, histórico soja, milho: com 20% menos chuva, `soja>milho` cai de R$ 13.481 para R$ 12.695/ha e passa de 1º para 3º no ranking de hoje; `soja>feijao` sobe de 3º para 1º. Com +2 °C, `soja>sorgo` passa a liderar hoje. Valores do motor conferidos pela API real.
 
 **Feito:**
 
 - [x] Motor: entrada opcional de ajuste aplicada às tabelas de clima e à série diária antes da conta.
 - [x] `docs/contrato_motor.md` (entrada `ajuste`, regra 19, "Em aberto" item 19).
-- [x] Tela (Gabriel): controles de chuva e temperatura, persistência, reset, reanálise e identificação de cenário hipotético nos resultados/detalhes. Aguardam `capabilities.ajuste: true`; ver `frontend/docs/API.md`.
+- [x] Tela (Gabriel): controles de chuva e temperatura, persistência, reset, reanálise e identificação de cenário hipotético nos resultados/detalhes, ativados por `capabilities.ajuste: true`; ver `frontend/docs/API.md`.
 
 **Falta:**
 
 - [x] API (15/11): `backend/app.py` aceita `ajuste` opcional (`chuva_pct` de −50 a +30 e `temp_c` de 0 a +4, finitos, padrão 0, sem campos extras), repassa ao motor depois de escolher o clima do ponto e anuncia `capabilities.ajuste: true` em `/metadata`. Valor fora da faixa dá 422. Testes em `backend/tests/test_api.py`.
 - [x] Chat (15/11): o prompt diz que, com `entrada.ajuste`, todos os números (inclusive do ano seco) são do cenário hipotético, e não previsão.
-- [ ] Integração (Gabriel): testar os controles da tela contra a API real.
-- [x] Dados (Brenno): uma coluna `dias_acima_NN` por grau, de 26 a 40, em `scripts/montar_clima.py` e `scripts/clima_ponto.py` (15/11). Na mesma entrega, os dias quentes do futuro passaram a ser contados na Tmax diária do POWER deslocada pelo delta do mês (69,5 dias/ano acima de 35 °C, eram 83,6) e a chuva do futuro passou a ser por razão na demonstração (1.234 mm/ano, eram 1.229). Rank de hoje igual; no futuro, as três primeiras não mudam. Faltam os números do contrato e as fixtures.
+- [x] Integração (Gabriel): controles conferidos com a API real em `motor-renda-anual` (`2a60d9b`): 85 verificações de navegador, 8 análises reais, reset, persistência, limites e avisos hipotéticos. Ver `frontend/docs/VALIDACAO.md`.
+- [x] Dados (Brenno): uma coluna `dias_acima_NN` por grau, de 26 a 40, em `scripts/montar_clima.py` e `scripts/clima_ponto.py` (`8a90877`). Dias quentes do futuro contados na Tmax diária do POWER deslocada pelo delta do mês (69,5 dias/ano acima de 35 °C, eram 83,6); chuva futura por razão na demonstração (1.234 mm/ano, eram 1.229). Fixtures regeneradas em `835f84d`, regra 19 atualizada em `2a60d9b`. Exemplos numéricos históricos do contrato continuam identificados como anteriores à revisão.
 - [ ] Chat (Gabriel, opcional): a IA traduz "e se chover menos?" em `ajuste` e chama o motor; o número continua vindo do motor.
 
 **Feito quando:** a tela permite pedir "20% menos chuva" e o resultado muda.
@@ -202,10 +202,17 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 Duas revisões do motor, uma estatística e uma agronômica, sem contexto do desafio. O que mudou no motor (branch `motor-renda-anual`) está em "O que mudou em 15/11" no contrato: `renda` por ano de talhão ocupado com teto fixo (soja safra + milho safrinha) e solo de 60 mm (ZARC).
 
+Integração do front sobre `motor-renda-anual` (`2a60d9b`), que reúne a API da
+Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envio
+é para essa branch; Pedro fará a revisão e o merge na `main`.
+
 **Falta:**
 
 - [ ] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Feito em 15/11 (`8a90877`): colunas `dias_acima_NN` de 26 a 40 °C, dias quentes do futuro pela Tmax diária deslocada e chuva do futuro por razão.
-- [ ] Tela (Gabriel): testes do front com os números novos; futuro chamado de "por volta de 2060".
+- [x] Tela (Gabriel): testes do front com os números novos; futuro chamado de "por volta de 2060"; detalhes distinguem receita da sequência e receita por ano de ocupação.
+- [x] Motor (Pedro): preços editados zero não zeram o teto. A referência usa preços da tabela e tem fallback para teto nulo (`baf7d3b`); casos mensal/diário cobertos (`1086db6`).
+- [x] Motor (Pedro): textos brutos de avisos/benefícios alinhados para "por volta de 2060" (`1086db6`). Metadados e prompt recebem a mesma correção na integração do front.
+- [ ] Dados (Brenno/Pedro): alinhar `origem.periodos.futuro` e o aviso de fallback em `scripts/clima_ponto.py`, que ainda usam `2041-2060`. Esses campos de proveniência são repassados sem alteração pela API.
 - [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo; penalidade por hospedeiro comum (soja→feijão).
 - [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
 
@@ -213,12 +220,12 @@ Duas revisões do motor, uma estatística e uma agronômica, sem contexto do des
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). Breno entregou `data/clima_modelos.csv` em `dados-calor`, commit `5deed52` (15/11/2026), já na `main` (merge `89138fe`). O leitor da API e o painel do front aceitam essa entrega para o contorno de demonstração; sem o CSV no servidor, a tela continua informando que a faixa não está disponível. Isso descreve a faixa climática do talhão, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). D2 (`5deed52`) foi integrado pela Main `8049494`, incluindo a fixture canônica com os três modelos. O leitor da API e o painel mostram a faixa climática para o contorno de demonstração, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 
 - [x] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Feito em 15/11 por `scripts/montar_clima.py`; teste em `tests/test_clima_modelos.py`. Só o talhão de demonstração.
-- [ ] Integração: trazer D2 para a `main`, reiniciar a API e regenerar a fixture canônica do front. A validação antecipada usa `metadata-d2.json` exportada do checkout isolado.
+- [x] Integração: D2 na `main`, API local reiniciada e fixture canônica regenerada. A fixture `metadata-d2.json` preserva a validação anterior ao merge.
 - [ ] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank.
 - [ ] API e tela: definir o contrato e apresentar as faixas de receita e rank de cada estratégia quando o motor as entregar.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
@@ -229,11 +236,11 @@ Duas revisões do motor, uma estatística e uma agronômica, sem contexto do des
 
 **Texto:** "seasons when current crops appear more vulnerable"; incerteza.
 
-**Hoje:** o modo diário existe no motor (`recomendar(..., diario=...)`), na branch `motor-diario`. A API não passa a série, o `Dockerfile` não copia `data/power`, e a tela não mostra nada disso.
+**Hoje:** o modo diário existe no motor (`recomendar(..., diario=...)`), já integrado à `main`, incluindo o aviso `fator_agua_diario` e o bloco diário de solo descoberto. A API não passa a série, o `Dockerfile` não copia `data/power`, e a tela não apresenta esses resumos diários.
 
 **Falta:**
 
-- [ ] Commit e merge da branch `motor-diario`.
+- [x] Commit e merge da branch `motor-diario`.
 - [ ] Time: reabrir "win rates or probabilities" para a tela poder mostrar "ano ruim, 1 em 5".
 - [ ] Dados: `scripts/clima_ponto.py` devolver a série diária que já baixa, para pontos fora da demonstração.
 - [ ] API: passar `diario` ao motor; copiar a série da demonstração na imagem.

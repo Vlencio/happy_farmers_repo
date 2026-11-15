@@ -171,7 +171,7 @@ async (originalPage) => {
     check(first.request.rotacao_atual.join('|') === 'soja|milho' && first.request.mes_plantio === 10 && first.request.horizonte === 2,
       'Migration preserves history, month, horizon, and usable farm');
     check(await priorityHeading().count() === 1, 'Results keeps the editable priorities panel');
-    await verifyRanking(first, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'Equal weights in October');
+    await verifyRanking(first, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'Equal weights in October');
     await align(priorityHeading());
     await page.screenshot({ path: 'output/playwright/priorities-desktop.png' });
 
@@ -184,7 +184,7 @@ async (originalPage) => {
     const soil = await setPriority('renda', 0);
     await verifyRanking(soil, ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'], 'Only soil in October');
     const zeros = await setPriority('solo', 0);
-    await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'All zero priorities in October');
+    await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'All zero priorities in October');
     check(same(zeros.request.prioridades, { agua: 0, solo: 0, renda: 0 }) && same(zeros.raw.entrada.prioridades, first.raw.entrada.prioridades),
       'Zero values reach the engine, which applies equal normalized weights');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
@@ -197,15 +197,17 @@ async (originalPage) => {
     check(same(strong.request.prioridades, { agua: 0, solo: 0, renda: 3 }), 'The maximum priority value is sent without frontend normalization');
 
     const february = await analyze(2);
-    check(february.raw.sequencias[0].id === 'crotalaria>algodao' && february.raw.sequencias[0].rank_futuro === 12,
-      'Real February winner moves from first today to twelfth in the future');
+    check(february.raw.sequencias[0].id === 'sorgo>soja' && february.raw.sequencias[0].rank_futuro === 1,
+      'Real February winner is sorghum-soybean with annual income scoring');
+    check(february.raw.sequencias[1].id === 'feijao>soja' && february.raw.sequencias[1].rank_futuro === 7,
+      'Real February runner-up moves from second today to seventh in the future');
     await verifyRanking(february, february.raw.sequencias.slice(0, 3).map(seq => seq.id), 'February future comparison');
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-desktop.png' });
     await click(await rankedCards().first().textContent());
     await waitText('Seu ciclo, etapa por etapa');
     const detail = await text();
-    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#12', '79,2 / 100', '64,6 / 100'].every(value => detail.includes(value)),
+    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '76 / 100', '75,1 / 100'].every(value => detail.includes(value)),
       'February detail retains the real current and future ranks and scores');
     await click('← Comparar estratégias');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
@@ -220,7 +222,7 @@ async (originalPage) => {
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-mobile.png' });
     await page.setViewportSize({ width: 1440, height: 1100 }); await page.waitForTimeout(350);
     const two = await analyze(3, 1);
-    await verifyRanking(two, ['trigo', 'crotalaria'], 'March one-crop horizon has only two viable choices');
+    await verifyRanking(two, ['crotalaria', 'trigo'], 'March one-crop horizon has only two viable choices');
     const one = await analyze(12, 1);
     await verifyRanking(one, ['algodao'], 'December one-crop horizon has only one viable choice');
     const empty = await analyze(4);

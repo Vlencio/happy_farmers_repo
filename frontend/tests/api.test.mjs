@@ -16,13 +16,13 @@ test('consumes the actual engine contract and keeps its first three ranked seque
   const result = mapMotorAnalysis(fixture, farm);
   assert.equal(result.demo, false);
   assert.deepEqual(result.recommendations.map((r) => r.category), ['rank1', 'rank2', 'rank3']);
-  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  assert.deepEqual(result.recommendations.map((r) => r.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>feijao']);
   assert.match(result.priority_note, /água 33,3%, solo 33,3% e renda 33,3%.*Pesos iguais/);
   const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
-  assert.equal(februaryWinner.sequence_id, 'crotalaria>algodao');
+  assert.equal(februaryWinner.sequence_id, 'sorgo>soja');
   assert.deepEqual(februaryWinner.rank_facts, [
-    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '79,2 / 100' },
-    { label: 'Posição · futuro', value: '#12' }, { label: 'Score · futuro', value: '64,6 / 100' },
+    { label: 'Posição · hoje', value: '#1' }, { label: 'Score · hoje', value: '76 / 100' },
+    { label: 'Posição · futuro', value: '#1' }, { label: 'Score · futuro', value: '75,1 / 100' },
   ]);
   assert.equal(result.discarded.length, 74);
 });
@@ -267,19 +267,20 @@ function withDryScenario() {
   for (const seq of data.sequencias) {
     seq.seco = structuredClone(seq.hoje); seq.rank_seco = seq.rank_hoje;
     seq.seco.receita_ha = 1234;
+    seq.seco.receita_ano_ha = 1234 / seq.seco.anos_ocupados;
     for (const crop of seq.seco.culturas) for (const month of crop.meses) month.chuva_mm = 7;
   }
   return data;
 }
 test('dry scenario is optional and supplies a third set of facts and monthly numbers when complete', () => {
   const current = mapMotorAnalysis(fixture, farm);
-  assert.equal(current.recommendations[0].facts.length, 6);
+  assert.equal(current.recommendations[0].facts.length, 10);
   assert.match(current.scenario_note, /ainda não está disponível/);
   const data = withDryScenario();
   const view = mapMotorAnalysis(data, { area_ha: 2 });
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), current.recommendations.map((r) => r.sequence_id));
   const rec = view.recommendations[0];
-  assert.equal(rec.facts.length, 9);
+  assert.equal(rec.facts.length, 15);
   assert.equal(rec.facts[7].value.replace(/\s/g, ''), 'R$2.468');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').at(-1), '7');
   assert.equal(rec.timeline[0].monthly[0].rain.split(' / ').length, 3);
@@ -301,7 +302,7 @@ test('actual P1 dry-year output is shown without changing the three winners', ()
   const view = mapMotorAnalysis(dryYear, farm);
   assert.deepEqual(view.recommendations.map((r) => r.sequence_id), mapMotorAnalysis(fixture, farm).recommendations.map((r) => r.sequence_id));
   assert.match(view.scenario_note, /2020\/21/);
-  assert.equal(view.recommendations[0].facts.length, 9);
+  assert.equal(view.recommendations[0].facts.length, 15);
   assert.equal(view.recommendations[0].timeline[0].monthly[0].rain.split(' / ').length, 3);
   assert.equal(view.current_rotation.status, 'ready');
   assert.deepEqual(view.current_rotation.strategy.facts, view.recommendations[0].facts);

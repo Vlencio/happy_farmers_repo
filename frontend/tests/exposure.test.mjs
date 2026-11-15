@@ -44,18 +44,24 @@ test('February starts a new exposure window and calendars over 12 months do not 
   assert.equal(exposure.months[0].label, 'fev · ano 1');
   assert.equal(exposure.months[11].label, 'jan · ano 2');
   assert.equal(exposure.months[11].exposed_days, 8);
-  const view = mapMotorAnalysis(february, { area_ha: 2 });
-  const extended = view.recommendations.find((rec) => rec.month_labels.length > 12);
-  assert.ok(extended, 'Fixture must exercise a calendar longer than 12 months');
+  // This delivered long sequence no longer ranks in the top three. Select it as
+  // the reference to exercise presentation without changing its calendar or facts.
+  const raw = structuredClone(february);
+  const long = find(raw, 'crotalaria>algodao');
+  raw.entrada.rotacao_atual = ['algodao', 'crotalaria'];
+  raw.atual = { id: long.id, culturas: long.culturas, viavel: true, motivo: null };
+  for (const seq of [...raw.sequencias, ...raw.descartadas]) seq.atual = seq.id === long.id;
+  const extended = mapMotorAnalysis(raw, { area_ha: 2 }).current_rotation.strategy;
+  assert.ok(extended.month_labels.length > 12, 'Fixture must exercise a calendar longer than 12 months');
   assert.equal(extended.exposure.months.length, 12);
   assert.match(extended.exposure.caption, /somente os primeiros 12 meses/);
 });
 
 test('real dry-year exposure keeps all supplied rainfall scenarios and the same day counts', () => {
   const exposure = buildExposure(find(dryYear, 'soja>milho'), 10);
-  assert.equal(exposure.facts[3].value, '74,3 / 73,2 / 51,3 mm');
-  assert.equal(exposure.months[3].exposed_rain, '61,7 / 60,4 / 41,1');
-  assert.equal(exposure.months[4].exposed_rain, '12,5 / 12,8 / 10,2');
+  assert.equal(exposure.facts[3].value, '74,3 / 73,3 / 51,3 mm');
+  assert.equal(exposure.months[3].exposed_rain, '61,7 / 60,5 / 41,1');
+  assert.equal(exposure.months[4].exposed_rain, '12,5 / 12,7 / 10,2');
   assert.match(exposure.caption, /hoje \/ futuro \/ ano seco, em milímetros/);
   assert.equal(exposure.months[3].exposed_days, 8);
 });

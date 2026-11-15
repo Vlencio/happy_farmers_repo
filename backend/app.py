@@ -87,7 +87,7 @@ app.add_middleware(
 
 LABELS = {"feijao": "Feijão", "algodao": "Algodão", "braquiaria": "Braquiária", "crotalaria": "Crotalária"}
 DATA_NOTICE = (
-    "Clima de hoje: POWER 2005–2024; futuro: 2041–2060, com deltas regionais. "
+    "Clima de hoje: POWER 2005–2024; futuro: por volta de 2060, com deltas regionais. "
     "Perto do talhão de demonstração usamos tabelas prontas. Confira os avisos de origem no resultado. "
     "O calendário de plantio é do Triângulo Mineiro; valide a adequação local."
 )
@@ -105,7 +105,7 @@ def metadata():
         "cultures": [{"id": name, "label": LABELS.get(name, name.capitalize())}
                      for name in app.state.tables[0]["cultura"].tolist()],
         "data_notice": DATA_NOTICE,
-        "climate_periods": {"hoje": "2005–2024", "futuro": "2041–2060"},
+        "climate_periods": {"hoje": "2005–2024", "futuro": "por volta de 2060"},
         "demo_field": app.state.demo_field,
         "model_spread": app.state.model_spread,
         "point_climate_available": True,

@@ -1,7 +1,8 @@
 # Integração Rune ↔ FastAPI ↔ motor
 
 O contrato vigente é [docs/contrato_motor.md](../../docs/contrato_motor.md), de
-15/11/2026, incluindo as prioridades da Parte 5 (`2413f15`) e os ajustes da Parte 6 (`2638e98`). Ele substitui a proposta anterior deste
+15/11/2026, incluindo as prioridades da Parte 5 (`2413f15`), os ajustes da Parte 6 (`2638e98`)
+e a renda anual com reserva do solo de 60 mm (`195bf1a`). Ele substitui a proposta anterior deste
 arquivo (`schema_version`, `farm`, `recommendations`, `horizon_months`).
 
 `backend/app.py` valida a entrada HTTP, seleciona as tabelas do ponto e chama
@@ -18,6 +19,17 @@ consultado ao vivo; os scripts de download regional não são executados pela AP
 - `POST /analyze`: entrada do motor mais `lon` opcional; retorna a saída completa e a origem do clima.
 - `GET /docs`: documentação OpenAPI gerada pelo FastAPI.
 - Entradas inválidas: HTTP 422 com `detail` (texto ou lista de erros do FastAPI).
+
+O futuro é apresentado como **por volta de 2060**, inclusive em `data_notice` e
+`climate_periods.futuro`. Os deltas dos modelos entre 1995–2014 e 2041–2060 são
+aplicados à base POWER 2005–2024; o período original dos modelos não é o centro
+temporal do clima resultante. A correção do rótulo não altera as tabelas.
+
+Pendência do provedor de dados: `scripts/clima_ponto.py` ainda usa `2041-2060`
+em `origem.periodos.futuro` e em um aviso de fallback. Esses campos de origem
+continuam repassados sem alteração; Brenno/Pedro devem alinhar esse texto.
+`origem.chuva_futuro` informa `razao` na demonstração e `delta_somado` quando a
+grade regional só fornece deltas. O front não troca métodos nem recalcula o clima.
 
 Vite serve `/api/*` por proxy para `http://127.0.0.1:8000/*`, tanto em desenvolvimento
 quanto em preview. `VITE_API_BASE_URL` permite outro serviço compatível. CORS libera
@@ -88,14 +100,31 @@ Soja → Milho (o histórico participa do índice de solo):
 
 | Pesos água/solo/renda | Cards, na ordem |
 |---|---|
-| 1/1/1 ou 0/0/0 | Soja → Milho; Soja → Sorgo; Soja → Crotalária |
+| 1/1/1 ou 0/0/0 | Soja → Milho; Soja → Sorgo; Soja → Feijão |
 | 0/0/1 | Soja → Milho; Soja → Trigo; Soja → Girassol |
 | 0/1/0 | Soja → Crotalária; Sorgo → Crotalária; Feijão → Crotalária |
 
-Em fevereiro, com pesos iguais, Crotalária → Algodão é a 1ª de hoje (79,218)
-e a 12ª no futuro (64,583). A tela formata os números recebidos, sem recalculá-los.
+Em fevereiro, com pesos iguais, Sorgo → Soja é a 1ª de hoje (75,987)
+e a 1ª no futuro (75,139), com os dados de `8a90877`. A tela formata os números
+recebidos, sem recalculá-los.
 `encaixe` expressa adequação de temperatura/chuva/calor no motor; não é probabilidade
 nem avaliação completa de eventos extremos. Receita é **bruta**, sem custos.
+
+### Receita da sequência e renda anual
+
+`receita_ha` continua sendo a receita total da sequência por hectare. O motor
+agora fornece também `anos_ocupados` (mínimo 1) e `receita_ano_ha`, em cada
+cenário de uma sequência viável. A parte `renda` do score usa essa receita por
+ano de ocupação, normalizada pelo teto de referência soja safra + milho safrinha,
+com preços da tabela. Alterar preços de entrada não altera esse teto; referência
+ausente ou nula usa o fallback do motor (`baf7d3b`). O front não calcula o teto,
+a anualização ou o ranking, nem permite editar preços.
+
+A tela distingue receita total da sequência e receita por hectare/ano ocupado,
+além do tempo de ocupação, usando os números recebidos. Os dois campos novos
+são opcionais para respostas antigas, mas, quando presentes, devem vir juntos
+e ser finitos: `anos_ocupados >= 1`, `receita_ano_ha >= 0`. A reserva de água de
+60 mm é uma hipótese do motor, não uma medição do solo deste talhão.
 
 ### Referência da rotação atual — Parte 1
 
@@ -155,7 +184,7 @@ expansíveis, tanto para ausência de plantio naquela safra quanto para época p
 
 ## Simulação de chuva e temperatura — Parte 6
 
-O motor aceita `ajuste` desde a Main `d6d7a73`, e a API desde 15/11: `/analyze`
+O motor aceita `ajuste` desde a Main `d6d7a73`, e a API desde `0ec5f06` (15/11): `/analyze`
 recebe `ajuste` opcional (`chuva_pct` de −50 a +30, `temp_c` de 0 a +4, finitos,
 padrão 0, sem campos extras; fora disso, 422) e o `/metadata` anuncia:
 
@@ -175,7 +204,7 @@ números. Arrastar mostra a escolha provisória e só salva ao soltar; cancelar 
 gesto preserva a escolha anterior. “Voltar ao clima sem ajuste” zera os dois campos.
 
 Quando ambos são zero, `buildRequest` omite `ajuste`, preservando compatibilidade
-com a API atual. Sem suporte, os controles ficam indisponíveis. Um rascunho com
+com servidores anteriores. Sem suporte, os controles ficam indisponíveis. Um rascunho com
 valores não zero bloqueia a análise até ser zerado; a tela não ignora o cenário
 salvo nem envia um campo que o servidor rejeita. Com suporte, um exemplo de envio é:
 
@@ -192,26 +221,21 @@ dias quentes, receita, score ou ranking. Os números continuam vindo do motor.
 Resultados e detalhes exibem “Cenário hipotético”: é um **e se**, não uma previsão.
 O mesmo ajuste vale para todos os meses e cenários, inclusive a base de 2020/21.
 Quando ajustado, esse ano seco não é apresentado como observação original.
-Com aumento de temperatura, a tela informa que os dias quentes são estimados por
-interpolação ou extrapolação dos limiares existentes.
+Com aumento de temperatura, a tela explica que valores entre limiares são
+interpolados e que extrapolação só ocorre fora da faixa disponível. A entrega
+`8a90877` tem colunas por grau de 26 a 40 °C: nos limiares atuais e ajustes
+inteiros permitidos, a demonstração usa as colunas exatas. Frações interpolam.
 
 O chat recebe a resposta completa, incluindo `entrada.ajuste`, e os IDs dos novos
 cards e da referência. Interpretar uma pergunta para mudar o cenário automaticamente
 não faz parte desta entrega. O prompt do servidor diz que, com `entrada.ajuste`,
 todos os números (inclusive do ano seco) são do cenário hipotético.
 
-**Mensagem para Pedro** (atendida em 15/11: API e prompt feitos):
-
-> Pedro, o front da Parte 6 está preparado. Confirmei os 9 testes do motor e os
-> números do caso −20% de chuva. A API atual ainda retorna 422 para `ajuste`.
-> Falta aceitar esse objeto opcional no `/analyze`: `chuva_pct` entre −50 e +30,
-> `temp_c` entre 0 e +4, ambos finitos e com padrão zero; repassar ao motor após
-> selecionar o clima do ponto; e anunciar `capabilities.ajuste: true` no `/metadata`.
-> O front envia os dois campos quando há ajuste e valida o retorno em
-> `entrada.ajuste`. Sem ajuste, mantém a requisição anterior. No chat, o contexto
-> já conserva `entrada.ajuste`; falta orientar o prompt de que os números ajustados
-> são hipóteses, inclusive o ano seco, e não observações originais. Não alterei API
-> nem motor. Depois da integração precisamos testar o fluxo HTTP real ajustado.
+**Integração entregue por Pedro:** a API valida e repassa o ajuste após selecionar
+o clima do ponto, anuncia a capability e mantém os valores efetivos em
+`entrada.ajuste`. O prompt contextualiza os cenários hipotéticos. O roteiro HTTP
+`scripts/check-live-api.mjs` cobre seis ajustes reais, incluindo frações, os dois
+limites de chuva, limite de temperatura, zero/reset e rejeição de entrada inválida.
 
 Para preparar os testes de navegador, execute da raiz:
 
@@ -221,8 +245,10 @@ Para preparar os testes de navegador, execute da raiz:
 
 O comando usa somente as tabelas locais e grava seis respostas reais do motor em
 `output/playwright/scenario-fixtures.json` (ignorado pelo Git). O roteiro
-`tests/browser-scenarios.js` usa essas respostas ao simular o transporte futuro;
-isso não substitui a validação do `/analyze` ajustado após a entrega da API.
+`tests/browser-scenarios.js` usa essas respostas em testes controlados de
+compatibilidade, falhas, respostas atrasadas e chat simulado. O roteiro
+`tests/browser-scenario-api.js` testa os controles com a API real, sem substituir
+metadados nem resultados. Evidências em [VALIDACAO.md](VALIDACAO.md).
 
 ## Solo entre as culturas — Parte 2
 
@@ -433,7 +459,8 @@ fazenda. `clima_seco.csv` entra no Docker. Há fixture e teste com a saída real
 
 D2 foi entregue por Breno em `dados-calor`, commit `5deed52` (15/11/2026), com
 `data/clima_modelos.csv`: `modelo,mes,delta_chuva_mm,delta_tmin_c,delta_tmax_c`.
-Essa entrega ainda não está integrada à `main` nem à `front-dev3`.
+Essa entrega foi integrada à `main` e recebida na `front-dev3` pela atualização
+até `8049494`; a fixture canônica já contém os três modelos.
 O leitor opcional exige 12 meses únicos e valores finitos
 por modelo. Soma os deltas mensais de chuva e tira a média aritmética dos 12 deltas
 de temperatura máxima; não pondera pelo número de dias. `/metadata.model_spread`
@@ -445,11 +472,11 @@ resposta da API, sem valores fixados no front. Na entrega D2, a faixa é de
 **+1,34 a +2,31 °C** e **−79,6 a +32,7 mm/ano**, com discordância no sinal da chuva.
 É uma faixa entre modelos, não um intervalo de confiança.
 
-Para validar antes do merge, `tests/fixtures/metadata-d2.json` registra a exportação
-do checkout D2 isolado. A fixture canônica `tests/fixtures/metadata.json` permanece
-compatível com os dados desta branch: o CI a regenera com `backend.export_fixture`
-e exige igualdade. Após integrar o CSV, reiniciar a API e regenerar as fixtures
-com `python -m backend.export_fixture` na raiz do projeto.
+`tests/fixtures/metadata-d2.json` preserva a exportação usada na validação anterior
+ao merge. A fixture canônica `tests/fixtures/metadata.json` agora inclui D2:
+o CI a regenera com `backend.export_fixture` e exige igualdade. Depois de alterar
+dados ou metadados, reiniciar a API e regenerar as fixtures com
+`python -m backend.export_fixture` na raiz do projeto.
 
 Essa faixa descreve o clima do talhão. O motor ainda calcula o futuro com a média
 dos três modelos; a Parte 7 continua dependendo de Pedro para calcular e expor

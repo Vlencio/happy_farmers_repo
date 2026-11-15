@@ -29,9 +29,11 @@ test('all actual fixture warnings validate without changing supplied evidence', 
 
 test('actual soybean-corn and soybean-bean strategies show different risks and their evidence', () => {
   const corn = show(find('soja>milho'));
-  assert.deepEqual(corn.risks, []);
+  assert.equal(corn.risks.length, 2);
+  assert.deepEqual(corn.risks.map(risk => risk.context), ['Milho · safrinha · clima de hoje', 'Milho · safrinha · clima futuro']);
+  assert.deepEqual(corn.risks.map(risk => risk.evidence), ['Fator de atendimento hídrico: 72,4 / 100.', 'Fator de atendimento hídrico: 72,1 / 100.']);
   assert.deepEqual(corn.gaps, []);
-  assert.equal(corn.summary, 'Nenhum aviso sinalizado pelo motor nesta sequência.');
+  assert.equal(corn.summary, '2 riscos sinalizados e 0 lacunas de informação.');
   assert.match(corn.note, /não garante ausência de risco/);
 
   const bean = show(find('soja>feijao'));
@@ -40,8 +42,8 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
   assert.equal(bean.risks[0].context, 'Feijão · safrinha · clima de hoje');
   assert.equal(bean.risks[1].context, 'Feijão · safrinha · clima futuro');
   assert.equal(bean.risks[0].evidence, 'Fator de calor: 77,6 / 100.');
-  assert.equal(bean.risks[1].evidence, 'Fator de calor: 44,5 / 100.');
-  assert.match(bean.risks[2].evidence, /11,6%.*10\.877.*9\.614/);
+  assert.equal(bean.risks[1].evidence, 'Fator de calor: 46,1 / 100.');
+  assert.match(bean.risks[2].evidence, /11,5%.*10\.877.*9\.623/);
   assert.equal(bean.risks[3].evidence, '160 dias expostos; 190,1 mm de chuva sobre o solo exposto.');
   assert.equal(bean.gaps[0].evidence, 'Limiar usado: 32 °C.');
   assert.ok(!JSON.stringify(bean).includes('feijao'));
@@ -50,19 +52,20 @@ test('actual soybean-corn and soybean-bean strategies show different risks and t
 test('adapter preserves engine ranking and gives current rotation the same sequence warnings', () => {
   const raw = structuredClone(fixtures[2]);
   const view = mapMotorAnalysis(raw, { area_ha: 2 });
-  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>crotalaria']);
+  assert.deepEqual(view.recommendations.map(rec => rec.sequence_id), ['soja>milho', 'soja>sorgo', 'soja>feijao']);
   for (const rec of [...view.recommendations, view.current_rotation.strategy]) {
     assert.deepEqual(rec.warnings, show(find(rec.sequence_id, raw)));
   }
   const corn = view.current_rotation.strategy.warnings;
-  const cover = view.recommendations.find(rec => rec.sequence_id === 'soja>crotalaria').warnings;
-  assert.equal(corn.risks.length, 2); // The dry-year water limitations are absent from the two-climate fixture.
+  const bean = view.recommendations.find(rec => rec.sequence_id === 'soja>feijao').warnings;
+  assert.equal(corn.risks.length, 4); // Two water limitations today/future and two in the dry year.
   assert.equal(corn.gaps.length, 0);
-  assert.equal(cover.risks.length, 2);
-  assert.equal(cover.gaps.length, 2);
-  assert.ok(corn.risks.every(risk => risk.context.includes('ano seco')));
-  assert.match(corn.risks[0].evidence, /77,8/);
-  assert.match(corn.risks[1].evidence, /53/);
+  assert.equal(bean.risks.length, 6);
+  assert.equal(bean.gaps.length, 2);
+  const dryRisks = corn.risks.filter(risk => risk.context.includes('ano seco'));
+  assert.equal(dryRisks.length, 2);
+  assert.match(dryRisks[0].evidence, /77,8/);
+  assert.match(dryRisks[1].evidence, /44,7/);
 
   for (const seq of raw.sequencias) delete seq.avisos;
   const legacy = mapMotorAnalysis(raw, { area_ha: 2 });
