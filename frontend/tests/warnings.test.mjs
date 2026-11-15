@@ -160,6 +160,29 @@ test('model rank warnings show source positions and model names without treating
   assert.deepEqual(seq, before);
 });
 
+test('income-ceiling gaps show raw revenue ratios per scenario and model and reject malformed evidence', () => {
+  const capped = warning('renda_no_teto', 'lacuna', {
+    teto: 8330.4, renda_bruta: { hoje: 1.52, futuro: 0.824 }, por_modelo: { MIROC6: 0.774, 'MRI-ESM2-0': 1.048 },
+  });
+  const before = structuredClone(capped);
+  const item = show(withWarnings(capped)).gaps[0];
+  assert.equal(item.title, 'Income score at its maximum');
+  assert.equal(item.context, 'Whole sequence');
+  assert.match(item.evidence, /BRL\s*8,330\/ha\/year.*today's climate 152%; future climate 82.4%; future climate \(MIROC6\) 77.4%; future climate \(MRI-ESM2-0\) 104.8%/);
+  assert.equal(item.card_summary, 'Income score capped (today\'s climate, future climate (MRI-ESM2-0)).');
+  assert.deepEqual(capped, before);
+  const cases = [
+    w => { w.tipo = 'risco'; }, w => { w.cenario = 'hoje'; }, w => { w.cultura = 'soja'; },
+    w => { w.dados.teto = 0; }, w => { delete w.dados.renda_bruta; }, w => { w.dados.renda_bruta = {}; },
+    w => { w.dados.renda_bruta.seco = 1.2; }, w => { w.dados.renda_bruta.hoje = -1; },
+    w => { w.dados.por_modelo = {}; }, w => { w.dados.por_modelo.MIROC6 = '0.7'; },
+  ];
+  for (const mutate of cases) {
+    const bad = structuredClone(capped); mutate(bad);
+    assert.throws(() => show(withWarnings(bad)), /engine contract: avisos/);
+  }
+});
+
 test('new warning contracts reject malformed evidence and scope but do not repeat the engine trigger thresholds', () => {
   const host = warning('hospedeiro_comum', 'risco', { fator_sequencia: 1.012, penalidade: 0.92, anterior: 'crotalaria', pragas: ['mofo-branco'], slot: 'safra' }, 'soja');
   const daily = warning('fator_agua_diario', 'risco', { fator_agua: 0.69, atendimento_hidrico: 0.75, ky: 1.25, slot: 'safrinha' }, 'feijao', 'hoje');
