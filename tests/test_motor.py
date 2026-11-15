@@ -109,9 +109,20 @@ class TestRecomendar(unittest.TestCase):
     def test_epoca_que_ja_passou(self):
         nov = recomendar({**ENTRADA, "horizonte": 1, "mes_plantio": 11}, *self.dados)
         self.assertEqual(ids(nov["sequencias"]), ["algodao"])  # soja e milho sao de outubro
-        jun = recomendar({**ENTRADA, "mes_plantio": 6}, *self.dados)  # safrinha de fev/mar ja passou
-        self.assertEqual(jun["sequencias"], [])
-        self.assertEqual(len(jun["descartadas"]), self.n**2)
+        abr = recomendar({**ENTRADA, "mes_plantio": 4}, *self.dados)  # safrinha passou; safra de out a 183 dias
+        self.assertEqual(abr["sequencias"], [])
+        self.assertEqual(len(abr["descartadas"]), self.n**2)
+        self.assertEqual(abr["slots"], ["safrinha", "safra"])  # sem saida nas duas ordens, fica a do semestre
+
+    def test_sem_sequencia_no_semestre_comeca_pelo_outro_slot(self):
+        # livre em junho: a safrinha de fev/mar so volta no ano seguinte, a safra de outubro cabe
+        jun = recomendar({**ENTRADA, "mes_plantio": 6}, *self.dados)
+        self.assertEqual(jun["slots"], ["safra", "safrinha"])
+        self.assertIn("soja>milho", ids(jun["sequencias"]))
+        self.assertEqual(cultura_de(jun, "soja>milho", "hoje", 0)["mes_plantio"], 10)
+        # meses em que a ordem do semestre ja tem sequencia nao mudam
+        for mes, slots in ((10, ["safra", "safrinha"]), (2, ["safrinha", "safra"])):
+            self.assertEqual(recomendar({**ENTRADA, "mes_plantio": mes}, *self.dados)["slots"], slots)
 
     def test_espera_o_mes_de_plantio(self):
         uma = recomendar({**ENTRADA, "horizonte": 1}, *self.dados)

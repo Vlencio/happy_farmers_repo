@@ -224,7 +224,7 @@ Os três cards da tela não são as três primeiras de `sequencias`: cada um esc
 ## Regras
 
 1. **ET0:** a coluna `et0_mm` da tabela de clima; sem ela, Hargreaves.
-2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte.
+2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte. Se nenhuma sequência cabe nessa ordem, o motor tenta a outra, começando pelo outro slot, e `slots` mostra a ordem usada. Com as tabelas de 14/11, isso vale para maio e junho (a safrinha de fevereiro e março já passou; a safra de outubro cabe) e para dezembro com duas culturas (depois do algodão, único de safra em dezembro, a safrinha já passou). Abril continua sem sequência: a safrinha passou e a safra de outubro fica a 183 dias, um a mais que o limite de meio ano (regra 3).
 3. **Época de plantio:** a cultura entra no mês de plantio dela naquele slot: no dia em que o talhão fica livre, se cair dentro do mês, ou no dia 1 do mês, se ainda não chegou. Enquanto espera, o solo só acumula chuva. A sequência é descartada se a cultura não tem mês naquele slot ou se o talhão só fica livre depois do mês (espera de mais de meio ano).
 4. **Tempo de colheita:** o talhão fica livre 10 dias depois do fim do ciclo.
 5. **Kc** ao longo do ciclo: `kc_ini` nos primeiros 20%, sobe até `kc_med` aos 45%, fica até 80%, desce até `kc_fim`.

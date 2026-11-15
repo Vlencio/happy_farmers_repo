@@ -765,17 +765,28 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         raise ValueError(f"culturas fora da tabela: {desconhecidas}. Validas: {sorted(tabela)}")
     pesos = _normalizar_pesos(entrada.get("prioridades") or {})
 
-    slots = ordem_dos_slots(mes_plantio, horizonte)
     anterior = historico[-1] if historico else None
     atual = rotacao_atual(historico, horizonte)
 
     todas = list(itertools.product(tabela, repeat=horizonte))
     et0 = {cen: et0_do_clima(clima, lat) for cen, clima in climas.items()}
-    aval = {
-        cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
-        for cen, clima in climas.items()
-    }
-    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas nos dois
+
+    def avaliar(slots):
+        return {
+            cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
+            for cen, clima in climas.items()
+        }
+
+    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas em todos os climas
+    slots = ordem_dos_slots(mes_plantio, horizonte)
+    aval = avaliar(slots)
+    if all("fora_de_epoca" in aval["hoje"][s] for s in todas):
+        # nenhuma sequencia cabe na ordem do semestre (talhao livre de abril a junho, ou em dezembro
+        # com duas culturas): tenta comecar pelo outro slot (regra 2)
+        outra = ordem_dos_slots(1 if slots[0] == "safra" else 7, horizonte)
+        aval_outra = avaliar(outra)
+        if any("fora_de_epoca" not in aval_outra["hoje"][s] for s in todas):
+            slots, aval = outra, aval_outra
     descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
     sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
