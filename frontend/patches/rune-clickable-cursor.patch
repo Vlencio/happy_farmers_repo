@@ -1,0 +1,93 @@
+--- a/crates/rune/src/runtime/input/pointer.rs
++++ b/crates/rune/src/runtime/input/pointer.rs
+@@ -467,17 +467,29 @@
+         let Some(mut i) = target else {
+             return crate::el::Cursor::Default;
+         };
++        // A disabled control must not inherit a hand from a clickable container.
++        // Kit controls without handlers keep their existing hit-test behaviour.
++        if std::iter::successors(Some(i), |&p| self.nodes[p].parent).any(|p| self.nodes[p].a11y.disabled) {
++            return crate::el::Cursor::Default;
++        }
+         if self.nodes[i].handlers.cursor.is_none() && (self.nodes[i].input.is_some() || self.nodes[i].role == "textbox") {
+             return crate::el::Cursor::Text;
+         }
+         if self.is_selectable(i) && !self.selectable.phase.dragging() && self.link_at(i, x, y).is_some() {
+             return crate::el::Cursor::Pointer;
+         }
++        // Native web affordance for actual controls, including options mounted in
++        // a portal. Background-dismiss handlers and drag-only surfaces stay arrows.
++        // An explicit cursor on the control or an ancestor still takes precedence.
++        let fallback = if self.nodes[i].handlers.on_press.is_some()
++            && matches!(self.nodes[i].role, "button" | "link" | "tab" | "checkbox" | "switch" | "radio"
++                | "combobox" | "option" | "menuitem" | "menuitemcheckbox" | "menuitemradio" | "treeitem" | "gridcell")
++        { crate::el::Cursor::Pointer } else { crate::el::Cursor::Default };
+         loop {
+             if let Some(c) = self.nodes[i].handlers.cursor {
+                 return c;
+             }
+-            let Some(parent) = self.nodes[i].parent else { return crate::el::Cursor::Default };
++            let Some(parent) = self.nodes[i].parent else { return fallback };
+             i = parent;
+         }
+     }
+--- a/crates/rune/src/runtime/tests/pointer_drag.rs
++++ b/crates/rune/src/runtime/tests/pointer_drag.rs
+@@ -390,7 +390,7 @@
+     let mut rt = Runtime::new(State { field: crate::edit::TextEdit::new("") }, view, (200.0, 200.0), Env::new(true, 1.0));
+     rt.frame(0.0);
+     assert_eq!(rt.cursor(), Cursor::Default);
+-    for (y, cursor) in [(20.0, Cursor::Pointer), (60.0, Cursor::Grab), (100.0, Cursor::Text), (140.0, Cursor::Default)] {
++    for (y, cursor) in [(20.0, Cursor::Pointer), (60.0, Cursor::Grab), (100.0, Cursor::Text), (140.0, Cursor::Pointer)] {
+         rt.pointer_move(50.0, y);
+         assert_eq!(rt.cursor(), cursor, "at y {y}");
+     }
+@@ -399,7 +399,47 @@
+     rt.pointer_move(50.0, 140.0);
+     assert_eq!(rt.cursor(), Cursor::Pointer, "a held press keeps its cursor");
+     rt.pointer_up(50.0, 140.0);
+-    assert_eq!(rt.cursor(), Cursor::Default);
++    assert_eq!(rt.cursor(), Cursor::Pointer);
+     rt.pointer_leave();
+     assert_eq!(rt.cursor(), Cursor::Default);
++}
++
++#[test]
++fn cursor_uses_a_hand_for_controls_but_not_backgrounds_or_drag_only_surfaces() {
++    use crate::el::Cursor;
++    fn view(_: &(), _: &mut Cx<()>) -> El {
++        col().size(200.0, 240.0)
++            .child(el().key("button").size(200.0, 40.0).on_press(|_: &mut ()| {}))
++            .child(el().key("select").role("combobox").size(200.0, 40.0).on_press(|_: &mut ()| {}))
++            .child(el().key("option").role("option").size(200.0, 40.0).on_press(|_: &mut ()| {}))
++            .child(el().key("scrim").size(200.0, 40.0).on_background_press(|_: &mut ()| {}))
++            .child(el().key("drag").size(200.0, 40.0).on_drag(|_: &mut (), _, _| {}))
++            .child(el().key("label").role("button").size(200.0, 40.0).focusable(true))
++    }
++    let mut rt = Runtime::new((), view, (200.0, 240.0), Env::new(true, 1.0));
++    rt.frame(0.0);
++    for (y, cursor) in [(20.0, Cursor::Pointer), (60.0, Cursor::Pointer), (100.0, Cursor::Pointer),
++        (140.0, Cursor::Default), (180.0, Cursor::Default), (220.0, Cursor::Default)]
++    {
++        rt.pointer_move(50.0, y);
++        assert_eq!(rt.cursor(), cursor, "at y {y}");
++    }
++}
++
++#[test]
++fn cursor_does_not_inherit_a_hand_in_disabled_controls_or_subtrees() {
++    use crate::el::Cursor;
++    fn view(_: &(), _: &mut Cx<()>) -> El {
++        col().size(200.0, 120.0).cursor(Cursor::Pointer)
++            .child(el().key("disabled").size(200.0, 40.0).disabled(true).on_press(|_: &mut ()| {}))
++            .child(el().key("disabled-parent").size(200.0, 40.0).disabled(true)
++                .child(el().key("child").size(200.0, 40.0).on_press(|_: &mut ()| {})))
++            .child(el().key("explicit").size(200.0, 40.0).cursor(Cursor::Crosshair).on_press(|_: &mut ()| {}))
++    }
++    let mut rt = Runtime::new((), view, (200.0, 120.0), Env::new(true, 1.0));
++    rt.frame(0.0);
++    for (y, cursor) in [(20.0, Cursor::Default), (60.0, Cursor::Default), (100.0, Cursor::Crosshair)] {
++        rt.pointer_move(50.0, y);
++        assert_eq!(rt.cursor(), cursor, "at y {y}");
++    }
+ }

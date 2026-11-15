@@ -61,6 +61,7 @@ Nenhum binário, cache ou `node_modules` precisa ser versionado.
 - Os quatro patches exigidos pelo Rune estão no manifesto raiz: `winit`, `parley_engine`, `wgpu-hal`, `accesskit_windows`, todos vindos desse checkout.
 - Patch adicional `patches/rune-wasm-instance-cache.patch`: a revisão original guarda `wgpu::Instance` em um `static Mutex`, incompatível com os handles não `Send`/`Sync` do navegador. A correção usa `thread_local!` apenas em WASM e preserva o caminho nativo. Não usa `unsafe` nem o recurso `fragile-send-sync-non-atomic-wasm`.
 - Patch adicional `patches/rune-scrollbar-visibility.patch`: adiciona a opção `ScrollBarStyle::always_visible()` para manter a barra principal visível enquanto houver conteúdo para rolar, sem mudar o comportamento padrão das outras barras do Rune. Arraste, clique no trilho e navegação por teclado usam a rolagem existente.
+- Patch adicional `patches/rune-clickable-cursor.patch`: usa o cursor de mão em controles habilitados com ação de clique, incluindo cards e opções de seleção desenhados no canvas. Preserva cursores explícitos, campos de texto e superfícies de arraste; controles desabilitados não recebem a mão.
 - `Cargo.lock` e `package-lock.json` fixam as demais dependências. Não altere `.cache/rune` manualmente.
 
 O build web usa fontes embutidas, WebGPU e fallback WebGL/CPU do Rune. Não exige WebGPU para abrir.
@@ -68,6 +69,7 @@ O Rune emite avisos de código nativo não utilizado no target web; não foram f
 
 ## O que está implementado
 
+- Feedback de mouse nos controles clicáveis: cursor nativo de mão, realce de cor suave ao entrar/sair e resposta ao pressionar. As áreas de clique ficam paradas; a preferência do navegador por movimento reduzido elimina a transição de hover. O mapa mantém seus próprios cursores de navegação e desenho.
 - Mapa satélite com desenho, edição de vértices, busca por coordenadas e localização opcional do dispositivo.
 - Importação de Geometry, Feature ou FeatureCollection de **uma** fazenda, com Polygon/MultiPolygon em WGS84.
 - Validação de coordenadas, fechamento, cruzamentos, anéis internos, área e limites de tamanho (2 MB / 5.000 vértices).

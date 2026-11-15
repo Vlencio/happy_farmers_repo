@@ -5,7 +5,9 @@ use crate::{
         SoilTexture, StrategyWarning,
     },
 };
-use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
+use rune::{
+    Color, Curve, Cx, Easing, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text,
+};
 use rune_kit::{
     Button, ButtonVariant, Card, ControlSize, Kit, PaletteSeed, ScrollBar, ScrollBarStyle, Select,
     SelectAppearance, TextArea, TextInput,
@@ -140,6 +142,8 @@ fn presentation_context(s: &State, k: &Kit, include_revenue: bool) -> El {
                         .radius(9.0)
                         .center()
                         .fill(color("#e2ead8"))
+                        .hover(color(INK).alpha(0.06))
+                        .press(color(INK).alpha(0.10))
                         .child(label(
                             if s.about_open { "−" } else { "+" },
                             24.0,
@@ -215,6 +219,9 @@ fn presentation_context(s: &State, k: &Kit, include_revenue: bool) -> El {
 fn disclosure(id: &str, title: &str, open: bool, action: impl Fn(&mut State) + 'static) -> El {
     row()
         .key(id)
+        .radius(8.0)
+        .hover(color(INK).alpha(0.06))
+        .press(color(INK).alpha(0.10))
         .w_full()
         .min_h(44.0)
         .gap(12.0)
@@ -342,6 +349,8 @@ fn sidebar(s: &State, _: &Kit) -> El {
             .h(48.0)
             .radius(9.0)
             .fill(color(if active { "#315440" } else { INK }))
+            .hover(Color::WHITE.alpha(if enabled { 0.08 } else { 0.0 }))
+            .press(Color::WHITE.alpha(if enabled { 0.14 } else { 0.0 }))
             .child(label(
                 number,
                 11.0,
@@ -1284,6 +1293,8 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
                     .radius(8.0)
                     .fill(color(if chosen { "#355e3e" } else { "#f4f6ee" }))
                     .border(1.0, color(if chosen { "#355e3e" } else { LINE }))
+                    .hover(color(INK).alpha(0.06))
+                    .press(color(INK).alpha(0.10))
                     .child(label(
                         format!("{value} {visible_title}"),
                         11.0,
@@ -1906,6 +1917,8 @@ fn recommendation_card(
             .build(k)
             .key(format!("card-{}", rec.category))
             .fill(Color::WHITE)
+            .hover(color(INK).alpha(0.045))
+            .press(color(INK).alpha(0.08))
             .padding(20.0)
             .radius(14.0)
             .border(1.0, color(LINE))
@@ -2269,6 +2282,8 @@ fn exposure_panel(s: &State, rec: &Recommendation, narrow: bool) -> El {
                     "Soil in {}: {} days without crop, {} exposed days",
                     month.label, month.days, month.exposed_days
                 ))
+                .hover(color(INK).alpha(0.06))
+                .press(color(INK).alpha(0.10))
                 .focusable(true)
                 .on_press(move |s: &mut State| s.exposure_month = i),
         );
@@ -2495,6 +2510,9 @@ fn chat_panel(s: &State, k: &Kit, narrow: bool) -> El {
                 .key("chat-latest")
                 .role("button")
                 .label("View latest answer")
+                .radius(8.0)
+                .hover(color(INK).alpha(0.06))
+                .press(color(INK).alpha(0.10))
                 .focusable(true)
                 .padding(10.0)
                 .child(label("View latest answer ↓", 12.0, 600.0, INK))
@@ -2784,6 +2802,8 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
                 .child(label("→", 18.0, 400.0, accent))
                 .role("button")
                 .label(format!("Stage {}: {}", i + 1, item.title))
+                .hover(color(INK).alpha(0.06))
+                .press(color(INK).alpha(0.10))
                 .focusable(true)
                 .on_press(move |s: &mut State| s.stage = i),
         );
@@ -3000,5 +3020,20 @@ pub(crate) fn view(s: &State, cx: &mut Cx<State>) -> El {
     if !narrow {
         base = base.child(sidebar(s, &kit));
     }
-    rune_kit::root(base.child(main), overlays)
+    // Rune normally keeps a brief color fade under Reduce Motion. Request an
+    // instant change explicitly so this optional feedback respects that setting.
+    let (hover_enter, hover_exit) = if cx.is_reduced_motion() {
+        (Curve::Instant, Curve::Instant)
+    } else {
+        (
+            Curve::tween(0.12, Easing::EASE_OUT),
+            Curve::tween(0.16, Easing::EASE_OUT),
+        )
+    };
+    // Color feedback only: hit areas and layout stay still.
+    rune_kit::root(
+        base.child(main)
+            .hover_motion_within(hover_enter, hover_exit),
+        overlays,
+    )
 }
