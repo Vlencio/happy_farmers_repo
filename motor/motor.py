@@ -48,6 +48,12 @@ DIAS_COLHEITA = 10  # dias para colher e liberar o talhao depois do fim do ciclo
 ESPERA_MAX_DIAS = 182  # meio ano: se o mes de plantio do slot esta mais longe que isso, a epoca ja passou
 FASE_SENSIVEL = FASES_KC[1:]  # florescimento e enchimento de graos: a fase de Kc medio
 PERDA_CALOR = 1.0  # fracao da produtividade perdida se todos os dias da fase sensivel passam do limiar
+# Escala da parte agua do score: o atendimento hidrico da sequencia (1 - deficit / demanda) vai da
+# faixa fixa [AGUA_REF_MIN, 1] para [0, 1], e abaixo de AGUA_REF_MIN vale 0. Sem a escala, a agua
+# variava 0,84-1,00 entre as sequencias no clima medio e pesava ~14% com pesos iguais (solo ~32%,
+# renda ~54%). 0,6 e por volta do pior atendimento que o motor da no talhao de demonstracao: ano
+# seco 0,56-0,86, ano ruim do modo diario 0,66-0,89. Faixa fixa: nao depende das outras sequencias.
+AGUA_REF_MIN = 0.6
 
 # Modo diario. Ky = queda relativa da produtividade por queda relativa da evapotranspiracao
 # (FAO-56, eq. 90). Valores da FAO-56, tabela 24, que repete o FAO Irrigation and Drainage
@@ -443,11 +449,12 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         resultados.append(r)
         anterior = nome
 
-    etc = sum(r["etc_mm"] for r in resultados)
     receita = sum(r["receita_ha"] for r in resultados)
     anos = anos_ocupados(dia - dia_livre)
+    atendimento = atendimento_da_sequencia(resultados)
     return {
-        "agua": 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0,
+        "agua": parte_agua(atendimento),
+        "atendimento_hidrico": atendimento,
         "solo": sum(r["solo"] for r in resultados) / len(resultados),
         "receita_ha": receita,
         "anos_ocupados": anos,
@@ -456,6 +463,17 @@ def avaliar_sequencia(nomes, slots, anterior, culturas, clima, et0, mes_plantio,
         "descoberto": solo_descoberto(dia_livre, ciclos, palhada_inicial, clima),
         "culturas": resultados,
     }
+
+
+def atendimento_da_sequencia(resultados):
+    """1 - deficit total / demanda total das culturas da sequencia (1 sem demanda)."""
+    etc = sum(r["etc_mm"] for r in resultados)
+    return 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0
+
+
+def parte_agua(atendimento):
+    """Parte agua do score: o atendimento hidrico na faixa fixa [AGUA_REF_MIN, 1], levado a [0, 1]."""
+    return min(1.0, max(0.0, (atendimento - AGUA_REF_MIN) / (1 - AGUA_REF_MIN)))
 
 
 def anos_ocupados(dias):
@@ -601,9 +619,10 @@ def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, 
         _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos)
         resultados.append(r)
         anterior = nome
-    etc = sum(r["etc_mm"] for r in resultados)
+    atendimento = atendimento_da_sequencia(resultados)
     return {
-        "agua": 1 - sum(r["deficit_mm"] for r in resultados) / etc if etc > 0 else 1.0,
+        "agua": parte_agua(atendimento),
+        "atendimento_hidrico": atendimento,
         "solo": sum(r["solo"] for r in resultados) / len(resultados),
         "receita_ha": sum(r["receita_ha"] for r in resultados),
         "culturas": resultados,
@@ -726,7 +745,7 @@ def _modo_diario(
         }
 
     niveis = {"mediano": statistics.median, "ruim": _quantil_ruim}
-    partes = ("agua", "solo", "receita_ha")
+    partes = ("agua", "atendimento_hidrico", "solo", "receita_ha")
     resumo = {
         cen: {
             s: {nivel: {p: f([a[p] for a in anos.values()]) for p in partes} for nivel, f in niveis.items()}
@@ -756,7 +775,7 @@ def _modo_diario(
             pior = min(anos, key=lambda ano: (anos[ano]["receita_ha"], anos[ano]["agua"]))
             blocos[s][cen] = {
                 **resumo[cen][s],
-                "pior_ano": {"ano": pior, "agua": anos[pior]["agua"], "receita_ha": anos[pior]["receita_ha"]},
+                "pior_ano": {"ano": pior, **{p: anos[pior][p] for p in ("agua", "atendimento_hidrico", "receita_ha")}},
                 "culturas": [
                     {
                         "cultura": nome,
@@ -1087,7 +1106,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         )
 
     campos = [
-        "score", "agua", "solo", "renda", "receita_ha", "anos_ocupados", "receita_ano_ha", "encaixe", "descoberto",
+        "score", "agua", "atendimento_hidrico", "solo", "renda", "receita_ha", "anos_ocupados", "receita_ano_ha", "encaixe",
+        "descoberto",
         "culturas",
     ]  # fmt: skip
     saida = {

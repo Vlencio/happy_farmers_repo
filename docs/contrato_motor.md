@@ -124,10 +124,11 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
       "rank_hoje": 1,
       "rank_futuro": 1,
       "hoje": {
-        "score": 81.988,
-        "agua": 0.918,
-        "solo": 0.542,
-        "renda": 1.0,
+        "score": 70.096,
+        "agua": 0.687,
+        "atendimento_hidrico": 0.875,
+        "solo": 0.513,
+        "renda": 0.903,
         "receita_ha": 14170.702,
         "encaixe": 0.986,
         "descoberto": {
@@ -211,7 +212,8 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `atual` (em cada sequência) | `true` na sequência que repete a rotação atual. No máximo uma, e ela pode estar em `descartadas` |
 | `rank_hoje`, `rank_futuro`, `rank_seco` | Posição (1 = melhor) em cada clima. `rank_seco` só existe se o ano seco foi passado |
 | `score` | 0 a 100. Média de `agua`, `solo` e `renda` com os pesos do usuário |
-| `agua`, `solo`, `renda` | As três partes do score, de 0 a 1 |
+| `agua`, `solo`, `renda` | As três partes do score, de 0 a 1 (regra 12). `agua` é o atendimento hídrico na faixa fixa de `AGUA_REF_MIN` a 1, não a fração da demanda atendida |
+| `atendimento_hidrico` (na sequência) | 1 − déficit total ÷ demanda total das culturas da sequência, de 0 a 1. É o número que `agua` reescala; serve para explicar a parte `agua` ("a sequência atende 88% da demanda de água") |
 | `receita_ha` | R$ por hectare, somando as culturas da sequência. O front multiplica pela área |
 | `anos_ocupados` | Anos de talhão que a sequência usa, do dia em que fica livre até o fim da última colheita. No mínimo 1 (regra 12) |
 | `receita_ano_ha` | `receita_ha` ÷ `anos_ocupados`, em R$/ha/ano. É o que entra na `renda` |
@@ -243,8 +245,8 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 se é não fixadora depois de fixadora de N; 1 nos outros casos.
 11. **Receita** = preço × produtividade do slot × `fator`, onde `fator` = menor entre encaixe de temperatura, encaixe de chuva, encaixe de calor e atendimento hídrico, vezes `fator_sequencia`.
 12. **Partes do score:**
-    - `agua` = 1 − déficit total / demanda total da sequência.
-    - `solo` = média, por cultura, de (0,4 se fixa N + 0,4 se cobre o solo + 0,2 se é diferente da anterior) × o quanto a cultura cresce.
+    - `agua` = o atendimento hídrico da sequência (`atendimento_hidrico` = 1 − déficit total / demanda total) levado da faixa fixa [`AGUA_REF_MIN`, 1] para [0, 1]: (atendimento − 0,6) ÷ 0,4, no mínimo 0. Atendimento de 60% ou menos vale 0; 80% vale 0,5; 100% vale 1. A faixa é fixa e não depende das outras sequências avaliadas, como o teto da `renda`. Motivo: sem a escala, o atendimento varia de 0,84 a 1,00 entre as sequências no clima médio, e com pesos iguais a parte `agua` respondia por cerca de 14% da diferença de score entre elas (solo 32%, renda 54%); a prioridade água do produtor quase não mexia no ranking. 0,6 é por volta do pior atendimento que o motor dá no talhão de demonstração em condições plausíveis (ano seco: 0,56 a 0,86; ano ruim do modo diário: 0,66 a 0,89). Vale igual em hoje, futuro, ano seco e no modo diário (por ano, antes da mediana e do ano ruim). Números antes e depois: "Em aberto", item 20.
+    - `solo` = média, por cultura, de (0,4 se fixa N + 0,4 se cobre o solo + 0,2 se é diferente da anterior) × o quanto a cultura cresce. A faixa de referência é a da própria fórmula, de 0 a 1; sem reescala.
     - `renda` = `receita_ano_ha` ÷ teto, no máximo 1. `receita_ano_ha` é a receita dividida pelos anos de talhão que a sequência ocupa (no mínimo 1): uma sequência que passa de um ano, como crotalária e depois algodão de dezembro com o talhão livre em fevereiro (1,3 ano), não pode comparar a receita dela com a de quem libera o talhão em 12 meses. O teto é a receita potencial do sistema de referência da região, soja na safra e milho na safrinha, com o preço e a produtividade da tabela e sem perda (`SISTEMA_REFERENCIA`; 14.936 R$/ha/ano com a tabela de 15/11). O teto usa o preço da tabela, não o editado em `precos`: o preço editado muda a receita das sequências, não a referência. Assim, soja e milho a preço zero não zeram o teto. O teto é o mesmo em todos os climas e não depende das outras sequências: tirar uma cultura da tabela não muda a `renda` das que ficam. Sem soja ou milho na tabela, ou com o teto da tabela igual a zero, o teto volta a ser a maior `receita_ano_ha` avaliada.
     - Antes de 15/11 o teto era a maior receita entre as sequências avaliadas. A revisão estatística mostrou que, assim, tirar o algodão da tabela trocava o 1º e o 2º lugar entre outras sequências.
 13. **Época de plantio no ano seco:** a mesma. As sequências viáveis e as descartadas não dependem do clima.
@@ -326,7 +328,7 @@ Um DataFrame com uma linha por dia, sem dias faltando.
 5. **Calor:** conta os dias da fase sensível com `tmax_c` acima do limiar da cultura. Não usa as colunas `dias_acima_NN`.
 6. **Perda por falta de água (Ky):** `fator_agua` = 1 − Ky × (1 − `atendimento_hidrico`), a função de resposta da FAO (FAO-56, equação 90). No modo diário ele entra no lugar do atendimento hídrico no "menor fator" da regra 11. Com Ky acima de 1, a cultura perde mais produtividade do que a água que faltou.
 7. **Futuro:** a série de hoje com a mudança mensal entre `clima_futuro` e `clima_hoje`. Nas temperaturas, soma a diferença do mês; na chuva e no ET0, multiplica pela razão do mês (dia sem chuva continua sem chuva). Funciona para qualquer ponto que tenha as duas tabelas.
-8. **Resumo:** para cada sequência e clima, a mediana e o valor do ano ruim de `agua`, `solo` e `receita_ha` entre os anos. O ano ruim é o valor na posição 20% da lista ordenada: com 19 anos, o 4º pior. Cada parte tem o seu ano ruim; não é um único ano.
+8. **Resumo:** para cada sequência e clima, a mediana e o valor do ano ruim de `agua`, `atendimento_hidrico`, `solo` e `receita_ha` entre os anos. `agua` de cada ano usa a mesma faixa fixa do modo mensal (regra 12). O ano ruim é o valor na posição 20% da lista ordenada: com 19 anos, o 4º pior. Cada parte tem o seu ano ruim; não é um único ano.
 9. **Renda, score e rank:** `renda` = receita do ano ÷ `anos_ocupados` da sequência (o calendário é o do modo mensal) ÷ o mesmo teto do modo mensal, no máximo 1. O `score` usa os mesmos pesos da entrada. Há um rank para o ano mediano e outro para o ano ruim, em cada clima.
 10. **Geada e chuva extrema (Parte 4):** em cada ano, o motor conta os dias do ciclo de cada cultura com `tmin_c` de 3 °C ou menos (geada) e com chuva acima do limiar de chuva extrema. Geada com mínima no abrigo de até 3 °C é o critério usual no Brasil (Grodzki et al., 1996; Embrapa Trigo): o ar no abrigo fica de 3 a 6 °C mais quente que a superfície das plantas. Chuva extrema é o dia acima do percentil 95 dos dias com pelo menos 1 mm na série de hoje (índice R95p do ETCCDI); o mesmo limiar vale no futuro, para a contagem mostrar a mudança. As contagens não mudam produtividade, score nem rank. Geada em algum ano vira o aviso `geada`; chuva extrema não vira aviso, porque por definição acontece todo ano no período chuvoso, e fica só como número.
 11. **Solo descoberto (regras 15 e 16, Parte 2):** os dias sem cultura e os dias expostos são os do modo mensal: o mesmo calendário, contado a partir do talhão livre, igual em todo ano e nos dois climas. Muda a chuva: em cada ano, a soma da chuva de cada dia da série nesses dias (no futuro, a série da regra 7). Com `declividade_pct`, `indice_erosao` = `chuva_exposta_mm` × fator S, como na regra 16. O resumo traz a mediana e o ano ruim de cada número. Aqui o ano ruim é o de **mais** chuva, porque mais chuva sobre solo sem cultura é mais risco de erosão: o valor na posição 20% da lista ordenada do mais chuvoso para o menos (com 19 anos, o 4º mais chuvoso), a mesma posição de `QUANTIL_RUIM` das outras partes, do outro lado. Cada número tem o seu ano ruim. Não muda score, rank nem avisos.
@@ -361,9 +363,9 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
 {
   "diario": {
     "hoje": {
-      "mediano": {"agua": 0.855, "solo": 0.427, "receita_ha": 11888.82, "renda": 0.678, "score": 65.338, "rank": 13},
-      "ruim":    {"agua": 0.795, "solo": 0.389, "receita_ha": 10839.506, "renda": 0.619, "score": 60.08, "rank": 10},
-      "pior_ano": {"ano": 2020, "agua": 0.694, "receita_ha": 9472.053},
+      "mediano": {"agua": 0.528, "atendimento_hidrico": 0.811, "solo": 0.402, "receita_ha": 11216.125, "renda": 0.747, "score": 55.883, "rank": 11},
+      "ruim":    {"agua": 0.307, "atendimento_hidrico": 0.723, "solo": 0.358, "receita_ha": 9959.451, "renda": 0.663, "score": 44.272, "rank": 13},
+      "pior_ano": {"ano": 2020, "agua": 0.133, "atendimento_hidrico": 0.653, "receita_ha": 8825.713},
       "culturas": [
         {
           "cultura": "milho",
@@ -375,7 +377,7 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
         },
         { "...": "soja, na safra" }
       ],
-      "anos": [{"ano": 2005, "agua": 0.855, "solo": 0.423, "receita_ha": 11771.385}, "... um por ano"],
+      "anos": [{"ano": 2005, "agua": 0.528, "atendimento_hidrico": 0.811, "solo": 0.399, "receita_ha": 11112.719}, "... um por ano"],
       "descoberto": {
         "dias": 115, "dias_expostos": 8,
         "mediano": {"chuva_mm": 130.26, "chuva_exposta_mm": 53.31, "indice_erosao": 24.898},
@@ -391,11 +393,11 @@ Em cada item de `sequencias` (exemplo: `milho>soja`, talhão livre em fevereiro,
 | Campo | Significado |
 |---|---|
 | `mediano`, `ruim` | Mediana e ano ruim de cada parte entre os anos, com `renda`, `score` e `rank` próprios |
-| `pior_ano` | O ano de menor receita da sequência (em empate, o de menos água) |
+| `pior_ano` | O ano de menor receita da sequência (em empate, o de menos água), com `agua`, `atendimento_hidrico` e `receita_ha` desse ano |
 | `culturas[]` | Por cultura: mediana e ano ruim do atendimento hídrico, do `fator_agua`, do encaixe de calor, do `fator` e da receita |
 | `culturas[].eventos` | Por cultura, `geada` e `chuva_extrema` no ciclo (regra 10 do modo diário): `anos` com pelo menos um dia, `dias_total` somando os anos e `max_no_ano`. Os números da `eventos` acima são ilustrativos |
 | `limiar_geada_c`, `limiar_chuva_extrema_mm` | No topo de `diario`: os limiares usados. O de chuva sai da série de hoje (24,67 mm no talhão de demonstração) |
-| `anos[]` | `agua`, `solo` e `receita_ha` de cada ano. Serve para um gráfico |
+| `anos[]` | `agua`, `atendimento_hidrico`, `solo` e `receita_ha` de cada ano. Serve para um gráfico |
 | `descoberto` | Solo sem cultura (regra 11 do modo diário). `dias` e `dias_expostos`: os do `descoberto` mensal. `mediano` e `ruim`: `chuva_mm` e `chuva_exposta_mm` (e `indice_erosao`, só com `declividade_pct`); o ruim é o lado mais chuvoso. `anos[]`: os mesmos números de cada ano. Os números do exemplo saem do talhão de demonstração, com `declividade_pct` = 4,05 |
 
 Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (2020).
@@ -420,6 +422,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `ESPERA_MAX_DIAS` | 182 | Espera máxima pelo mês de plantio; mais que isso, a época do slot já passou |
 | `FASE_SENSIVEL` | 45% a 80% | Parte do ciclo em que o calor conta |
 | `PERDA_CALOR` | 1,0 | Fração da produtividade perdida se todos os dias da fase sensível passam do limiar |
+| `AGUA_REF_MIN` | 0,6 | Piso da faixa fixa da parte `agua` (regra 12): atendimento hídrico de 60% ou menos vale 0. Escolhido pelo que o motor produz no talhão de demonstração (ano seco e ano ruim do modo diário), não por fonte agronômica |
 | `QUANTIL_RUIM` | 0,2 | Modo diário: posição do "ano ruim" na lista ordenada dos anos |
 | `MIN_ANOS_DIARIO` | 5 | Modo diário: mínimo de anos completos na série |
 | `KY_PADRAO` | 1,0 | Modo diário: Ky das culturas que não estão na tabela da FAO |
@@ -536,5 +539,19 @@ Receita em R$/ha, sem histórico:
 17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Desde 15 nov `culturas.csv` traz `preco_status` (feijão, girassol e algodão: `memoria`) e `temp_calor_c_status` (girassol: `sem fonte`; trigo: `memoria`), preenchidas em `STATUS` de `scripts/montar_culturas.py` conforme `docs/culturas_fontes.md`. Ao conferir um valor, apague a entrada em `STATUS` e rode o script de novo.
 18. ~~**`fator_limitante` olha o modo mensal.**~~ Resolvido em 15/11 com um código à parte, `fator_agua_diario` (regra 17), em vez de mudar `fator_limitante`: sem o modo diário a saída não muda, e o texto da tela para `fator_limitante` ("usa a avaliação mensal") continua certo. Com `diario=`, o milho safrinha de `soja>milho` (outubro, histórico soja, milho) atende 82% no mensal (sem aviso) e ganha o aviso com `fator_agua` 0,696 hoje e 0,693 no futuro (atendimento 0,757 e 0,755, Ky 1,25); `clima_favoravel` sai dessa sequência. No talhão de demonstração, em outubro: 14 avisos em 7 das 26 sequências, 10 deles sem aviso de água no mensal (milho safrinha de `soja>milho`, trigo safrinha), e `clima_favoravel` passa de 11 para 10 sequências. Em fevereiro: 20 avisos em 10 das 36 (milho safrinha 0,72, trigo safrinha 0,73), nenhum com aviso de água no mensal, e `clima_favoravel` passa de 18 para 15. Fica em aberto: o aviso olha só a água do ano mediano; o ano ruim e o calor do diário não viram aviso por cultura (o ano ruim já entra em `queda_no_ano_ruim`).
 19. **Dias quentes no ajuste de temperatura.** Desde 15/11 as tabelas têm uma coluna `dias_acima_NN` por grau, de 26 a 40 °C (`scripts/montar_clima.py`). Com os limiares das culturas (32 a 38 °C) e `temp_c` até 4, todo ajuste inteiro cai numa coluna e é exato. Ajuste fracionário (por exemplo, +0,5 °C) interpola entre dois graus vizinhos, um erro pequeno. Antes, só havia 32/35/36/38, e a interpolação errava de −31% a +20% (revisão estatística). A API aceita `ajuste` desde 15/11 e anuncia `capabilities.ajuste` em `/metadata`.
-20. **Pesos efetivos não são os nominais.** Com pesos iguais, a dispersão entre as sequências é de cerca de 0,04 em `agua`, 0,13 em `solo` e 0,22 em `renda` (revisão estatística, 15/11, antes da renda por ano ocupado): a prioridade água quase não move o ranking. A água também entra três vezes (em `agua`, na receita e na parte `solo`). Os pesos não podem ser lidos como "importância". Equalizar as escalas (cada parte sobre uma faixa de referência fixa) ainda não foi feito.
+20. ~~**Pesos efetivos não são os nominais.**~~ Tratado em 15/11 com a faixa fixa da parte `agua` (`AGUA_REF_MIN`, regra 12). Medido no talhão de demonstração, histórico soja, milho, pesos iguais. Peso efetivo de cada parte = peso × desvio-padrão da parte entre as sequências viáveis ÷ a soma dos três:
+
+    | Clima | Antes: água / solo / renda | Depois |
+    |---|---|---|
+    | Outubro, hoje (26 sequências) | 14% / 32% / 54% (desvio 0,051 / 0,116 / 0,193) | 29% / 27% / 44% (0,127 / 0,116 / 0,193) |
+    | Outubro, futuro | 13% / 34% / 53% | 27% / 28% / 45% |
+    | Outubro, ano seco | 18% / 30% / 51% | 36% / 24% / 40% |
+    | Fevereiro, hoje (36 sequências) | 14% / 32% / 54% (0,052 / 0,118 / 0,201) | 29% / 26% / 45% (0,129 / 0,118 / 0,201) |
+    | Fevereiro, futuro | 14% / 36% / 50% | 29% / 29% / 41% |
+    | Fevereiro, ano seco | 23% / 32% / 45% | 41% / 24% / 34% |
+    | Modo diário, ano mediano e ano ruim, hoje e futuro, os dois meses | 12% a 16% / 30% a 35% / 50% a 56% | 26% a 31% / 25% a 29% / 41% a 46% |
+
+    Ainda falta: a `renda` continua com o maior peso efetivo (cerca de 44%), porque a faixa dela (0 ao teto do sistema de referência) já é a natural e as culturas de cobertura a preço zero ficam perto de 0,1 a 0,2. A água continua entrando três vezes (em `agua`, na receita e na parte `solo`), e a escala aumenta o peso da parte direta. No ano seco de fevereiro 2 das 36 sequências ficam abaixo de 60% de atendimento e empatam em `agua` = 0. Os pesos continuam não sendo "importância" pura; agora as três partes têm dispersão da mesma ordem. Alternativas medidas e não adotadas: `AGUA_REF_MIN` 0,5 (água 25%, nenhuma sequência abaixo do piso) e 0,7 (água 35%, mas 6 a 7 sequências do ano seco e algumas do ano ruim diário ficam em 0).
+
+    Três primeiras de hoje, pesos iguais (futuro entre parênteses): outubro passou de `soja>milho`, `soja>sorgo`, `soja>feijao` (`soja>milho`, `soja>sorgo`, `soja>crotalaria`) para `soja>feijao`, `soja>sorgo`, `soja>crotalaria` (`soja>sorgo`, `soja>milheto`, `soja>crotalaria`); fevereiro, de `sorgo>soja`, `feijao>soja`, `crotalaria>soja` (`sorgo>soja`, `crotalaria>soja`, `milho>soja`) para `feijao>soja`, `sorgo>soja`, `feijao>milho` (`sorgo>soja`, `milheto>soja`, `crotalaria>soja`). Em outubro `soja>milho` foi de 1º para 6º hoje e 5º no futuro: o milho safrinha atende 72% da demanda, a sequência atende 87,5%, e `agua` cai de 0,875 para 0,687. `soja>feijao` vence hoje e cai para 6º no futuro, pelo calor de 32 °C do feijão (item 2); `feijao>soja` faz o mesmo em fevereiro (1º hoje, 5º no futuro). Com água 3, solo 1, renda 1, os três primeiros de hoje mudam nos dois meses (outubro: `soja>feijao`, `soja>milheto`, `soja>sorgo`; fevereiro: `feijao>soja`, `feijao>milho`, `milheto>soja`). Antes da escala também mudavam, com o feijão subindo pela água.
 21. **Textura do solo vem do produtor.** O motor recebe `solo_textura` pronta. A sugestão por ponto (GLDAS da NASA, 0,25°, ou HWSD/GAEZ da FAO, ~1 km) ainda não existe: é dado novo, com o dono dos dados. A célula é muito maior que o talhão, então a tela deve tratar a fonte como sugestão e deixar o produtor trocar. No talhão de demonstração, outubro, histórico soja, milho: em solo argiloso `soja>milho` fica em 1º hoje e no futuro; em solo arenoso ou médio `soja>feijao` fica em 1º hoje e cai para 6º no futuro, e `soja>milho` sobe de 3º para 1º. A queda do feijão vem do limiar de calor de 32 °C (item 2).
