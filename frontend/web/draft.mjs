@@ -22,6 +22,12 @@ export function restoreDraft(text) {
         name: typeof draft.farm.name === 'string' ? draft.farm.name : 'My farm',
         source: ['draw', 'sample', 'import'].includes(draft.farm.source) ? draft.farm.source : 'import',
       });
+      // Older sample drafts kept the generated Portuguese label in the GeoJSON.
+      // Only migrate that default; imported and customized names belong to the user.
+      if (farm.source === 'sample' && ['Talhão de demonstração', 'Talhao de demonstracao'].includes(farm.name)) {
+        farm.name = 'Demonstration field';
+        farm.geojson.properties.name = farm.name;
+      }
     } catch { repaired = true; }
   }
   const items = Array.isArray(draft.history) ? draft.history : [];

@@ -52,3 +52,39 @@ test('language changes never translate user-authored field names and notes or cr
   assert.equal(restored.history[0].notes, notes);
   assert.equal(restored.history[0].crop, 'milho');
 });
+
+test('legacy sample drafts restore the English default name without changing the plan', () => {
+  for (const version of [1, 2]) {
+    for (const name of ['Talhão de demonstração', 'Talhao de demonstracao']) {
+      const farm = normalizeFarm(metadata.demo_field.boundary, { source: 'sample' });
+      farm.name = name;
+      farm.geojson.properties.name = name;
+      const draft = { version, farm, history: [{ crop: 'milho', season: '2025', notes: 'Milho após a chuva' }],
+        settings: { mes_plantio: 2, horizonte: 2, prioridades: { agua: 0, solo: 1, renda: 3 }, ajuste: { chuva_pct: -10, temp_c: 1 }, solo_textura: 'arenoso' } };
+      const restored = restoreDraft(JSON.stringify(draft));
+      assert.equal(restored.farm.name, 'Demonstration field');
+      assert.equal(restored.farm.geojson.properties.name, 'Demonstration field');
+      assert.deepEqual(restored.farm.geojson.geometry, farm.geojson.geometry);
+      assert.equal(restored.farm.area_ha, farm.area_ha);
+      assert.deepEqual(restored.history, draft.history);
+      assert.deepEqual(restored.settings, draft.settings);
+      assert.equal(restored.repaired, false);
+      assert.equal(farm.geojson.properties.name, name);
+      assert.deepEqual(restoreDraft(JSON.stringify({ version, ...restored })), restored);
+    }
+  }
+});
+
+test('default-name migration preserves customized samples and imported or drawn field names', () => {
+  for (const source of ['sample', 'import', 'draw']) {
+    const names = source === 'sample' ? ['Fazenda Água Clara', 'Demonstration field'] : ['Talhão de demonstração', 'Talhao de demonstracao'];
+    for (const name of names) {
+      const farm = normalizeFarm(metadata.demo_field.boundary, { source });
+      farm.name = name;
+      farm.geojson.properties.name = name;
+      const restored = restoreDraft(JSON.stringify({ version: 2, farm, history: [], settings: { mes_plantio: 10, horizonte: 2 } }));
+      assert.equal(restored.farm.name, name);
+      assert.equal(restored.farm.geojson.properties.name, name);
+    }
+  }
+});

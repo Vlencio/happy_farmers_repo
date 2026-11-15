@@ -56,15 +56,18 @@ async originalPage => {
       check(await page.getByText(term, { exact: true }).count() === 1, 'English glossary: ' + term);
     }
     await capture('glossary-mobile', page.getByText('Ky · response to water shortage', { exact: true }));
-    // Seed crop history through the normal saved-draft format, retaining the
-    // Portuguese protocol IDs while every presented crop name is English.
+    // Reproduce a draft saved before the English UI, including its default name.
+    // The migration must preserve crop IDs, history and the selected settings.
     await page.evaluate(() => {
       const key = 'happy-farmers-draft-v1', value = JSON.parse(localStorage.getItem(key));
+      value.farm.name = 'Talhão de demonstração';
+      value.farm.geojson.properties.name = 'Talhão de demonstração';
       value.history = ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2024 + i), notes: '' }));
       localStorage.setItem(key, JSON.stringify(value));
     });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.reload(); await waitText('Engine connected');
+    check((await text()).includes('Demonstration field') && !(await text()).includes('Talhão de demonstração'), 'Legacy sample draft restores the English default field name');
     check((await text()).includes('Soybean') && (await text()).includes('Corn'), 'Saved wire IDs display as English crop names');
     const pending = page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
