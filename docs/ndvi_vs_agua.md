@@ -47,13 +47,13 @@ O NDVI começa em dezembro de 2014: são 10 safras, de 2014/15 a 2023/24.
 | Chuva out–mar | NDVI dez–mar | 0,14 | 0,70 | 0,01 | 1,00 |
 | `agua_soja` | Chuva out–mar | 0,50 | 0,14 | 0,61 | 0,07 |
 
-**Não andam juntos.** Nenhum par passa de 0,25 em módulo, e o par principal tem até o sinal trocado. Com esta série, o NDVI não serve de evidência observada para o índice de água do motor. A chuva da estação também não explica o NDVI, então o problema não é só do motor.
+**Não andam juntos.** Nenhum par com o NDVI passa de 0,25 em módulo, e o par principal tem até o sinal trocado. Com esta série, o NDVI não serve de evidência observada para o índice de água do motor. A chuva da estação também não explica o NDVI, então o problema não é só do motor.
 
 O único ano em que os dois concordam é 2020/21, o ano seco: o menor `agua_soja` (0,767) e o segundo menor NDVI de dezembro a março. Um ano não é evidência.
 
 O que o NDVI mostra é a **data de plantio e de colheita**, mais do que a falta de água:
 
-- **2020/21:** o talhão ficou sem cobertura até meados de novembro (NDVI 0,30) e só ficou verde em dezembro. O produtor esperou a chuva. A cultura chegou a 0,874 em janeiro, um dos maiores picos da série. O motor planta sempre em 1º de outubro e cobra um déficit que a lavoura real evitou plantando mais tarde.
+- **2020/21:** o talhão ficou sem cobertura até meados de novembro (NDVI 0,30) e só ficou verde em dezembro. O NDVI sugere que o plantio esperou a chuva. A cultura chegou a 0,874 em janeiro, um dos maiores picos da série. O motor planta sempre em 1º de outubro e cobra um déficit que a lavoura real evitou plantando mais tarde.
 - **2021/22:** verde já no começo de novembro, pico em janeiro e colheita em fevereiro (0,58 em 2/fev, 0,47 em março). Para o motor, foi o ano de mais água (1,000); a média de dezembro a março é a menor só porque a colheita caiu dentro da janela.
 
 ## Limitações
