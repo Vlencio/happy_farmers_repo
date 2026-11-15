@@ -211,18 +211,20 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `descoberto` | Solo sem cultura nos 365 dias a partir do talhão livre (regra 15). `dias` e `chuva_mm`: dias sem cultura em pé e a chuva que cai neles. `dias_expostos` e `chuva_exposta_mm`: a parte desses dias sem palhada da cultura anterior. `indice_erosao` só existe se a entrada trouxe `declividade_pct`. `meses[]`: os mesmos quatro números por mês, na ordem do calendário a partir do talhão livre; só os meses com algum dia sem cultura |
 | `culturas[]` | Uma entrada por cultura, na ordem de plantio, com os números que explicam o score |
 | `avisos[]` | Em cada item de `sequencias`: lacunas de informação e riscos daquela sequência (regra 17). Não existe em `descartadas` |
+| `beneficios[]` | Em cada item de `sequencias`: benefícios daquela sequência, só com o que entra na conta (regra 18). Não existe em `descartadas` |
+| `fixa_n`, `cobre_solo` | Em cada item de `culturas[]`: os atributos da tabela que entram na parte `solo` (`true` ou `false`) |
 | `encaixe_calor` | 1 = sem dias acima do limiar na fase sensível; cai com a fração desses dias. Sempre 1 em cultura sem limiar |
 | `dias_calor` | Dias esperados acima do limiar da cultura dentro da fase sensível |
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
 
-Os três cards da tela não são as três primeiras de `sequencias`: cada um escolhe por um objetivo (maior `receita_ha` de hoje, maior `solo` de hoje, maior `encaixe` no futuro). A regra está em `frontend/docs/API.md`. O texto por LLM foi abandonado pelo time em 14/11.
+Os três cards da tela não são as três primeiras de `sequencias`: cada um escolhe por um objetivo (maior `receita_ha` de hoje, maior `solo` de hoje, maior `encaixe` no futuro). A regra está em `frontend/docs/API.md`. O chat com LLM (`POST /chat`, `docs/chat.md`) só explica esta saída: lê `avisos`, `beneficios` e os números das sequências na tela, e não produz número nenhum.
 
 ## Regras
 
 1. **ET0:** a coluna `et0_mm` da tabela de clima; sem ela, Hargreaves.
-2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte.
+2. **Slots:** cada posição da sequência é um slot. Talhão livre de julho a dezembro: safra e depois safrinha. Livre de janeiro a junho: safrinha e depois a safra seguinte. Se nenhuma sequência cabe nessa ordem, o motor tenta a outra, começando pelo outro slot, e `slots` mostra a ordem usada. Com as tabelas de 14/11, isso vale para maio e junho (a safrinha de fevereiro e março já passou; a safra de outubro cabe) e para dezembro com duas culturas (depois do algodão, único de safra em dezembro, a safrinha já passou). Abril continua sem sequência: a safrinha passou e a safra de outubro fica a 183 dias, um a mais que o limite de meio ano (regra 3).
 3. **Época de plantio:** a cultura entra no mês de plantio dela naquele slot: no dia em que o talhão fica livre, se cair dentro do mês, ou no dia 1 do mês, se ainda não chegou. Enquanto espera, o solo só acumula chuva. A sequência é descartada se a cultura não tem mês naquele slot ou se o talhão só fica livre depois do mês (espera de mais de meio ano).
 4. **Tempo de colheita:** o talhão fica livre 10 dias depois do fim do ciclo.
 5. **Kc** ao longo do ciclo: `kc_ini` nos primeiros 20%, sobe até `kc_med` aos 45%, fica até 80%, desce até `kc_fim`.
@@ -263,6 +265,19 @@ Os três cards da tela não são as três primeiras de `sequencias`: cada um esc
 | `sem_valor_de_mercado` | lacuna | Cultura com preço zero (as de cobertura), já contando o preço editado | — |
 | `ky_padrao` | lacuna | Só no modo diário: cultura fora da tabela de Ky da FAO | `ky` |
 | `valor_a_conferir` | lacuna | A tabela de culturas tem `<campo>_status` preenchido para a cultura | `campo`, `status`, `valor` |
+
+18. **Benefícios:** cada sequência viável traz a lista `beneficios`, no formato dos avisos sem `tipo`. Cada benefício sai de um atributo ou número que o motor usa: nada de benefício agronômico que não entre na conta. A lista explica o resultado; não muda score nem rank. Uma cultura repetida na sequência conta uma vez em `fixa_nitrogenio` e `deixa_palhada`.
+
+| `codigo` | Quando aparece | `dados` |
+|---|---|---|
+| `fixa_nitrogenio` | Cultura com `fixa_n` na tabela | — |
+| `bonus_apos_fixadora` | Não fixadora depois de uma fixadora (fator de sequência 1,10) | `fator_sequencia`, `slot` |
+| `deixa_palhada` | Cultura com `cobre_solo`: o motor conta o solo coberto até o próximo plantio | — |
+| `pouco_solo_exposto` | Menos de 60 dias sem cultura e sem palhada, no clima de hoje. É o contrário do aviso `solo_exposto` | `dias_expostos`, `chuva_exposta_mm` |
+| `estavel_no_futuro` | Receita de hoje acima de zero e queda de até 10% (ou alta) para o futuro. É o contrário do aviso `queda_no_futuro` | `queda` (negativa = alta), `receita_hoje`, `receita_futuro` |
+| `clima_favoravel` | Hoje e no futuro, nenhuma cultura tem fator de clima ou água abaixo de 0,8. É o contrário do aviso `fator_limitante` nesses dois climas | `menor_fator` |
+
+"Menor demanda de água" ficou de fora: seria uma comparação entre sequências e precisaria de um limite sem fonte.
 
 ## Modo diário (opcional)
 

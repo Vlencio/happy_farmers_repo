@@ -287,6 +287,8 @@ def _receita_e_solo(r, c, slot, anterior, culturas, cresce, precos):
     else:
         fator_sequencia = 1.0
     produtividade = c["produtividade"] if slot == "safra" else c["produtividade_safrinha"]
+    r["fixa_n"] = c["fixa_n"]  # atributos da tabela que entram na parte de solo, para explicar o numero
+    r["cobre_solo"] = c["cobre_solo"]
     r["fator_sequencia"] = fator_sequencia
     r["fator"] = cresce * fator_sequencia
     r["receita_ha"] = precos.get(nome, c["preco"]) * produtividade * r["fator"]
@@ -555,6 +557,17 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
     return geral, blocos
 
 
+def _fator_limitante(r):
+    """O menor entre encaixe de temperatura, de chuva, de calor e atendimento hidrico: (nome, valor)."""
+    fatores = {
+        "temperatura": r["encaixe_temp"],
+        "chuva": r["encaixe_chuva"],
+        "calor": r["encaixe_calor"],
+        "agua": r["atendimento_hidrico"],
+    }
+    return min(fatores.items(), key=lambda kv: kv[1])
+
+
 def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
     """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
 
@@ -568,13 +581,7 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
 
     for cen, porseq in aval.items():
         for r in porseq[s]["culturas"]:
-            fatores = {
-                "temperatura": r["encaixe_temp"],
-                "chuva": r["encaixe_chuva"],
-                "calor": r["encaixe_calor"],
-                "agua": r["atendimento_hidrico"],
-            }
-            fator, valor = min(fatores.items(), key=lambda kv: kv[1])
+            fator, valor = _fator_limitante(r)
             if valor < AVISO_FATOR:
                 aviso(
                     "risco", "fator_limitante",
@@ -653,6 +660,69 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
     return lista
 
 
+def beneficios_da_sequencia(s, aval):
+    """Beneficios de uma sequencia, so com o que o motor usa na conta (regra 18).
+
+    Mesmo formato dos avisos, sem "tipo". Cada beneficio sai de um numero ou atributo que
+    entra no score ou em descoberto; a lista explica o resultado e nao muda score nem rank.
+    """
+    lista = []
+
+    def beneficio(codigo, texto, cultura=None, cenario=None, **dados):
+        lista.append({"codigo": codigo, "cultura": cultura, "cenario": cenario, "dados": dados, "texto": texto})
+
+    hoje, futuro = aval["hoje"][s], aval["futuro"][s]
+    vistas = set()
+    for r in hoje["culturas"]:
+        nome = r["cultura"]
+        if r["fator_sequencia"] == BONUS_APOS_FIXADORA:
+            beneficio(
+                "bonus_apos_fixadora",
+                f"{nome} na {r['slot']} vem depois de uma fixadora de nitrogênio: o motor soma "
+                f"{(BONUS_APOS_FIXADORA - 1) * 100:.0f}% à produtividade. O valor é provisório.",
+                nome, fator_sequencia=r["fator_sequencia"], slot=r["slot"],
+            )  # fmt: skip
+        if nome in vistas:
+            continue
+        vistas.add(nome)
+        if r["fixa_n"]:
+            beneficio("fixa_nitrogenio", f"{nome} fixa nitrogênio do ar, segundo a tabela de culturas.", nome)
+        if r["cobre_solo"]:
+            beneficio(
+                "deixa_palhada",
+                f"{nome} deixa palhada: o motor conta o solo como coberto do fim do ciclo até o próximo plantio.",
+                nome,
+            )  # fmt: skip
+    expostos = hoje["descoberto"]["dias_expostos"]
+    if expostos < AVISO_DIAS_EXPOSTOS:
+        beneficio(
+            "pouco_solo_exposto",
+            "O solo não fica nenhum dia sem cultura e sem palhada no ano." if expostos == 0
+            else f"O solo fica só {expostos} dias no ano sem cultura e sem palhada.",
+            dias_expostos=expostos, chuva_exposta_mm=hoje["descoberto"]["chuva_exposta_mm"],
+        )  # fmt: skip
+    if hoje["receita_ha"] > 0:
+        queda = 1 - futuro["receita_ha"] / hoje["receita_ha"]
+        if queda <= AVISO_QUEDA_FUTURO:
+            if abs(queda) < 0.005:
+                muda = "fica igual"
+            else:
+                muda = f"sobe {-queda * 100:.0f}%" if queda < 0 else f"cai só {queda * 100:.0f}%"
+            beneficio(
+                "estavel_no_futuro",
+                f"A receita {muda} do clima de hoje para o de 2041-2060.",
+                cenario="futuro", queda=queda, receita_hoje=hoje["receita_ha"], receita_futuro=futuro["receita_ha"],
+            )  # fmt: skip
+    piores = [_fator_limitante(r)[1] for cen in ("hoje", "futuro") for r in aval[cen][s]["culturas"]]
+    if min(piores) >= AVISO_FATOR:
+        beneficio(
+            "clima_favoravel",
+            f"Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de {AVISO_FATOR * 100:.0f}%.",
+            menor_fator=min(piores),
+        )  # fmt: skip
+    return lista
+
+
 def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, diario=None):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
@@ -695,17 +765,28 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         raise ValueError(f"culturas fora da tabela: {desconhecidas}. Validas: {sorted(tabela)}")
     pesos = _normalizar_pesos(entrada.get("prioridades") or {})
 
-    slots = ordem_dos_slots(mes_plantio, horizonte)
     anterior = historico[-1] if historico else None
     atual = rotacao_atual(historico, horizonte)
 
     todas = list(itertools.product(tabela, repeat=horizonte))
     et0 = {cen: et0_do_clima(clima, lat) for cen, clima in climas.items()}
-    aval = {
-        cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
-        for cen, clima in climas.items()
-    }
-    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas nos dois
+
+    def avaliar(slots):
+        return {
+            cen: {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[cen], mes_plantio, precos) for s in todas}
+            for cen, clima in climas.items()
+        }
+
+    # a epoca de plantio nao depende do clima: as descartadas sao as mesmas em todos os climas
+    slots = ordem_dos_slots(mes_plantio, horizonte)
+    aval = avaliar(slots)
+    if all("fora_de_epoca" in aval["hoje"][s] for s in todas):
+        # nenhuma sequencia cabe na ordem do semestre (talhao livre de abril a junho, ou em dezembro
+        # com duas culturas): tenta comecar pelo outro slot (regra 2)
+        outra = ordem_dos_slots(1 if slots[0] == "safra" else 7, horizonte)
+        aval_outra = avaliar(outra)
+        if any("fora_de_epoca" not in aval_outra["hoje"][s] for s in todas):
+            slots, aval = outra, aval_outra
     descartadas = [s for s in todas if "fora_de_epoca" in aval["hoje"][s]]
     sequencias = [s for s in todas if "fora_de_epoca" not in aval["hoje"][s]]
 
@@ -766,6 +847,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
                 "avisos": avisos_da_sequencia(
                     s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None
                 ),
+                "beneficios": beneficios_da_sequencia(s, aval),
             }
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],

@@ -5,12 +5,14 @@ import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAU
 import { buildFieldContext, getAnalysisSlope } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
+import { createChatSession } from './chat.mjs';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
 let wasm, farm = null, history = [], settings = { ...DEFAULT_SETTINGS }, metadata = null, controller, requestId = 0;
 let connectionId = 0, connectionController;
 const send = (command) => wasm?.receive_command(JSON.stringify(command));
+const chat = createChatSession({ baseUrl, onChange: send });
 const farmPreview = createFarmPreview((frame) => {
   if (frame.rgba) wasm?.receive_farm_preview(frame.rgba, frame.width, frame.height, frame.note);
   else send({ type: 'preview_note', message: frame.note });
@@ -22,7 +24,7 @@ function saveDraft() {
     send({ type: 'notice', message: 'Rascunho salvo neste navegador.' });
   } catch { send({ type: 'notice', message: 'Não foi possível salvar neste navegador. Baixe seu GeoJSON para guardar o contorno.' }); }
 }
-function invalidate() { requestId++; controller?.abort(); }
+function invalidate() { requestId++; controller?.abort(); chat.invalidate(); }
 function updateFieldContext() {
   send({ type: 'field_context', context: buildFieldContext(farm, metadata) });
 }
@@ -34,11 +36,13 @@ async function connect() {
     const result = await requestMetadata(baseUrl, { signal: AbortSignal.any([connectionController.signal, AbortSignal.timeout(10000)]) });
     if (id !== connectionId) return;
     metadata = result;
+    chat.configure(metadata);
     send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice });
     updateFieldContext();
   } catch (error) {
     if (id !== connectionId) return;
     metadata = null;
+    chat.configure(null);
     send({ type: 'field_context', context: null });
     send({ type: 'config', ready: false, cultures: [], data_notice: '' });
     send({ type: 'error', message: `Não foi possível conectar ao motor. Inicie a API e clique em Reconectar. ${error.message}` });
@@ -78,6 +82,9 @@ async function dispatch(action) {
     case 'history': invalidate(); history = action.history; saveDraft(); break;
     case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
     case 'connect': await connect(); break;
+    case 'chat_send': await chat.ask(action.pergunta); break;
+    case 'chat_cancel': chat.cancel(); break;
+    case 'chat_clear': chat.clear(); break;
     case 'clear': {
       invalidate(); farm = null; history = []; settings = { ...DEFAULT_SETTINGS };
       farmPreview.setFarm(null);
@@ -101,6 +108,7 @@ async function dispatch(action) {
         if (id !== requestId) return;
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         send({ type: 'analysis', analysis: result });
+        chat.setAnalysis(raw, result);
       } catch (error) {
         if (id === requestId) send({ type: 'error', message: error.name === 'AbortError'
           ? 'A consulta ao clima excedeu 6 minutos. Tente novamente; o POWER pode estar lento ou indisponível.'
