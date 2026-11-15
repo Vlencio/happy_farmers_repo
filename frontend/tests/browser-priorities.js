@@ -128,7 +128,8 @@ async (originalPage) => {
     const hasCurrent = analysis.view.current_rotation.status === 'ready';
     check(await cards().count() === ids.length + (hasCurrent ? 1 : 0), name + ': reference is separate and no cards are fabricated');
     const namesById = analysis.view.recommendations.map((rec, i) => [rec, names[i]]);
-    if (hasCurrent) namesById.push([analysis.view.current_rotation.strategy, await cards().first().textContent()]);
+    if (hasCurrent) namesById.push([analysis.view.current_rotation.strategy,
+      await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent()]);
     check(namesById.every(([rec, name]) => {
       const seq = analysis.raw.sequencias.find(seq => seq.id === rec.sequence_id);
       const facts = [ ['Rank · today', '#' + seq.rank_hoje], ['Score · today', number(seq.hoje.score) + ' / 100'],
@@ -136,7 +137,8 @@ async (originalPage) => {
       return facts.every(([label, value]) => name.includes(`${label}: ${value}`))
         && rec.comparison_facts.every(fact => name.includes(`${fact.label}: ${fact.value}`));
     }), name + ': every card exposes actual current/future rank, score, and comparison values');
-    if (hasCurrent) check((await cards().first().textContent()).includes('CURRENT ROTATION'), name + ': current rotation remains the comparison reference');
+    if (hasCurrent) check(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).count() === 1,
+      name + ': current rotation remains the comparison reference');
   }
   async function openChat() {
     if (await button('Open AI chat').count()) await click('Open AI chat');

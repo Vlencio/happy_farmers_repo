@@ -10,6 +10,7 @@ async (originalPage) => {
   const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.includes(value), value, { timeout: 20000 });
   const waitConnected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 20000 });
   const cards = () => page.getByRole('button', { name: /Open timeline$/ });
+  const reference = () => page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ });
   async function reveal(locator) {
     for (let i = 0; i < 22; i++) {
       const box = await locator.boundingBox();
@@ -48,13 +49,15 @@ async (originalPage) => {
     await analyze(['soja', 'milho']);
     check(await cards().count() === 4, 'Current reference plus three ranked cards from real API');
     const names = await cards().allTextContents();
-    check(names[0].startsWith('CURRENT ROTATION: Soybean → Corn'), 'Current reference remains separate from ranked options');
+    check(names[3].startsWith('CURRENT ROTATION: Soybean → Corn'), 'Current reference remains separate after the ranked options');
     const screen = await text();
     for (const metric of ['Gross revenue / ha · full rotation · today', 'Soil · today', 'Suitability · future']) {
       check(screen.split(metric).length - 1 === 4, 'All four cards show ' + metric);
     }
     const boxes = await Promise.all([0, 1, 2, 3].map(i => cards().nth(i).boundingBox()));
-    check(boxes.every(box => Math.abs(box.y - boxes[0].y) < 2), 'Wide desktop shows four cards side by side');
+    check(boxes.slice(0, 3).every(box => Math.abs(box.y - boxes[0].y) < 2)
+      && boxes[3].y > boxes[0].y + boxes[0].height && boxes[3].width > boxes[0].width * 2,
+      'Wide desktop gives three suggestions equal columns and the reference its own full-width row');
     await reveal(cards().first());
     await page.screenshot({ path: 'output/playwright/current-rotation-desktop.png' });
     for (const name of names) {
@@ -74,7 +77,7 @@ async (originalPage) => {
     check(mobile.every((box, i) => box.x >= 0 && box.x + box.width <= 391 && (i === 0 || box.y > mobile[i - 1].y)), 'Mobile stacks all four cards without horizontal overflow');
     await reveal(cards().first());
     await page.screenshot({ path: 'output/playwright/current-rotation-mobile.png' });
-    await click(names[0]);
+    await click(names[3]);
     await waitText('Your crop cycle, step by step');
     check((await text()).includes('Your comparison reference'), 'Mobile opens current rotation details');
     await page.setViewportSize({ width: 1440, height: 1100 });
@@ -86,14 +89,14 @@ async (originalPage) => {
     await analyze([]);
     check(await cards().count() === 3 && (await text()).includes('NO HISTORY PROVIDED'), 'Optional empty history preserves three ranked options');
     await analyze(['algodao', 'soja', 'milho']);
-    check(await cards().count() === 4 && (await cards().first().textContent()).startsWith('CURRENT ROTATION: Soybean → Corn'), 'Long history displays the corrected current rotation');
+    check(await cards().count() === 4 && (await reference().textContent()).startsWith('CURRENT ROTATION: Soybean → Corn'), 'Long history displays the corrected current rotation');
     check(!(await text()).includes('There are more seasons in the history'), 'Obsolete history-length warning is removed');
-    await click(await cards().first().textContent());
+    await click(await reference().textContent());
     await waitText('Your crop cycle, step by step');
     check(await page.getByRole('button', { name: 'Stage 1: Soybean · Main season', exact: true }).count() === 1, 'Long-history current rotation opens the correct first crop');
     await page.setViewportSize({ width: 390, height: 844 });
     await analyze(['algodao', 'soja', 'milho'], 10, 1);
-    check(await cards().count() === 4 && (await cards().first().textContent()).startsWith('CURRENT ROTATION: Soybean.'), 'One-crop horizon follows the engine equivalent slot on mobile');
+    check(await cards().count() === 4 && (await reference().textContent()).startsWith('CURRENT ROTATION: Soybean.'), 'One-crop horizon follows the engine equivalent slot on mobile');
     await page.setViewportSize({ width: 1440, height: 1100 });
     await analyze(['soja', 'milho'], 4, 1);
     check(await cards().count() === 0 && (await text()).includes('No feasible sequence'), 'Empty result still explains missing reference');

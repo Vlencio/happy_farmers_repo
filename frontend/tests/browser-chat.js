@@ -126,7 +126,7 @@ async (originalPage) => {
       'Real capability=false hides the chat while analysis remains available', false);
     check(real.raw.sequencias.every(sequence => Array.isArray(sequence.beneficios)) && await cards().count() === 4,
       'Real engine delivers benefits and retains current rotation plus three cards', false);
-    await click(await cards().first().textContent());
+    await click(await page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ }).textContent());
     await waitText('Benefits considered by the engine');
     const benefits = real.view.current_rotation.strategy.benefits.items;
     check(benefits.every(item => (item.title && item.evidence)) && (await text()).includes(benefits[0].title),

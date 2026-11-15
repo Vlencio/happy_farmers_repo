@@ -205,7 +205,7 @@ e ser finitos: `anos_ocupados >= 1`, `receita_ano_ha >= 0`. A reserva de água d
 
 ### Referência da rotação atual — Parte 1
 
-A tela acrescenta a **rotação atual** às até três sugestões, sem alterar sua ordem.
+A tela mostra a **rotação atual** em uma seção de referência após as até três sugestões, sem alterar a ordem delas.
 Os cards mostram os mesmos indicadores: receita bruta por hectare
 de hoje, índice de solo de hoje e encaixe climático futuro. A referência tem calendário,
 detalhes e ano seco quando esses dados existem na resposta. Ela permanece separada

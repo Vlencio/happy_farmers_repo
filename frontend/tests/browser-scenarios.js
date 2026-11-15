@@ -117,7 +117,9 @@ async (originalPage) => {
     await page.evaluate(async ajuste => {
       const { normalizeFarm } = await import('/web/geometry.mjs');
       const farm = normalizeFarm(await (await fetch('/demo-farm.geojson')).json(), { source: 'sample' });
-      const settings = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 } };
+      // These climate fixtures use the default soil reference. Keep the regional
+      // lookup from adding a texture absent from their actual-engine requests.
+      const settings = { mes_plantio: 10, horizonte: 2, prioridades: { agua: 1, solo: 1, renda: 1 }, solo_padrao: true };
       if (ajuste) settings.ajuste = ajuste;
       localStorage.setItem('happy-farmers-draft-v1', JSON.stringify({ version: 2, farm,
         history: ['soja', 'milho'].map((crop, i) => ({ crop, season: String(2022 + i), notes: '' })), settings }));

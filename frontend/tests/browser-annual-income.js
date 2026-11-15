@@ -101,6 +101,7 @@ async (originalPage) => {
     check(await cards.count() === 3, 'Three ranked cards remain visible');
     const labels = await cards.allTextContents();
     check(['Sunn hemp → Soybean', 'Sorghum → Soybean', 'Common bean → Soybean'].every((crop, i) => labels[i].includes(crop)), 'Cards preserve the new engine top-three order');
+    await click('About this analysis · expand');
     check((await text()).includes('Full rotation covers all crops in the planned sequence. Per year means revenue per year of field occupancy and is used by the income priority.'), 'Results distinguish sequence revenue from the annual ranking basis');
     check((await text()).includes('Currency: Brazilian reais (BRL).') && (await text()).includes('Revenue is gross, before costs. It is not profit.'), 'Results identify the original currency and gross revenue');
     check(labels.every(label => label.includes('Gross revenue / ha · full rotation · today')), 'Each ranked card identifies the full rotation and per-hectare basis');

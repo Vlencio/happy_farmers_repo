@@ -1,5 +1,65 @@
 # Verificação da integração · 14/11/2026
 
+## Altura do card após reiniciar · 15/11/2026
+
+- Campo e histórico mantêm suas alturas naturais no desktop. O card vazio do
+  campo deixa de esticar até a altura do histórico, eliminando a sobra branca
+  abaixo do bloco de demonstração, inclusive após `Analyze another field`.
+  O alinhamento dos cards de resultados e o empilhamento mobile não mudaram.
+- Build, formatação e diff check passaram. `browser-ux.js` passou em **43
+  verificações**, incluindo uma análise real, cancelamento e confirmação do
+  reinício, retorno aos controles vazios e telas de 1440, 1024, 390 e 320 px.
+  Capturas após o reinício: `output/playwright/ux-reset-*.png`;
+  log: `output/playwright/field-spacing-ux.log`. Sem erros JavaScript.
+
+## Hierarquia visual e navegação · 15/11/2026
+
+- Entrada com contexto compacto, glossário independente e demonstração em
+  destaque. Brasil, unidades métricas, BRL e período climático ficam visíveis;
+  `About this analysis` abre a explicação completa sem alterar o rascunho nem
+  iniciar uma requisição. A ação de análise explica seu estado de prontidão.
+- Resultados com três sugestões em colunas mais largas no desktop e referência
+  atual em seção própria abaixo. Tablet usa duas colunas, celular uma. Acesso
+  à linha do tempo perto do título; métricas, receita zero, empate técnico,
+  faixas de modelos, benefícios, riscos e lacunas continuam disponíveis.
+- A linha do tempo apresenta primeiro calendário, seleção e detalhe da cultura;
+  a comparação completa dos cenários e os dados técnicos vêm em seguida.
+  Foram removidas repetições da explicação dos pesos, sem mudar o ranking.
+- Testes de navegador antigos que dependiam da referência na primeira posição
+  foram atualizados para identificar os cards por função e continuar comparando
+  seus valores com a API. A suite de mapa também deixou de esperar o texto antigo
+  de conexão em português. O novo roteiro `tests/browser-ux.js` verifica a nova
+  disposição, teclado, responsividade, dados reais e preservação do rascunho.
+- Um teste fora do contorno demonstrativo apontou que o aviso de observações
+  indisponíveis tinha ficado recolhido; o aviso voltou a ficar sempre visível.
+  A revisão também trouxe a explicação do empate técnico para junto dos cards
+  e para o detalhe, mantendo o limite de 2 pontos e sua ressalva interpretativa.
+- **165 testes JavaScript**, **1 teste Rust de anos/safras** e **42 casos de
+  integração HTTP** passaram. Build Rune/WASM + Vite, formatação Rust, sintaxe
+  dos roteiros de navegador e diff check aprovados. Permanecem os avisos
+  conhecidos do Rune e de tamanho do bundle, sem novos erros de build.
+- **897 verificações em 21 roteiros de navegador**, sem contar repetições:
+  mapa, histórico, prioridades, análise vazia, referência atual, linha do tempo,
+  renda anual/zero, exposição, avisos, benefícios, modelos, solo, clima, chat,
+  inglês, persistência, recuperação de falhas e barra de rolagem. Larguras de
+  320 a 1920 px; teclado, mouse, desenho por toque e leitura das capturas.
+  As análises usam a API local ou fixtures geradas pelo motor atual; transporte
+  legado, falhas, geolocalização negada e respostas de chat são explicitamente
+  simulados. Nenhuma chamada a provedor de IA ou erro JavaScript não tratado.
+- A suite antiga de cenários agora fixa a referência padrão de solo usada por
+  suas fixtures, impedindo que uma sugestão regional assíncrona invalide o eco
+  da resposta simulada. Não houve alteração nos números esperados do motor.
+  O clique de card no roteiro de avisos usa a posição atual após a rolagem;
+  clique real no botão desenhado e navegação por teclado também foram conferidos.
+
+Os ajustes finais de disponibilidade, alinhamento e empate foram recompilados;
+os roteiros afetados e o novo fluxo de UX passaram novamente após as correções.
+Logs do build, unitários, Rust e integração: `frontend/.cache/ux-*.log`.
+
+Sem alteração de motor, API, dados ou fixtures canônicas. Capturas e logs
+em `output/playwright/ux-*`; testes usam contextos isolados. Celular simulado
+no navegador, sem validação em aparelho físico ou em produção.
+
 ## Receita zero e papel das culturas de cobertura · 15/11/2026
 
 - Cards, referência atual e etapas explicam quando uma cultura é representada

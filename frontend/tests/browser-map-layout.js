@@ -5,11 +5,11 @@ async (originalPage) => {
   const checks = [], errors = [], layouts = [];
   page.on('pageerror', error => errors.push(error.message));
   const check = (ok, name) => { if (!ok) throw new Error(name); checks.push(name); };
-  const waitText = value => page.waitForFunction(value => document.querySelector('[data-rune-a11y]')?.textContent.toLowerCase().includes(value.toLowerCase()), value, { timeout: 15000 });
+  const connected = () => page.waitForFunction(() => /Engine connected|Connected/.test(document.querySelector('[data-rune-a11y]')?.textContent ?? ''), null, { timeout: 15000 });
   const activate = async name => { await page.getByRole('button', { name, exact: true }).evaluate(el => el.click()); await page.waitForTimeout(150); };
   const draft = () => page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
   try {
-    await page.goto(originalPage.url()); await waitText('conectado');
+    await page.goto(originalPage.url()); await connected();
     await activate('Draw on map');
     await page.locator('#locate').click();
     await page.waitForFunction(() => document.querySelector('#map-status').textContent.includes('Approximate device location'));
@@ -54,7 +54,7 @@ async (originalPage) => {
       value.history = Array.from({ length: 12 }, (_, i) => ({ crop: i % 2 ? 'milho' : 'soja', season: String(2013 + i), notes: 'A long note to check readability and history wrapping on small screens.' }));
       localStorage.setItem(key, JSON.stringify(value));
     });
-    await page.reload(); await waitText('conectado');
+    await page.reload(); await connected();
     for (const width of [320, 360, 390, 768, 900, 1024, 1440, 1920]) {
       await page.setViewportSize({ width, height: 844 }); await page.waitForTimeout(250);
       const overflow = await page.locator('[data-rune-a11y] button').evaluateAll((buttons, width) => buttons.filter(el => { const r = el.getBoundingClientRect(); return r.width > 0 && (r.left < -1 || r.right > width + 1); }).map(el => el.textContent), width);

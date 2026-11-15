@@ -118,8 +118,9 @@ async (originalPage) => {
   }
   async function openCurrent(analysis) {
     const current = analysis.view.current_rotation.strategy;
-    check(current && (await cards().first().textContent()).includes('CURRENT ROTATION'), 'Current reference is visible before opening its new warnings');
-    await click(await cards().first().textContent()); await waitText('Risks and data gaps for this strategy');
+    const reference = page.getByRole('button', { name: /^CURRENT ROTATION:.*Open timeline$/ });
+    check(current && await reference.count() === 1, 'Current reference is visible before opening its new warnings');
+    await click(await reference.textContent()); await waitText('Risks and data gaps for this strategy');
     const screen = await text();
     check([...current.warnings.risks, ...current.warnings.gaps].every(item =>
       [item.title, item.context, item.description, item.evidence].every(value => !value || screen.includes(value))), 'Every current-reference warning retains its actual context and evidence');

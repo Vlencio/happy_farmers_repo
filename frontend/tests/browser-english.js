@@ -34,9 +34,11 @@ async originalPage => {
     check(await page.locator('html').getAttribute('lang') === 'en-US', 'Document language is English for assistive technology');
     check(await page.locator('#rune-app').getAttribute('aria-label') === 'Happy Farmers, farm planning', 'Canvas accessibility label is English');
     check(!noPortuguese.test(await text()), 'Setup and metadata notices have English presentation text');
-    check((await text()).includes('Demonstration in Minas Gerais, Brazil.') && (await text()).includes('Triângulo Mineiro region; crop prices reflect Brazilian conditions.'), 'Setup identifies the Brazilian demonstration and local calendar and prices');
-    check((await text()).includes('hectares (ha), millimeters (mm), degrees Celsius (°C) and meters (m). Currency: Brazilian reais (BRL).'), 'Setup explains metric units and the Brazilian currency before analysis');
+    check((await text()).includes('Demonstration in Minas Gerais, Brazil.') && (await text()).includes('Brazilian reais (BRL)'), 'Compact setup identifies the Brazilian demonstration and currency');
     await capture('setup-desktop', page.getByRole('heading', { name: 'What will your next crop cycle be?' }));
+    await click('About this analysis · expand');
+    check((await text()).includes('Triângulo Mineiro region; crop prices reflect Brazilian conditions.'), 'Expanded context identifies the regional calendar and prices');
+    check((await text()).includes('hectares (ha), millimeters (mm), degrees Celsius (°C) and meters (m). Currency: Brazilian reais (BRL).'), 'Expanded context explains metric units and the Brazilian currency before analysis');
     await capture('context-desktop', page.getByText(/^Demonstration in Minas Gerais, Brazil\./));
     await click('Use sample field');
     await page.locator('#map-dialog').waitFor({ state: 'visible' });
@@ -74,6 +76,7 @@ async originalPage => {
     await page.reload(); await waitText('Engine connected');
     check((await text()).includes('Demonstration field') && !(await text()).includes('Talhão de demonstração'), 'Legacy sample draft restores the English default field name');
     check((await text()).includes('Soybean') && (await text()).includes('Corn'), 'Saved wire IDs display as English crop names');
+    await click('About this analysis · expand');
     const pending = page.waitForResponse(r => r.request().method() === 'POST' && new URL(r.url()).pathname.endsWith('/analyze'));
     await click('Analyze farm →');
     const response = await pending, raw = await response.json();
