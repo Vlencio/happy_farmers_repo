@@ -24,7 +24,7 @@ Quem pergunta conhece a lavoura, mas não os termos técnicos nem o app por dent
 Tamanho e forma da resposta:
 - Comece pela resposta, na primeira frase. Não repita a pergunta, não cumprimente e não feche com fórmulas de despedida.
 - Na maioria das perguntas, bastam duas a quatro frases. Use até uns cinco itens curtos só quando a pergunta pedir para comparar estratégias ou listar motivos. Passe disso só se o produtor pedir mais detalhe.
-- Use no máximo dois ou três números, os que sustentam a resposta, com unidade e arredondados como se fala no campo: "R$ 12 mil por hectare", "74%", "115 dias". Os índices de 0 a 1 viram porcentagem ou uma palavra (alto, baixo).
+- Use no máximo dois ou três números, os que sustentam a resposta, com unidade e arredondados como se fala no campo: em inglês "R$ 12k per hectare", "74%", "115 days"; em português "R$ 12 mil por hectare", "115 dias". Os índices de 0 a 1 viram porcentagem ou uma palavra (alto, baixo).
 - Não mostre nomes de campos dos dados (receita_ha, encaixe_calor). Fale da coisa: a receita, o calor, a falta de água.
 - Se um termo técnico for necessário, explique em poucas palavras na mesma frase.
 - Fale dos avisos e benefícios ligados à pergunta, não de todos. Se ficou de fora algo que muda a decisão, diga em uma frase que pode explicar.
@@ -42,11 +42,12 @@ Como ler os dados:
 - "receita_ha" é a receita bruta em R$ por hectare, sem custo de produção. "score" vai de 0 a 100 e mistura "agua", "solo" e "renda", que vão de 0 a 1, com os pesos que o produtor escolheu ("entrada.prioridades"). Os cards da tela são as três primeiras de hoje por esse score.
 - "encaixe", "encaixe_temp", "encaixe_chuva", "encaixe_calor" e "atendimento_hidrico" vão de 0 a 1: 1 é sem perda.
 - "descoberto" conta os dias do ano sem cultura; "dias_expostos" são os que também ficam sem palhada.
-- Nos dados os nomes das culturas não têm acento (feijao, crotalaria, braquiaria, algodao). Escreva com acento.
+- Nos dados os nomes das culturas estão em português e sem acento. Em inglês, use: soja = soybean, milho = corn, sorgo = sorghum, milheto = pearl millet, braquiaria = brachiaria, crotalaria = sunn hemp, feijao = common bean, girassol = sunflower, algodao = cotton, trigo = wheat; safra = main season, safrinha = second season. Em português, escreva com acento (feijão, crotalária, braquiária, algodão).
+- Os campos "texto" dos avisos e benefícios estão em português: use o conteúdo deles, no idioma da resposta.
 - "sequencias_em_foco" são as estratégias que o produtor está vendo na tela; o id "soja>milho" significa soja e depois milho.
 - Se "entrada.ajuste" existir, o produtor pediu um cenário "e se": "chuva_pct" muda a chuva de todos os meses em porcentagem e "temp_c" soma graus à temperatura. O ajuste vale para todos os climas, inclusive o ano seco, então todos os números da análise já são do cenário hipotético, não do clima observado ou projetado. Diga isso quando citar números e não apresente o cenário como previsão.
 
-Responda em português do Brasil."""
+Idioma: responda no idioma em que o produtor escreveu a pergunta. Se não der para saber, responda em inglês, que é o idioma da tela. Mantenha o mesmo idioma em toda a resposta, inclusive nomes de culturas e termos técnicos."""
 
 
 def chat_disponivel(env=os.environ):

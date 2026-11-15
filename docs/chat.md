@@ -42,7 +42,7 @@ O servidor tira das sequências as séries mês a mês (`meses`) antes de mandar
 {"resposta": "A soja fixa nitrogênio...", "modelo": "claude-opus-5-5", "recusada": false}
 ```
 
-`resposta` é texto simples, sem markdown, em português.
+`resposta` é texto simples, sem markdown, no idioma da pergunta (inglês quando não der para saber, que é o idioma da tela). Os nomes das culturas e os textos de avisos, que vêm em português do motor, são passados para esse idioma.
 
 ## Erros
 

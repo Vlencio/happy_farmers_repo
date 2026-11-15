@@ -151,3 +151,13 @@ class TestChatApi(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestIdioma(unittest.TestCase):
+    def test_responde_no_idioma_da_pergunta_e_ingles_por_padrao(self):
+        from backend.chat import INSTRUCOES
+        self.assertNotIn("Responda em português do Brasil", INSTRUCOES)
+        self.assertIn("responda no idioma em que o produtor escreveu a pergunta", INSTRUCOES)
+        self.assertIn("responda em inglês", INSTRUCOES)
+        for nome in ("soybean", "corn", "sunn hemp", "common bean"):
+            self.assertIn(nome, INSTRUCOES)
