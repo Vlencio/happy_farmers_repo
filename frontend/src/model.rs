@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+fn is_false(value: &bool) -> bool {
+    !*value
+}
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Farm {
     pub name: String,
@@ -28,6 +31,24 @@ pub struct Settings {
     pub prioridades: Priorities,
     #[serde(default)]
     pub ajuste: Adjustment,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub solo_textura: Option<SoilTexture>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub solo_padrao: bool,
+}
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum SoilTexture {
+    Arenoso,
+    Medio,
+    Argiloso,
+}
+#[derive(Clone, Debug, Default, Deserialize)]
+pub struct SoilContext {
+    pub loading: bool,
+    pub suggestion: Option<SoilTexture>,
+    pub source: String,
+    pub notice: String,
 }
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct Adjustment {
@@ -61,6 +82,8 @@ impl Default for Settings {
             horizonte: 2,
             prioridades: Priorities::default(),
             ajuste: Adjustment::default(),
+            solo_textura: None,
+            solo_padrao: false,
         }
     }
 }
@@ -83,6 +106,10 @@ pub struct Analysis {
     pub scenario_note: String,
     pub priority_note: String,
     pub adjustment_note: String,
+    #[serde(default)]
+    pub ranking_note: String,
+    #[serde(default)]
+    pub soil_note: String,
     pub recommendations: Vec<Recommendation>,
     pub current_rotation: CurrentRotation,
     pub discarded: Vec<String>,
@@ -100,6 +127,10 @@ pub struct Recommendation {
     pub crop: String,
     pub reason: String,
     pub tradeoff: String,
+    #[serde(default)]
+    pub tie_note: String,
+    #[serde(default)]
+    pub model_note: String,
     pub facts: Vec<Fact>,
     pub comparison_facts: Vec<Fact>,
     pub rank_facts: Vec<Fact>,

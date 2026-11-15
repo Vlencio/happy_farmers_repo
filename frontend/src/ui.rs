@@ -2,7 +2,7 @@ use crate::{
     State, host,
     model::{
         Adjustment, Analysis, CurrentRotation, Farm, Page, Recommendation, SelectedStrategy,
-        StrategyWarning,
+        SoilTexture, StrategyWarning,
     },
 };
 use rune::{Color, Cx, El, ScrollSpec, Shape, TextStyle, canvas, col, el, row, text};
@@ -651,6 +651,7 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
         .child(responsive_row(narrow).child(farm_panel(s, k, narrow)).child(history_panel(s, k, overlays, narrow)))
         .child(planning_panel(s, k, overlays, narrow));
     view = view.child(priorities_panel(s, k, narrow));
+    view = view.child(soil_panel(s, k, narrow));
     view = view.child(scenario_panel(s, k, narrow));
     let action = Button::new(if s.loading {
         "Analisando…"
@@ -659,7 +660,9 @@ fn setup_view(s: &State, k: &Kit, overlays: &mut Vec<El>, narrow: bool) -> El {
     })
     .variant(ButtonVariant::Contrast)
     .control_size(ControlSize::ExtraLarge)
-    .disabled(s.farm.is_none() || s.loading || !s.ready || s.adjustment_blocked())
+    .disabled(
+        s.farm.is_none() || s.loading || !s.ready || s.adjustment_blocked() || s.soil_blocked(),
+    )
     .on_press(State::analyze)
     .build(k)
     .key("analyze")
@@ -812,8 +815,70 @@ fn glossary(s: &State, k: &Kit) -> El {
         view = view.child(rule())
             .child(label("Valide com seu agrônomo", 17.0, 600.0, INK))
             .child(paragraph("Receitas são brutas, sem custos; preços históricos e valores ainda marcados para conferência precisam de validação local. Limites de calor variam com cultivar e fase da planta. Sem limiar cadastrado, o motor não penaliza o calor; isso não comprova tolerância."))
-            .child(paragraph("A reserva de água do solo usada pelo motor é de 60 mm, uma referência provisória para o cálculo, não uma medição deste talhão. Outras constantes ainda são provisórias: fator 0,85 para repetição e 1,10 após fixadora de nitrogênio, pesos de solo 0,4/0,4/0,2, fases de Kc em 20%/45%/80% do ciclo, intervalo de colheita de 10 dias, espera máxima de 182 dias e perda proporcional de 1 para 1 pelos dias de calor na fase de 45% a 80% do ciclo. Elas não substituem medições nem recomendação agronômica."));
+            .child(paragraph("A reserva de água usada no cálculo é de 30 mm para solo arenoso, 45 mm para médio e 60 mm para argiloso. Sem textura informada, a referência é 60 mm. São referências por classe, não medições deste talhão."))
+            .child(paragraph("As regras de sequência usam fator 0,85 para repetição e bônus 1,10 para uma cultura não fixadora plantada até 60 dias depois de um adubo verde. Essa janela é provisória. Pares que compartilham praga ou doença podem receber outro desconto; os detalhes mostram o fator aplicado. Os pesos do índice de solo são 0,4/0,4/0,2, sem medir a qualidade real do solo. Essas regras não substituem avaliação agronômica."));
     }
+    view
+}
+fn soil_panel(s: &State, k: &Kit, narrow: bool) -> El {
+    if !s.soil_available && !s.soil_blocked() {
+        return el();
+    }
+    let mut view = panel().gap(14.0).w_full()
+        .child(label("Textura do solo", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
+        .child(paragraph("A textura define a reserva de água considerada no cálculo. Confira a sugestão regional ou escolha o solo que você conhece no talhão."));
+    if s.soil_available {
+        let mut choices = responsive_row(narrow);
+        for (texture, name) in [
+            (SoilTexture::Arenoso, "Arenoso · 30 mm"),
+            (SoilTexture::Medio, "Médio · 45 mm"),
+            (SoilTexture::Argiloso, "Argiloso · 60 mm"),
+        ] {
+            let chosen = s.settings.solo_textura == Some(texture);
+            choices = choices.child(column_width(
+                button(
+                    k,
+                    &format!("soil-{texture:?}"),
+                    &format!("{name}{}", if chosen { " · selecionado" } else { "" }),
+                    chosen,
+                    move |s| s.set_soil(Some(texture)),
+                ),
+                narrow,
+                1.0,
+            ));
+        }
+        view = view.child(choices);
+        if s.soil_context.loading {
+            view = view.child(paragraph("Consultando a sugestão regional de solo…"));
+        } else if let Some(suggestion) = s.soil_context.suggestion {
+            let name = match suggestion {
+                SoilTexture::Arenoso => "arenoso",
+                SoilTexture::Medio => "médio",
+                SoilTexture::Argiloso => "argiloso",
+            };
+            view = view.child(paragraph(format!("Sugestão regional: {name}. Confira antes de analisar; a grade regional não representa uma medição no talhão.")));
+        }
+        if !s.soil_context.source.is_empty() {
+            view = view.child(
+                label(&s.soil_context.source, 12.0, 400.0, MUTED)
+                    .wrap()
+                    .w_full(),
+            );
+        }
+        if !s.soil_context.notice.is_empty() {
+            view = view.child(paragraph(&s.soil_context.notice));
+        }
+        if s.settings.solo_textura.is_none() {
+            view = view.child(paragraph(
+                "Sem textura informada: a análise usará a referência de 60 mm.",
+            ));
+        }
+    } else {
+        view = view.child(paragraph("A textura salva está indisponível nesta análise. Use a referência padrão para continuar."));
+    }
+    view = view
+        .child(button(k, "soil-default", "Usar referência padrão · 60 mm", false, |s| s.set_soil(None)))
+        .child(label(if s.page == Page::Setup { "A escolha será usada ao analisar. Valores em milímetros de água armazenada, não de irrigação." } else { "Mudar a textura refaz a análise e reinicia o chat. Os valores representam a reserva usada no cálculo, não uma medição." }, 12.0, 400.0, MUTED).wrap().w_full());
     view
 }
 fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
@@ -1347,12 +1412,43 @@ fn recommendation_card(
             row()
                 .center_y()
                 .justify_between()
-                .child(pill(name, tint, accent))
+                .child(pill(
+                    if rec.tie_note.is_empty() || matches!(selection, SelectedStrategy::Current) {
+                        name
+                    } else {
+                        "EMPATE TÉCNICO"
+                    },
+                    tint,
+                    accent,
+                ))
                 .child(label(marker, 12.0, 400.0, accent)),
         )
-        .child(label(tagline, 12.0, 400.0, MUTED).wrap().w_full())
+        .child(
+            label(
+                if rec.tie_note.is_empty() {
+                    tagline
+                } else {
+                    "Pontuações próximas no clima de hoje"
+                },
+                12.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        )
         .child(label(&rec.crop, 25.0, 600.0, INK).wrap().w_full())
         .child(rankings)
+        .child(if rec.tie_note.is_empty() {
+            el()
+        } else {
+            label(&rec.tie_note, 12.0, 600.0, INK).wrap().w_full()
+        })
+        .child(if rec.model_note.is_empty() {
+            el()
+        } else {
+            label(&rec.model_note, 12.0, 400.0, MUTED).wrap().w_full()
+        })
         .child(metrics)
         .child(exposure_summary)
         .child(rule())
@@ -1389,8 +1485,14 @@ fn recommendation_card(
             .border(1.0, color(LINE))
             .role("button")
             .label(format!(
-                "{}: {}. {}. {} {} Abrir linha do tempo",
-                name, rec.crop, comparison_label, benefits_label, warnings_label
+                "{}: {}. {}. {} {} {} {} Abrir linha do tempo",
+                name,
+                rec.crop,
+                comparison_label,
+                rec.tie_note,
+                rec.model_note,
+                benefits_label,
+                warnings_label
             ))
             .focusable(true)
             .on_press(move |s: &mut State| s.select(selection)),
@@ -2048,6 +2150,7 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
                 narrow,
             ))
             .child(priorities_panel(s, k, narrow))
+            .child(soil_panel(s, k, narrow))
             .child(scenario_panel(s, k, narrow))
             .child(if s.loading {
                 button(k, "cancel-priorities", "Cancelar análise", false, |s| {
@@ -2057,7 +2160,9 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
             } else {
                 Button::new("Aplicar cenário")
                     .variant(ButtonVariant::Contrast)
-                    .disabled(!s.ready || s.farm.is_none() || s.adjustment_blocked())
+                    .disabled(
+                        !s.ready || s.farm.is_none() || s.adjustment_blocked() || s.soil_blocked(),
+                    )
                     .on_press(State::analyze)
                     .build(k)
                     .key("apply-scenario")
@@ -2108,10 +2213,13 @@ fn results_view(s: &State, k: &Kit, narrow: bool, wide: bool) -> El {
         .child(heading(if analysis.recommendations.is_empty() { "Vamos ajustar o calendário?" } else { "As melhores pontuações de hoje." }, if analysis.recommendations.is_empty() { "O motor verificou as épocas de plantio. Confira os motivos abaixo e ajuste as opções para uma nova análise." } else { "Até três estratégias na ordem do motor, com as suas prioridades. Compare a posição e a pontuação de hoje e do futuro, junto da sua rotação atual." }, narrow))
         .child(farm_summary(s)).child(analysis_banner(analysis))
         .child(priorities_panel(s, k, narrow))
+        .child(soil_panel(s, k, narrow))
         .child(scenario_panel(s, k, narrow))
         .child(adjustment_banner(analysis))
         .child(paragraph(&analysis.priority_note))
         .child(paragraph(&analysis.scenario_note))
+        .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
+        .child(if analysis.ranking_note.is_empty() { el() } else { panel().child(paragraph(&analysis.ranking_note)) })
         .child(chat_panel(s, k, narrow))
         .child(cards);
     if analysis.recommendations.is_empty() {
@@ -2307,6 +2415,9 @@ fn timeline_view(s: &State, k: &Kit, narrow: bool) -> El {
         .child(farm_summary(s)).child(analysis_banner(analysis)).child(adjustment_banner(analysis)).child(paragraph(&analysis.scenario_note)).child(facts)
         .child(paragraph(&analysis.priority_note))
         .child(chat_panel(s, k, narrow))
+        .child(if analysis.soil_note.is_empty() { el() } else { paragraph(&analysis.soil_note) })
+        .child(if rec.tie_note.is_empty() { el() } else { paragraph(&rec.tie_note) })
+        .child(if rec.model_note.is_empty() { el() } else { paragraph(&rec.model_note) })
         .child(benefits_panel(rec))
         .child(warnings_panel(rec, narrow))
         .child(col().gap(13.0).child(label("Seu ciclo, etapa por etapa", 22.0, 600.0, INK).wrap())

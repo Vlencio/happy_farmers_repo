@@ -41,7 +41,12 @@ export function validateSequenceBenefits(seq, scenarios) {
     switch (benefit.codigo) {
       case 'bonus_apos_fixadora':
         if (!['safra', 'safrinha'].includes(d.slot)) invalid(`${path}.dados.slot`);
-        amount('fator_sequencia'); break;
+        amount('fator_sequencia');
+        if (Object.hasOwn(d, 'dias_apos_anterior')) {
+          amount('dias_apos_anterior');
+          if (!Number.isInteger(d.dias_apos_anterior)) invalid(`${path}.dados.dias_apos_anterior`);
+        }
+        break;
       case 'pouco_solo_exposto':
         amount('dias_expostos', 0, 365);
         if (!Number.isInteger(d.dias_expostos)) invalid(`${path}.dados.dias_expostos`);
@@ -74,8 +79,10 @@ function present(benefit, cropLabel) {
       return item('Fixação de nitrogênio', 'A tabela classifica esta cultura como fixadora de nitrogênio. O motor usa esse atributo no índice de solo; não é uma medição no talhão.',
         'Fixação de nitrogênio: sim, segundo a tabela de culturas.', `${crop}: fixadora de nitrogênio na tabela do motor.`);
     case 'bonus_apos_fixadora':
-      return item('Bônus após fixadora', 'Esta cultura vem depois de uma fixadora de nitrogênio. O motor aplica um fator provisório à produtividade, que precisa de revisão local.',
-        `Fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`, `${crop} · ${d.slot}: após fixadora, fator ${number(d.fator_sequencia, 3)}×.`);
+      return item('Bônus após adubo verde',
+        'Esta cultura não fixadora recebe um bônus após um adubo verde que fixa nitrogênio. A regra atual exige plantio até 60 dias após o fim do ciclo anterior; o prazo e o bônus são provisórios. O fator aplicado também pode incluir desconto por hospedeiro comum de pragas ou doenças.',
+        `${d.dias_apos_anterior === undefined ? 'Intervalo entre culturas não informado nesta resposta.' : `Plantio ${d.dias_apos_anterior} dias após o fim do ciclo anterior.`} Fator de sequência aplicado: ${number(d.fator_sequencia, 3)}×.`,
+        `${crop} · ${d.slot}: após adubo verde, fator ${number(d.fator_sequencia, 3)}×.`);
     case 'deixa_palhada':
       return item('Cobertura por palhada', 'Segundo a tabela, esta cultura deixa palhada. O motor supõe que ela cobre o solo do fim do ciclo até o próximo plantio, sem medir quantidade ou duração no talhão.',
         'Cobertura do solo: sim, segundo a tabela de culturas.', `${crop}: palhada considerada até o próximo plantio.`);

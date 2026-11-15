@@ -81,7 +81,7 @@ async (originalPage) => {
       'All four accessible card names include their own benefit summaries');
     check(recs[0].sequence_id === recs[1].sequence_id && names[0] !== names[1],
       'A duplicated winning sequence keeps both reference and first-ranked cards');
-    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>milho|soja>sorgo|soja>feijao',
+    check(first.view.recommendations.map(rec => rec.sequence_id).join('|') === 'soja>milho|soja>sorgo|soja>crotalaria',
       'Benefit presentation preserves the three weighted winners');
     await align(cards().first());
     await page.screenshot({ path: 'output/playwright/benefits-cards-desktop.png' });
@@ -91,8 +91,8 @@ async (originalPage) => {
       await verifyDetail(rec, first.raw.sequencias.find(seq => seq.id === rec.sequence_id));
       if (i === 0) {
         const source = first.raw.sequencias.find(seq => seq.id === rec.sequence_id);
-        check(new Set(source.beneficios.map(item => item.codigo)).size === 5, 'The real current rotation has five benefits after the soil-capacity revision');
-        check((await text()).includes('queda de 1,5%') && (await text()).includes('13.481') && (await text()).includes('13.284'),
+        check(new Set(source.beneficios.map(item => item.codigo)).size === 4, 'The real current rotation has four benefits without a nitrogen bonus after commercial soybean');
+        check((await text()).includes('queda de 1,5%') && (await text()).includes('13.003') && (await text()).includes('12.808'),
           'The real future-revenue decline and both revenues reach the detail');
         check(!(await text()).includes('Fatores favoráveis hoje e no futuro'),
           'The UI does not invent the favorable-climate benefit removed by the engine');
@@ -108,14 +108,14 @@ async (originalPage) => {
           'Favorable climate benefit for soybean-sorghum excludes its dry-year risks');
       }
       if (i === 3) {
-        check((await text()).includes('Feijão') && !(await text()).includes('feijao'), 'Bean benefit labels preserve Portuguese accents');
+        check((await text()).includes('Crotalária') && !(await text()).includes('crotalaria'), 'Cover-crop benefit labels preserve Portuguese accents');
       }
       await click('← Comparar estratégias');
     }
     const bean = await analyze(['soja', 'feijao']);
     const current = bean.view.current_rotation.strategy;
-    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 5,
-      'Changing the real current rotation changes five benefits to two');
+    check(current.sequence_id === 'soja>feijao' && current.benefits.items.length === 2 && recs[0].benefits.items.length === 4,
+      'Changing the real current rotation changes four benefits to two');
     await click(await cards().first().textContent());
     await waitText('Benefícios considerados pelo motor');
     await verifyDetail(current, bean.raw.sequencias.find(seq => seq.id === current.sequence_id));

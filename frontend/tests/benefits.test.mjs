@@ -64,6 +64,20 @@ test('fixation and mulch are explicitly table attributes and model assumptions',
   assert.match(view.note, /não comprovam um resultado no talhão/);
 });
 
+test('nitrogen benefit distinguishes green manure, elapsed days and the final factor after a host penalty', () => {
+  // Synthetic combined factor: the front displays the supplied evidence without recreating the host table.
+  const seq = { culturas: ['milho'], beneficios: [benefit('bonus_apos_fixadora', { fator_sequencia: 1.012, slot: 'safra', dias_apos_anterior: 37 }, 'milho')] };
+  const before = structuredClone(seq);
+  const item = show(seq).items[0];
+  assert.equal(item.title, 'Bônus após adubo verde');
+  assert.match(item.description, /não fixadora.*adubo verde.*60 dias.*provisórios.*desconto por hospedeiro comum/);
+  assert.equal(item.evidence, 'Plantio 37 dias após o fim do ciclo anterior. Fator de sequência aplicado: 1,012×.');
+  assert.equal(item.card_summary, 'Milho · safra: após adubo verde, fator 1,012×.');
+  assert.deepEqual(seq, before);
+  delete seq.beneficios[0].dados.dias_apos_anterior;
+  assert.equal(show(seq).items[0].evidence, 'Intervalo entre culturas não informado nesta resposta. Fator de sequência aplicado: 1,012×.');
+});
+
 test('climate benefit covers today and future even when dry-year risks exist', () => {
   const sorghum = find('soja>sorgo', fixtures[2]);
   assert.ok(sorghum.avisos.some(item => item.codigo === 'fator_limitante' && item.cenario === 'seco'));
@@ -136,6 +150,9 @@ test('nonfinite evidence and invalid numerical ranges cannot enter the UI', () =
     benefit('novo', { nested: { valor: NaN } }),
     benefit('bonus_apos_fixadora', { fator_sequencia: -1, slot: 'safra' }, 'soja'),
     benefit('bonus_apos_fixadora', { fator_sequencia: 1.1, slot: 'inverno' }, 'soja'),
+    benefit('bonus_apos_fixadora', { fator_sequencia: 1.1, slot: 'safra', dias_apos_anterior: -1 }, 'soja'),
+    benefit('bonus_apos_fixadora', { fator_sequencia: 1.1, slot: 'safra', dias_apos_anterior: 0.5 }, 'soja'),
+    benefit('bonus_apos_fixadora', { fator_sequencia: 1.1, slot: 'safra', dias_apos_anterior: '10' }, 'soja'),
     benefit('pouco_solo_exposto', { dias_expostos: 1.5, chuva_exposta_mm: 0 }),
     benefit('pouco_solo_exposto', { dias_expostos: 366, chuva_exposta_mm: 0 }),
     benefit('pouco_solo_exposto', { dias_expostos: 0, chuva_exposta_mm: -1 }),

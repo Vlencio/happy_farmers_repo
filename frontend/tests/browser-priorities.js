@@ -181,20 +181,20 @@ async (originalPage) => {
     check(first.request.rotacao_atual.join('|') === 'soja|milho' && first.request.mes_plantio === 10 && first.request.horizonte === 2,
       'Migration preserves history, month, horizon, and usable farm');
     check(await priorityHeading().count() === 1, 'Results keeps the editable priorities panel');
-    await verifyRanking(first, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'Equal weights in October');
+    await verifyRanking(first, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'Equal weights in October');
     await align(priorityHeading());
     await page.screenshot({ path: 'output/playwright/priorities-desktop.png' });
 
     await setPriority('agua', 0);
     const income = await setPriority('solo', 0);
-    await verifyRanking(income, ['soja>milho', 'soja>trigo', 'soja>girassol'], 'Only income in October');
+    await verifyRanking(income, ['soja>milho', 'soja>trigo', 'soja>sorgo'], 'Only income in October');
     check(same(income.request.prioridades, { agua: 0, solo: 0, renda: 1 }) && income.view.current_rotation.strategy.sequence_id === 'soja>milho',
       'Priority clicks rerun the API automatically and preserve the current rotation');
     await setPriority('solo', 1);
     const soil = await setPriority('renda', 0);
     await verifyRanking(soil, ['soja>crotalaria', 'sorgo>crotalaria', 'feijao>crotalaria'], 'Only soil in October');
     const zeros = await setPriority('solo', 0);
-    await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'All zero priorities in October');
+    await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>crotalaria'], 'All zero priorities in October');
     check(same(zeros.request.prioridades, { agua: 0, solo: 0, renda: 0 }) && same(zeros.raw.entrada.prioridades, first.raw.entrada.prioridades),
       'Zero values reach the engine, which applies equal normalized weights');
     check((await text()).includes('Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1.'),
@@ -205,21 +205,23 @@ async (originalPage) => {
     const reloaded = await submit();
     check(same(reloaded.request, zeros.request), 'Reload preserves selected priorities and the full farm analysis request');
     const strong = await setPriority('renda', 3);
-    await verifyRanking(strong, ['soja>milho', 'soja>trigo', 'soja>girassol'], 'Priority level three');
+    await verifyRanking(strong, ['soja>milho', 'soja>trigo', 'soja>sorgo'], 'Priority level three');
     check(same(strong.request.prioridades, { agua: 0, solo: 0, renda: 3 }), 'The maximum priority value is sent without frontend normalization');
 
     const february = await analyze(2);
     check(february.raw.sequencias[0].id === 'sorgo>soja' && february.raw.sequencias[0].rank_futuro === 1,
       'Real February winner is sorghum-soybean with annual income scoring');
-    check(february.raw.sequencias[1].id === 'feijao>soja' && february.raw.sequencias[1].rank_futuro === 7,
-      'Real February runner-up moves from second today to seventh in the future');
+    check(february.raw.sequencias[1].id === 'crotalaria>soja' && february.raw.sequencias[1].rank_futuro === 2,
+      'Real February runner-up is crotalaria-soybean in both climates');
+    check(february.raw.sequencias[2].id === 'feijao>soja' && february.raw.sequencias[2].rank_futuro === 10,
+      'Real February third sequence moves to tenth in the future');
     await verifyRanking(february, february.raw.sequencias.slice(0, 3).map(seq => seq.id), 'February future comparison');
     await align(rankedCards().first());
     await page.screenshot({ path: 'output/playwright/priorities-future-rank-desktop.png' });
     await click(await rankedCards().first().textContent());
     await waitText('Seu ciclo, etapa por etapa');
     const detail = await text();
-    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '76 / 100', '75,1 / 100'].every(value => detail.includes(value)),
+    check(['POSIÇÃO · HOJE', 'SCORE · HOJE', 'POSIÇÃO · FUTURO', 'SCORE · FUTURO', '#1', '76,7 / 100', '75,7 / 100'].every(value => detail.includes(value)),
       'February detail retains the real current and future ranks and scores');
     await click('← Comparar estratégias');
     await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(350);
@@ -263,7 +265,7 @@ async (originalPage) => {
     await openChat();
     reply = { resposta: 'SIMULAÇÃO: agora as prioridades favorecem a renda.', modelo: 'qa-simulado', recusada: false };
     await send('O que mudou com a renda?'); await waitText(reply.resposta);
-    check(same(posts.at(-1).foco, expectedFocus(chatIncome)) && !posts.at(-1).foco.includes('soja>sorgo')
+    check(same(posts.at(-1).foco, expectedFocus(chatIncome)) && !posts.at(-1).foco.includes('soja>crotalaria')
       && posts.at(-1).foco.includes('soja>trigo') && posts.at(-1).historico.length === 0,
       'SIMULATED next question uses only newly visible cards and starts a clean history', true);
     holdChat = true;

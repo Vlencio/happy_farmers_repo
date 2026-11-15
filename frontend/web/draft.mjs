@@ -36,6 +36,11 @@ export function restoreDraft(text) {
     try { Object.assign(settings, validateSettings({ mes_plantio: partial.mes_plantio, horizonte: partial.horizonte })); } catch { /* Keep the default calendar. */ }
     try { settings.prioridades = validateSettings({ ...DEFAULT_SETTINGS, prioridades: partial.prioridades }).prioridades; } catch { /* Keep equal priorities. */ }
     try { settings.ajuste = validateSettings({ ...DEFAULT_SETTINGS, ajuste: partial.ajuste }).ajuste; } catch { /* Keep the unadjusted climate. */ }
+    try {
+      const soil = validateSettings({ ...DEFAULT_SETTINGS, solo_textura: partial.solo_textura, solo_padrao: partial.solo_padrao });
+      if (soil.solo_textura) settings.solo_textura = soil.solo_textura;
+      if (soil.solo_padrao) settings.solo_padrao = true;
+    } catch { /* Keep the engine's default soil reference. */ }
   }
   return { farm, history, settings, repaired };
 }

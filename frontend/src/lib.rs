@@ -7,7 +7,7 @@ mod season;
 mod ui;
 use model::{
     Adjustment, Analysis, ChatState, Culture, Farm, FieldContext, HistoryItem, Page,
-    SelectedStrategy, Settings,
+    SelectedStrategy, Settings, SoilContext, SoilTexture,
 };
 
 struct State {
@@ -28,6 +28,8 @@ struct State {
     cultures: Vec<Culture>,
     settings: Settings,
     scenario_available: bool,
+    soil_available: bool,
+    soil_context: SoilContext,
     adjustment_preview: Option<Adjustment>,
     month_open: bool,
     horizon_open: bool,
@@ -65,6 +67,8 @@ impl Default for State {
             cultures: vec![],
             settings: Settings::default(),
             scenario_available: false,
+            soil_available: false,
+            soil_context: SoilContext::default(),
             adjustment_preview: None,
             month_open: false,
             horizon_open: false,
@@ -170,6 +174,10 @@ impl State {
             self.error = "O cenário salvo tem ajustes indisponíveis neste servidor. Volte ao clima sem ajuste para analisar.".into();
             return;
         }
+        if self.soil_blocked() {
+            self.error = "A textura salva está indisponível nesta análise. Use a referência padrão para continuar.".into();
+            return;
+        }
         self.crop_open = false;
         self.month_open = false;
         self.horizon_open = false;
@@ -205,7 +213,12 @@ impl State {
         *priority = value;
         let reanalyze = self.page != Page::Setup || self.loading;
         self.invalidate();
-        if reanalyze && self.ready && self.farm.is_some() && !self.adjustment_blocked() {
+        if reanalyze
+            && self.ready
+            && self.farm.is_some()
+            && !self.adjustment_blocked()
+            && !self.soil_blocked()
+        {
             self.page = Page::Results;
             self.loading = true;
         }
@@ -213,6 +226,23 @@ impl State {
     }
     fn adjustment_blocked(&self) -> bool {
         !self.scenario_available && self.settings.ajuste.active()
+    }
+    fn soil_blocked(&self) -> bool {
+        !self.soil_available && self.settings.solo_textura.is_some()
+    }
+    fn set_soil(&mut self, texture: Option<SoilTexture>) {
+        if texture.is_some() && !self.soil_available {
+            return;
+        }
+        let reanalyze = self.page != Page::Setup || self.loading;
+        self.settings.solo_textura = texture;
+        self.settings.solo_padrao = texture.is_none();
+        self.invalidate();
+        if reanalyze && self.ready && self.farm.is_some() && !self.adjustment_blocked() {
+            self.page = Page::Results;
+            self.loading = true;
+        }
+        host(json!({"type":"soil", "settings":self.settings, "analyze":self.loading}));
     }
     fn save_adjustment(&mut self, adjustment: Adjustment) {
         self.adjustment_preview = None;
@@ -259,6 +289,11 @@ impl State {
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum Command {
+    Soil {
+        context: SoilContext,
+        texture: Option<SoilTexture>,
+        use_default: bool,
+    },
     Chat {
         chat: ChatState,
         clear_question: bool,
@@ -269,6 +304,8 @@ enum Command {
         data_notice: String,
         #[serde(default)]
         scenario_available: bool,
+        #[serde(default)]
+        soil_available: bool,
     },
     Farm {
         farm: Farm,
@@ -298,6 +335,18 @@ enum Command {
 }
 fn apply_command(s: &mut State, command: Command) {
     match command {
+        Command::Soil {
+            context,
+            texture,
+            use_default,
+        } => {
+            if s.settings.solo_textura != texture {
+                s.invalidate();
+            }
+            s.soil_context = context;
+            s.settings.solo_textura = texture;
+            s.settings.solo_padrao = use_default;
+        }
         Command::Chat {
             chat,
             clear_question,
@@ -315,9 +364,11 @@ fn apply_command(s: &mut State, command: Command) {
             cultures,
             data_notice,
             scenario_available,
+            soil_available,
         } => {
             s.ready = ready;
             s.scenario_available = scenario_available;
+            s.soil_available = soil_available;
             s.cultures = cultures;
             s.data_notice = data_notice;
             if ready {
@@ -362,12 +413,14 @@ fn apply_command(s: &mut State, command: Command) {
             let ready = s.ready;
             let chat_available = s.chat.available;
             let scenario_available = s.scenario_available;
+            let soil_available = s.soil_available;
             let cultures = s.cultures.clone();
             let data_notice = s.data_notice.clone();
             *s = State::default();
             s.ready = ready;
             s.chat.available = chat_available;
             s.scenario_available = scenario_available;
+            s.soil_available = soil_available;
             s.cultures = cultures;
             s.data_notice = data_notice;
         }

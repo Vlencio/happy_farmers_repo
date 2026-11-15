@@ -2,7 +2,8 @@
 
 O contrato vigente é [docs/contrato_motor.md](../../docs/contrato_motor.md), de
 15/11/2026, incluindo as prioridades da Parte 5 (`2413f15`), os ajustes da Parte 6 (`2638e98`)
-e a renda anual com reserva do solo de 60 mm (`195bf1a`). Ele substitui a proposta anterior deste
+e a revisão integrada na `main` `7d8c1fe` (água, bônus de adubo verde, hospedeiros,
+textura e avaliações por modelo). Ele substitui a proposta anterior deste
 arquivo (`schema_version`, `farm`, `recommendations`, `horizon_months`).
 
 `backend/app.py` valida a entrada HTTP, seleciona as tabelas do ponto e chama
@@ -485,10 +486,93 @@ o CI a regenera com `backend.export_fixture` e exige igualdade. Depois de altera
 dados ou metadados, reiniciar a API e regenerar as fixtures com
 `python -m backend.export_fixture` na raiz do projeto.
 
-Essa faixa descreve o clima do talhão. O motor ainda calcula o futuro com a média
-dos três modelos; a Parte 7 continua dependendo de Pedro para calcular e expor
-faixas de receita e de rank por estratégia. Fora da demonstração, também faltam
-deltas regionais separados por modelo.
+Essa faixa descreve o clima do talhão. Desde `7d8c1fe`, o motor também pode avaliar
+cada modelo separadamente; a API ainda precisa passar `clima_modelos` para
+entregar as faixas por estratégia. O front já consome esses blocos opcionais
+(ver integração da revisão abaixo). Fora da demonstração, faltam deltas
+regionais separados por modelo.
+
+## Integração da revisão estatística e agronômica · 15/11/2026
+
+Base: `main` `7d8c1fe`, que inclui os controles de prioridades de `28c8a9c`.
+Os novos rankings de outubro e fevereiro são preservados exatamente como vêm
+do motor. As alterações numéricas de Pedro nos testes de API, benefícios, chat
+e avisos foram conferidas contra as saídas atuais; a exigência de acentos foi
+restaurada para `hospedeiro_comum`, que agora tem apresentação própria.
+
+- `hospedeiro_comum`: cultura anterior, pragas/doenças, penalidade e fator final
+  aplicado. O bônus de adubo verde pode coexistir com o desconto.
+- `fator_agua_diario`: fator de água, atendimento e Ky do ano mediano, sem
+  confundir esse resumo com a avaliação mensal.
+- `rank_varia_entre_modelos`: faixa de posições, ranks de cada modelo e limite
+  informado. Os dois últimos códigos só aparecem quando a API entregar os dados.
+- O detalhe valida e apresenta `repete`, `bonus_n`, `penalidade_hospedeiro`,
+  `dias_apos_anterior` e `hospedeiro_comum` quando presentes. Bônus: cultura não
+  fixadora até 60 dias após adubo verde, janela provisória. Campos ausentes em
+  respostas antigas não são reconstruídos.
+- `atendimento_hidrico` da sequência é exibido como demanda atendida, separado
+  da parte `agua` do score; renda anual e anos ocupados continuam vindo do motor.
+- `diario` e seus anos continuam preservados no JSON original enviado ao chat.
+  A visualização anual completa permanece dependente da Parte 8.
+
+### Empate técnico na comparação
+
+Quando a diferença das duas primeiras notas **de hoje** é menor que 2 pontos,
+os cards próximos ao líder recebem “Empate técnico”. O terceiro só entra se
+também estiver a menos de 2 pontos do primeiro, sem encadear diferenças.
+A mesma sequência na referência recebe a mesma indicação. É uma faixa de
+apresentação solicitada pelo time, não um teste estatístico. Não modifica
+`rank_hoje`, score, ordem, foco do chat ou escolha das três sequências.
+
+### Faixas futuras por modelo (consumo pronto, transporte pendente)
+
+Com `modelos` no topo e em todas as sequências viáveis, a tela valida nomes,
+cenários, posições e extremos e apresenta `rank_min`–`rank_max` nos cards.
+Os detalhes incluem `receita_ano_ha_min`–`receita_ano_ha_max`. A faixa considera
+somente os modelos; `rank_futuro` da média continua separado. Sem o bloco não há
+faixa inventada. `modelos.chuva: "aproximada"` mantém a ressalva na tela.
+
+A API deve carregar `carregar_clima_modelos()` e passar o resultado somente
+quando estiver usando o clima do talhão de demonstração. Não usar esses deltas
+na grade regional. O Dockerfile **já** inclui `clima_modelos.csv` e
+`clima_correcoes.csv` por `data/clima_*.csv`.
+
+### Textura do solo (contrato HTTP proposto, ainda não entregue na API)
+
+A tela só mostra o seletor com `capabilities.solo_textura: true`. Valores enviados
+em `/analyze`: `solo_textura: "arenoso" | "medio" | "argiloso"`. O motor já
+suporta o campo e devolve `entrada.solo_textura` e `entrada.cad_mm`; o front exige
+esse eco antes de exibir a análise. Sem escolha, omite o campo e usa a referência
+do motor. A capacidade exibida nos resultados é a retornada, sem recalcular.
+
+**Proposta para Pedro confirmar/implementar:** aproveitar
+`GET /metadata?lat=...&lon=...`, consultando somente a tabela local de solos
+(sem iniciar download POWER), e incluir:
+
+```json
+{
+  "solo": {
+    "lat": -20.032,
+    "lon": -48.526,
+    "textura_sugerida": "argiloso",
+    "fonte": "GLDAS2/Noah (NASA), camada 0–30 cm, grade de 0,25°. Sugestão regional."
+  }
+}
+```
+
+`lat`/`lon` devem repetir o **ponto consultado**, não o centro da célula.
+`textura_sugerida: null` significa sem cobertura; a ausência de `solo` também é
+tratada como sugestão indisponível. Sem parâmetros, o metadata normal continua
+válido. A capability deve anunciar que a API aceita a entrada e essa consulta.
+Falta copiar `data/solo/regiao_mg/textura.csv` para a imagem de produção.
+
+A sugestão preenche a primeira escolha; a pessoa pode trocar ou usar a referência
+de 60 mm. Uma escolha manual salva é preservada ao recarregar. A marca local
+`settings.solo_padrao: true` preserva o reset explícito e **nunca é enviada** à API.
+Trocar o contorno limpa a escolha anterior; respostas de consultas antigas são
+canceladas/ignoradas. Sem capability, uma escolha salva bloqueia envio até o
+usuário voltar à referência. Falha da sugestão permite escolha manual.
+Nova escolha nos resultados refaz a análise e limpa o chat.
 
 ## Clima por ponto (G5)
 

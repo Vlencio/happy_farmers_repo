@@ -6,11 +6,45 @@ import { buildFieldContext, getAnalysisSlope } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
 import { createChatSession } from './chat.mjs';
+import { supportsSoil, requestSoilSuggestion, assertSoilApplied } from './soil.mjs';
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
 const storageKey = 'happy-farmers-draft-v1';
 let wasm, farm = null, history = [], settings = { ...DEFAULT_SETTINGS }, metadata = null, controller, requestId = 0;
 let connectionId = 0, connectionController;
+let soilId = 0, soilController;
+let soilContext = { loading: false, suggestion: null, source: '', notice: '' };
+const sendSoil = () => send({ type: 'soil', context: soilContext, texture: settings.solo_textura ?? null, use_default: settings.solo_padrao === true });
+function cancelSoil() {
+  soilId++; soilController?.abort(); soilController = undefined;
+  soilContext = { ...soilContext, loading: false };
+}
+async function updateSoil() {
+  cancelSoil();
+  soilContext = { loading: false, suggestion: null, source: '', notice: '' };
+  if (!farm || !supportsSoil(metadata)) { sendSoil(); return; }
+  const id = soilId;
+  soilController = new AbortController();
+  soilContext.loading = true; sendSoil();
+  try {
+    const { lat, lon } = buildRequest(farm, [], DEFAULT_SETTINGS, [], metadata);
+    const result = await requestSoilSuggestion(baseUrl, { lat, lon }, {
+      signal: AbortSignal.any([soilController.signal, AbortSignal.timeout(10000)]),
+    });
+    if (id !== soilId) return;
+    soilContext = { loading: false, suggestion: result?.textura_sugerida ?? null,
+      source: result?.fonte ?? '', notice: result?.textura_sugerida ? '' : 'Sem sugestão disponível para este ponto. Informe a textura se souber.' };
+    if (!settings.solo_textura && !settings.solo_padrao && result?.textura_sugerida) {
+      invalidate();
+      settings = { ...settings, solo_textura: result.textura_sugerida };
+      saveDraft();
+    }
+  } catch (error) {
+    if (id !== soilId) return;
+    soilContext = { loading: false, suggestion: null, source: '', notice: 'Não foi possível obter a sugestão do ponto. Você pode informar a textura ou usar a referência padrão.' };
+  }
+  if (id === soilId) sendSoil();
+}
 const send = (command) => wasm?.receive_command(JSON.stringify(command));
 const chat = createChatSession({ baseUrl, onChange: send });
 const farmPreview = createFarmPreview((frame) => {
@@ -37,11 +71,13 @@ async function connect() {
     if (id !== connectionId) return;
     metadata = result;
     chat.configure(metadata);
-    send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice, scenario_available: supportsAdjustment(metadata) });
+    send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice, scenario_available: supportsAdjustment(metadata), soil_available: supportsSoil(metadata) });
     updateFieldContext();
+    void updateSoil();
   } catch (error) {
     if (id !== connectionId) return;
     metadata = null;
+    cancelSoil();
     chat.configure(null);
     send({ type: 'field_context', context: null });
     send({ type: 'config', ready: false, cultures: [], data_notice: '', scenario_available: false });
@@ -49,7 +85,12 @@ async function connect() {
   }
 }
 const farmMap = createFarmMap((value) => {
-  invalidate(); farm = value; send({ type: 'farm', farm }); farmPreview.setFarm(farm); updateFieldContext(); saveDraft();
+  invalidate(); cancelSoil();
+  if (JSON.stringify(farm?.geojson.geometry) !== JSON.stringify(value.geojson.geometry)) {
+    const { solo_textura, solo_padrao, ...rest } = settings; settings = rest;
+  }
+  farm = value; send({ type: 'farm', farm }); farmPreview.setFarm(farm); updateFieldContext(); saveDraft();
+  void updateSoil();
 });
 document.getElementById('geojson-file').onchange = async (event) => {
   const file = event.target.files?.[0]; event.target.value = '';
@@ -82,6 +123,11 @@ async function dispatch(action) {
     case 'history': invalidate(); history = action.history; saveDraft(); break;
     case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
     case 'scenario': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
+    case 'soil': {
+      cancelSoil(); invalidate(); settings = validateSettings(action.settings); saveDraft(); sendSoil();
+      if (action.analyze) await dispatch({ type: 'analyze' });
+      break;
+    }
     case 'priorities': {
       invalidate(); settings = validateSettings(action.settings); saveDraft();
       if (action.analyze) await dispatch({ type: 'analyze' });
@@ -92,6 +138,7 @@ async function dispatch(action) {
     case 'chat_cancel': chat.cancel(); break;
     case 'chat_clear': chat.clear(); break;
     case 'clear': {
+      cancelSoil(); soilContext = { loading: false, suggestion: null, source: '', notice: '' };
       invalidate(); farm = null; history = []; settings = { ...DEFAULT_SETTINGS };
       farmPreview.setFarm(null);
       let stored = true;
@@ -104,6 +151,7 @@ async function dispatch(action) {
     case 'analyze': {
       if (!farm) throw new Error('Defina o limite da fazenda antes de analisar.');
       if (!metadata) throw new Error('Conecte ao motor antes de analisar.');
+      cancelSoil(); sendSoil();
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
       const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
       try {
@@ -113,6 +161,7 @@ async function dispatch(action) {
         const raw = await requestAnalysis(baseUrl, request, { signal: pending.signal });
         if (id !== requestId) return;
         assertAdjustmentApplied(raw, request);
+        assertSoilApplied(raw, request);
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         send({ type: 'analysis', analysis: result });
         chat.setAnalysis(raw, result);
