@@ -701,6 +701,20 @@ def _fator_limitante(r):
     return min(fatores.items(), key=lambda kv: kv[1])
 
 
+def _agua_diaria_baixa(bloco_diario):
+    """Modo diario: (clima, cultura do bloco) com fator_agua do ano mediano abaixo de AVISO_FATOR.
+
+    E o complemento diario de fator_limitante: no mensal a agua entra pelo atendimento hidrico
+    da media de 20 anos; no diario, pelo fator com Ky, que pesa mais (regra 6 do modo diario).
+    """
+    return [
+        (cen, c)
+        for cen, bloco in (bloco_diario or {}).items()
+        for c in bloco["culturas"]
+        if c["mediano"]["fator_agua"] < AVISO_FATOR
+    ]
+
+
 def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
     """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
 
@@ -737,6 +751,16 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
                 f"Clima {cen}: em um ano ruim (1 em 5) a receita fica {(1 - ruim / mediano) * 100:.0f}% abaixo da do ano mediano.",
                 cenario=cen, queda=1 - ruim / mediano, receita_mediano=mediano, receita_ruim=ruim,
             )  # fmt: skip
+    for cen, c in _agua_diaria_baixa(bloco_diario):
+        m = c["mediano"]
+        ky = tabela[c["cultura"]]["ky"]
+        aviso(
+            "risco", "fator_agua_diario",
+            f"{c['cultura']} na {c['slot']}, clima {cen}, modo diário: no ano mediano a falta de água "
+            f"(Ky {ky:g}) limita a produtividade a {m['fator_agua'] * 100:.0f}%.",
+            c["cultura"], cen, fator_agua=m["fator_agua"], atendimento_hidrico=m["atendimento_hidrico"],
+            ky=ky, slot=c["slot"],
+        )  # fmt: skip
     for cen, bloco in (bloco_diario or {}).items():
         for c in bloco["culturas"]:
             g = c["eventos"]["geada"]
@@ -804,11 +828,12 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
     return lista
 
 
-def beneficios_da_sequencia(s, aval):
+def beneficios_da_sequencia(s, aval, bloco_diario=None):
     """Beneficios de uma sequencia, so com o que o motor usa na conta (regra 18).
 
     Mesmo formato dos avisos, sem "tipo". Cada beneficio sai de um numero ou atributo que
     entra no score ou em descoberto; a lista explica o resultado e nao muda score nem rank.
+    bloco_diario: so no modo diario; com aviso fator_agua_diario, clima_favoravel nao sai.
     """
     lista = []
 
@@ -858,7 +883,7 @@ def beneficios_da_sequencia(s, aval):
                 cenario="futuro", queda=queda, receita_hoje=hoje["receita_ha"], receita_futuro=futuro["receita_ha"],
             )  # fmt: skip
     piores = [_fator_limitante(r)[1] for cen in ("hoje", "futuro") for r in aval[cen][s]["culturas"]]
-    if min(piores) >= AVISO_FATOR:
+    if min(piores) >= AVISO_FATOR and not _agua_diaria_baixa(bloco_diario):
         beneficio(
             "clima_favoravel",
             f"Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de {AVISO_FATOR * 100:.0f}%.",
@@ -996,7 +1021,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
                 "avisos": avisos_da_sequencia(
                     s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None
                 ),
-                "beneficios": beneficios_da_sequencia(s, aval),
+                "beneficios": beneficios_da_sequencia(s, aval, blocos_diario[s] if blocos_diario is not None else None),
             }
             for s in sorted(sequencias, key=lambda s: rank["hoje"][s])
         ],

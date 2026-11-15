@@ -258,6 +258,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 |---|---|---|---|
 | `fator_limitante` | risco | Por cultura e clima: o menor entre encaixe de temperatura, de chuva, de calor e atendimento hídrico está abaixo de 0,8 | `fator` (`temperatura`, `chuva`, `calor` ou `agua`), `valor`, `slot` |
 | `queda_no_futuro` | risco | A receita da sequência cai mais de 10% de hoje para o futuro | `queda`, `receita_hoje`, `receita_futuro` |
+| `fator_agua_diario` | risco | Só no modo diário, por cultura e clima: o `fator_agua` do ano mediano (com Ky, regra 6 do modo diário) está abaixo de 0,8. É o lado diário de `fator_limitante`, que olha o mensal: os dois podem sair para a mesma cultura, com números diferentes | `fator_agua`, `atendimento_hidrico` (os dois do ano mediano), `ky`, `slot` |
 | `queda_no_ano_ruim` | risco | Só no modo diário, por clima: a receita do ano ruim fica mais de 20% abaixo da do ano mediano | `queda`, `receita_mediano`, `receita_ruim` |
 | `repete_a_cultura` | risco | A cultura repete a anterior (fator de sequência 0,85) | `fator_sequencia`, `slot` |
 | `solo_exposto` | risco | 60 dias ou mais sem cultura e sem palhada, no clima de hoje | `dias_expostos`, `chuva_exposta_mm` |
@@ -278,7 +279,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `deixa_palhada` | Cultura com `cobre_solo`: o motor conta o solo coberto até o próximo plantio | — |
 | `pouco_solo_exposto` | Menos de 60 dias sem cultura e sem palhada, no clima de hoje. É o contrário do aviso `solo_exposto` | `dias_expostos`, `chuva_exposta_mm` |
 | `estavel_no_futuro` | Receita de hoje acima de zero e queda de até 10% (ou alta) para o futuro. É o contrário do aviso `queda_no_futuro` | `queda` (negativa = alta), `receita_hoje`, `receita_futuro` |
-| `clima_favoravel` | Hoje e no futuro, nenhuma cultura tem fator de clima ou água abaixo de 0,8. É o contrário do aviso `fator_limitante` nesses dois climas | `menor_fator` |
+| `clima_favoravel` | Hoje e no futuro, nenhuma cultura tem fator de clima ou água abaixo de 0,8. É o contrário do aviso `fator_limitante` nesses dois climas e, no modo diário, também de `fator_agua_diario`: com esse aviso, o benefício não sai | `menor_fator` (só do mensal) |
 
 "Menor demanda de água" ficou de fora: seria uma comparação entre sequências e precisaria de um limite sem fonte.
 
@@ -400,7 +401,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | `QUANTIL_RUIM` | 0,2 | Modo diário: posição do "ano ruim" na lista ordenada dos anos |
 | `MIN_ANOS_DIARIO` | 5 | Modo diário: mínimo de anos completos na série |
 | `KY_PADRAO` | 1,0 | Modo diário: Ky das culturas que não estão na tabela da FAO |
-| `AVISO_FATOR` | 0,8 | Fator de clima ou água abaixo disso vira aviso `fator_limitante` |
+| `AVISO_FATOR` | 0,8 | Fator de clima ou água abaixo disso vira aviso `fator_limitante`; no modo diário, `fator_agua` do ano mediano abaixo disso vira `fator_agua_diario` |
 | `AVISO_QUEDA_FUTURO` | 0,10 | Queda de receita de hoje para o futuro que vira aviso |
 | `AVISO_QUEDA_ANO_RUIM` | 0,20 | Queda de receita do ano mediano para o ano ruim que vira aviso |
 | `AVISO_DIAS_EXPOSTOS` | 60 | Dias sem cultura e sem palhada que viram aviso |
@@ -497,5 +498,5 @@ Receita em R$/ha, sem histórico:
 15. **Índice de erosão não é perda de solo.** Usa o total de chuva, não a erosividade (fator R), e deixa de fora o tipo de solo (K), o comprimento da rampa (L) e o manejo (C, P). O fator S linear subestima em declives fortes, além dos dados de origem (até 18%). A declividade é a média do talhão.
 16. **Solo descoberto no modo diário e na API.** O modo diário não devolve a chuva exposta de cada ano. A API aceita `declividade_pct` opcional (0 a 100, finito) e anuncia `capabilities.declividade_pct` em `/metadata`; o front só envia a declividade no contorno do talhão de demonstração.
 17. **Aviso de preço e de limiar sem fonte depende dos dados.** O motor avisa `valor_a_conferir` quando `culturas.csv` traz colunas `<campo>_status`. Desde 15 nov `culturas.csv` traz `preco_status` (feijão, girassol e algodão: `memoria`) e `temp_calor_c_status` (girassol: `sem fonte`; trigo: `memoria`), preenchidas em `STATUS` de `scripts/montar_culturas.py` conforme `docs/culturas_fontes.md`. Ao conferir um valor, apague a entrada em `STATUS` e rode o script de novo.
-18. **`fator_limitante` olha o modo mensal.** No modo diário a água pesa mais (Ky), e uma cultura pode ficar sem aviso de água no mensal e com `fator_agua` baixo no diário: o milho safrinha de `soja>milho` atende 82% no mensal (sem aviso) e fica com 0,70 no ano mediano do diário.
+18. ~~**`fator_limitante` olha o modo mensal.**~~ Resolvido em 15/11 com um código à parte, `fator_agua_diario` (regra 17), em vez de mudar `fator_limitante`: sem o modo diário a saída não muda, e o texto da tela para `fator_limitante` ("usa a avaliação mensal") continua certo. Com `diario=`, o milho safrinha de `soja>milho` (outubro, histórico soja, milho) atende 82% no mensal (sem aviso) e ganha o aviso com `fator_agua` 0,696 hoje e 0,693 no futuro (atendimento 0,757 e 0,755, Ky 1,25); `clima_favoravel` sai dessa sequência. No talhão de demonstração, em outubro: 14 avisos em 7 das 26 sequências, 10 deles sem aviso de água no mensal (milho safrinha de `soja>milho`, trigo safrinha), e `clima_favoravel` passa de 11 para 10 sequências. Em fevereiro: 20 avisos em 10 das 36 (milho safrinha 0,72, trigo safrinha 0,73), nenhum com aviso de água no mensal, e `clima_favoravel` passa de 18 para 15. Fica em aberto: o aviso olha só a água do ano mediano; o ano ruim e o calor do diário não viram aviso por cultura (o ano ruim já entra em `queda_no_ano_ruim`).
 19. **Dias quentes no ajuste de temperatura são estimados.** Entre 32 e 35 °C a tabela não tem coluna, e a contagem cai rápido (janeiro: 9,6 dias acima de 32, 1,85 acima de 35); a reta entre os dois é uma aproximação. Abaixo de 32 °C (feijão, algodão e trigo com qualquer `temp_c` acima de 0) o motor estende a reta, sem dado. Uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py` tornaria exato todo ajuste inteiro, sem mudar o motor. O ajuste também não chega à API nem à tela: falta `backend/app.py` aceitar e validar `ajuste` e anunciar em `/metadata`.

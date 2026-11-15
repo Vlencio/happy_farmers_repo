@@ -103,7 +103,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Hoje (14/11, front integrado à `motor-diario` em `589b16b`):** avisos e benefícios do motor têm apresentação na tela; faltam as marcações de origem dos dados.
 
-- Cada sequência viável devolve `avisos`: uma lista de riscos e lacunas, cada um com `tipo`, `codigo`, `cultura`, `cenario`, `dados` (os números que geraram o aviso) e `texto`. Regra 17 do contrato, com a tabela dos 11 códigos.
+- Cada sequência viável devolve `avisos`: uma lista de riscos e lacunas, cada um com `tipo`, `codigo`, `cultura`, `cenario`, `dados` (os números que geraram o aviso) e `texto`. Regra 17 do contrato, com a tabela dos códigos (11 com texto próprio na tela; `geada` e `fator_agua_diario`, só do modo diário, usam o caminho de código desconhecido).
 - Riscos: fator que mais limita cada cultura em cada clima, queda de receita no futuro, queda no ano ruim (modo diário), repetição de cultura, solo exposto.
 - Lacunas: sem histórico, cultura sem limiar de calor, limiar de 32 °C, cultura com preço zero, Ky padrão (modo diário), valor marcado a conferir.
 - Não muda score nem rank.
@@ -124,7 +124,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [x] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
 - [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
 - [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
-- [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
+- [x] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato). Motor (15/11, branch `motor-parte3`): com `diario=`, sai o aviso novo `fator_agua_diario` (risco, por cultura e clima) quando o `fator_agua` do ano mediano fica abaixo de `AVISO_FATOR` (0,8); `fator_limitante` continua o do mensal, e `clima_favoravel` não sai quando há esse aviso. Sem o modo diário nada muda (fixtures iguais); score e rank não mudam. Talhão de demonstração, outubro, histórico soja, milho: o milho safrinha de `soja>milho` (82% no mensal, sem aviso) ganha o aviso com 0,696 hoje e 0,693 no futuro; 14 avisos em 7 das 26 sequências. A API e a tela ainda não usam o modo diário (Parte 8); quando usarem, o front mostra o código novo pelo caminho de código desconhecido (texto e dados do motor), sem mudança.
 
 **Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front, incluindo benefícios; status dos dados e limitação mensal continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`.
 

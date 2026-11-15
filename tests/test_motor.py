@@ -563,12 +563,20 @@ class TestDiario(unittest.TestCase):
         self.assertNotIn("diario", sem)
         self.assertNotIn("diario", sem["sequencias"][0])
         com = json.loads(json.dumps(self.saida))
+        sem = json.loads(json.dumps(sem))
         com.pop("diario")
-        so_no_diario = ("ky_padrao", "queda_no_ano_ruim", "geada")  # avisos que dependem da serie
+        so_no_diario = ("ky_padrao", "queda_no_ano_ruim", "geada", "fator_agua_diario")  # avisos que dependem da serie
+        agua_baixa = set()
         for s in com["sequencias"]:
             s.pop("diario")
+            if any(a["codigo"] == "fator_agua_diario" for a in s["avisos"]):
+                agua_baixa.add(s["id"])
             s["avisos"] = [a for a in s["avisos"] if a["codigo"] not in so_no_diario]
-        self.assertEqual(com, json.loads(json.dumps(sem)))
+        self.assertIn("soja>milho", agua_baixa)
+        for s in sem["sequencias"]:  # com agua baixa no diario, clima_favoravel sai; o resto e igual
+            if s["id"] in agua_baixa:
+                s["beneficios"] = [b for b in s["beneficios"] if b["codigo"] != "clima_favoravel"]
+        self.assertEqual(com, sem)
 
     def test_serializa_e_resume_os_anos(self):
         json.dumps(self.saida)
@@ -603,6 +611,48 @@ class TestDiario(unittest.TestCase):
         self.assertAlmostEqual(milho["fator_agua"], 1 - motor.KY["milho"] * (1 - milho["atendimento_hidrico"]), delta=0.002)
         self.assertLess(milho["fator_agua"], milho["atendimento_hidrico"])  # Ky > 1: perde mais que a agua que faltou
         self.assertLessEqual(milho["fator"], milho["fator_agua"] * motor.BONUS_APOS_FIXADORA + 0.001)
+
+    def test_aviso_de_agua_do_ano_mediano(self):
+        # milho safrinha de soja>milho: no mensal atende acima de AVISO_FATOR (sem aviso);
+        # no diario, com Ky 1,25, o fator de agua do ano mediano fica abaixo
+        seq = next(s for s in self.saida["sequencias"] if s["id"] == "soja>milho")
+        mensal = [a for a in seq["avisos"] if a["codigo"] == "fator_limitante"]
+        self.assertEqual(mensal, [])
+        for cen in ("hoje", "futuro"):
+            self.assertGreaterEqual(seq[cen]["culturas"][1]["atendimento_hidrico"], motor.AVISO_FATOR)
+        avisos = [a for a in seq["avisos"] if a["codigo"] == "fator_agua_diario"]
+        self.assertEqual([(a["tipo"], a["cultura"], a["cenario"], a["dados"]["slot"]) for a in avisos],
+                         [("risco", "milho", "hoje", "safrinha"), ("risco", "milho", "futuro", "safrinha")])  # fmt: skip
+        for a in avisos:
+            m = seq["diario"][a["cenario"]]["culturas"][1]["mediano"]
+            self.assertEqual(a["dados"], {"fator_agua": m["fator_agua"], "atendimento_hidrico": m["atendimento_hidrico"],
+                                          "ky": motor.KY["milho"], "slot": "safrinha"})  # fmt: skip
+            self.assertLess(a["dados"]["fator_agua"], motor.AVISO_FATOR)
+            self.assertTrue(a["texto"].endswith("."))
+        # e o contrario de clima_favoravel: o beneficio sai no modo diario
+        self.assertNotIn("clima_favoravel", [b["codigo"] for b in seq["beneficios"]])
+        self.assertIn("clima_favoravel", [b["codigo"] for b in next(
+            s for s in recomendar(ENTRADA, *self.dados)["sequencias"] if s["id"] == "soja>milho")["beneficios"]])
+
+    def test_aviso_de_agua_segue_o_limite(self):
+        # um aviso por cultura e clima com fator_agua mediano abaixo de AVISO_FATOR, e so esses
+        for s in self.saida["sequencias"]:
+            esperado = [
+                (c["cultura"], c["slot"], cen)
+                for cen in ("hoje", "futuro")
+                for c in s["diario"][cen]["culturas"]
+                if c["mediano"]["fator_agua"] < motor.AVISO_FATOR
+            ]
+            obtido = [(a["cultura"], a["dados"]["slot"], a["cenario"]) for a in s["avisos"] if a["codigo"] == "fator_agua_diario"]
+            self.assertEqual(obtido, esperado, s["id"])
+        with mock.patch.object(motor, "AVISO_FATOR", 0.0):
+            saida = recomendar(ENTRADA, *self.dados, diario=self.serie)
+        self.assertFalse(any(a["codigo"] == "fator_agua_diario" for s in saida["sequencias"] for a in s["avisos"]))
+        # o aviso nao muda score nem rank, nem os do mensal nem os do diario
+        with mock.patch.object(motor, "AVISO_FATOR", 2.0):
+            saida = recomendar(ENTRADA, *self.dados, diario=self.serie)
+        numeros = lambda o: [(s["id"], s["rank_hoje"], s["hoje"]["score"], s["diario"]) for s in o["sequencias"]]  # noqa: E731
+        self.assertEqual(numeros(saida), numeros(self.saida))
 
     def test_ky_padrao_e_coluna_ky(self):
         self.assertEqual(motor._tabela_culturas(self.dados[0])["crotalaria"]["ky"], motor.KY_PADRAO)
