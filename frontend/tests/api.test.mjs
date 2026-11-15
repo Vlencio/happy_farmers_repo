@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { DEFAULT_SETTINGS, validateSettings, validateMotorOutput, buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis } from '../web/api.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
+import { matchesDemoBoundary } from '../web/field.mjs';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/motor.json', import.meta.url)));
 const february = JSON.parse(readFileSync(new URL('./fixtures/motor-fevereiro.json', import.meta.url)));
@@ -91,7 +92,7 @@ test('altitude discards explain the minimum and field elevation in both referenc
     if (legacy) delete raw.atual;
     const view = mapMotorAnalysis(raw, farm);
     const reason = view.discarded.find(reason => reason.startsWith('Soybean → Wheat:'));
-    assert.match(reason, /Wheat.*minimum elevation of 800 m.*field is at 484\.41 m/);
+    assert.match(reason, /Wheat.*minimum elevation of 800 m.*demonstration field, whose climate is used here, is at 484\.41 m/);
     assert.doesNotMatch(reason, /only available|has no planting window/);
     assert.equal(view.current_rotation.status, 'discarded');
     assert.equal(view.current_rotation.strategy, null);
@@ -103,6 +104,23 @@ test('altitude discards explain the minimum and field elevation in both referenc
   // The dedicated reference is sufficient even if no full discarded list is sent.
   data.descartadas = [];
   assert.match(mapMotorAnalysis(data, farm).current_rotation.description, /excluded due to elevation/);
+});
+
+// The API echoes the demo SRTM elevation for any boundary within 25 km of the demo.
+test('altitude text names the demo field unless the boundary is exactly the demo one', () => {
+  const data = altitudeDiscard();
+  const demoFarm = normalizeFarm(metadata.demo_field.boundary);
+  // About 16 km from the demo (-19.90, -48.45): demo climate and elevation, but not this field's.
+  const nearFarm = normalizeFarm({ type: 'Polygon', coordinates: [[[-48.455,-19.905],[-48.445,-19.905],[-48.445,-19.895],[-48.455,-19.895],[-48.455,-19.905]]] });
+  const cases = [[demoFarm, /; this field is at 484\.41 m\./], [nearFarm, /; the demonstration field, whose climate is used here, is at 484\.41 m; this boundary has no elevation data of its own\./]];
+  for (const [field, expected] of cases) {
+    const view = mapMotorAnalysis(data, field, { demoBoundary: matchesDemoBoundary(field, metadata.demo_field.boundary) });
+    const reason = view.discarded.find(reason => reason.startsWith('Soybean → Wheat:'));
+    assert.match(reason, expected);
+    assert.match(view.current_rotation.description, expected);
+  }
+  const near = mapMotorAnalysis(data, nearFarm, { demoBoundary: false });
+  assert.doesNotMatch(near.discarded.join(' ') + near.current_rotation.description, /this field is at/);
 });
 
 test('legacy calendar reasons keep their explanation even when the API echoes altitude', () => {
