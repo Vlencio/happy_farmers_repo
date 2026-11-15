@@ -826,7 +826,7 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
         queda = 1 - futuro["receita_ha"] / hoje["receita_ha"]
         aviso(
             "risco", "queda_no_futuro",
-            f"A receita cai {queda * 100:.0f}% do clima de hoje para o de 2041-2060.",
+            f"A receita cai {queda * 100:.0f}% do clima de hoje para o futuro (por volta de 2060).",
             cenario="futuro", queda=queda, receita_hoje=hoje["receita_ha"], receita_futuro=futuro["receita_ha"],
         )  # fmt: skip
     for cen, bloco in (bloco_diario or {}).items():
@@ -965,14 +965,14 @@ def beneficios_da_sequencia(s, aval, bloco_diario=None):
                 muda = f"sobe {-queda * 100:.0f}%" if queda < 0 else f"cai só {queda * 100:.0f}%"
             beneficio(
                 "estavel_no_futuro",
-                f"A receita {muda} do clima de hoje para o de 2041-2060.",
+                f"A receita {muda} do clima de hoje para o futuro (por volta de 2060).",
                 cenario="futuro", queda=queda, receita_hoje=hoje["receita_ha"], receita_futuro=futuro["receita_ha"],
             )  # fmt: skip
     piores = [_fator_limitante(r)[1] for cen in ("hoje", "futuro") for r in aval[cen][s]["culturas"]]
     if min(piores) >= AVISO_FATOR and not _agua_diaria_baixa(bloco_diario):
         beneficio(
             "clima_favoravel",
-            f"Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de {AVISO_FATOR * 100:.0f}%.",
+            f"Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de {AVISO_FATOR * 100:.0f}%.",
             menor_fator=min(piores),
         )  # fmt: skip
     return lista

@@ -1083,7 +1083,7 @@
             "receita_hoje": 13481.124,
             "receita_futuro": 13323.918
           },
-          "texto": "A receita cai só 1% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 1% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -1710,7 +1710,7 @@
             "receita_hoje": 11291.58,
             "receita_futuro": 11130.959
           },
-          "texto": "A receita cai só 1% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 1% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -1719,7 +1719,7 @@
           "dados": {
             "menor_fator": 0.901
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -2335,7 +2335,7 @@
             "receita_hoje": 10877.379,
             "receita_futuro": 9614.311
           },
-          "texto": "A receita cai 12% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 12% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "risco",
@@ -3003,7 +3003,7 @@
             "receita_hoje": 8216.898,
             "receita_futuro": 8086.944
           },
-          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -3012,7 +3012,7 @@
           "dados": {
             "menor_fator": 0.842
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -3657,7 +3657,7 @@
             "receita_hoje": 11511.988,
             "receita_futuro": 11096.146
           },
-          "texto": "A receita cai só 4% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 4% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -3666,7 +3666,7 @@
           "dados": {
             "menor_fator": 0.871
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -4318,7 +4318,7 @@
             "receita_hoje": 11562.743,
             "receita_futuro": 11022.274
           },
-          "texto": "A receita cai só 5% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 5% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -4961,7 +4961,7 @@
             "receita_hoje": 8216.898,
             "receita_futuro": 8086.944
           },
-          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -4970,7 +4970,7 @@
           "dados": {
             "menor_fator": 0.966
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -5616,7 +5616,7 @@
             "receita_hoje": 8216.898,
             "receita_futuro": 8086.944
           },
-          "texto": "A receita cai só 2% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -5625,7 +5625,7 @@
           "dados": {
             "menor_fator": 0.862
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -6220,7 +6220,7 @@
             "receita_hoje": 8550.449,
             "receita_futuro": 7183.712
           },
-          "texto": "A receita cai 16% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 16% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "risco",
@@ -6901,7 +6901,7 @@
             "receita_hoje": 5695.815,
             "receita_futuro": 5255.343
           },
-          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 8% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -6910,7 +6910,7 @@
           "dados": {
             "menor_fator": 0.842
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -7556,7 +7556,7 @@
             "receita_hoje": 8048.601,
             "receita_futuro": 7587.052
           },
-          "texto": "A receita cai só 6% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 6% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -8200,7 +8200,7 @@
             "receita_hoje": 8737.492,
             "receita_futuro": 7923.825
           },
-          "texto": "A receita cai só 9% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 9% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -8807,7 +8807,7 @@
             "receita_hoje": 2936.707,
             "receita_futuro": 2814.567
           },
-          "texto": "A receita cai só 4% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 4% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -8816,7 +8816,7 @@
           "dados": {
             "menor_fator": 0.842
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -9451,7 +9451,7 @@
             "receita_hoje": 5695.815,
             "receita_futuro": 5255.343
           },
-          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 8% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -9460,7 +9460,7 @@
           "dados": {
             "menor_fator": 0.864
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -10073,7 +10073,7 @@
             "receita_hoje": 5643.453,
             "receita_futuro": 4400.561
           },
-          "texto": "A receita cai 22% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 22% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -10784,7 +10784,7 @@
             "receita_hoje": 9147.713,
             "receita_futuro": 8686.611
           },
-          "texto": "A receita cai só 5% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 5% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -11424,7 +11424,7 @@
             "receita_hoje": 8252.699,
             "receita_futuro": 7789.767
           },
-          "texto": "A receita cai só 6% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 6% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "codigo": "clima_favoravel",
@@ -11433,7 +11433,7 @@
           "dados": {
             "menor_fator": 0.807
           },
-          "texto": "Hoje e em 2041-2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
       ]
     },
@@ -12073,7 +12073,7 @@
             "receita_hoje": 7690.205,
             "receita_futuro": 6446.403
           },
-          "texto": "A receita cai 16% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 16% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -12723,7 +12723,7 @@
             "receita_hoje": 2720.341,
             "receita_futuro": 1503.56
           },
-          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 45% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -13424,7 +13424,7 @@
             "receita_hoje": 5978.384,
             "receita_futuro": 5483.048
           },
-          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 8% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -14061,7 +14061,7 @@
             "receita_hoje": 5022.949,
             "receita_futuro": 2891.514
           },
-          "texto": "A receita cai 42% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 42% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "risco",
@@ -14776,7 +14776,7 @@
             "receita_hoje": 5695.815,
             "receita_futuro": 5255.343
           },
-          "texto": "A receita cai só 8% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai só 8% do clima de hoje para o futuro (por volta de 2060)."
         }
       ]
     },
@@ -15389,7 +15389,7 @@
             "receita_hoje": 2720.341,
             "receita_futuro": 1503.56
           },
-          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 45% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -16079,7 +16079,7 @@
             "receita_hoje": 6066.186,
             "receita_futuro": 4438.889
           },
-          "texto": "A receita cai 27% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 27% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",
@@ -16772,7 +16772,7 @@
             "receita_hoje": 5869.598,
             "receita_futuro": 4590.697
           },
-          "texto": "A receita cai 22% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 22% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "risco",
@@ -17488,7 +17488,7 @@
             "receita_hoje": 2720.341,
             "receita_futuro": 1503.56
           },
-          "texto": "A receita cai 45% do clima de hoje para o de 2041-2060."
+          "texto": "A receita cai 45% do clima de hoje para o futuro (por volta de 2060)."
         },
         {
           "tipo": "lacuna",

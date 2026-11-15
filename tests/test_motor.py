@@ -799,6 +799,15 @@ class TestDiario(unittest.TestCase):
                     esperado = min(1.0, b["receita_ha"] / s["hoje"]["anos_ocupados"] / teto)
                     self.assertAlmostEqual(b["renda"], esperado, delta=2e-3)
 
+    def test_preco_zero_de_soja_e_milho_no_modo_diario(self):
+        # o teto da renda vem da tabela: preco zero nao zera o teto (antes, divisao por zero)
+        teto = 2100 * 3.6 + 1000 * 5.0
+        for pesos in ({"agua": 1, "solo": 1, "renda": 1}, {"agua": 1, "solo": 1, "renda": 0}):
+            saida = recomendar({**ENTRADA, "prioridades": pesos, "precos": {"soja": 0, "milho": 0}}, *self.dados, diario=self.serie)
+            for s in saida["sequencias"]:
+                b = s["diario"]["hoje"]["mediano"]
+                self.assertAlmostEqual(b["renda"], min(1.0, b["receita_ha"] / s["hoje"]["anos_ocupados"] / teto), delta=2e-3)
+
     def test_prioridades_valem_no_modo_diario(self):
         saida = recomendar({**ENTRADA, "prioridades": {"agua": 1}}, *self.dados, diario=self.serie)
         for s in saida["sequencias"]:
