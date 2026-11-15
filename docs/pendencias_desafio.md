@@ -220,14 +220,15 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Texto:** "Explain how the model interprets uncertainty".
 
-**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). D2 (`5deed52`) foi integrado pela Main `8049494`, incluindo a fixture canônica com os três modelos. O leitor da API e o painel mostram a faixa climática para o contorno de demonstração, ainda sem faixas de receita ou rank por estratégia. O modo diário cobre a variação entre anos, não entre modelos.
+**Hoje:** o futuro é a média de três modelos, que discordam do sinal da chuva (MIROC6 −79,6 mm, ACCESS-CM2 +7,9 mm, MRI-ESM2-0 +32,7 mm por ano). D2 (`5deed52`) foi integrado pela Main `8049494`, incluindo a fixture canônica com os três modelos. O leitor da API e o painel mostram a faixa climática para o contorno de demonstração. O motor já devolve a faixa de receita e de rank por estratégia com `clima_modelos` (branch `motor-modelos`); a API ainda não passa o argumento. O modo diário cobre a variação entre anos, não entre modelos.
 
 **Falta:**
 
 - [x] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Feito em 15/11 por `scripts/montar_clima.py`; teste em `tests/test_clima_modelos.py`. Só o talhão de demonstração.
 - [x] Integração: D2 na `main`, API local reiniciada e fixture canônica regenerada. A fixture `metadata-d2.json` preserva a validação anterior ao merge.
-- [ ] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank.
-- [ ] API e tela: definir o contrato e apresentar as faixas de receita e rank de cada estratégia quando o motor as entregar.
+- [x] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank. Feito em 15/11 (branch `motor-modelos`): `recomendar(..., clima_modelos=carregar_clima_modelos())` dá a cada sequência viável `modelos` (score, rank e receita por ano de cada modelo, mín/máx de rank e de receita) e o aviso `rank_varia_entre_modelos` (faixa acima de 5 posições, provisório). Regra 20 e "Em aberto" 22 do contrato. Sem o argumento, a saída não muda. Outubro: o 1º do futuro é `soja>milho` em MIROC6 e MRI-ESM2-0 e `soja>sorgo` em ACCESS-CM2 (0,5 ponto). Fevereiro: `sorgo>soja` em 1º nos três modelos.
+- [ ] Dados: acrescentar `razao_chuva` (ssp245 ÷ historical, por modelo e mês) a `clima_modelos.csv`. Sem ela, o motor aproxima a chuva de cada modelo (até 6 mm num mês; o ranking com pesos iguais não muda).
+- [ ] API e tela: passar `clima_modelos` ao motor só no talhão de demonstração (onde `clima_futuro` é a média dos mesmos modelos), copiar `data/clima_modelos.csv` e `data/clima_correcoes.csv` na imagem, e mostrar `modelos.rank_min`–`rank_max` e a faixa de receita em cada card. O motor já entrega.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 
 **Feito quando:** cada estratégia mostra a faixa entre os três modelos, e não só a média.

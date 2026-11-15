@@ -9,6 +9,9 @@ Contrato de entrada e saida: docs/contrato_motor.md
 
 Modo diario (opcional): recomendar(..., diario=carregar_diario()) roda a mesma conta
 com a serie diaria de cada ano, em vez da media mensal, e resume ano mediano e ano ruim.
+
+Futuro por modelo (opcional): recomendar(..., clima_modelos=carregar_clima_modelos()) roda o
+futuro uma vez por modelo climatico e devolve a faixa de rank e de receita de cada sequencia.
 """
 import datetime
 import itertools
@@ -79,6 +82,10 @@ NOME_FATOR = {"temperatura": "a temperatura", "chuva": "a chuva do ciclo", "calo
 AJUSTE_CHUVA_PCT = (-50.0, 30.0)  # % sobre a chuva de cada mes
 AJUSTE_TEMP_C = (0.0, 4.0)  # graus C somados a minima e a maxima de cada mes
 
+# Futuro por modelo (regra 20). Limite provisorio, sem fonte: so decide quando avisar.
+AVISO_FAIXA_RANK = 5  # rank do futuro que varia mais que isso entre os modelos vira aviso
+COLUNAS_MODELOS = ["modelo", "mes", "delta_chuva_mm", "delta_tmin_c", "delta_tmax_c"]  # razao_chuva, off_* opcionais
+
 COLUNAS_CLIMA = ["mes", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm e dias_acima_NN sao opcionais
 COLUNAS_NUMERICAS = [
     "ciclo_dias", "temp_min", "temp_max", "temp_otima_min", "temp_otima_max",
@@ -104,6 +111,23 @@ def carregar_clima_seco(pasta=DADOS):
     """Le clima_seco.csv (o ano agricola mais seco do POWER). None se a pasta nao tem o arquivo."""
     arquivo = Path(pasta) / "clima_seco.csv"
     return pd.read_csv(arquivo) if arquivo.exists() else None
+
+
+def carregar_clima_modelos(pasta=DADOS):
+    """Le clima_modelos.csv (deltas do NEX por modelo e mes). None se a pasta nao tem o arquivo.
+
+    Se a pasta tem clima_correcoes.csv, junta off_tmin e off_tmax (correcao da estacao A520) por
+    mes: o ET0 de cada modelo usa as temperaturas sem a correcao, como scripts/montar_clima.py.
+    """
+    pasta = Path(pasta)
+    arquivo = pasta / "clima_modelos.csv"
+    if not arquivo.exists():
+        return None
+    modelos = pd.read_csv(arquivo)
+    correcoes = pasta / "clima_correcoes.csv"
+    if correcoes.exists() and not {"off_tmin", "off_tmax"} & set(modelos.columns):
+        modelos = modelos.merge(pd.read_csv(correcoes)[["mes", "off_tmin", "off_tmax"]], on="mes", how="left")
+    return modelos
 
 
 def carregar_diario(pasta=DADOS):
@@ -249,6 +273,61 @@ def ajustar_serie(serie, ajuste):
         "tmax": [v + dt for v in serie["tmax"]],
         "et0": [v * fator_et0_temp(tn, tx, dt) for v, tn, tx in zip(serie["et0"], serie["tmin"], serie["tmax"])],
     }
+
+
+def climas_por_modelo(modelos, hoje, futuro, lat):
+    """Uma tabela de clima futuro por modelo, com o metodo de scripts/montar_clima.py (regra 20).
+
+    modelos: {modelo: 12 linhas de _tabela_modelos}; hoje e futuro: tabelas de _tabela_clima
+    (futuro = a media dos mesmos modelos). Por mes:
+    - tmin_c, tmax_c: hoje + delta do modelo;
+    - chuva_mm: hoje x razao_chuva do modelo, se a coluna vier (o metodo do script); senao a
+      aproximacao futuro medio x (hoje + delta do modelo) / (hoje + delta medio), que deixa a
+      media dos modelos igual ao futuro medio;
+    - et0_mm (so se hoje traz a coluna): ET0 de hoje x Hargreaves(temperaturas sem a correcao da
+      estacao + delta do modelo) / Hargreaves(sem a correcao). Sem off_tmin/off_tmax, usa as
+      temperaturas de hoje como estao;
+    - dias_acima_NN: dias_acima_deslocado de hoje pelo delta de Tmax do modelo.
+    """
+    n = len(modelos)
+    media_chuva = [sum(linhas[i]["delta_chuva_mm"] for linhas in modelos.values()) / n for i in range(12)]
+    tem_et0 = all("et0_mm" in m for m in hoje)
+    sem_correcao = [
+        {"mes": h["mes"], "tmin_c": h["tmin_c"] - (off.get("off_tmin") or 0.0), "tmax_c": h["tmax_c"] - (off.get("off_tmax") or 0.0)}
+        for h, off in zip(hoje, next(iter(modelos.values())))
+    ]  # fmt: skip
+    hg_hoje = et0_hargreaves(sem_correcao, lat)
+    saida = {}
+    for nome, linhas in modelos.items():
+        clima = []
+        hg = et0_hargreaves(
+            [
+                {"mes": b["mes"], "tmin_c": b["tmin_c"] + d["delta_tmin_c"], "tmax_c": b["tmax_c"] + d["delta_tmax_c"]}
+                for b, d in zip(sem_correcao, linhas)
+            ],
+            lat,
+        )
+        for i, (h, f, d) in enumerate(zip(hoje, futuro, linhas)):
+            if d.get("razao_chuva") is not None:
+                chuva = h["chuva_mm"] * d["razao_chuva"]
+            elif h["chuva_mm"] + media_chuva[i] > 0:
+                chuva = f["chuva_mm"] * (h["chuva_mm"] + d["delta_chuva_mm"]) / (h["chuva_mm"] + media_chuva[i])
+            else:
+                chuva = h["chuva_mm"] + d["delta_chuva_mm"]
+            m = {
+                "mes": h["mes"],
+                "chuva_mm": max(chuva, 0.0),
+                "tmin_c": h["tmin_c"] + d["delta_tmin_c"],
+                "tmax_c": h["tmax_c"] + d["delta_tmax_c"],
+            }
+            if tem_et0:
+                m["et0_mm"] = h["et0_mm"] * (hg[i] / hg_hoje[i] if hg_hoje[i] > 0 else 1.0)
+            for col in h:
+                if col.startswith("dias_acima_"):
+                    m[col] = dias_acima_deslocado(h, int(col[len("dias_acima_") :]), d["delta_tmax_c"], DIAS_MES[i])
+            clima.append(m)
+        saida[nome] = clima
+    return saida
 
 
 def kc_do_dia(c, fracao):
@@ -810,7 +889,7 @@ def _agua_diaria_baixa(bloco_diario):
     ]
 
 
-def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
+def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bloco_modelos=None):
     """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
 
     Cada aviso: tipo ("risco" ou "lacuna"), codigo, cultura e cenario (ou None), os dados
@@ -867,6 +946,15 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
                     c["cultura"], cen, anos=g["anos"], n_anos=len(bloco["anos"]), dias_total=g["dias_total"],
                     max_no_ano=g["max_no_ano"], limiar_c=LIMIAR_GEADA_C, slot=c["slot"],
                 )  # fmt: skip
+    if bloco_modelos is not None and bloco_modelos["rank_max"] - bloco_modelos["rank_min"] > AVISO_FAIXA_RANK:
+        por = {m["modelo"]: m["rank"] for m in bloco_modelos["por_modelo"]}
+        aviso(
+            "risco", "rank_varia_entre_modelos",
+            f"Por volta de 2060, o rank desta sequência vai de {bloco_modelos['rank_min']} a {bloco_modelos['rank_max']} "
+            "conforme o modelo climático: os modelos discordam sobre ela.",
+            cenario="futuro", rank_min=bloco_modelos["rank_min"], rank_max=bloco_modelos["rank_max"], por_modelo=por,
+            limite=AVISO_FAIXA_RANK,
+        )  # fmt: skip
     for r in hoje["culturas"]:
         if r["fator_sequencia"] == PENALIDADE_REPETICAO:
             aviso(
@@ -987,7 +1075,50 @@ def beneficios_da_sequencia(s, aval, bloco_diario=None):
     return lista
 
 
-def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, diario=None):
+def _por_modelo(climas_mod, lat, tabela, sequencias, slots, anterior, mes_plantio, precos, pesos, teto, cad, info):
+    """Avalia as sequencias viaveis no futuro de cada modelo (regra 20).
+
+    Devolve (resumo geral, {sequencia: bloco "modelos"}). Mesma renda (teto fixo), score e ordem
+    de ranking do futuro medio; nada disso entra no score nem no rank principais.
+    """
+    et0 = {nome: et0_do_clima(clima, lat) for nome, clima in climas_mod.items()}
+    aval, rank = {}, {}
+    for nome, clima in climas_mod.items():
+        porseq = {s: avaliar_sequencia(s, slots, anterior, tabela, clima, et0[nome], mes_plantio, precos, cad) for s in sequencias}
+        for a in porseq.values():
+            a["renda"] = min(1.0, a["receita_ano_ha"] / teto)
+            a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
+        ordem = sorted(sequencias, key=lambda s: _chave_rank(porseq[s]))
+        aval[nome], rank[nome] = porseq, {s: i + 1 for i, s in enumerate(ordem)}
+    blocos = {}
+    for s in sequencias:
+        por = [
+            {"modelo": nome, "score": aval[nome][s]["score"], "rank": rank[nome][s], "receita_ano_ha": aval[nome][s]["receita_ano_ha"]}
+            for nome in climas_mod
+        ]  # fmt: skip
+        blocos[s] = {
+            "por_modelo": por,
+            "rank_min": min(m["rank"] for m in por),
+            "rank_max": max(m["rank"] for m in por),
+            "receita_ano_ha_min": min(m["receita_ano_ha"] for m in por),
+            "receita_ano_ha_max": max(m["receita_ano_ha"] for m in por),
+        }
+    geral = {
+        "nomes": list(climas_mod),
+        **info,
+        "aviso_faixa_rank": AVISO_FAIXA_RANK,
+        "primeiro": {
+            nome: ">".join(min(sequencias, key=lambda s: rank[nome][s])) if sequencias else None for nome in climas_mod
+        },
+        "clima": {
+            nome: [{**m, "et0_mm": et0[nome][i] * DIAS_MES[i]} for i, m in enumerate(clima)]
+            for nome, clima in climas_mod.items()
+        },
+    }
+    return geral, blocos
+
+
+def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, diario=None, clima_modelos=None):
     """Ranqueia as sequencias de 1 ou 2 culturas no clima de hoje e no futuro.
 
     Cada posicao da sequencia e um slot (safra ou safrinha). Sequencia com cultura
@@ -1002,6 +1133,10 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     diario: opcional, serie diaria de hoje (data, chuva_mm, tmin_c, tmax_c e, se houver,
     et0_mm). Se vier, a saida ganha "diario": cada sequencia viavel em cada ano da serie,
     com ano mediano e ano ruim. Os campos que ja existiam nao mudam.
+    clima_modelos: opcional, deltas do NEX por modelo e mes (carregar_clima_modelos). Se vier, o
+    futuro roda uma vez por modelo (regra 20): cada sequencia viavel ganha "modelos" (score, rank
+    e receita por ano de cada modelo, e a faixa) e a saida ganha "modelos". Score e rank principais
+    nao mudam. clima_futuro deve ser a media dos mesmos modelos.
     Devolve um dict pronto para json.dumps.
     """
     tabela = _tabela_culturas(culturas)
@@ -1012,9 +1147,20 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         faltam = sorted({coluna_de_calor(c) for c in tabela.values() if coluna_de_calor(c)} - set(clima[0]))
         if faltam:
             raise ValueError(f"clima {cen} sem as colunas de calor {faltam}: rode scripts/montar_clima.py")
+    climas_mod = info_modelos = None
+    if clima_modelos is not None:  # o futuro de cada modelo sai das tabelas antes do ajuste
+        modelos = _tabela_modelos(clima_modelos)
+        linhas = [d for t in modelos.values() for d in t]
+        info_modelos = {
+            "chuva": "razao" if all(d.get("razao_chuva") is not None for d in linhas) else "aproximada",
+            "et0_sem_correcao": all(d.get("off_tmin") is not None and d.get("off_tmax") is not None for d in linhas),
+        }
+        climas_mod = climas_por_modelo(modelos, climas["hoje"], climas["futuro"], float(entrada["lat"]))
     ajuste = ler_ajuste(entrada.get("ajuste"))
     if ajuste is not None:  # "e se": o mesmo ajuste em todos os cenarios, antes da conta
         climas = {cen: ajustar_clima(clima, ajuste) for cen, clima in climas.items()}
+        if climas_mod is not None:
+            climas_mod = {nome: ajustar_clima(clima, ajuste) for nome, clima in climas_mod.items()}
 
     textura = entrada.get("solo_textura")
     if textura is not None and (not isinstance(textura, str) or textura not in CAD_POR_TEXTURA):
@@ -1086,6 +1232,12 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             declividade, teto, cad,
         )
 
+    geral_modelos = blocos_modelos = None
+    if climas_mod is not None:
+        geral_modelos, blocos_modelos = _por_modelo(
+            climas_mod, lat, tabela, sequencias, slots, anterior, mes_plantio, precos, pesos, teto, cad, info_modelos
+        )
+
     campos = [
         "score", "agua", "solo", "renda", "receita_ha", "anos_ocupados", "receita_ano_ha", "encaixe", "descoberto",
         "culturas",
@@ -1125,8 +1277,10 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
                 **{f"rank_{cen}": rank[cen][s] for cen in climas},
                 **{cen: {k: aval[cen][s][k] for k in campos} for cen in climas},
                 **({"diario": blocos_diario[s]} if blocos_diario is not None else {}),
+                **({"modelos": blocos_modelos[s]} if blocos_modelos is not None else {}),
                 "avisos": avisos_da_sequencia(
-                    s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None
+                    s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None,
+                    blocos_modelos[s] if blocos_modelos is not None else None,
                 ),
                 "beneficios": beneficios_da_sequencia(s, aval, blocos_diario[s] if blocos_diario is not None else None),
             }
@@ -1139,6 +1293,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     }
     if geral_diario is not None:
         saida["diario"] = geral_diario
+    if geral_modelos is not None:
+        saida["modelos"] = geral_modelos
     return _arredondar(saida)
 
 
@@ -1196,6 +1352,34 @@ def _tabela_clima(df):
     opcionais = [c for c in df.columns if c == "et0_mm" or c.startswith("dias_acima_")]
     colunas = COLUNAS_CLIMA[1:] + opcionais
     return [{"mes": int(m["mes"]), **{k: float(m[k]) for k in colunas}} for m in linhas]
+
+
+def _tabela_modelos(df):
+    """Confere clima_modelos e devolve {modelo: 12 linhas por mes}, modelos em ordem alfabetica."""
+    faltam = [c for c in COLUNAS_MODELOS if c not in df.columns]
+    if faltam:
+        raise ValueError(f"clima_modelos sem as colunas: {faltam}")
+    numericas = COLUNAS_MODELOS[2:] + [c for c in ("razao_chuva", "off_tmin", "off_tmax") if c in df.columns]
+    modelos = {}
+    for nome, g in df.groupby("modelo", sort=True):
+        linhas = g.sort_values("mes").to_dict("records")
+        if [int(m["mes"]) for m in linhas] != list(range(1, 13)):
+            raise ValueError(f"clima_modelos: {nome} precisa de 12 linhas, uma por mes (1 a 12)")
+        tabela = []
+        for m in linhas:
+            linha = {"mes": int(m["mes"])}
+            for k in numericas:
+                v = m[k]
+                if pd.isna(v) and k in COLUNAS_MODELOS:
+                    raise ValueError(f"clima_modelos: {nome}, mes {linha['mes']}: {k} vazio")
+                linha[k] = None if pd.isna(v) else float(v)
+            if linha.get("razao_chuva") is not None and linha["razao_chuva"] < 0:
+                raise ValueError(f"clima_modelos: {nome}, mes {linha['mes']}: razao_chuva negativa")
+            tabela.append(linha)
+        modelos[str(nome)] = tabela
+    if not modelos:
+        raise ValueError("clima_modelos esta vazio")
+    return modelos
 
 
 def _tabela_culturas(df):

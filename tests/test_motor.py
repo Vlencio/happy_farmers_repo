@@ -10,7 +10,7 @@ from unittest import mock
 
 import pandas as pd
 
-from motor import carregar_clima_seco, carregar_dados, carregar_diario, diario_do_power, recomendar
+from motor import carregar_clima_modelos, carregar_clima_seco, carregar_dados, carregar_diario, diario_do_power, recomendar
 from motor import motor
 
 FIXOS = Path(__file__).resolve().parent / "dados"
@@ -1196,6 +1196,159 @@ class TestBeneficios(unittest.TestCase):
                          [(s["id"], s["hoje"]["score"]) for s in self.saida["sequencias"]])  # fmt: skip
 
 
+def deltas_modelos(linhas):
+    """Tabela no formato de clima_modelos.csv: linhas = {modelo: (delta_chuva, delta_tmin, delta_tmax)}."""
+    return pd.DataFrame(
+        [
+            {"modelo": nome, "mes": mes, "delta_chuva_mm": dc, "delta_tmin_c": dn, "delta_tmax_c": dx}
+            for nome, (dc, dn, dx) in linhas.items()
+            for mes in range(1, 13)
+        ]
+    )
+
+
+class TestModelos(unittest.TestCase):
+    """Futuro por modelo (regra 20), com deltas fixos sobre as tabelas de tests/dados."""
+
+    MODELOS = {"A": (-5.0, 1.0, 1.0), "B": (0.0, 1.5, 2.0), "C": (16.0, 2.0, 3.0)}
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dados = carregar_dados(FIXOS)
+        cls.modelos = deltas_modelos(cls.MODELOS)
+        cls.sem = recomendar(ENTRADA, *cls.dados)
+        cls.com = recomendar(ENTRADA, *cls.dados, clima_modelos=cls.modelos)
+        cls.hoje = motor._tabela_clima(cls.dados[1])
+        cls.futuro = motor._tabela_clima(cls.dados[2])
+
+    def climas(self, modelos=None, hoje=None):
+        return motor.climas_por_modelo(
+            motor._tabela_modelos(self.modelos if modelos is None else modelos),
+            self.hoje if hoje is None else hoje, self.futuro, -20.032,
+        )  # fmt: skip
+
+    def test_sem_a_tabela_a_saida_nao_muda(self):
+        self.assertNotIn("modelos", self.sem)
+        for s in self.sem["sequencias"]:
+            self.assertNotIn("modelos", s)
+        self.assertEqual(recomendar(ENTRADA, *self.dados, clima_modelos=None), self.sem)
+
+    def test_o_resto_da_saida_nao_muda_com_a_tabela(self):
+        com = {k: v for k, v in self.com.items() if k != "modelos"}
+        com["sequencias"] = [
+            {k: v for k, v in s.items() if k not in ("modelos", "avisos")} for s in self.com["sequencias"]
+        ]  # fmt: skip
+        sem = {**self.sem, "sequencias": [{k: v for k, v in s.items() if k != "avisos"} for s in self.sem["sequencias"]]}
+        self.assertEqual(com, sem)
+
+    def test_temperatura_soma_o_delta_e_chuva_media_igual_ao_futuro(self):
+        climas = self.climas()
+        self.assertEqual(list(climas), ["A", "B", "C"])
+        for i in range(12):
+            h, f = self.hoje[i], self.futuro[i]
+            for nome, (_, dn, dx) in self.MODELOS.items():
+                self.assertAlmostEqual(climas[nome][i]["tmin_c"], h["tmin_c"] + dn)
+                self.assertAlmostEqual(climas[nome][i]["tmax_c"], h["tmax_c"] + dx)
+            # sem razao_chuva, a chuva e ancorada no futuro medio: a media dos modelos e o futuro
+            self.assertAlmostEqual(sum(c[i]["chuva_mm"] for c in climas.values()) / 3, f["chuva_mm"], places=6)
+            self.assertLess(climas["A"][i]["chuva_mm"], climas["C"][i]["chuva_mm"])
+
+    def test_chuva_por_razao_se_a_coluna_vier(self):
+        modelos = self.modelos.assign(razao_chuva=self.modelos["modelo"].map({"A": 0.8, "B": 1.0, "C": 1.25}))
+        climas = self.climas(modelos)
+        for i in range(12):
+            for nome, r in (("A", 0.8), ("B", 1.0), ("C", 1.25)):
+                self.assertAlmostEqual(climas[nome][i]["chuva_mm"], self.hoje[i]["chuva_mm"] * r)
+        saida = recomendar(ENTRADA, *self.dados, clima_modelos=modelos)
+        self.assertEqual(saida["modelos"]["chuva"], "razao")
+        self.assertEqual(self.com["modelos"]["chuva"], "aproximada")
+
+    def test_dias_quentes_deslocados_pelo_delta_de_tmax(self):
+        c = self.climas()["C"]  # +3 graus na maxima: dias acima de 35 = dias acima de 32 hoje
+        for i in range(12):
+            self.assertAlmostEqual(c[i]["dias_acima_35"], self.hoje[i]["dias_acima_32"])
+            self.assertAlmostEqual(c[i]["dias_acima_38"], self.hoje[i]["dias_acima_35"])
+
+    def test_et0_pelo_hargreaves_sem_a_correcao(self):
+        hoje = motor._tabela_clima(self.dados[1].assign(et0_mm=[d * 4.0 for d in motor.DIAS_MES]))
+        # off: correcao da estacao; mesmo delta na minima e na maxima nao muda a amplitude
+        modelos = deltas_modelos({"A": (0.0, 2.0, 2.0), "B": (0.0, 0.0, 0.0)}).assign(off_tmin=-1.5, off_tmax=1.0)
+        climas = self.climas(modelos, hoje)
+        for i, h in enumerate(hoje):
+            self.assertAlmostEqual(climas["B"][i]["et0_mm"], h["et0_mm"])
+            fator = motor.fator_et0_temp(h["tmin_c"] + 1.5, h["tmax_c"] - 1.0, 2.0)
+            self.assertAlmostEqual(climas["A"][i]["et0_mm"], h["et0_mm"] * fator)
+        self.assertNotIn("et0_mm", self.climas()["A"][0])  # sem a coluna em hoje, o motor calcula
+
+    def test_modelos_iguais_ao_futuro_dao_o_rank_do_futuro(self):
+        # futuro montado pelo proprio metodo a partir de um modelo so: cada modelo igual a ele
+        um = deltas_modelos({"X": (5.0, 1.2, 1.8)})
+        fut = pd.DataFrame(motor.climas_por_modelo(motor._tabela_modelos(um), self.hoje, self.futuro, -20.032)["X"])
+        dois = deltas_modelos({"X": (5.0, 1.2, 1.8), "Y": (5.0, 1.2, 1.8)})
+        saida = recomendar(ENTRADA, self.dados[0], self.dados[1], fut, clima_modelos=dois)
+        for s in saida["sequencias"]:
+            b = s["modelos"]
+            self.assertEqual(b["rank_min"], s["rank_futuro"])
+            self.assertEqual(b["rank_max"], s["rank_futuro"])
+            for m in b["por_modelo"]:
+                self.assertEqual(m["score"], s["futuro"]["score"])
+                self.assertEqual(m["receita_ano_ha"], s["futuro"]["receita_ano_ha"])
+
+    def test_bloco_modelos(self):
+        seqs = self.com["sequencias"]
+        geral = self.com["modelos"]
+        self.assertEqual(geral["nomes"], ["A", "B", "C"])
+        self.assertFalse(geral["et0_sem_correcao"])
+        self.assertEqual(set(geral["clima"]), {"A", "B", "C"})
+        for nome in geral["nomes"]:
+            ranks = sorted(next(m["rank"] for m in s["modelos"]["por_modelo"] if m["modelo"] == nome) for s in seqs)
+            self.assertEqual(ranks, list(range(1, len(seqs) + 1)))
+            primeiro = next(s for s in seqs if next(m for m in s["modelos"]["por_modelo"] if m["modelo"] == nome)["rank"] == 1)
+            self.assertEqual(geral["primeiro"][nome], primeiro["id"])
+        for s in seqs:
+            b = s["modelos"]
+            self.assertEqual([m["modelo"] for m in b["por_modelo"]], ["A", "B", "C"])
+            self.assertEqual(b["rank_min"], min(m["rank"] for m in b["por_modelo"]))
+            self.assertEqual(b["rank_max"], max(m["rank"] for m in b["por_modelo"]))
+            self.assertEqual(b["receita_ano_ha_min"], min(m["receita_ano_ha"] for m in b["por_modelo"]))
+            self.assertEqual(b["receita_ano_ha_max"], max(m["receita_ano_ha"] for m in b["por_modelo"]))
+            for m in b["por_modelo"]:
+                self.assertTrue(0 <= m["score"] <= 100)
+        json.dumps(self.com)
+
+    def test_aviso_quando_o_rank_varia(self):
+        self.assertFalse(any(a["codigo"] == "rank_varia_entre_modelos" for s in self.sem["sequencias"] for a in s["avisos"]))
+        with mock.patch.object(motor, "AVISO_FAIXA_RANK", 0):  # em fevereiro os ranks dos modelos diferem
+            saida = recomendar({**ENTRADA, "mes_plantio": 2}, *self.dados, clima_modelos=self.modelos)
+        varia = [s for s in saida["sequencias"] if s["modelos"]["rank_max"] > s["modelos"]["rank_min"]]
+        self.assertTrue(varia)
+        for s in saida["sequencias"]:
+            avisos = [a for a in s["avisos"] if a["codigo"] == "rank_varia_entre_modelos"]
+            self.assertEqual(len(avisos), int(s in varia), s["id"])
+            for a in avisos:
+                self.assertEqual(a["dados"]["rank_min"], s["modelos"]["rank_min"])
+                self.assertEqual(a["cenario"], "futuro")
+
+    def test_ajuste_vale_tambem_para_os_modelos(self):
+        com = recomendar({**ENTRADA, "ajuste": {"chuva_pct": -20}}, *self.dados, clima_modelos=self.modelos)
+        for nome in ("A", "B", "C"):
+            for m, base in zip(com["modelos"]["clima"][nome], self.com["modelos"]["clima"][nome]):
+                self.assertAlmostEqual(m["chuva_mm"], base["chuva_mm"] * 0.8, delta=2e-3)
+
+    def test_tabela_invalida(self):
+        for ruim in (
+            self.modelos.drop(columns=["delta_tmax_c"]),
+            self.modelos[self.modelos["mes"] != 12],
+            self.modelos.assign(delta_chuva_mm=float("nan")),
+            self.modelos.iloc[0:0],
+        ):
+            with self.assertRaises(ValueError):
+                recomendar(ENTRADA, *self.dados, clima_modelos=ruim)
+
+    def test_carregar_clima_modelos(self):
+        self.assertIsNone(carregar_clima_modelos(FIXOS))  # tests/dados nao tem a tabela
+
+
 class TestDadosReais(unittest.TestCase):
     """As tabelas de data/ carregam e produzem um ranking. Nao testa numeros."""
 
@@ -1220,6 +1373,23 @@ class TestDadosReais(unittest.TestCase):
             for s in saida["sequencias"]:
                 self.assertTrue(0 <= s["seco"]["score"] <= 100)
                 self.assertTrue(0 <= s["seco"]["renda"] <= 1)
+
+    def test_roda_com_os_modelos_de_data(self):
+        dados = carregar_dados()
+        modelos = carregar_clima_modelos()
+        self.assertEqual(sorted(modelos["modelo"].unique()), ["ACCESS-CM2", "MIROC6", "MRI-ESM2-0"])
+        for mes in (10, 2):
+            saida = recomendar({**ENTRADA, "mes_plantio": mes}, *dados, clima_modelos=modelos)
+            json.dumps(saida)
+            self.assertTrue(saida["modelos"]["et0_sem_correcao"])  # off_* de clima_correcoes.csv
+            # a media dos tres futuros fica perto do futuro medio (clima_futuro.csv)
+            clima, futuro = saida["modelos"]["clima"], saida["clima"]["futuro"]
+            for col, tol in (("chuva_mm", 0.2), ("tmin_c", 0.02), ("tmax_c", 0.02), ("et0_mm", 0.2), ("dias_acima_35", 1.0)):
+                for i in range(12):
+                    media = sum(c[i][col] for c in clima.values()) / 3
+                    self.assertAlmostEqual(media, futuro[i][col], delta=tol, msg=(col, i + 1))
+            for s in saida["sequencias"]:
+                self.assertLessEqual(s["modelos"]["rank_min"], s["modelos"]["rank_max"])
 
     def test_roda_com_a_serie_diaria_de_data(self):
         dados = carregar_dados()
