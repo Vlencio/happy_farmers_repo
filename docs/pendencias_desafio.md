@@ -204,7 +204,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Os números já estão em `data/nexgddp/`.
+- [x] Dados: gerar `data/clima_modelos.csv` (tarefa D2 do plano anterior). Feito em 15/11 por `scripts/montar_clima.py`; teste em `tests/test_clima_modelos.py`. Só o talhão de demonstração.
 - [ ] Motor: rodar o futuro uma vez por modelo e devolver a faixa de receita e de rank.
 - [ ] A grade regional só tem a média dos modelos: fora da demonstração, a faixa depende de refazer `delta_mensal.csv` por modelo.
 

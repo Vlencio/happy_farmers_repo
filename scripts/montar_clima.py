@@ -11,6 +11,8 @@ Requer: pip install pandas numpy
                     Ano real, mesmo formato das outras; mostra o que a media esconde.
 - clima_correcoes.csv: os offsets da A520 e os deltas do NEX, para conferencia.
                     scripts/clima_ponto.py le os deltas daqui para outros pontos.
+- clima_modelos.csv: os mesmos deltas do NEX antes da media, um por modelo e mes.
+                    Mostra a faixa entre os modelos (backend/field_context.py).
 
 ET0 por Hargreaves (FAO-56 eq. 52), igual nos dois lados, calculado com as
 temperaturas do POWER SEM a correcao da A520 (+ deltas do NEX no futuro). Motivo:
@@ -82,11 +84,17 @@ def offsets_a520():
     return g[["off_tmin", "off_tmax"]].mean(), g.size().rename("n_meses_a520")
 
 
-def deltas_nex():
+def deltas_por_modelo():
+    """(media ssp245 2041-2060 - media historical 1995-2014) por modelo e mes."""
     n = pd.read_csv(NEX)
     d = n.groupby(["modelo", "cenario", "mes"])[["chuva_mm", "tmin_c", "tmax_c"]].mean().unstack("cenario")
     delta = pd.DataFrame({v: d[(v, "ssp245")] - d[(v, "historical")] for v in ["chuva_mm", "tmin_c", "tmax_c"]})
-    return delta.groupby("mes").mean().add_prefix("delta_")
+    return delta.add_prefix("delta_")
+
+
+def deltas_nex():
+    """Media dos 3 modelos, por mes: e o delta usado em clima_futuro."""
+    return deltas_por_modelo().groupby("mes").mean()
 
 
 def limiares_de_calor():
@@ -204,6 +212,8 @@ def main():
     for nome, df in [("clima_hoje", hoje), ("clima_futuro", fut), ("clima_seco", seco), ("clima_correcoes", corr)]:
         df.index.name = "mes"
         df.round(2).to_csv(DADOS / f"{nome}.csv")
+    por_modelo = deltas_por_modelo()
+    por_modelo.round(2).reset_index().to_csv(DADOS / "clima_modelos.csv", index=False)
 
     print("Hoje:\n", hoje.round(1).to_string())
     print("\nFuturo:\n", fut.round(1).to_string())
