@@ -951,6 +951,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -1015,6 +1016,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.797,
             "receita_ha": 5264.226,
             "solo": 0.435
@@ -1133,6 +1135,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -1197,6 +1200,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.793,
             "receita_ha": 5241.289,
             "solo": 0.433
@@ -1315,6 +1319,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -1379,6 +1384,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.492,
             "receita_ha": 3250.287,
             "solo": 0.268
@@ -1612,6 +1618,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -1668,6 +1675,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 1.001,
             "receita_ha": 3074.682,
             "solo": 0.546
@@ -1793,6 +1801,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -1849,6 +1858,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.992,
             "receita_ha": 3047.143,
             "solo": 0.541
@@ -1974,6 +1984,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -2030,6 +2041,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.588,
             "receita_ha": 1805.025,
             "solo": 0.321
@@ -2127,16 +2139,16 @@
       ],
       "atual": false,
       "rank_hoje": 3,
-      "rank_futuro": 6,
-      "rank_seco": 7,
+      "rank_futuro": 7,
+      "rank_seco": 8,
       "hoje": {
-        "score": 75.228,
+        "score": 74.753,
         "agua": 1.0,
         "solo": 0.529,
-        "renda": 0.728,
-        "receita_ha": 10877.379,
+        "renda": 0.714,
+        "receita_ha": 10664.541,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 10877.379,
+        "receita_ano_ha": 10664.541,
         "encaixe": 0.776,
         "descoberto": {
           "dias": 160,
@@ -2248,6 +2260,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -2303,21 +2316,28 @@
             "espera_dias": 0,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.776,
-            "receita_ha": 2660.481,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.714,
+            "receita_ha": 2447.642,
             "solo": 0.465
           }
         ]
       },
       "futuro": {
-        "score": 69.067,
+        "score": 68.785,
         "agua": 1.0,
         "solo": 0.428,
-        "renda": 0.644,
-        "receita_ha": 9622.55,
+        "renda": 0.636,
+        "receita_ha": 9496.186,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 9622.55,
+        "receita_ano_ha": 9496.186,
         "encaixe": 0.461,
         "descoberto": {
           "dias": 160,
@@ -2429,6 +2449,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -2484,21 +2505,28 @@
             "espera_dias": 0,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.461,
-            "receita_ha": 1579.549,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.424,
+            "receita_ha": 1453.185,
             "solo": 0.276
           }
         ]
       },
       "seco": {
-        "score": 52.066,
+        "score": 51.846,
         "agua": 0.704,
         "solo": 0.341,
-        "renda": 0.517,
-        "receita_ha": 7716.346,
+        "renda": 0.51,
+        "receita_ha": 7617.693,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 7716.346,
+        "receita_ano_ha": 7617.693,
         "encaixe": 0.36,
         "descoberto": {
           "dias": 160,
@@ -2610,6 +2638,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -2665,9 +2694,16 @@
             "espera_dias": 0,
             "fixa_n": true,
             "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.36,
-            "receita_ha": 1233.158,
+            "fator_sequencia": 0.92,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)",
+                "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+              ]
+            },
+            "fator": 0.331,
+            "receita_ha": 1134.506,
             "solo": 0.216
           }
         ]
@@ -2727,11 +2763,28 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.115,
-            "receita_hoje": 10877.379,
-            "receita_futuro": 9622.55
+            "queda": 0.11,
+            "receita_hoje": 10664.541,
+            "receita_futuro": 9496.186
           },
-          "texto": "A receita cai 12% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 11% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "feijao",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 0.92,
+            "penalidade": 0.92,
+            "anterior": "soja",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)",
+              "mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "feijao na safrinha vem depois de soja, que divide com ela mofo-branco (Sclerotinia sclerotiorum) e mosca-branca (Bemisia tabaci), vetora do mosaico-dourado do feijoeiro: o motor tira 8% da produtividade. O valor é provisório."
         },
         {
           "tipo": "risco",
@@ -2906,6 +2959,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -2962,6 +3016,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -3080,6 +3135,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -3136,6 +3192,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -3254,6 +3311,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -3310,6 +3368,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -3413,668 +3472,14 @@
       ]
     },
     {
-      "id": "soja>girassol",
-      "culturas": [
-        "soja",
-        "girassol"
-      ],
-      "atual": false,
-      "rank_hoje": 5,
-      "rank_futuro": 5,
-      "rank_seco": 9,
-      "hoje": {
-        "score": 71.473,
-        "agua": 0.982,
-        "solo": 0.391,
-        "renda": 0.771,
-        "receita_ha": 11511.988,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 11511.988,
-        "encaixe": 0.979,
-        "descoberto": {
-          "dias": 140,
-          "dias_expostos": 140,
-          "chuva_mm": 165.75,
-          "chuva_exposta_mm": 165.75,
-          "meses": [
-            {
-              "mes": 1,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 61.714,
-              "chuva_exposta_mm": 61.714
-            },
-            {
-              "mes": 2,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 12.542,
-              "chuva_exposta_mm": 12.542
-            },
-            {
-              "mes": 5,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 9.724,
-              "chuva_exposta_mm": 9.724
-            },
-            {
-              "mes": 6,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 19.27,
-              "chuva_exposta_mm": 19.27
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 10.14,
-              "chuva_exposta_mm": 10.14
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 9.49,
-              "chuva_exposta_mm": 9.49
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 42.87,
-              "chuva_exposta_mm": 42.87
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "soja",
-            "mes_plantio": 10,
-            "mes_colheita": 1,
-            "ciclo_dias": 115,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.986,
-            "dias_calor": 0.545,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 656.506,
-            "etc_mm": 506.662,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 10,
-                "dias": 31,
-                "kc": 0.424,
-                "chuva_mm": 106.51,
-                "etc_mm": 74.259,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.954,
-                "chuva_mm": 156.71,
-                "etc_mm": 155.967,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.15,
-                "chuva_mm": 215.86,
-                "etc_mm": 181.585,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 23,
-                "kc": 0.839,
-                "chuva_mm": 177.426,
-                "etc_mm": 94.85,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 0,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.986,
-            "receita_ha": 8216.898,
-            "solo": 0.592
-          },
-          {
-            "cultura": "girassol",
-            "mes_plantio": 2,
-            "mes_colheita": 5,
-            "ciclo_dias": 110,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.979,
-            "dias_calor": 0.794,
-            "atendimento_hidrico": 0.954,
-            "chuva_mm": 419.954,
-            "etc_mm": 320.602,
-            "deficit_mm": 14.75,
-            "meses": [
-              {
-                "mes": 2,
-                "dias": 26,
-                "kc": 0.355,
-                "chuva_mm": 163.048,
-                "etc_mm": 44.348,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.78,
-                "chuva_mm": 159.86,
-                "etc_mm": 104.458,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 1.0,
-                "chuva_mm": 69.09,
-                "etc_mm": 117.25,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 23,
-                "kc": 0.703,
-                "chuva_mm": 27.956,
-                "etc_mm": 54.546,
-                "deficit_mm": 14.75
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 0,
-            "fixa_n": false,
-            "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.049,
-            "receita_ha": 3295.089,
-            "solo": 0.191
-          }
-        ]
-      },
-      "futuro": {
-        "score": 70.643,
-        "agua": 0.979,
-        "solo": 0.384,
-        "renda": 0.757,
-        "receita_ha": 11299.818,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 11299.818,
-        "encaixe": 0.943,
-        "descoberto": {
-          "dias": 140,
-          "dias_expostos": 140,
-          "chuva_mm": 164.814,
-          "chuva_exposta_mm": 164.814,
-          "meses": [
-            {
-              "mes": 1,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 60.547,
-              "chuva_exposta_mm": 60.547
-            },
-            {
-              "mes": 2,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 12.743,
-              "chuva_exposta_mm": 12.743
-            },
-            {
-              "mes": 5,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 10.545,
-              "chuva_exposta_mm": 10.545
-            },
-            {
-              "mes": 6,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 20.61,
-              "chuva_exposta_mm": 20.61
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 10.71,
-              "chuva_exposta_mm": 10.71
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 7.01,
-              "chuva_exposta_mm": 7.01
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 42.65,
-              "chuva_exposta_mm": 42.65
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "soja",
-            "mes_plantio": 10,
-            "mes_colheita": 1,
-            "ciclo_dias": 115,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.966,
-            "dias_calor": 1.38,
-            "atendimento_hidrico": 1.0,
-            "chuva_mm": 648.873,
-            "etc_mm": 532.028,
-            "deficit_mm": 0.0,
-            "meses": [
-              {
-                "mes": 10,
-                "dias": 31,
-                "kc": 0.424,
-                "chuva_mm": 95.66,
-                "etc_mm": 80.485,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.954,
-                "chuva_mm": 153.98,
-                "etc_mm": 165.419,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.15,
-                "chuva_mm": 225.16,
-                "etc_mm": 186.829,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 23,
-                "kc": 0.839,
-                "chuva_mm": 174.073,
-                "etc_mm": 99.295,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 0,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.966,
-            "receita_ha": 8043.001,
-            "solo": 0.579
-          },
-          {
-            "cultura": "girassol",
-            "mes_plantio": 2,
-            "mes_colheita": 5,
-            "ciclo_dias": 110,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.943,
-            "dias_calor": 2.169,
-            "atendimento_hidrico": 0.945,
-            "chuva_mm": 420.243,
-            "etc_mm": 333.283,
-            "deficit_mm": 18.309,
-            "meses": [
-              {
-                "mes": 2,
-                "dias": 26,
-                "kc": 0.355,
-                "chuva_mm": 165.657,
-                "etc_mm": 46.476,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.78,
-                "chuva_mm": 155.94,
-                "etc_mm": 109.858,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 1.0,
-                "chuva_mm": 68.33,
-                "etc_mm": 121.05,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 5,
-                "dias": 23,
-                "kc": 0.703,
-                "chuva_mm": 30.315,
-                "etc_mm": 55.898,
-                "deficit_mm": 18.309
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 0,
-            "fixa_n": false,
-            "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.037,
-            "receita_ha": 3256.817,
-            "solo": 0.189
-          }
-        ]
-      },
-      "seco": {
-        "score": 51.749,
-        "agua": 0.696,
-        "solo": 0.291,
-        "renda": 0.566,
-        "receita_ha": 8457.115,
-        "anos_ocupados": 1.0,
-        "receita_ano_ha": 8457.115,
-        "encaixe": 0.778,
-        "descoberto": {
-          "dias": 140,
-          "dias_expostos": 140,
-          "chuva_mm": 83.121,
-          "chuva_exposta_mm": 83.121,
-          "meses": [
-            {
-              "mes": 1,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 41.128,
-              "chuva_exposta_mm": 41.128
-            },
-            {
-              "mes": 2,
-              "dias": 2,
-              "dias_expostos": 2,
-              "chuva_mm": 10.191,
-              "chuva_exposta_mm": 10.191
-            },
-            {
-              "mes": 5,
-              "dias": 8,
-              "dias_expostos": 8,
-              "chuva_mm": 3.352,
-              "chuva_exposta_mm": 3.352
-            },
-            {
-              "mes": 6,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 14.98,
-              "chuva_exposta_mm": 14.98
-            },
-            {
-              "mes": 7,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 1.27,
-              "chuva_exposta_mm": 1.27
-            },
-            {
-              "mes": 8,
-              "dias": 31,
-              "dias_expostos": 31,
-              "chuva_mm": 4.04,
-              "chuva_exposta_mm": 4.04
-            },
-            {
-              "mes": 9,
-              "dias": 30,
-              "dias_expostos": 30,
-              "chuva_mm": 8.16,
-              "chuva_exposta_mm": 8.16
-            }
-          ]
-        },
-        "culturas": [
-          {
-            "cultura": "soja",
-            "mes_plantio": 10,
-            "mes_colheita": 1,
-            "ciclo_dias": 115,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 1.0,
-            "encaixe_calor": 0.953,
-            "dias_calor": 1.9,
-            "atendimento_hidrico": 0.778,
-            "chuva_mm": 496.802,
-            "etc_mm": 556.243,
-            "deficit_mm": 123.343,
-            "meses": [
-              {
-                "mes": 10,
-                "dias": 31,
-                "kc": 0.424,
-                "chuva_mm": 81.01,
-                "etc_mm": 78.27,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 11,
-                "dias": 30,
-                "kc": 0.954,
-                "chuva_mm": 56.95,
-                "etc_mm": 183.033,
-                "deficit_mm": 123.343
-              },
-              {
-                "mes": 12,
-                "dias": 31,
-                "kc": 1.15,
-                "chuva_mm": 240.6,
-                "etc_mm": 188.336,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 1,
-                "dias": 23,
-                "kc": 0.839,
-                "chuva_mm": 118.242,
-                "etc_mm": 106.604,
-                "deficit_mm": 0.0
-              }
-            ],
-            "slot": "safra",
-            "espera_dias": 0,
-            "fixa_n": true,
-            "cobre_solo": false,
-            "fator_sequencia": 1.0,
-            "fator": 0.778,
-            "receita_ha": 6483.188,
-            "solo": 0.467
-          },
-          {
-            "cultura": "girassol",
-            "mes_plantio": 2,
-            "mes_colheita": 5,
-            "ciclo_dias": 110,
-            "encaixe_temp": 1.0,
-            "encaixe_chuva": 0.778,
-            "encaixe_calor": 0.862,
-            "dias_calor": 5.258,
-            "atendimento_hidrico": 0.571,
-            "chuva_mm": 233.536,
-            "etc_mm": 370.117,
-            "deficit_mm": 158.599,
-            "meses": [
-              {
-                "mes": 2,
-                "dias": 26,
-                "kc": 0.355,
-                "chuva_mm": 132.489,
-                "etc_mm": 50.47,
-                "deficit_mm": 0.0
-              },
-              {
-                "mes": 3,
-                "dias": 31,
-                "kc": 0.78,
-                "chuva_mm": 48.12,
-                "etc_mm": 121.611,
-                "deficit_mm": 13.491
-              },
-              {
-                "mes": 4,
-                "dias": 30,
-                "kc": 1.0,
-                "chuva_mm": 43.29,
-                "etc_mm": 136.93,
-                "deficit_mm": 93.64
-              },
-              {
-                "mes": 5,
-                "dias": 23,
-                "kc": 0.703,
-                "chuva_mm": 9.638,
-                "etc_mm": 61.105,
-                "deficit_mm": 51.467
-              }
-            ],
-            "slot": "safrinha",
-            "espera_dias": 0,
-            "fixa_n": false,
-            "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 0.629,
-            "receita_ha": 1973.927,
-            "solo": 0.114
-          }
-        ]
-      },
-      "avisos": [
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "soja",
-          "cenario": "seco",
-          "dados": {
-            "fator": "agua",
-            "valor": 0.778,
-            "slot": "safra"
-          },
-          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "fator_limitante",
-          "cultura": "girassol",
-          "cenario": "seco",
-          "dados": {
-            "fator": "agua",
-            "valor": 0.571,
-            "slot": "safrinha"
-          },
-          "texto": "girassol na safrinha, clima seco: a falta de água limita a produtividade a 57%."
-        },
-        {
-          "tipo": "risco",
-          "codigo": "solo_exposto",
-          "cultura": null,
-          "cenario": null,
-          "dados": {
-            "dias_expostos": 140,
-            "chuva_exposta_mm": 165.75
-          },
-          "texto": "O solo fica 140 dias sem cultura e sem palhada, com 166 mm de chuva nesses dias."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "valor_a_conferir",
-          "cultura": "girassol",
-          "cenario": null,
-          "dados": {
-            "campo": "preco",
-            "status": "memoria",
-            "valor": 2000.0
-          },
-          "texto": "girassol: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
-        },
-        {
-          "tipo": "lacuna",
-          "codigo": "valor_a_conferir",
-          "cultura": "girassol",
-          "cenario": null,
-          "dados": {
-            "campo": "temp_calor_c",
-            "status": "sem fonte",
-            "valor": 35
-          },
-          "texto": "girassol: o valor de temp_calor_c está marcado como 'sem fonte' na tabela de culturas. Confira com uma fonte local."
-        }
-      ],
-      "beneficios": [
-        {
-          "codigo": "fixa_nitrogenio",
-          "cultura": "soja",
-          "cenario": null,
-          "dados": {},
-          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
-        },
-        {
-          "codigo": "bonus_apos_fixadora",
-          "cultura": "girassol",
-          "cenario": null,
-          "dados": {
-            "fator_sequencia": 1.1,
-            "slot": "safrinha"
-          },
-          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
-        },
-        {
-          "codigo": "estavel_no_futuro",
-          "cultura": null,
-          "cenario": "futuro",
-          "dados": {
-            "queda": 0.018,
-            "receita_hoje": 11511.988,
-            "receita_futuro": 11299.818
-          },
-          "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
-        },
-        {
-          "codigo": "clima_favoravel",
-          "cultura": null,
-          "cenario": null,
-          "dados": {
-            "menor_fator": 0.943
-          },
-          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
-        }
-      ]
-    },
-    {
       "id": "soja>trigo",
       "culturas": [
         "soja",
         "trigo"
       ],
       "atual": false,
-      "rank_hoje": 6,
-      "rank_futuro": 7,
+      "rank_hoje": 5,
+      "rank_futuro": 6,
       "rank_seco": 6,
       "hoje": {
         "score": 71.38,
@@ -4188,6 +3593,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -4244,6 +3650,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.74,
             "receita_ha": 3345.845,
             "solo": 0.404
@@ -4362,6 +3769,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -4418,6 +3826,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.65,
             "receita_ha": 2935.329,
             "solo": 0.354
@@ -4536,6 +3945,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -4592,6 +4002,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.434,
             "receita_ha": 1961.548,
             "solo": 0.237
@@ -4725,7 +4136,7 @@
         "milheto"
       ],
       "atual": false,
-      "rank_hoje": 7,
+      "rank_hoje": 6,
       "rank_futuro": 4,
       "rank_seco": 4,
       "hoje": {
@@ -4847,6 +4258,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -4903,6 +4315,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 1.062,
             "receita_ha": 0.0,
             "solo": 0.579
@@ -5028,6 +4441,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -5084,6 +4498,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 1.093,
             "receita_ha": 0.0,
             "solo": 0.596
@@ -5209,6 +4624,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -5265,6 +4681,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.714,
             "receita_ha": 0.0,
             "solo": 0.389
@@ -5365,6 +4782,697 @@
           "cenario": null,
           "dados": {
             "menor_fator": 0.966
+          },
+          "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
+        }
+      ]
+    },
+    {
+      "id": "soja>girassol",
+      "culturas": [
+        "soja",
+        "girassol"
+      ],
+      "atual": false,
+      "rank_hoje": 7,
+      "rank_futuro": 5,
+      "rank_seco": 9,
+      "hoje": {
+        "score": 70.885,
+        "agua": 0.982,
+        "solo": 0.391,
+        "renda": 0.753,
+        "receita_ha": 11248.381,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 11248.381,
+        "encaixe": 0.979,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 140,
+          "chuva_mm": 165.75,
+          "chuva_exposta_mm": 165.75,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 61.714,
+              "chuva_exposta_mm": 61.714
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.542,
+              "chuva_exposta_mm": 12.542
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 9.724,
+              "chuva_exposta_mm": 9.724
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 19.27,
+              "chuva_exposta_mm": 19.27
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.14,
+              "chuva_exposta_mm": 10.14
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 9.49,
+              "chuva_exposta_mm": 9.49
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.87,
+              "chuva_exposta_mm": 42.87
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "soja",
+            "mes_plantio": 10,
+            "mes_colheita": 1,
+            "ciclo_dias": 115,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.986,
+            "dias_calor": 0.545,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 656.506,
+            "etc_mm": 506.662,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 10,
+                "dias": 31,
+                "kc": 0.424,
+                "chuva_mm": 106.51,
+                "etc_mm": 74.259,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.954,
+                "chuva_mm": 156.71,
+                "etc_mm": 155.967,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.15,
+                "chuva_mm": 215.86,
+                "etc_mm": 181.585,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 23,
+                "kc": 0.839,
+                "chuva_mm": 177.426,
+                "etc_mm": 94.85,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
+            "fator": 0.986,
+            "receita_ha": 8216.898,
+            "solo": 0.592
+          },
+          {
+            "cultura": "girassol",
+            "mes_plantio": 2,
+            "mes_colheita": 5,
+            "ciclo_dias": 110,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.979,
+            "dias_calor": 0.794,
+            "atendimento_hidrico": 0.954,
+            "chuva_mm": 419.954,
+            "etc_mm": 320.602,
+            "deficit_mm": 14.75,
+            "meses": [
+              {
+                "mes": 2,
+                "dias": 26,
+                "kc": 0.355,
+                "chuva_mm": 163.048,
+                "etc_mm": 44.348,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.78,
+                "chuva_mm": 159.86,
+                "etc_mm": 104.458,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 1.0,
+                "chuva_mm": 69.09,
+                "etc_mm": 117.25,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 23,
+                "kc": 0.703,
+                "chuva_mm": 27.956,
+                "etc_mm": 54.546,
+                "deficit_mm": 14.75
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.965,
+            "receita_ha": 3031.482,
+            "solo": 0.191
+          }
+        ]
+      },
+      "futuro": {
+        "score": 70.062,
+        "agua": 0.979,
+        "solo": 0.384,
+        "renda": 0.739,
+        "receita_ha": 11039.273,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 11039.273,
+        "encaixe": 0.943,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 140,
+          "chuva_mm": 164.814,
+          "chuva_exposta_mm": 164.814,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 60.547,
+              "chuva_exposta_mm": 60.547
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 12.743,
+              "chuva_exposta_mm": 12.743
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 10.545,
+              "chuva_exposta_mm": 10.545
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 20.61,
+              "chuva_exposta_mm": 20.61
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 10.71,
+              "chuva_exposta_mm": 10.71
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 7.01,
+              "chuva_exposta_mm": 7.01
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 42.65,
+              "chuva_exposta_mm": 42.65
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "soja",
+            "mes_plantio": 10,
+            "mes_colheita": 1,
+            "ciclo_dias": 115,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.966,
+            "dias_calor": 1.38,
+            "atendimento_hidrico": 1.0,
+            "chuva_mm": 648.873,
+            "etc_mm": 532.028,
+            "deficit_mm": 0.0,
+            "meses": [
+              {
+                "mes": 10,
+                "dias": 31,
+                "kc": 0.424,
+                "chuva_mm": 95.66,
+                "etc_mm": 80.485,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.954,
+                "chuva_mm": 153.98,
+                "etc_mm": 165.419,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.15,
+                "chuva_mm": 225.16,
+                "etc_mm": 186.829,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 23,
+                "kc": 0.839,
+                "chuva_mm": 174.073,
+                "etc_mm": 99.295,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
+            "fator": 0.966,
+            "receita_ha": 8043.001,
+            "solo": 0.579
+          },
+          {
+            "cultura": "girassol",
+            "mes_plantio": 2,
+            "mes_colheita": 5,
+            "ciclo_dias": 110,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.943,
+            "dias_calor": 2.169,
+            "atendimento_hidrico": 0.945,
+            "chuva_mm": 420.243,
+            "etc_mm": 333.283,
+            "deficit_mm": 18.309,
+            "meses": [
+              {
+                "mes": 2,
+                "dias": 26,
+                "kc": 0.355,
+                "chuva_mm": 165.657,
+                "etc_mm": 46.476,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.78,
+                "chuva_mm": 155.94,
+                "etc_mm": 109.858,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 1.0,
+                "chuva_mm": 68.33,
+                "etc_mm": 121.05,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 5,
+                "dias": 23,
+                "kc": 0.703,
+                "chuva_mm": 30.315,
+                "etc_mm": 55.898,
+                "deficit_mm": 18.309
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.954,
+            "receita_ha": 2996.272,
+            "solo": 0.189
+          }
+        ]
+      },
+      "seco": {
+        "score": 51.397,
+        "agua": 0.696,
+        "solo": 0.291,
+        "renda": 0.556,
+        "receita_ha": 8299.2,
+        "anos_ocupados": 1.0,
+        "receita_ano_ha": 8299.2,
+        "encaixe": 0.778,
+        "descoberto": {
+          "dias": 140,
+          "dias_expostos": 140,
+          "chuva_mm": 83.121,
+          "chuva_exposta_mm": 83.121,
+          "meses": [
+            {
+              "mes": 1,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 41.128,
+              "chuva_exposta_mm": 41.128
+            },
+            {
+              "mes": 2,
+              "dias": 2,
+              "dias_expostos": 2,
+              "chuva_mm": 10.191,
+              "chuva_exposta_mm": 10.191
+            },
+            {
+              "mes": 5,
+              "dias": 8,
+              "dias_expostos": 8,
+              "chuva_mm": 3.352,
+              "chuva_exposta_mm": 3.352
+            },
+            {
+              "mes": 6,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 14.98,
+              "chuva_exposta_mm": 14.98
+            },
+            {
+              "mes": 7,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 1.27,
+              "chuva_exposta_mm": 1.27
+            },
+            {
+              "mes": 8,
+              "dias": 31,
+              "dias_expostos": 31,
+              "chuva_mm": 4.04,
+              "chuva_exposta_mm": 4.04
+            },
+            {
+              "mes": 9,
+              "dias": 30,
+              "dias_expostos": 30,
+              "chuva_mm": 8.16,
+              "chuva_exposta_mm": 8.16
+            }
+          ]
+        },
+        "culturas": [
+          {
+            "cultura": "soja",
+            "mes_plantio": 10,
+            "mes_colheita": 1,
+            "ciclo_dias": 115,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 1.0,
+            "encaixe_calor": 0.953,
+            "dias_calor": 1.9,
+            "atendimento_hidrico": 0.778,
+            "chuva_mm": 496.802,
+            "etc_mm": 556.243,
+            "deficit_mm": 123.343,
+            "meses": [
+              {
+                "mes": 10,
+                "dias": 31,
+                "kc": 0.424,
+                "chuva_mm": 81.01,
+                "etc_mm": 78.27,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 11,
+                "dias": 30,
+                "kc": 0.954,
+                "chuva_mm": 56.95,
+                "etc_mm": 183.033,
+                "deficit_mm": 123.343
+              },
+              {
+                "mes": 12,
+                "dias": 31,
+                "kc": 1.15,
+                "chuva_mm": 240.6,
+                "etc_mm": 188.336,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 1,
+                "dias": 23,
+                "kc": 0.839,
+                "chuva_mm": 118.242,
+                "etc_mm": 106.604,
+                "deficit_mm": 0.0
+              }
+            ],
+            "slot": "safra",
+            "espera_dias": 0,
+            "fixa_n": true,
+            "cobre_solo": false,
+            "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
+            "fator": 0.778,
+            "receita_ha": 6483.188,
+            "solo": 0.467
+          },
+          {
+            "cultura": "girassol",
+            "mes_plantio": 2,
+            "mes_colheita": 5,
+            "ciclo_dias": 110,
+            "encaixe_temp": 1.0,
+            "encaixe_chuva": 0.778,
+            "encaixe_calor": 0.862,
+            "dias_calor": 5.258,
+            "atendimento_hidrico": 0.571,
+            "chuva_mm": 233.536,
+            "etc_mm": 370.117,
+            "deficit_mm": 158.599,
+            "meses": [
+              {
+                "mes": 2,
+                "dias": 26,
+                "kc": 0.355,
+                "chuva_mm": 132.489,
+                "etc_mm": 50.47,
+                "deficit_mm": 0.0
+              },
+              {
+                "mes": 3,
+                "dias": 31,
+                "kc": 0.78,
+                "chuva_mm": 48.12,
+                "etc_mm": 121.611,
+                "deficit_mm": 13.491
+              },
+              {
+                "mes": 4,
+                "dias": 30,
+                "kc": 1.0,
+                "chuva_mm": 43.29,
+                "etc_mm": 136.93,
+                "deficit_mm": 93.64
+              },
+              {
+                "mes": 5,
+                "dias": 23,
+                "kc": 0.703,
+                "chuva_mm": 9.638,
+                "etc_mm": 61.105,
+                "deficit_mm": 51.467
+              }
+            ],
+            "slot": "safrinha",
+            "espera_dias": 0,
+            "fixa_n": false,
+            "cobre_solo": false,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "soja",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.578,
+            "receita_ha": 1816.013,
+            "solo": 0.114
+          }
+        ]
+      },
+      "avisos": [
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "soja",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.778,
+            "slot": "safra"
+          },
+          "texto": "soja na safra, clima seco: a falta de água limita a produtividade a 78%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "fator_limitante",
+          "cultura": "girassol",
+          "cenario": "seco",
+          "dados": {
+            "fator": "agua",
+            "valor": 0.571,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha, clima seco: a falta de água limita a produtividade a 57%."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.012,
+            "penalidade": 0.92,
+            "anterior": "soja",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de soja, que divide com ela mofo-branco (Sclerotinia sclerotiorum): o motor tira 8% da produtividade. Com o bônus após fixadora de nitrogênio, o fator aplicado fica 1,012. O valor é provisório."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "solo_exposto",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "dias_expostos": 140,
+            "chuva_exposta_mm": 165.75
+          },
+          "texto": "O solo fica 140 dias sem cultura e sem palhada, com 166 mm de chuva nesses dias."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "preco",
+            "status": "memoria",
+            "valor": 2000.0
+          },
+          "texto": "girassol: o valor de preco está marcado como 'memoria' na tabela de culturas. Confira com uma fonte local."
+        },
+        {
+          "tipo": "lacuna",
+          "codigo": "valor_a_conferir",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "campo": "temp_calor_c",
+            "status": "sem fonte",
+            "valor": 35
+          },
+          "texto": "girassol: o valor de temp_calor_c está marcado como 'sem fonte' na tabela de culturas. Confira com uma fonte local."
+        }
+      ],
+      "beneficios": [
+        {
+          "codigo": "fixa_nitrogenio",
+          "cultura": "soja",
+          "cenario": null,
+          "dados": {},
+          "texto": "soja fixa nitrogênio do ar, segundo a tabela de culturas."
+        },
+        {
+          "codigo": "bonus_apos_fixadora",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.012,
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. Com o desconto por hospedeiro comum de pragas, o fator aplicado fica 1,012. O valor é provisório."
+        },
+        {
+          "codigo": "estavel_no_futuro",
+          "cultura": null,
+          "cenario": "futuro",
+          "dados": {
+            "queda": 0.019,
+            "receita_hoje": 11248.381,
+            "receita_futuro": 11039.273
+          },
+          "texto": "A receita cai só 2% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "codigo": "clima_favoravel",
+          "cultura": null,
+          "cenario": null,
+          "dados": {
+            "menor_fator": 0.943
           },
           "texto": "Hoje e por volta de 2060, nenhum fator de clima ou água limita as culturas abaixo de 80%."
         }
@@ -5492,6 +5600,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.986,
             "receita_ha": 8216.898,
             "solo": 0.592
@@ -5556,6 +5665,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.948,
             "receita_ha": 0.0,
             "solo": 0.517
@@ -5674,6 +5784,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.966,
             "receita_ha": 8043.001,
             "solo": 0.579
@@ -5738,6 +5849,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.951,
             "receita_ha": 0.0,
             "solo": 0.519
@@ -5856,6 +5968,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.778,
             "receita_ha": 6483.188,
             "solo": 0.467
@@ -5920,6 +6033,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.523,
             "receita_ha": 0.0,
             "solo": 0.285
@@ -6155,6 +6269,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -6211,6 +6326,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.832,
             "receita_ha": 2854.633,
             "solo": 0.499
@@ -6337,6 +6453,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -6393,6 +6510,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.62,
             "receita_ha": 2128.289,
             "solo": 0.372
@@ -6519,6 +6637,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -6575,6 +6694,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.439,
             "receita_ha": 1504.879,
             "solo": 0.263
@@ -6803,6 +6923,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -6859,6 +6980,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -6978,6 +7100,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -7034,6 +7157,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -7153,6 +7277,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -7209,6 +7334,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -7433,6 +7559,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -7497,6 +7624,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.766,
             "receita_ha": 2352.786,
             "solo": 0.46
@@ -7616,6 +7744,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -7680,6 +7809,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.76,
             "receita_ha": 2334.471,
             "solo": 0.456
@@ -7799,6 +7929,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -7863,6 +7994,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.47,
             "receita_ha": 1443.072,
             "solo": 0.282
@@ -8079,6 +8211,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -8135,6 +8268,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -8254,6 +8388,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -8310,6 +8445,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -8429,6 +8565,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -8485,6 +8622,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
@@ -8609,7 +8747,7 @@
       "atual": false,
       "rank_hoje": 13,
       "rank_futuro": 10,
-      "rank_seco": 8,
+      "rank_seco": 7,
       "hoje": {
         "score": 61.675,
         "agua": 0.941,
@@ -8722,6 +8860,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.956,
             "receita_ha": 2936.707,
             "solo": 0.574
@@ -8778,6 +8917,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -8896,6 +9036,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.916,
             "receita_ha": 2813.002,
             "solo": 0.55
@@ -8952,6 +9093,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -9070,6 +9212,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.935,
             "receita_ha": 2872.965,
             "solo": 0.561
@@ -9126,6 +9269,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -9346,6 +9490,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -9402,6 +9547,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.904,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -9528,6 +9674,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -9584,6 +9731,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.919,
             "receita_ha": 0.0,
             "solo": 0.552
@@ -9710,6 +9858,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -9766,6 +9915,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.601,
             "receita_ha": 0.0,
             "solo": 0.36
@@ -9988,6 +10138,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -10044,6 +10195,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.952,
             "receita_ha": 2923.112,
             "solo": 0.519
@@ -10168,6 +10320,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -10224,6 +10377,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.944,
             "receita_ha": 2900.434,
             "solo": 0.515
@@ -10348,6 +10502,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -10404,6 +10559,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.577,
             "receita_ha": 1771.775,
             "solo": 0.315
@@ -10647,6 +10803,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -10719,6 +10876,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.523,
             "receita_ha": 3451.897,
             "solo": 0.246
@@ -10831,6 +10989,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -10903,6 +11062,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.52,
             "receita_ha": 3432.985,
             "solo": 0.245
@@ -11015,6 +11175,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -11087,6 +11248,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.319,
             "receita_ha": 2109.142,
             "solo": 0.15
@@ -11307,6 +11469,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -11371,6 +11534,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.814,
             "receita_ha": 2556.884,
             "solo": 0.163
@@ -11490,6 +11654,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -11554,6 +11719,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.808,
             "receita_ha": 2537.344,
             "solo": 0.162
@@ -11673,6 +11839,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -11737,6 +11904,7 @@
             "fixa_n": false,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.47,
             "receita_ha": 1475.447,
             "solo": 0.094
@@ -11954,6 +12122,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -12018,6 +12187,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.752,
             "receita_ha": 4969.863,
             "solo": 0.41
@@ -12135,6 +12305,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -12199,6 +12370,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.749,
             "receita_ha": 4946.71,
             "solo": 0.408
@@ -12316,6 +12488,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -12380,6 +12553,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.488,
             "receita_ha": 3224.139,
             "solo": 0.266
@@ -12652,6 +12826,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -12708,6 +12883,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.851,
             "receita_ha": 0.0,
             "solo": 0.851
@@ -12825,6 +13001,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -12881,6 +13058,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.843,
             "receita_ha": 0.0,
             "solo": 0.843
@@ -12998,6 +13176,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -13054,6 +13233,7 @@
             "fixa_n": true,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.542,
             "receita_ha": 0.0,
             "solo": 0.542
@@ -13316,6 +13496,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.956,
             "receita_ha": 2936.707,
             "solo": 0.574
@@ -13372,6 +13553,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.673,
             "receita_ha": 3041.677,
             "solo": 0.404
@@ -13490,6 +13672,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.916,
             "receita_ha": 2813.002,
             "solo": 0.55
@@ -13546,6 +13729,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.59,
             "receita_ha": 2668.481,
             "solo": 0.354
@@ -13664,6 +13848,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.935,
             "receita_ha": 2872.965,
             "solo": 0.561
@@ -13720,6 +13905,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.395,
             "receita_ha": 1783.225,
             "solo": 0.237
@@ -13952,6 +14138,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -14008,6 +14195,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.671,
             "receita_ha": 2302.608,
             "solo": 0.316
@@ -14132,6 +14320,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -14188,6 +14377,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.428,
             "receita_ha": 1469.612,
             "solo": 0.202
@@ -14312,6 +14502,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -14368,6 +14559,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.329,
             "receita_ha": 1128.884,
             "solo": 0.155
@@ -14637,6 +14829,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.796,
             "receita_ha": 5695.815,
             "solo": 0.374
@@ -14701,6 +14894,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.637,
             "receita_ha": 0.0,
             "solo": 0.382
@@ -14820,6 +15014,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.728,
             "receita_ha": 5210.532,
             "solo": 0.343
@@ -14884,6 +15079,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.637,
             "receita_ha": 0.0,
             "solo": 0.382
@@ -15003,6 +15199,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 0.85,
+            "hospedeiro_comum": null,
             "fator": 0.754,
             "receita_ha": 5400.731,
             "solo": 0.355
@@ -15067,6 +15264,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.292,
             "receita_ha": 0.0,
             "solo": 0.175
@@ -15304,6 +15502,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -15360,6 +15559,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 1.042,
             "receita_ha": 0.0,
             "solo": 0.568
@@ -15484,6 +15684,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -15540,6 +15741,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 1.079,
             "receita_ha": 0.0,
             "solo": 0.589
@@ -15664,6 +15866,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -15720,6 +15923,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.686,
             "receita_ha": 0.0,
             "solo": 0.374
@@ -15984,6 +16188,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -16040,6 +16245,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.74,
             "receita_ha": 3345.845,
             "solo": 0.404
@@ -16157,6 +16363,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -16213,6 +16420,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.65,
             "receita_ha": 2935.329,
             "solo": 0.354
@@ -16330,6 +16538,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -16386,6 +16595,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.434,
             "receita_ha": 1961.548,
             "solo": 0.237
@@ -16570,13 +16780,13 @@
       "rank_futuro": 23,
       "rank_seco": 24,
       "hoje": {
-        "score": 54.783,
+        "score": 54.22,
         "agua": 0.96,
         "solo": 0.29,
-        "renda": 0.393,
-        "receita_ha": 5869.598,
+        "renda": 0.376,
+        "receita_ha": 5617.657,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 5869.598,
+        "receita_ano_ha": 5617.657,
         "encaixe": 0.664,
         "descoberto": {
           "dias": 165,
@@ -16687,6 +16897,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -16742,21 +16953,27 @@
             "espera_dias": 0,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 1.003,
-            "receita_ha": 3149.257,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.923,
+            "receita_ha": 2897.316,
             "solo": 0.182
           }
         ]
       },
       "futuro": {
-        "score": 49.74,
+        "score": 49.182,
         "agua": 0.957,
         "solo": 0.214,
-        "renda": 0.322,
-        "receita_ha": 4805.685,
+        "renda": 0.305,
+        "receita_ha": 4555.781,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 4805.685,
+        "receita_ano_ha": 4555.781,
         "encaixe": 0.411,
         "descoberto": {
           "dias": 165,
@@ -16867,6 +17084,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -16922,21 +17140,27 @@
             "espera_dias": 0,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 0.995,
-            "receita_ha": 3123.795,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.915,
+            "receita_ha": 2873.891,
             "solo": 0.181
           }
         ]
       },
       "seco": {
-        "score": 41.377,
+        "score": 41.033,
         "agua": 0.794,
         "solo": 0.193,
-        "renda": 0.254,
-        "receita_ha": 3797.892,
+        "renda": 0.244,
+        "receita_ha": 3643.713,
         "anos_ocupados": 1.0,
-        "receita_ano_ha": 3797.892,
+        "receita_ano_ha": 3643.713,
         "encaixe": 0.457,
         "descoberto": {
           "dias": 165,
@@ -17047,6 +17271,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -17102,9 +17327,15 @@
             "espera_dias": 0,
             "fixa_n": false,
             "cobre_solo": false,
-            "fator_sequencia": 1.1,
-            "fator": 0.614,
-            "receita_ha": 1927.231,
+            "fator_sequencia": 1.012,
+            "hospedeiro_comum": {
+              "anterior": "feijao",
+              "pragas": [
+                "mofo-branco (Sclerotinia sclerotiorum)"
+              ]
+            },
+            "fator": 0.565,
+            "receita_ha": 1773.052,
             "solo": 0.112
           }
         ]
@@ -17164,11 +17395,27 @@
           "cultura": null,
           "cenario": "futuro",
           "dados": {
-            "queda": 0.181,
-            "receita_hoje": 5869.598,
-            "receita_futuro": 4805.685
+            "queda": 0.189,
+            "receita_hoje": 5617.657,
+            "receita_futuro": 4555.781
           },
-          "texto": "A receita cai 18% do clima de hoje para o futuro (por volta de 2060)."
+          "texto": "A receita cai 19% do clima de hoje para o futuro (por volta de 2060)."
+        },
+        {
+          "tipo": "risco",
+          "codigo": "hospedeiro_comum",
+          "cultura": "girassol",
+          "cenario": null,
+          "dados": {
+            "fator_sequencia": 1.012,
+            "penalidade": 0.92,
+            "anterior": "feijao",
+            "pragas": [
+              "mofo-branco (Sclerotinia sclerotiorum)"
+            ],
+            "slot": "safrinha"
+          },
+          "texto": "girassol na safrinha vem depois de feijao, que divide com ela mofo-branco (Sclerotinia sclerotiorum): o motor tira 8% da produtividade. Com o bônus após fixadora de nitrogênio, o fator aplicado fica 1,012. O valor é provisório."
         },
         {
           "tipo": "risco",
@@ -17241,10 +17488,10 @@
           "cultura": "girassol",
           "cenario": null,
           "dados": {
-            "fator_sequencia": 1.1,
+            "fator_sequencia": 1.012,
             "slot": "safrinha"
           },
-          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. O valor é provisório."
+          "texto": "girassol na safrinha vem depois de uma fixadora de nitrogênio: o motor soma 10% à produtividade. Com o desconto por hospedeiro comum de pragas, o fator aplicado fica 1,012. O valor é provisório."
         }
       ]
     },
@@ -17369,6 +17616,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.664,
             "receita_ha": 2720.341,
             "solo": 0.399
@@ -17433,6 +17681,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.874,
             "receita_ha": 0.0,
             "solo": 0.477
@@ -17550,6 +17799,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.411,
             "receita_ha": 1681.89,
             "solo": 0.246
@@ -17614,6 +17864,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.876,
             "receita_ha": 0.0,
             "solo": 0.478
@@ -17731,6 +17982,7 @@
             "fixa_n": true,
             "cobre_solo": false,
             "fator_sequencia": 1.0,
+            "hospedeiro_comum": null,
             "fator": 0.457,
             "receita_ha": 1870.661,
             "solo": 0.274
@@ -17795,6 +18047,7 @@
             "fixa_n": false,
             "cobre_solo": true,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.463,
             "receita_ha": 0.0,
             "solo": 0.252

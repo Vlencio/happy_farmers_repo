@@ -213,7 +213,9 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Motor (Pedro): preços editados zero não zeram o teto. A referência usa preços da tabela e tem fallback para teto nulo (`baf7d3b`); casos mensal/diário cobertos (`1086db6`).
 - [x] Motor (Pedro): textos brutos de avisos/benefícios alinhados para "por volta de 2060" (`1086db6`). Metadados e prompt recebem a mesma correção na integração do front.
 - [ ] Dados (Brenno/Pedro): alinhar `origem.periodos.futuro` e o aviso de fallback em `scripts/clima_ponto.py`, que ainda usam `2041-2060`. Esses campos de proveniência são repassados sem alteração pela API.
-- [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo; penalidade por hospedeiro comum (soja→feijão).
+- [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo.
+- [x] Motor (15/11, branch `motor-hospedeiro`): penalidade por hospedeiro comum de pragas e doenças (regra 10 do contrato). Tabela `HOSPEDEIRO_COMUM` em `motor/motor.py`, com fonte por par: mofo-branco entre soja, feijão, girassol e algodão (Embrapa Algodão, CT 336) e mosca-branca de soja para feijão (Embrapa Arroz e Feijão, CT 91). Fator 0,92, provisório; não soma com a repetição e multiplica o bônus após fixadora. Aviso novo `hospedeiro_comum`. `soja>feijao` segue em 3º em outubro (75,2 → 74,8); `feijao>soja` cai de 2º para 3º em fevereiro. Números em "O que mudou em 15/11 (hospedeiro comum de pragas)" no contrato.
+- [ ] Agrônomo: conferir o tamanho do efeito (0,92) e se crotalária entra no grupo do mofo-branco. Tela (Gabriel): o aviso `hospedeiro_comum` aparece pelo `texto` do motor (código desconhecido); um texto próprio é opcional.
 - [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
 
 ## Parte 7 — Incerteza entre os modelos climáticos

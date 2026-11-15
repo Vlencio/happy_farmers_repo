@@ -152,6 +152,7 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
             "etc_mm": 421.529,
             "deficit_mm": 76.17,
             "fator_sequencia": 1.1,
+            "hospedeiro_comum": null,
             "fator": 0.901,
             "receita_ha": 5953.803,
             "solo": 0.492,
@@ -240,7 +241,16 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 7. **Encaixe de temperatura:** 1 dentro da faixa ótima, 0 fora dos limites absolutos, linear entre os dois. Média sobre os dias do ciclo, com a temperatura média do mês.
 8. **Encaixe de chuva:** chuva do ciclo contra `chuva_min` e `chuva_max`. Cai em proporção à falta ou ao excesso.
 9. **Calor:** a fase sensível é o meio do ciclo, de 45% a 80% (florescimento e enchimento de grãos, a mesma fase do Kc médio). O motor soma os dias acima do limiar da cultura (`dias_acima_<temp_calor_c>`) que caem nessa fase. `encaixe_calor` = 1 − dias de calor / dias da fase. Exemplo: 10 dias de calor em 40 dias de fase dá 0,75.
-10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 se é não fixadora depois de fixadora de N; 1 nos outros casos.
+10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; senão, 1,10 se é não fixadora depois de fixadora de N, vezes 0,92 se divide praga ou doença relevante com a anterior (hospedeiro comum); 1 nos outros casos. A cultura anterior da primeira posição é a última do histórico.
+    - **Hospedeiro comum** (desde 15/11): tabela `HOSPEDEIRO_COMUM` no topo de `motor/motor.py`, com a praga e a fonte de cada par. Pares de culturas diferentes; a cultura idêntica continua só com a repetição (0,85), sem somar as duas. Com o bônus após fixadora, os dois multiplicam: girassol ou algodão depois de soja dão 1,10 × 0,92 = 1,012. O fator 0,92 (`PENALIDADE_HOSPEDEIRO`) é provisório, sem fonte para o tamanho do efeito. Vale no modo mensal e no diário.
+    - Cada cultura traz `hospedeiro_comum`: `null` ou `{"anterior": "soja", "pragas": ["mofo-branco (Sclerotinia sclerotiorum)", ...]}`.
+
+    | Anterior → seguinte | Praga ou doença | Fonte |
+    |---|---|---|
+    | Qualquer ordem entre soja, feijão, girassol e algodão | Mofo-branco (*Sclerotinia sclerotiorum*) | Embrapa Algodão, Comunicado Técnico 336 (2007): hospedeiras feijão, soja, girassol (...) e algodão. https://www.infoteca.cnptia.embrapa.br/bitstream/doc/276699/1/COMTEC336.pdf |
+    | Soja → feijão | Mosca-branca (*Bemisia tabaci*), vetora do mosaico-dourado do feijoeiro | Embrapa Arroz e Feijão, Circular Técnica 91: soja hospedeira da mosca-branca; "evitar a semeadura escalonada do feijão após feijão ou após a soja". https://www.infoteca.cnptia.embrapa.br/infoteca/bitstream/doc/1130832/1/CNPAF-circ-tec-91.pdf |
+
+    Ficaram de fora: *Pratylenchus brachyurus* e *Macrophomina phaseolina*, que atacam quase todas as culturas da tabela e não diferenciam sequências; crotalária como hospedeira de mofo-branco, sem fonte conferida.
 11. **Receita** = preço × produtividade do slot × `fator`, onde `fator` = menor entre encaixe de temperatura, encaixe de chuva, encaixe de calor e atendimento hídrico, vezes `fator_sequencia`.
 12. **Partes do score:**
     - `agua` = 1 − déficit total / demanda total da sequência.
@@ -268,6 +278,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `fator_agua_diario` | risco | Só no modo diário, por cultura e clima: o `fator_agua` do ano mediano (com Ky, regra 6 do modo diário) está abaixo de 0,8. É o lado diário de `fator_limitante`, que olha o mensal: os dois podem sair para a mesma cultura, com números diferentes | `fator_agua`, `atendimento_hidrico` (os dois do ano mediano), `ky`, `slot` |
 | `queda_no_ano_ruim` | risco | Só no modo diário, por clima: a receita do ano ruim fica mais de 20% abaixo da do ano mediano | `queda`, `receita_mediano`, `receita_ruim` |
 | `repete_a_cultura` | risco | A cultura repete a anterior (fator de sequência 0,85) | `fator_sequencia`, `slot` |
+| `hospedeiro_comum` | risco | A cultura divide praga ou doença com a anterior (regra 10; fator 0,92, ou 1,012 com o bônus após fixadora). Clima de hoje, como a repetição | `fator_sequencia` (o aplicado), `penalidade`, `anterior`, `pragas` (lista de textos), `slot` |
 | `solo_exposto` | risco | 60 dias ou mais sem cultura e sem palhada, no clima de hoje | `dias_expostos`, `chuva_exposta_mm` |
 | `sem_historico` | lacuna | A entrada veio sem histórico: a primeira cultura fica sem as regras de sequência | — |
 | `sem_limiar_de_calor` | lacuna | Cultura sem `temp_calor_c`: o motor não desconta calor dela | — |
@@ -282,7 +293,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `codigo` | Quando aparece | `dados` |
 |---|---|---|
 | `fixa_nitrogenio` | Cultura com `fixa_n` na tabela | — |
-| `bonus_apos_fixadora` | Não fixadora depois de uma fixadora (fator de sequência 1,10) | `fator_sequencia`, `slot` |
+| `bonus_apos_fixadora` | Não fixadora depois de uma fixadora (fator de sequência 1,10; 1,012 se a cultura também leva o desconto de hospedeiro comum, e o texto diz isso) | `fator_sequencia` (o aplicado), `slot` |
 | `deixa_palhada` | Cultura com `cobre_solo`: o motor conta o solo coberto até o próximo plantio | — |
 | `pouco_solo_exposto` | Menos de 60 dias sem cultura e sem palhada, no clima de hoje. É o contrário do aviso `solo_exposto` | `dias_expostos`, `chuva_exposta_mm` |
 | `estavel_no_futuro` | Receita de hoje acima de zero e queda de até 10% (ou alta) para o futuro. É o contrário do aviso `queda_no_futuro` | `queda` (negativa = alta), `receita_hoje`, `receita_futuro` |
@@ -414,6 +425,7 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 |---|---|---|
 | `PENALIDADE_REPETICAO` | 0,85 | Fator ao repetir a cultura |
 | `BONUS_APOS_FIXADORA` | 1,10 | Fator depois de fixadora de N |
+| `PENALIDADE_HOSPEDEIRO` | 0,92 | Fator quando a cultura divide praga ou doença com a anterior (regra 10). Os pares têm fonte; o tamanho do efeito não |
 | `PESO_SOLO` | 0,4 / 0,4 / 0,2 | Pesos de fixa N, cobre solo, diversidade |
 | `FASES_KC` | 20% / 45% / 80% | Fases do Kc no ciclo |
 | `DIAS_COLHEITA` | 10 | Dias entre o fim do ciclo e o talhão livre, igual para todas as culturas |
@@ -445,6 +457,18 @@ Histórico soja, milho, pesos iguais, clima de hoje (futuro entre parênteses qu
 
 - Fevereiro: `crotalaria>algodao` ocupa 1,3 ano e caiu de 1º para 9º hoje (20º no futuro). A troca de vencedor entre hoje e o futuro em fevereiro deixou de existir: `sorgo>soja` vence nos dois.
 - Outubro: `soja>milho` e `soja>sorgo` ficam a 0,1 ponto, um empate. Com o solo de 60 mm, o milho safrinha atende 72% da demanda de água no mensal (era 82%), e a parte `agua` de `soja>milho` cai de 0,918 para 0,875.
+
+## O que mudou em 15/11 (hospedeiro comum de pragas)
+
+A revisão agronômica apontou que `soja>feijao` e `feijao>soja` subiam sem custo, embora as duas culturas dividam mofo-branco e a soja multiplique a mosca-branca que leva o mosaico-dourado ao feijão. Regra 10, fator 0,92 (provisório). Histórico soja, milho, pesos iguais, clima de hoje (rank no futuro entre parênteses):
+
+| Talhão livre em | Antes: 1º a 5º | Agora: 1º a 5º |
+|---|---|---|
+| Outubro | `soja>milho` 76,4, `soja>sorgo` 76,3, `soja>feijao` 75,2 (6º), `soja>crotalaria` 74,0, `soja>girassol` 71,5 | `soja>milho` 76,4, `soja>sorgo` 76,3, `soja>feijao` 74,8 (7º), `soja>crotalaria` 74,0, `soja>trigo` 71,4 |
+| Fevereiro | `sorgo>soja` 76,0, `feijao>soja` 75,0 (7º), `crotalaria>soja` 73,9, `milho>soja` 71,6, `feijao>milho` 71,5 | `sorgo>soja` 76,0, `crotalaria>soja` 73,9, `feijao>soja` 73,6 (10º), `milho>soja` 71,6, `feijao>milho` 71,5 |
+
+- Levam a penalidade: em outubro, `soja>feijao`, `soja>girassol` (1,10 × 0,92: cai de 5º para 7º) e `feijao>girassol`; em fevereiro, `feijao>soja`, `girassol>soja` e `girassol>feijao`.
+- O efeito no score é pequeno: 0,92 só tira 8% da receita da cultura seguinte, e a receita é um terço do score com pesos iguais. `soja>feijao` continua em 3º em outubro. Com 0,85 continuaria em 3º; com 0,75 cairia para 4º. `feijao>soja` em fevereiro troca de lugar com `crotalaria>soja`.
 
 ## O que a regra de calor muda (tabelas de 14/11)
 
