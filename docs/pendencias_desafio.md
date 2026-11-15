@@ -30,7 +30,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 10 | Atributos de cultura que faltam | Falta | Brenno, Pedro | Fontes a levantar | Não |
 | 11 | Umidade do solo e vegetação observadas | Falta e incompleto | Brenno, Pedro | Sim (SMAP) | Sim (SMAP) |
 | 12 | Tendência de água de longo prazo | Falta | Brenno | Talvez (GRACE) | Não |
-| 13 | Comparar abordagens estatísticas ou de IA | Falta | Pedro | Não | Não |
+| 13 | Comparar abordagens estatísticas ou de IA | Mensal × diário e texto do pitch feitos; falta conferir contra a PAM de vários anos | Pedro, Brenno | Sim (PAM) | Não |
 | 14 | Mapa com camadas, tempo e zonas do talhão | Falta | Gabriel, Brenno | Em parte | Não |
 | 15 | Explicações para o agricultor | Incompleto | Gabriel | Não | Não |
 | 16 | Dados de resoluções diferentes | Falta | Brenno | Não | Não |
@@ -287,13 +287,13 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "compare different SI or statistical approaches for identifying patterns in historical climate and soil conditions".
 
-**Hoje:** o motor é por regras, por decisão do time. Não há comparação com outra abordagem.
+**Hoje:** o motor é por regras, por decisão do time. `docs/comparacao_abordagens.md` compara o modo mensal com o modo diário no talhão de demonstração (outubro e fevereiro, histórico soja, milho): as duas ordenam as sequências quase igual (Spearman 0,97 a 0,98 contra o ano mediano), mas o vencedor de outubro troca (`soja>milho` no mensal, `soja>sorgo` no ano mediano) e o ano ruim derruba as sequências com algodão.
 
 **Falta:**
 
-- [ ] Comparar o que já existe: média mensal contra série diária (os números estão em `docs/contrato_motor.md`).
-- [ ] Conferir o motor contra dado observado: produtividade por ano do IBGE PAM contra o fator calculado pelo modo diário nos mesmos anos. Precisa da PAM de vários anos; hoje só há 2025.
-- [ ] Texto para o pitch: por que regras explicáveis e não um modelo treinado.
+- [x] Comparar o que já existe: média mensal contra série diária. Tabela, o que cada uma capta e perde e conferência dos números do contrato em `docs/comparacao_abordagens.md`.
+- [ ] Conferir o motor contra dado observado: produtividade por ano do IBGE PAM contra o fator calculado pelo modo diário nos mesmos anos. Precisa da PAM de vários anos; hoje só há 2025. Dado novo, dono Brenno; nada baixado.
+- [x] Texto para o pitch: por que regras explicáveis e não um modelo treinado, com o que a escolha perde. Em `docs/comparacao_abordagens.md`.
 
 **Feito quando:** existe uma tabela comparando ao menos duas abordagens no mesmo talhão, com o que cada uma acerta e erra.
 
