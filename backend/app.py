@@ -3,15 +3,16 @@ from contextlib import asynccontextmanager
 import os
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 import anthropic
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from motor import carregar_clima_seco, carregar_dados, recomendar
+from motor import carregar_clima_modelos, carregar_clima_seco, carregar_dados, recomendar
 from backend.chat import MAX_FOCO, MAX_MENSAGEM, Chat, RespostaVazia
 from backend.field_context import load_demo_field, load_model_spread
 from backend.point_climate import PointClimate
+from backend.soil import SoilSuggestion
 
 NonNegative = Annotated[float, Field(ge=0, allow_inf_nan=False)]
 
@@ -41,6 +42,8 @@ class EntradaMotor(BaseModel):
     precos: dict[str, NonNegative] = Field(default_factory=dict)
     # Optional mean slope of the field (%); the engine then adds indice_erosao to descoberto.
     declividade_pct: Annotated[float | None, Field(ge=0, le=100, allow_inf_nan=False)] = None
+    # Optional soil texture confirmed by the farmer: the engine sets the soil water storage from it.
+    solo_textura: Literal["arenoso", "medio", "argiloso"] | None = None
     # Optional what-if: rain in % and temperature in degrees C, applied by the engine to every climate.
     ajuste: Ajuste | None = None
 
@@ -70,6 +73,8 @@ async def lifespan(app: FastAPI):
     # Load delivered tables once. POWER is requested only when analyzing another point.
     app.state.tables = carregar_dados()
     app.state.dry_climate = carregar_clima_seco()
+    app.state.model_climates = carregar_clima_modelos()  # per-model deltas: demo field only
+    app.state.soil = SoilSuggestion()
     app.state.point_climate = PointClimate()
     app.state.demo_field = load_demo_field()
     app.state.model_spread = load_model_spread()
@@ -99,8 +104,13 @@ def health():
 
 
 @app.get("/metadata")
-def metadata():
-    return {
+def metadata(
+    lat: Annotated[float | None, Query(ge=-90, le=90, allow_inf_nan=False)] = None,
+    lon: Annotated[float | None, Query(ge=-180, le=180, allow_inf_nan=False)] = None,
+):
+    if (lat is None) != (lon is None):
+        raise HTTPException(status_code=422, detail="Envie lat e lon juntos para a sugestão de solo.")
+    result = {
         "contract": "2026-11-14",
         "cultures": [{"id": name, "label": LABELS.get(name, name.capitalize())}
                      for name in app.state.tables[0]["cultura"].tolist()],
@@ -109,8 +119,14 @@ def metadata():
         "demo_field": app.state.demo_field,
         "model_spread": app.state.model_spread,
         "point_climate_available": True,
-        "capabilities": {"declividade_pct": True, "ajuste": True, "chat": app.state.chat is not None},
+        "capabilities": {
+            "declividade_pct": True, "ajuste": True, "solo_textura": app.state.soil.available,
+            "chat": app.state.chat is not None,
+        },
     }
+    if lat is not None:  # suggested texture of the point, from the local table only (no POWER request)
+        result["solo"] = app.state.soil.get(lat, lon)
+    return result
 
 
 @app.post("/analyze")
@@ -123,14 +139,17 @@ def analyze(entrada: EntradaMotor):
         if unknown:
             raise ValueError(f"Culturas fora da tabela: {unknown}.")
         dry = app.state.dry_climate
+        models = app.state.model_climates
         origin = None
         if entrada.lon is not None:
             climate = app.state.point_climate.get(entrada.lat, entrada.lon)
             today, future, origin = climate["clima_hoje"], climate["clima_futuro"], climate["origem"]
             # P1's delivered dry year is local to the demo, not a dry year for other farms.
+            # The same goes for the per-model deltas: the regional grid only has the model average.
             if origin["hoje"] != "tabela_demo":
                 dry = None
-        result = recomendar(request, cultures, today, future, dry)
+                models = None
+        result = recomendar(request, cultures, today, future, dry, clima_modelos=models)
         if origin is not None:
             result["origem"] = origin
         return result

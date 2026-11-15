@@ -34,6 +34,7 @@ COPY scripts/ scripts/
 COPY data/culturas.csv data/clima_*.csv data/talhao_demo_2.geojson data/
 COPY data/nexgddp/regiao_mg/delta_mensal.csv data/nexgddp/regiao_mg/
 COPY data/talhao/ndvi_climatologia.csv data/talhao/declividade.csv data/talhao/
+COPY data/solo/regiao_mg/textura.csv data/solo/regiao_mg/
 RUN mkdir -p data/power
 COPY --from=front /app/frontend/dist frontend/dist
 

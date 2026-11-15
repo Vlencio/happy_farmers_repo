@@ -17,7 +17,7 @@ class TestApi(unittest.TestCase):
         request = {"lat": -20.032, "rotacao_atual": ["soja", "milho"], "horizonte": 2, "mes_plantio": 10}
         response = self.client.post("/analyze", json=request)
         self.assertEqual(response.status_code, 200)
-        expected = recomendar(request, *app.state.tables, app.state.dry_climate)
+        expected = recomendar(request, *app.state.tables, app.state.dry_climate, clima_modelos=app.state.model_climates)
         self.assertEqual(response.json(), expected)
         self.assertEqual(len(expected["sequencias"]) + len(expected["descartadas"]), 100)
 
@@ -58,7 +58,7 @@ class TestApi(unittest.TestCase):
         response = self.client.post("/analyze", json=request)
         self.assertEqual(response.status_code, 200)
         result = response.json()
-        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate, clima_modelos=app.state.model_climates))
         self.assertEqual(result["entrada"]["declividade_pct"], 4.05)
         self.assertIn("indice_erosao", result["sequencias"][0]["hoje"]["descoberto"])
         without = self.client.post("/analyze", json={k: v for k, v in request.items() if k != "declividade_pct"}).json()
@@ -70,7 +70,7 @@ class TestApi(unittest.TestCase):
         response = self.client.post("/analyze", json=request)
         self.assertEqual(response.status_code, 200)
         result = response.json()
-        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(result, recomendar(request, *app.state.tables, app.state.dry_climate, clima_modelos=app.state.model_climates))
         self.assertEqual(result["entrada"]["ajuste"], {"chuva_pct": -20.0, "temp_c": 2.0})
         self.assertEqual(sorted(result["clima"]), ["futuro", "hoje", "seco"])  # the dry year is adjusted too
         partial = self.client.post("/analyze", json={"lat": -20.032, "ajuste": {"chuva_pct": -10}}).json()
@@ -78,13 +78,47 @@ class TestApi(unittest.TestCase):
         without = self.client.post("/analyze", json={"lat": -20.032, "rotacao_atual": ["soja", "milho"]}).json()
         self.assertNotIn("ajuste", without["entrada"])
 
+    def test_soil_texture_reaches_engine(self):
+        self.assertTrue(self.client.get("/metadata").json()["capabilities"]["solo_textura"])
+        request = {"lat": -20.032, "rotacao_atual": ["soja", "milho"], "solo_textura": "arenoso"}
+        result = self.client.post("/analyze", json=request).json()
+        self.assertEqual((result["entrada"]["solo_textura"], result["entrada"]["cad_mm"]), ("arenoso", 30))
+        without = self.client.post("/analyze", json={"lat": -20.032, "rotacao_atual": ["soja", "milho"]}).json()
+        self.assertNotIn("solo_textura", without["entrada"])
+        for bad in ("argila", "ARENOSO", 30):
+            self.assertEqual(self.client.post("/analyze", json={"lat": -20.032, "solo_textura": bad}).status_code, 422)
+
+    def test_metadata_suggests_soil_for_the_point(self):
+        plain = self.client.get("/metadata").json()
+        self.assertNotIn("solo", plain)
+        solo = self.client.get("/metadata", params={"lat": -20.032, "lon": -48.526}).json()["solo"]
+        self.assertEqual((solo["lat"], solo["lon"]), (-20.032, -48.526))  # the point asked, not the cell centre
+        self.assertEqual(solo["textura_sugerida"], "argiloso")  # demo cell: 51.8% clay
+        self.assertIn("GLDAS", solo["fonte"])
+        far = self.client.get("/metadata", params={"lat": 10.0, "lon": 10.0}).json()["solo"]
+        self.assertEqual((far["textura_sugerida"], far["fonte"]), (None, None))
+        for params in ({"lat": -20.0}, {"lon": -48.5}, {"lat": 91, "lon": 0}, {"lat": 0, "lon": "NaN"}):
+            self.assertEqual(self.client.get("/metadata", params=params).status_code, 422, params)
+
+    def test_model_range_only_on_the_demo_tables(self):
+        demo = self.client.post("/analyze", json={"lat": -20.032, "rotacao_atual": ["soja", "milho"]}).json()
+        self.assertIn("modelos", demo)
+        self.assertIn("modelos", demo["sequencias"][0])
+        # another point: the regional grid only has the model average, so no per-model block
+        other = {"clima_hoje": app.state.tables[1], "clima_futuro": app.state.tables[2],
+                 "origem": {"hoje": "power_ponto", "aviso": None}}
+        with patch.object(app.state.point_climate, "get", return_value=other):
+            result = self.client.post("/analyze", json={"lat": -19.0, "lon": -45.0}).json()
+        self.assertNotIn("modelos", result)
+        self.assertNotIn("seco", result["clima"])
+
     def test_cors_for_local_frontend(self):
         response = self.client.options("/analyze", headers={"Origin": "http://127.0.0.1:4173", "Access-Control-Request-Method": "POST"})
         self.assertEqual(response.headers["access-control-allow-origin"], "http://127.0.0.1:4173")
 
     def test_partial_priorities_preserve_engine_semantics(self):
         request = {"lat": -20.032, "prioridades": {"agua": 1}, "horizonte": 1}
-        self.assertEqual(self.client.post("/analyze", json=request).json(), recomendar(request, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(self.client.post("/analyze", json=request).json(), recomendar(request, *app.state.tables, app.state.dry_climate, clima_modelos=app.state.model_climates))
 
     def test_demo_keeps_delivered_tables_and_adds_real_dry_year_and_provenance(self):
         request = {"lat": -20.032, "lon": -48.526, "mes_plantio": 10, "horizonte": 2}
@@ -94,7 +128,7 @@ class TestApi(unittest.TestCase):
         origin = result.pop("origem")
         self.assertEqual(origin["hoje"], "tabela_demo")
         self.assertIn("25 km", origin["aviso"])
-        self.assertEqual(result, recomendar({k: v for k, v in request.items() if k != "lon"}, *app.state.tables, app.state.dry_climate))
+        self.assertEqual(result, recomendar({k: v for k, v in request.items() if k != "lon"}, *app.state.tables, app.state.dry_climate, clima_modelos=app.state.model_climates))
         self.assertEqual(len(result["clima"]["seco"]), 12)
 
     def test_optional_engine_tables_and_output_pass_through_without_recalculation(self):
