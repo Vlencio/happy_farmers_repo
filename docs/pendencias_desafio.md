@@ -21,8 +21,8 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
-| 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
-| 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
+| 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
+| 5 | Prioridades e restrições do agricultor | Motor e API prontos; falta a tela; restrições em aberto | Gabriel | Não | Reaberto (15/11) |
 | 6 | Controles de cenário | Falta | Pedro, Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
@@ -132,31 +132,45 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "frost risk, extreme precipitation".
 
-**Hoje:** nada. A conferência do plano anterior deu zero dia de geada no talhão de demonstração (menor mínima de 2005 a 2024: 4,2 °C, sem a correção da estação). A chuva só entra como total do ciclo.
+**Hoje (15/11, `motor-diario`):** o modo diário conta, por cultura, ano e clima, os dias do ciclo com geada e com chuva extrema (regra 10 do modo diário no contrato). Não muda score nem rank.
+
+- Geada: mínima no abrigo de 3 °C ou menos (Grodzki et al., 1996; Embrapa Trigo). Vira o aviso `geada`.
+- Chuva extrema: acima do percentil 95 dos dias com chuva da série de hoje (R95p do ETCCDI), 24,7 mm no talhão de demonstração. Fica só como número: por definição acontece todo ano no período chuvoso.
+- Talhão de demonstração, com a correção da A520: um dia de geada em 19 anos, 1/jul/2021 (2,2 °C), a onda de frio de 2021. Só o milho safrinha de `milho>milho` pega esse dia. Soja na safra: chuva extrema em 18 de 19 anos, 69 dias no total; no futuro, 64.
+
+**Feito:**
+
+- [x] Motor, modo diário: dias de geada e de chuva extrema por cultura e ano, com `anos`, `dias_total` e `max_no_ano`.
+- [x] Limiares com fonte.
+- [x] Decidido: só aviso, sem desconto na produtividade.
 
 **Falta:**
 
-- [ ] Motor, modo diário: contar por cultura e ano os dias do ciclo com mínima abaixo de um limiar de geada e os dias com chuva acima de um limiar de chuva extrema. A série diária já tem as duas colunas.
-- [ ] Definir os dois limiares com fonte (de memória: geada com mínima no abrigo abaixo de uns 3 °C; conferir).
-- [ ] Decidir se viram desconto na produtividade ou só aviso (Parte 3).
-- [ ] Para o sul de Minas a geada pode não ser zero: depende da Parte 8 (série diária por ponto).
+- [ ] API e tela: dependem do modo diário na API (Parte 8). Sem ele, os números não chegam à tela.
+- [ ] Para o sul de Minas a geada pode não ser zero: depende da série diária por ponto (Parte 8).
+- [ ] POWER é grade de cerca de 50 km; a mínima real no talhão pode ser mais baixa em baixadas.
 
-**Feito quando:** a saída do modo diário traz dias de geada e de chuva extrema por cultura, e a tela mostra a frase correspondente, mesmo que seja "nenhum dia em 19 anos".
+**Feito quando:** a saída do modo diário traz dias de geada e de chuva extrema por cultura (feito), e a tela mostra a frase correspondente, mesmo que seja "nenhum dia em 19 anos".
 
 ## Parte 5 — Prioridades e restrições do agricultor
 
 **Texto:** "farmer priorities"; "allow farmers to input their own priorities or constraints, such as water availability, equipment limitations, or market preferences"; "mapping which rotation ideas best align with farmer priorities".
 
-**Hoje:** o motor aceita pesos de água, solo e renda e eles mudam o ranking. A tela manda sempre 1/1/1 (`frontend/web/api.mjs`), e os três cards não usam o score com pesos. Não há como informar restrição.
+**Decisão (Pedro, 15/11):** em vez de um card por objetivo (renda, solo, clima), a tela mostra as três sequências de maior score de hoje, com os pesos de água, solo e renda escolhidos pelo produtor. Cada card mostra também a posição no futuro.
+
+**Hoje (15/11, `motor-diario`):** o motor já aceitava os pesos e ordenava por eles; a API já recebe `prioridades`. Nos dados reais, os pesos mudam as três primeiras (outubro: pesos iguais dão `soja>milho`, `soja>sorgo`, `soja>crotalaria`; só renda troca as duas últimas por `soja>trigo` e `soja>girassol`; só solo dá três sequências com crotalária).
+
+**Feito:**
+
+- [x] Time: decisão de 14/11 reaberta por Pedro.
+- [x] Motor: desempate do ranking. Com peso só em água, várias sequências empatam em 100 (a parte `agua` satura no modo mensal); o empate agora vai para a maior média simples de `agua`, `solo` e `renda`. Com pesos iguais nada muda; fixtures iguais.
 
 **Falta:**
 
-- [ ] Time: reabrir a decisão de 14/11 (pesos iguais, sem controle na tela).
-- [ ] Tela: controle de prioridade e alguma forma de mostrar qual estratégia mais combina com ela.
-- [ ] Motor: entrada de restrições. O mínimo: lista de culturas que o agricultor não quer ou não consegue plantar (equipamento, mercado) e se há irrigação.
-- [ ] Tela: campos para essas restrições.
+- [ ] Tela (Gabriel): controle de prioridade e os três cards pelo `rank_hoje`, com o `rank_futuro` em cada um.
+- [ ] Motor: entrada de restrições (culturas que o produtor não quer ou não consegue plantar; irrigação). Fora desta decisão.
 
-**Feito quando:** mudar a prioridade ou excluir uma cultura na tela muda o resultado mostrado.
+**Feito quando:** mudar a prioridade na tela muda os três cards mostrados.
 
 ## Parte 6 — Controles de cenário
 

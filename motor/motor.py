@@ -43,6 +43,13 @@ KY = {"soja": 0.85, "milho": 1.25, "sorgo": 0.90, "feijao": 1.15, "girassol": 0.
 KY_PADRAO = 1.0  # cultura sem Ky na tabela da FAO: perda proporcional, como no modo mensal
 QUANTIL_RUIM = 0.2  # "ano ruim": cerca de 1 em cada 5 anos fica nesse valor ou abaixo
 MIN_ANOS_DIARIO = 5  # menos anos completos que isso: nao resumir
+# Geada: minima no abrigo de 3 graus C ou menos, o criterio usual no Brasil (Grodzki et al., 1996;
+# Embrapa Trigo): o ar no abrigo fica de 3 a 6 graus C mais quente que a superficie das plantas.
+LIMIAR_GEADA_C = 3.0
+# Chuva extrema: dia acima do percentil 95 dos dias com chuva da serie de hoje (indice R95p do
+# ETCCDI). O limiar sai da propria serie e vale tambem para o futuro, para a contagem mostrar a mudanca.
+PERCENTIL_CHUVA_EXTREMA = 0.95
+DIA_COM_CHUVA_MM = 1.0
 COLUNAS_DIARIO = ["data", "chuva_mm", "tmin_c", "tmax_c"]  # et0_mm (mm no dia) e opcional
 DIARIO_DEMO = Path("power") / "power_diario_-20.032_-48.526_2005_2024.csv"  # talhao de demonstracao
 LAT_DEMO = -20.032
@@ -403,8 +410,9 @@ def simular_cultura_diaria(c, inicio, serie, agua):
     ciclo = c["ciclo_dias"]
     limiar = c["temp_calor_c"]
     chuvas, et0s, tmins, tmaxs = serie["chuva"], serie["et0"], serie["tmin"], serie["tmax"]
+    limiar_chuva = serie.get("limiar_chuva_extrema")
     soma_temp = chuva_ciclo = etc_ciclo = deficit = 0.0
-    dias_sensiveis = dias_calor = 0
+    dias_sensiveis = dias_calor = dias_geada = dias_chuva_extrema = 0
     for i in range(ciclo):
         d = inicio + i
         fracao = i / ciclo
@@ -416,6 +424,8 @@ def simular_cultura_diaria(c, inicio, serie, agua):
         if limiar is not None and FASE_SENSIVEL[0] <= fracao < FASE_SENSIVEL[1]:
             dias_sensiveis += 1
             dias_calor += tmaxs[d] > limiar
+        dias_geada += tmins[d] <= LIMIAR_GEADA_C
+        dias_chuva_extrema += limiar_chuva is not None and chuva > limiar_chuva
         chuva_ciclo += chuva
         etc_ciclo += etc
         deficit += etc - eta
@@ -430,6 +440,8 @@ def simular_cultura_diaria(c, inicio, serie, agua):
         "chuva_mm": chuva_ciclo,
         "etc_mm": etc_ciclo,
         "deficit_mm": deficit,
+        "dias_geada": float(dias_geada),
+        "dias_chuva_extrema": float(dias_chuva_extrema),
     }
     return resultado, agua
 
@@ -469,6 +481,28 @@ def avaliar_sequencia_diaria(nomes, slots, anterior, culturas, esperas, inicio, 
     }
 
 
+def _percentil(valores, q):
+    """Percentil com interpolacao linear entre os vizinhos (o mesmo do numpy)."""
+    v = sorted(valores)
+    pos = (len(v) - 1) * q
+    i = int(pos)
+    return v[i] + (v[min(i + 1, len(v) - 1)] - v[i]) * (pos - i)
+
+
+def _eventos(valores):
+    """Dias de um evento por ano -> anos com algum dia, total de dias e o maior ano."""
+    return {"anos": sum(v > 0 for v in valores), "dias_total": sum(valores), "max_no_ano": max(valores, default=0.0)}
+
+
+def _chave_rank(a):
+    """Ordem do ranking: maior score; em empate, a media simples de agua, solo e renda.
+
+    O empate acontece quando a prioridade pesa so uma parte que satura (agua = 1 em varias
+    sequencias). Com pesos iguais o desempate e o proprio score e a ordem nao muda.
+    """
+    return (-round(a["score"], 9), -round(a["agua"] + a["solo"] + a["renda"], 9))
+
+
 def _quantil_ruim(valores):
     v = sorted(valores)
     return v[int(len(v) * QUANTIL_RUIM)]
@@ -481,6 +515,8 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
     e ano ruim (QUANTIL_RUIM) de agua, solo e receita, cada um com score e rank.
     """
     hoje = _serie_diaria(diario, lat)
+    com_chuva = [v for v in hoje["chuva"] if v >= DIA_COM_CHUVA_MM]
+    hoje["limiar_chuva_extrema"] = _percentil(com_chuva, PERCENTIL_CHUVA_EXTREMA) if com_chuva else None
     series = {"hoje": hoje, "futuro": _serie_futura(hoje, climas["hoje"], climas["futuro"], et0["hoje"], et0["futuro"])}
     esperas = {s: [r["espera_dias"] for r in aval_hoje[s]["culturas"]] for s in sequencias}
     # dias do talhao livre ate o fim do ultimo ciclo, na sequencia mais longa
@@ -527,7 +563,7 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
                 a = resumo[cen][s][nivel]
                 a["renda"] = min(1.0, a["receita_ha"] / teto)
                 a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
-            for i, s in enumerate(sorted(sequencias, key=lambda s: -resumo[cen][s][nivel]["score"])):
+            for i, s in enumerate(sorted(sequencias, key=lambda s: _chave_rank(resumo[cen][s][nivel]))):
                 resumo[cen][s][nivel]["rank"] = i + 1
 
     campos_cultura = ("atendimento_hidrico", "fator_agua", "encaixe_calor", "fator", "receita_ha")
@@ -548,12 +584,22 @@ def _modo_diario(diario, lat, climas, et0, tabela, sequencias, aval_hoje, slots,
                             nivel: {k: f([a["culturas"][i][k] for a in anos.values()]) for k in campos_cultura}
                             for nivel, f in niveis.items()
                         },
+                        "eventos": {
+                            evento: _eventos([a["culturas"][i][f"dias_{evento}"] for a in anos.values()])
+                            for evento in ("geada", "chuva_extrema")
+                        },
                     }
                     for i, (nome, slot) in enumerate(zip(s, slots))
                 ],
                 "anos": [{"ano": ano, **{p: a[p] for p in partes}} for ano, a in anos.items()],
             }
-    geral = {"anos": list(inicios), "n_anos": len(inicios), "quantil_ruim": QUANTIL_RUIM}
+    geral = {
+        "anos": list(inicios),
+        "n_anos": len(inicios),
+        "quantil_ruim": QUANTIL_RUIM,
+        "limiar_geada_c": LIMIAR_GEADA_C,
+        "limiar_chuva_extrema_mm": hoje["limiar_chuva_extrema"],
+    }
     return geral, blocos
 
 
@@ -604,6 +650,17 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario):
                 f"Clima {cen}: em um ano ruim (1 em 5) a receita fica {(1 - ruim / mediano) * 100:.0f}% abaixo da do ano mediano.",
                 cenario=cen, queda=1 - ruim / mediano, receita_mediano=mediano, receita_ruim=ruim,
             )  # fmt: skip
+    for cen, bloco in (bloco_diario or {}).items():
+        for c in bloco["culturas"]:
+            g = c["eventos"]["geada"]
+            if g["anos"] > 0:
+                aviso(
+                    "risco", "geada",
+                    f"{c['cultura']} na {c['slot']}, clima {cen}: a mínima chegou a {LIMIAR_GEADA_C:g} °C ou menos "
+                    f"durante o ciclo em {g['anos']} de {len(bloco['anos'])} anos.",
+                    c["cultura"], cen, anos=g["anos"], n_anos=len(bloco["anos"]), dias_total=g["dias_total"],
+                    max_no_ano=g["max_no_ano"], limiar_c=LIMIAR_GEADA_C, slot=c["slot"],
+                )  # fmt: skip
     for r in hoje["culturas"]:
         if r["fator_sequencia"] == PENALIDADE_REPETICAO:
             aviso(
@@ -801,7 +858,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             if declividade is not None:  # chuva sobre solo exposto, ponderada pela declividade; fora do score
                 a["descoberto"]["indice_erosao"] = a["descoberto"]["chuva_exposta_mm"] * fator_declividade(declividade)
-        ordem = sorted(sequencias, key=lambda s: -porseq[s]["score"])
+        ordem = sorted(sequencias, key=lambda s: _chave_rank(porseq[s]))
         rank[cen] = {s: i + 1 for i, s in enumerate(ordem)}
 
     geral_diario = blocos_diario = None

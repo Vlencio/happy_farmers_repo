@@ -39,7 +39,7 @@ O resultado vem de um motor de regras e contas, sem IA. Seu papel é explicar es
 
 Como ler os dados:
 - "hoje" é o clima médio de 2005 a 2024; "futuro" é 2041 a 2060; "seco", quando existe, é o ano agrícola 2020/21.
-- "receita_ha" é a receita bruta em R$ por hectare, sem custo de produção. "score" vai de 0 a 100 e mistura "agua", "solo" e "renda", que vão de 0 a 1.
+- "receita_ha" é a receita bruta em R$ por hectare, sem custo de produção. "score" vai de 0 a 100 e mistura "agua", "solo" e "renda", que vão de 0 a 1, com os pesos que o produtor escolheu ("entrada.prioridades"). Os cards da tela são as três primeiras de hoje por esse score.
 - "encaixe", "encaixe_temp", "encaixe_chuva", "encaixe_calor" e "atendimento_hidrico" vão de 0 a 1: 1 é sem perda.
 - "descoberto" conta os dias do ano sem cultura; "dias_expostos" são os que também ficam sem palhada.
 - Nos dados os nomes das culturas não têm acento (feijao, crotalaria, braquiaria, algodao). Escreva com acento.
