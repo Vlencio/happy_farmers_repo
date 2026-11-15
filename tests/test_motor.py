@@ -398,14 +398,33 @@ class TestRecomendar(unittest.TestCase):
         self.assertEqual(zero["hoje"]["receita_ha"], 0.0)
 
     def test_parte_solo_nao_usa_a_agua(self):
+        tabela = motor._tabela_culturas(self.dados[0])
         for s in self.saida["sequencias"]:
             for r in s["hoje"]["culturas"]:
                 clima = min(r["encaixe_temp"], r["encaixe_chuva"], r["encaixe_calor"])
+                credito = 1.0 if motor.adubo_verde(tabela[r["cultura"]]) else motor.CREDITO_N_LEGUMINOSA_GRAO
                 esperado = clima * (
-                    motor.PESO_SOLO["fixa_n"] * r["fixa_n"] + motor.PESO_SOLO["cobre_solo"] * r["cobre_solo"]
+                    motor.PESO_SOLO["fixa_n"] * r["fixa_n"] * credito + motor.PESO_SOLO["cobre_solo"] * r["cobre_solo"]
                     + motor.PESO_SOLO["diversidade"] * (not r["repete"])
                 )  # fmt: skip
                 self.assertAlmostEqual(r["solo"], esperado, delta=2e-3)
+
+    def test_leguminosa_de_grao_tem_meio_credito_de_n(self):
+        tabela = motor._tabela_culturas(self.dados[0])
+        self.assertEqual(motor.credito_n(tabela["crotalaria"]), 1.0)  # adubo verde: peso inteiro
+        self.assertEqual(motor.credito_n(tabela["soja"]), motor.CREDITO_N_LEGUMINOSA_GRAO)
+        self.assertEqual(motor.credito_n(tabela["milho"]), 0.0)
+        self.assertEqual(motor.CREDITO_N_LEGUMINOSA_GRAO, 0.5)
+        # soja depois de milho, sem palhada: so o meio credito de N e a diversidade, vezes o encaixe de clima
+        soja = cultura_de(self.saida, "soja>milho", "hoje", 0)
+        self.assertTrue(soja["fixa_n"])  # o campo continua sendo o atributo da tabela
+        clima = min(soja["encaixe_temp"], soja["encaixe_chuva"], soja["encaixe_calor"])
+        self.assertAlmostEqual(soja["solo"], clima * (0.2 + motor.PESO_SOLO["diversidade"]), delta=2e-3)
+        # a mesma soja sem produtividade vira adubo verde e leva o peso inteiro (0,4)
+        culturas = self.dados[0].copy()
+        culturas.loc[culturas["cultura"] == "soja", ["produtividade", "preco"]] = 0
+        verde = cultura_de(recomendar(ENTRADA, culturas, *self.dados[1:]), "soja>milho", "hoje", 0)
+        self.assertAlmostEqual(verde["solo"] - soja["solo"], clima * 0.2, delta=2e-3)
 
     def test_entradas_invalidas(self):
         with self.assertRaises(ValueError):
