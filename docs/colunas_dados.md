@@ -83,6 +83,7 @@ Script: `scripts/montar_culturas.py` · arquivo `data/culturas.csv` · uma linha
 | `preco` | R$/t (0 = cobertura) |
 | `produtividade`, `produtividade_safrinha` | t/ha, Conab 2024/25 (média Brasil) |
 | `temp_calor_c` | Máxima diária (°C) que prejudica o florescimento (Luo 2011). Vazio = cobertura, regra de calor não se aplica |
+| `preco_status`, `temp_calor_c_status` | Valor ainda sem fonte conferida (`memoria` ou `sem fonte`); vazio = conferido. O motor gera o aviso `valor_a_conferir` |
 
 ## 6. Tabelas de clima do motor
 
