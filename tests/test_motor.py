@@ -387,6 +387,40 @@ class TestRecomendar(unittest.TestCase):
         milho = next(s for s in saida["sequencias"] if s["id"] == "milho")["hoje"]
         self.assertAlmostEqual(milho["renda"], min(1.0, milho["receita_ano_ha"] / (1000 * 5.0)), delta=2e-3)
 
+    def test_renda_no_teto(self):
+        # algodao h1 de safra: receita acima do teto da soja; renda cortada em 1, o aviso traz a razao bruta
+        saida = recomendar({**ENTRADA, "horizonte": 1}, *self.dados)
+        self.assertEqual(saida["slots"], ["safra"])
+        alg = next(s for s in saida["sequencias"] if s["id"] == "algodao")
+        teto = 2100 * 3.6
+        for cen in ("hoje", "futuro"):
+            a = alg[cen]
+            self.assertAlmostEqual(a["renda_bruta"], a["receita_ano_ha"] / teto, delta=2e-3)
+            self.assertEqual(a["renda"], min(1.0, a["renda_bruta"]))
+        self.assertGreater(alg["hoje"]["renda_bruta"], 1)
+        (av,) = [a for a in alg["avisos"] if a["codigo"] == "renda_no_teto"]
+        self.assertEqual((av["tipo"], av["cultura"], av["cenario"]), ("lacuna", None, None))
+        self.assertEqual(av["dados"]["teto"], teto)
+        self.assertEqual(av["dados"]["renda_bruta"], {c: alg[c]["renda_bruta"] for c in ("hoje", "futuro")})
+        self.assertIn("não distingue receitas acima do teto", av["texto"])
+        # soja>milho h2 em outubro: abaixo do teto, sem aviso, renda_bruta igual a renda
+        sm = next(s for s in self.saida["sequencias"] if s["id"] == "soja>milho")
+        self.assertNotIn("renda_no_teto", [a["codigo"] for a in sm["avisos"]])
+        self.assertLess(sm["hoje"]["renda_bruta"], 1)
+        self.assertEqual(sm["hoje"]["renda"], sm["hoje"]["renda_bruta"])
+
+    def test_renda_no_teto_com_dados_reais(self):
+        # tabelas de data/: algodao h1 de safra (talhao livre em outubro) passa do teto hoje; soja>milho h2 nao
+        dados = carregar_dados()
+        uma = recomendar({**ENTRADA, "horizonte": 1}, *dados)
+        alg = next(s for s in uma["sequencias"] if s["id"] == "algodao")
+        self.assertGreater(alg["hoje"]["renda_bruta"], 1)
+        self.assertEqual(alg["hoje"]["renda"], 1.0)
+        self.assertIn("renda_no_teto", [a["codigo"] for a in alg["avisos"]])
+        duas = recomendar(ENTRADA, *dados)
+        sm = next(s for s in duas["sequencias"] if s["id"] == "soja>milho")
+        self.assertNotIn("renda_no_teto", [a["codigo"] for a in sm["avisos"]])
+
     def test_preco_editado_nao_muda_o_teto(self):
         # soja e milho a preco zero: o teto continua o da tabela (antes dava divisao por zero)
         saida = recomendar({**ENTRADA, "precos": {"soja": 0, "milho": 0}}, *self.dados)

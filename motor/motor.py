@@ -1050,11 +1050,17 @@ def _virgula(x, casas=3):
     return f"{x:.{casas}f}".replace(".", ",")
 
 
-def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bloco_modelos=None):
+def _milhar(x):
+    """Numero inteiro com ponto de milhar, para os textos."""
+    return f"{x:,.0f}".replace(",", ".")
+
+
+def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bloco_modelos=None, teto=None):
     """Lacunas de informacao e riscos de uma sequencia, tirados dos proprios numeros dela.
 
     Cada aviso: tipo ("risco" ou "lacuna"), codigo, cultura e cenario (ou None), os dados
     que o geraram e um texto pronto. A lista explica o resultado; nao muda score nem rank.
+    teto: o teto de renda (regra 12), para o aviso renda_no_teto; sem ele, o aviso nao sai.
     """
     lista = []
 
@@ -1152,6 +1158,19 @@ def avisos_da_sequencia(s, tabela, aval, precos, tem_historico, bloco_diario, bl
             "Sem histórico de plantio: a primeira cultura não recebe a penalidade de repetição, a de hospedeiro comum "
             "de pragas nem o bônus após fixadora de nitrogênio.",
         )  # fmt: skip
+    if teto is not None:
+        brutas = {cen: porseq[s]["renda_bruta"] for cen, porseq in aval.items()}
+        modelos = {m["modelo"]: m["receita_ano_ha"] / teto for m in (bloco_modelos or {}).get("por_modelo", [])}
+        acima = {**brutas, **modelos}
+        acima = {nome: v for nome, v in acima.items() if v > 1 + 1e-9}
+        if acima:
+            aviso(
+                "lacuna", "renda_no_teto",
+                f"A receita por ano passa do teto de renda ({_milhar(teto)} R$/ha/ano, a referência nos slots usados) em "
+                f"{', '.join(f'{nome} ({v * 100:.0f}%)' for nome, v in acima.items())}: a parte renda do score fica no "
+                "máximo (1) e não distingue receitas acima do teto.",
+                teto=teto, renda_bruta=brutas, **({"por_modelo": modelos} if modelos else {}),
+            )  # fmt: skip
     for nome in dict.fromkeys(s):
         c = tabela[nome]
         if c["temp_calor_c"] is None:
@@ -1412,7 +1431,9 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
     for cen, porseq in aval.items():
         for s in sequencias:
             a = porseq[s]
-            a["renda"] = min(1.0, a["receita_ano_ha"] / teto)
+            # a razao antes do corte: acima de 1, a renda satura e sai o aviso renda_no_teto
+            a["renda_bruta"] = a["receita_ano_ha"] / teto
+            a["renda"] = min(1.0, a["renda_bruta"])
             a["score"] = 100 * (pesos["agua"] * a["agua"] + pesos["solo"] * a["solo"] + pesos["renda"] * a["renda"])
             if declividade is not None:  # chuva sobre solo exposto, ponderada pela declividade; fora do score
                 a["descoberto"]["indice_erosao"] = a["descoberto"]["chuva_exposta_mm"] * fator_declividade(declividade)
@@ -1433,7 +1454,8 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
         )
 
     campos = [
-        "score", "agua", "atendimento_hidrico", "solo", "renda", "receita_ha", "anos_ocupados", "receita_ano_ha", "encaixe",
+        "score", "agua", "atendimento_hidrico", "solo", "renda", "renda_bruta", "receita_ha", "anos_ocupados", "receita_ano_ha",
+        "encaixe",
         "descoberto",
         "culturas",
     ]  # fmt: skip
@@ -1476,7 +1498,7 @@ def recomendar(entrada, culturas, clima_hoje, clima_futuro, clima_seco=None, dia
                 **({"modelos": blocos_modelos[s]} if blocos_modelos is not None else {}),
                 "avisos": avisos_da_sequencia(
                     s, tabela, aval, precos, bool(historico), blocos_diario[s] if blocos_diario is not None else None,
-                    blocos_modelos[s] if blocos_modelos is not None else None,
+                    blocos_modelos[s] if blocos_modelos is not None else None, teto,
                 ),
                 "beneficios": beneficios_da_sequencia(s, aval, blocos_diario[s] if blocos_diario is not None else None),
             }

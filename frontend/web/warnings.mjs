@@ -10,6 +10,7 @@ const TYPES = {
   sem_limiar_de_calor: 'lacuna', limiar_de_calor_pouco_confiavel: 'lacuna',
   sem_valor_de_mercado: 'lacuna', ky_padrao: 'lacuna', valor_a_conferir: 'lacuna',
   hospedeiro_comum: 'risco', fator_agua_diario: 'risco', rank_varia_entre_modelos: 'risco',
+  renda_no_teto: 'lacuna',
 };
 const FIELDS = { preco: 'Price', temp_calor_c: 'Heat threshold', produtividade: 'Main-season yield',
   produtividade_safrinha: 'Second-season yield', ky: 'Yield response to water shortage (Ky)' };
@@ -79,6 +80,22 @@ export function validateSequenceWarnings(seq, scenarios) {
           string(model, `${path}.dados.por_modelo`, 100);
           finite(rank, `${path}.dados.por_modelo.${model}`, d.rank_min, d.rank_max);
           if (!Number.isInteger(rank)) invalid(`${path}.dados.por_modelo.${model}`);
+        }
+        break;
+      }
+      case 'renda_no_teto': {
+        amount('teto', Number.MIN_VALUE);
+        if (!object(d.renda_bruta) || !Object.keys(d.renda_bruta).length) invalid(`${path}.dados.renda_bruta`);
+        for (const [key, ratio] of Object.entries(d.renda_bruta)) {
+          if (!scenarios.includes(key)) invalid(`${path}.dados.renda_bruta`);
+          finite(ratio, `${path}.dados.renda_bruta.${key}`, 0);
+        }
+        if (Object.hasOwn(d, 'por_modelo')) {
+          if (!object(d.por_modelo) || !Object.keys(d.por_modelo).length) invalid(`${path}.dados.por_modelo`);
+          for (const [model, ratio] of Object.entries(d.por_modelo)) {
+            string(model, `${path}.dados.por_modelo`, 100);
+            finite(ratio, `${path}.dados.por_modelo.${model}`, 0);
+          }
         }
         break;
       }
@@ -187,6 +204,15 @@ function present(warning, cropLabel) {
         'This sequence\'s future rank changes across climate models. The range compares the available models; it is neither a confidence interval nor a probability.',
         `Future rank: #${d.rank_min} to #${d.rank_max}. ${Object.entries(d.por_modelo).map(([model, rank]) => `${model}: #${rank}`).join('; ')}. Rank-spread threshold used for this warning: ${d.limite} positions.`,
         `Future ranks range from #${d.rank_min} to #${d.rank_max} across models.`);
+    case 'renda_no_teto': {
+      const ratios = [...Object.entries(d.renda_bruta).map(([key, ratio]) => [SCENARIOS[key], ratio]),
+        ...Object.entries(d.por_modelo || {}).map(([model, ratio]) => [`future climate (${model})`, ratio])];
+      const above = ratios.filter(([, ratio]) => ratio > 1).map(([label]) => label);
+      return item('Income score at its maximum',
+        'Annual revenue exceeds the income reference (the regional reference crop for each season used, without losses). The income part of the score is capped at its maximum, so revenues above the reference score the same. This warning does not change scores or order.',
+        `Income reference: ${money(d.teto)}/ha/year. Revenue as a share of the reference: ${ratios.map(([label, ratio]) => `${label} ${percent(ratio)}`).join('; ')}.`,
+        `Income score capped${above.length ? ` (${above.join(', ')})` : ''}.`);
+    }
     case 'solo_exposto':
       return item('Exposed soil', 'Days without a standing crop or mulch within the first 365 days. Rainfall refers to today\'s climate.',
         `${d.dias_expostos} exposed days; ${number(d.chuva_exposta_mm)} mm of rain on exposed soil.`,

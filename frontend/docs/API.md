@@ -586,6 +586,9 @@ restaurada para `hospedeiro_comum`, que agora tem apresentação própria.
   confundir esse resumo com a avaliação mensal.
 - `rank_varia_entre_modelos`: faixa de posições, ranks de cada modelo e limite
   informado. O aviso diário depende de a API chamar esse modo; o de modelos já pode aparecer no clima de demonstração.
+- `renda_no_teto` (lacuna): teto de renda e a razão receita/teto sem corte por
+  cenário e por modelo (`renda_bruta`, `por_modelo`); o card diz que a parte
+  renda está no máximo. O campo `renda_bruta` de cada cenário é ignorado pela tela.
 - O detalhe valida e apresenta `repete`, `bonus_n`, `penalidade_hospedeiro`,
   `dias_apos_anterior` e `hospedeiro_comum` quando presentes. Bônus: cultura não
   fixadora até 60 dias após adubo verde, janela provisória. Campos ausentes em
