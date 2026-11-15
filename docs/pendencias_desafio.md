@@ -116,12 +116,13 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [x] `docs/contrato_motor.md` (regra 17 e coluna `<campo>_status`) e fixtures do front regeneradas.
 - [x] Tela (Gabriel): resumo separado de riscos e lacunas nos cards; lista completa com contexto e evidências no detalhe de cada estratégia, inclusive a rotação atual. Ausência do campo não é tratada como lista vazia.
 - [x] Texto: os 11 códigos têm apresentação em português com os rótulos acentuados das culturas, números e unidades de `dados`. Código novo preserva texto e dados do motor.
+- [x] Motor: lista `beneficios` por sequência (regra 18): fixa nitrogênio, bônus após fixadora, deixa palhada, pouco solo exposto, estável no futuro, clima favorável. Só com o que entra na conta. `culturas[]` traz `fixa_n` e `cobre_solo`.
 
 **Falta:**
 
 - [ ] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
 - [ ] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato).
-- [ ] Benefícios por estratégia: o texto do desafio também pede "what benefits it may offer". Hoje o benefício é o critério do card; não há lista de benefícios gerada pelo motor (fixa nitrogênio, deixa palhada, menor demanda de água).
+- [ ] Tela (Gabriel): mostrar `beneficios` ao lado de `avisos`.
 
 **Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front; status dos dados e benefícios continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`, seção Parte 3.
 
@@ -293,6 +294,8 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 - [ ] Glossário: anomalia de umidade do solo, risco de geada, ano ruim, Ky.
 - [ ] Texto curto sobre o papel de cada tipo de cultura: fixadora de nitrogênio, cobertura, raiz profunda, tolerante à seca.
+- [x] API: `POST /chat` responde dúvidas do produtor sobre a análise na tela, só com os números do motor (`docs/chat.md`).
+- [ ] Tela (Gabriel): painel de chat quando `/metadata` anunciar `capabilities.chat`.
 
 **Feito quando:** todo termo técnico que aparece na tela tem explicação na própria tela.
 
