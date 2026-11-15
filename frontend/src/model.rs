@@ -26,6 +26,18 @@ pub struct Settings {
     pub horizonte: u8,
     #[serde(default)]
     pub prioridades: Priorities,
+    #[serde(default)]
+    pub ajuste: Adjustment,
+}
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq)]
+pub struct Adjustment {
+    pub chuva_pct: f64,
+    pub temp_c: f64,
+}
+impl Adjustment {
+    pub fn active(&self) -> bool {
+        self.chuva_pct != 0.0 || self.temp_c != 0.0
+    }
 }
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Priorities {
@@ -48,6 +60,7 @@ impl Default for Settings {
             mes_plantio: 10,
             horizonte: 2,
             prioridades: Priorities::default(),
+            ajuste: Adjustment::default(),
         }
     }
 }
@@ -69,6 +82,7 @@ pub struct Analysis {
     pub source_warning: String,
     pub scenario_note: String,
     pub priority_note: String,
+    pub adjustment_note: String,
     pub recommendations: Vec<Recommendation>,
     pub current_rotation: CurrentRotation,
     pub discarded: Vec<String>,

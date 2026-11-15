@@ -1,7 +1,7 @@
 # Integração Rune ↔ FastAPI ↔ motor
 
 O contrato vigente é [docs/contrato_motor.md](../../docs/contrato_motor.md), de
-15/11/2026, incluindo a decisão de prioridades da Parte 5 (`2413f15`). Ele substitui a proposta anterior deste
+15/11/2026, incluindo as prioridades da Parte 5 (`2413f15`) e os ajustes da Parte 6 (`2638e98`). Ele substitui a proposta anterior deste
 arquivo (`schema_version`, `farm`, `recommendations`, `horizon_months`).
 
 `backend/app.py` valida a entrada HTTP, seleciona as tabelas do ponto e chama
@@ -45,6 +45,7 @@ por vírgulas quando necessário. Os servidores locais escutam apenas em loopbac
 | Mês em que o talhão fica livre | `mes_plantio`, 1–12, padrão outubro |
 | Próxima cultura / próximas duas | `horizonte`, 1 ou 2, padrão 2 |
 | Suas prioridades: água, solo e renda | `prioridades`: cada controle de 0 a 3, padrão 1/1/1 |
+| Simule outro clima | `ajuste: {chuva_pct, temp_c}`, somente após o servidor anunciar suporte; veja Parte 6 |
 | Preços | Sem substituição dos preços da tabela |
 | Área em hectares | Uso local: `receita_ha × area_ha` |
 | Safra/ano e observações | Rascunho local; não são campos aceitos pelo motor |
@@ -151,6 +152,78 @@ Não são inventadas etapas de preparo ou regras agronômicas pelo front-end.
 `sequencias: []` é um resultado válido: mostra ausência de alternativa viável e
 oferece ajuste do calendário. `descartadas[].motivo` é convertido em explicações
 expansíveis, tanto para ausência de plantio naquela safra quanto para época perdida.
+
+## Simulação de chuva e temperatura — Parte 6
+
+O motor da Main `d6d7a73` já aceita `ajuste`, mas a API ainda responde **422**
+para esse campo. O front está preparado; a ativação depende da entrega abaixo.
+O nome da capability é uma proposta de integração para Pedro, não um campo já
+disponível no servidor atual:
+
+```json
+{"capabilities": {"ajuste": true}}
+```
+
+Com esse sinal booleano, os dois controles de “Simule outro clima” ficam ativos:
+chuva entre −50% e +30%, em passos de 5%; temperatura entre 0 e +4 °C, em passos
+de 0,5 °C. Podem ser arrastados ou operados por teclado e pelos botões −/+. O
+rascunho preserva os valores; rascunhos anteriores começam em 0/0. Ajuste inválido
+no rascunho é recuperado sem apagar histórico, calendário ou prioridades válidos.
+
+No planejamento, a consulta começa em “Analisar fazenda”. Nos resultados, mudar
+um controle invalida a análise e o chat; “Aplicar cenário” consulta os novos
+números. Arrastar mostra a escolha provisória e só salva ao soltar; cancelar o
+gesto preserva a escolha anterior. “Voltar ao clima sem ajuste” zera os dois campos.
+
+Quando ambos são zero, `buildRequest` omite `ajuste`, preservando compatibilidade
+com a API atual. Sem suporte, os controles ficam indisponíveis. Um rascunho com
+valores não zero bloqueia a análise até ser zerado; a tela não ignora o cenário
+salvo nem envia um campo que o servidor rejeita. Com suporte, um exemplo de envio é:
+
+```json
+{"ajuste": {"chuva_pct": -20, "temp_c": 2}}
+```
+
+Antes de exibir uma resposta, `assertAdjustmentApplied` exige os mesmos valores
+em `entrada.ajuste`. Resposta sem o ajuste solicitado, divergente ou com um ajuste
+não solicitado vira erro, e respostas de consultas canceladas são descartadas.
+`web/scenario.mjs` valida e rotula os dados; não altera chuva, temperatura, ET0,
+dias quentes, receita, score ou ranking. Os números continuam vindo do motor.
+
+Resultados e detalhes exibem “Cenário hipotético”: é um **e se**, não uma previsão.
+O mesmo ajuste vale para todos os meses e cenários, inclusive a base de 2020/21.
+Quando ajustado, esse ano seco não é apresentado como observação original.
+Com aumento de temperatura, a tela informa que os dias quentes são estimados por
+interpolação ou extrapolação dos limiares existentes.
+
+O chat recebe a resposta completa, incluindo `entrada.ajuste`, e os IDs dos novos
+cards e da referência. Interpretar uma pergunta para mudar o cenário automaticamente
+não faz parte desta entrega. O prompt do servidor ainda precisa contextualizar
+os cenários ajustados como hipóteses.
+
+**Mensagem para Pedro:**
+
+> Pedro, o front da Parte 6 está preparado. Confirmei os 9 testes do motor e os
+> números do caso −20% de chuva. A API atual ainda retorna 422 para `ajuste`.
+> Falta aceitar esse objeto opcional no `/analyze`: `chuva_pct` entre −50 e +30,
+> `temp_c` entre 0 e +4, ambos finitos e com padrão zero; repassar ao motor após
+> selecionar o clima do ponto; e anunciar `capabilities.ajuste: true` no `/metadata`.
+> O front envia os dois campos quando há ajuste e valida o retorno em
+> `entrada.ajuste`. Sem ajuste, mantém a requisição anterior. No chat, o contexto
+> já conserva `entrada.ajuste`; falta orientar o prompt de que os números ajustados
+> são hipóteses, inclusive o ano seco, e não observações originais. Não alterei API
+> nem motor. Depois da integração precisamos testar o fluxo HTTP real ajustado.
+
+Para preparar os testes de navegador, execute da raiz:
+
+```powershell
+.\.venv\Scripts\python.exe frontend/scripts/export-scenario-fixtures.py
+```
+
+O comando usa somente as tabelas locais e grava seis respostas reais do motor em
+`output/playwright/scenario-fixtures.json` (ignorado pelo Git). O roteiro
+`tests/browser-scenarios.js` usa essas respostas ao simular o transporte futuro;
+isso não substitui a validação do `/analyze` ajustado após a entrega da API.
 
 ## Solo entre as culturas — Parte 2
 

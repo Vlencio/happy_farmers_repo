@@ -1,7 +1,7 @@
 import './style.css';
 import { normalizeFarm, parseGeoJSON, MAX_FILE_BYTES } from './geometry.mjs';
 import { createFarmMap, downloadGeoJSON } from './map.mjs';
-import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings } from './api.mjs';
+import { buildRequest, requestAnalysis, requestMetadata, mapMotorAnalysis, DEFAULT_SETTINGS, ANALYSIS_TIMEOUT_MS, validateSettings, supportsAdjustment, assertAdjustmentApplied } from './api.mjs';
 import { buildFieldContext, getAnalysisSlope } from './field.mjs';
 import { createFarmPreview } from './farm-preview.mjs';
 import { restoreDraft } from './draft.mjs';
@@ -37,14 +37,14 @@ async function connect() {
     if (id !== connectionId) return;
     metadata = result;
     chat.configure(metadata);
-    send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice });
+    send({ type: 'config', ready: true, cultures: metadata.cultures, data_notice: metadata.data_notice, scenario_available: supportsAdjustment(metadata) });
     updateFieldContext();
   } catch (error) {
     if (id !== connectionId) return;
     metadata = null;
     chat.configure(null);
     send({ type: 'field_context', context: null });
-    send({ type: 'config', ready: false, cultures: [], data_notice: '' });
+    send({ type: 'config', ready: false, cultures: [], data_notice: '', scenario_available: false });
     send({ type: 'error', message: `Não foi possível conectar ao motor. Inicie a API e clique em Reconectar. ${error.message}` });
   }
 }
@@ -81,6 +81,7 @@ async function dispatch(action) {
     case 'download': if (farm) downloadGeoJSON(farm); break;
     case 'history': invalidate(); history = action.history; saveDraft(); break;
     case 'settings': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
+    case 'scenario': invalidate(); settings = validateSettings(action.settings); saveDraft(); break;
     case 'priorities': {
       invalidate(); settings = validateSettings(action.settings); saveDraft();
       if (action.analyze) await dispatch({ type: 'analyze' });
@@ -106,11 +107,12 @@ async function dispatch(action) {
       invalidate(); const id = requestId; const pending = new AbortController(); controller = pending;
       const timer = setTimeout(() => pending.abort(), ANALYSIS_TIMEOUT_MS);
       try {
-        const request = buildRequest(farm, history, settings, metadata.cultures);
+        const request = buildRequest(farm, history, settings, metadata.cultures, metadata);
         const slope = getAnalysisSlope(farm, metadata);
         if (slope !== null) request.declividade_pct = slope;
         const raw = await requestAnalysis(baseUrl, request, { signal: pending.signal });
         if (id !== requestId) return;
+        assertAdjustmentApplied(raw, request);
         const result = mapMotorAnalysis(raw, farm, { dataNotice: metadata.data_notice });
         send({ type: 'analysis', analysis: result });
         chat.setAnalysis(raw, result);
