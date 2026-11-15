@@ -23,6 +23,13 @@ class Prioridades(BaseModel):
     renda: NonNegative = 0
 
 
+class Ajuste(BaseModel):
+    """What-if scenario (engine rule 19). Ranges mirror AJUSTE_CHUVA_PCT and AJUSTE_TEMP_C in motor/."""
+    model_config = ConfigDict(extra="forbid")
+    chuva_pct: Annotated[float, Field(ge=-50, le=30, allow_inf_nan=False)] = 0
+    temp_c: Annotated[float, Field(ge=0, le=4, allow_inf_nan=False)] = 0
+
+
 class EntradaMotor(BaseModel):
     model_config = ConfigDict(extra="forbid")
     lat: Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
@@ -34,6 +41,8 @@ class EntradaMotor(BaseModel):
     precos: dict[str, NonNegative] = Field(default_factory=dict)
     # Optional mean slope of the field (%); the engine then adds indice_erosao to descoberto.
     declividade_pct: Annotated[float | None, Field(ge=0, le=100, allow_inf_nan=False)] = None
+    # Optional what-if: rain in % and temperature in degrees C, applied by the engine to every climate.
+    ajuste: Ajuste | None = None
 
 
 class MensagemChat(BaseModel):
@@ -100,7 +109,7 @@ def metadata():
         "demo_field": app.state.demo_field,
         "model_spread": app.state.model_spread,
         "point_climate_available": True,
-        "capabilities": {"declividade_pct": True, "chat": app.state.chat is not None},
+        "capabilities": {"declividade_pct": True, "ajuste": True, "chat": app.state.chat is not None},
     }
 
 

@@ -44,6 +44,7 @@ Como ler os dados:
 - "descoberto" conta os dias do ano sem cultura; "dias_expostos" são os que também ficam sem palhada.
 - Nos dados os nomes das culturas não têm acento (feijao, crotalaria, braquiaria, algodao). Escreva com acento.
 - "sequencias_em_foco" são as estratégias que o produtor está vendo na tela; o id "soja>milho" significa soja e depois milho.
+- Se "entrada.ajuste" existir, o produtor pediu um cenário "e se": "chuva_pct" muda a chuva de todos os meses em porcentagem e "temp_c" soma graus à temperatura. O ajuste vale para todos os climas, inclusive o ano seco, então todos os números da análise já são do cenário hipotético, não do clima observado ou projetado. Diga isso quando citar números e não apresente o cenário como previsão.
 
 Responda em português do Brasil."""
 

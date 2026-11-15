@@ -23,7 +23,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Prioridades e ranking integrados na tela; restrições em aberto | Pedro, Gabriel | Não | Reaberto (15/11) |
-| 6 | Controles de cenário | Motor feito; front preparado; falta habilitar a API e validar integração | Pedro, Gabriel | Não | Não |
+| 6 | Controles de cenário | Motor, API e front feitos; falta testar a tela contra a API real | Gabriel | Não | Não |
 | 7 | Incerteza entre os modelos climáticos | Incompleto | Brenno, Pedro, Gabriel | Não na demonstração | Não |
 | 8 | Modo diário na API e na tela | Incompleto | Gabriel, Brenno | Não | Sim (probabilidades) |
 | 9 | Informação local de solo | Falta | Brenno, Pedro | Sim | Sim (SoilGrids) |
@@ -190,9 +190,9 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] API (Pedro): aceitar e validar `ajuste` em `backend/app.py`, repassar ao motor e anunciar `capabilities.ajuste: true` em `/metadata`. O front exige os mesmos valores de volta em `entrada.ajuste`.
-- [ ] Integração: testar os controles contra a API real após a liberação; hoje o endpoint rejeita `ajuste` com 422.
-- [ ] Chat (Pedro): contextualizar no prompt que `entrada.ajuste` altera os números de todos os cenários, incluindo o ano seco; são hipóteses, não observações originais.
+- [x] API (15/11): `backend/app.py` aceita `ajuste` opcional (`chuva_pct` de −50 a +30 e `temp_c` de 0 a +4, finitos, padrão 0, sem campos extras), repassa ao motor depois de escolher o clima do ponto e anuncia `capabilities.ajuste: true` em `/metadata`. Valor fora da faixa dá 422. Testes em `backend/tests/test_api.py`.
+- [x] Chat (15/11): o prompt diz que, com `entrada.ajuste`, todos os números (inclusive do ano seco) são do cenário hipotético, e não previsão.
+- [ ] Integração (Gabriel): testar os controles da tela contra a API real.
 - [ ] Dados (Brenno, opcional): uma coluna `dias_acima_NN` por grau, de 28 a 38, em `scripts/montar_clima.py`. Hoje os dias quentes entre os limiares são interpolados, e abaixo de 32 °C, extrapolados.
 - [ ] Chat (Gabriel, opcional): a IA traduz "e se chover menos?" em `ajuste` e chama o motor; o número continua vindo do motor.
 

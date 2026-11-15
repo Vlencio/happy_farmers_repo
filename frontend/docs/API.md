@@ -155,10 +155,9 @@ expansíveis, tanto para ausência de plantio naquela safra quanto para época p
 
 ## Simulação de chuva e temperatura — Parte 6
 
-O motor da Main `d6d7a73` já aceita `ajuste`, mas a API ainda responde **422**
-para esse campo. O front está preparado; a ativação depende da entrega abaixo.
-O nome da capability é uma proposta de integração para Pedro, não um campo já
-disponível no servidor atual:
+O motor aceita `ajuste` desde a Main `d6d7a73`, e a API desde 15/11: `/analyze`
+recebe `ajuste` opcional (`chuva_pct` de −50 a +30, `temp_c` de 0 a +4, finitos,
+padrão 0, sem campos extras; fora disso, 422) e o `/metadata` anuncia:
 
 ```json
 {"capabilities": {"ajuste": true}}
@@ -198,10 +197,10 @@ interpolação ou extrapolação dos limiares existentes.
 
 O chat recebe a resposta completa, incluindo `entrada.ajuste`, e os IDs dos novos
 cards e da referência. Interpretar uma pergunta para mudar o cenário automaticamente
-não faz parte desta entrega. O prompt do servidor ainda precisa contextualizar
-os cenários ajustados como hipóteses.
+não faz parte desta entrega. O prompt do servidor diz que, com `entrada.ajuste`,
+todos os números (inclusive do ano seco) são do cenário hipotético.
 
-**Mensagem para Pedro:**
+**Mensagem para Pedro** (atendida em 15/11: API e prompt feitos):
 
 > Pedro, o front da Parte 6 está preparado. Confirmei os 9 testes do motor e os
 > números do caso −20% de chuva. A API atual ainda retorna 422 para `ajuste`.

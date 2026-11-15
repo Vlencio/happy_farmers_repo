@@ -169,7 +169,8 @@ in `tests/dados/`.
    probabilities" in "Out of scope" and needs the team to reopen it.
 9. **Scenario adjustment (optional)**, `entrada["ajuste"] = {"chuva_pct", "temp_c"}`:
    a "what if" applied to every climate table and the daily series before the
-   math (rule 19 of the contract). The API and the screen do not use it yet.
+   math (rule 19 of the contract). The API accepts it and announces
+   `capabilities.ajuste` (15 Nov); the screen shows the two controls when it does.
 
 ## Stack
 
