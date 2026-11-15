@@ -22,10 +22,10 @@ test('consumes the actual engine contract and keeps its first three ranked seque
   const februaryWinner = mapMotorAnalysis(february, farm).recommendations[0];
   assert.equal(februaryWinner.sequence_id, 'crotalaria>soja');
   assert.deepEqual(februaryWinner.rank_facts, [
-    { label: 'Rank · today', value: '#1' }, { label: 'Score · today', value: '78.1 / 100' },
-    { label: 'Rank · future', value: '#1' }, { label: 'Score · future', value: '77.5 / 100' },
+    { label: 'Rank · today', value: '#1' }, { label: 'Score · today', value: '74.8 / 100' },
+    { label: 'Rank · future', value: '#1' }, { label: 'Score · future', value: '74.3 / 100' },
   ]);
-  assert.equal(result.discarded.length, 75);
+  assert.equal(result.discarded.length, 68);
 });
 test('current rotation stays beside the three winners with comparable actual engine metrics', () => {
   const view = mapMotorAnalysis(fixture, farm);
@@ -347,7 +347,7 @@ test('empty viable sequences remain empty, with reasons from the engine', () => 
   delete data.atual; // This synthetic legacy result has no current reference.
   const result = mapMotorAnalysis(data, farm);
   assert.deepEqual(result.recommendations, []);
-  assert.equal(result.discarded.length, 75);
+  assert.equal(result.discarded.length, 68);
   assert.ok(result.discarded.some((reason) => reason.includes('has no planting window')));
   assert.ok(result.discarded.some((reason) => reason.includes('only available')));
 });
@@ -508,7 +508,7 @@ test('near-leading scores are shown as a technical tie without changing engine r
   assert.equal(view.current_rotation.strategy.tie_note, view.recommendations.find(card => card.sequence_id === view.current_rotation.strategy.sequence_id).tie_note);
   assert.deepEqual(view.recommendations.map(card => card.sequence_id), fixture.sequencias.slice(0, 3).map(seq => seq.id));
   assert.deepEqual(view.recommendations.map(card => card.rank_facts[0].value), ['#1', '#2', '#3']);
-  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['78.2 / 100', '77.9 / 100', '76.5 / 100']);
+  assert.deepEqual(view.recommendations.map(card => card.rank_facts[1].value), ['74.9 / 100', '74.6 / 100', '73.2 / 100']);
 });
 
 // Synthetic future scores 3 points apart, so only the today rules are exercised.
@@ -560,10 +560,10 @@ test('current reference gets a tie only when its own sequence belongs to the lea
 
 test('third card is marked when the hidden fourth sequence of today is less than 2 points below', () => {
   const note = 'Technical tie · today with the next sequence (#4), which is not shown in the cards';
-  // Real February fixture: #3 feijao>soja 73.55 and #4 crotalaria>milho 73.47.
+  // Real February fixture: leader 74.81, #3 sorgo>soja 73.37 (also within 2 points of the leader) and #4 trigo>algodao 72.11.
   const feb = mapMotorAnalysis(february, farm);
-  assert.ok(feb.recommendations[2].tie_note.startsWith(`${note}.`));
-  assert.match(feb.ranking_note, /top two.*third suggestion is also less than 2 points above the next sequence \(#4\), which is not shown in the cards/);
+  assert.ok(feb.recommendations[2].tie_note.startsWith('Technical tie · today, also with the next sequence (#4), which is not shown in the cards.'));
+  assert.match(feb.ranking_note, /top three.*third suggestion is also less than 2 points above the next sequence \(#4\), which is not shown in the cards/);
   assert.deepEqual(feb.recommendations.map(card => card.sequence_id), february.sequencias.slice(0, 3).map(seq => seq.id));
   for (const [scores, expected] of [
     [[90, 85, 80, 78.001], note],
