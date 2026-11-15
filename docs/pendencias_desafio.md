@@ -19,7 +19,7 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | Parte | Assunto | Situação | Dono | Dado novo | Reabre escopo |
 |---|---|---|---|---|---|
 | 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
-| 2 | Solo descoberto e erosão por sequência | Motor feito; faltam API e tela | Gabriel | Não na demonstração | Não |
+| 2 | Solo descoberto e erosão por sequência | Dias e chuva na tela; falta API para declividade | Gabriel, Pedro | Não na demonstração | Não |
 | 3 | Lacunas e riscos por estratégia | Incompleto | Pedro, Gabriel | Não | Não |
 | 4 | Geada e chuva extrema | Falta | Pedro | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Incompleto e falta | Gabriel, Pedro | Não | Sim (pesos) |
@@ -71,7 +71,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Texto:** "highlight times when fields are typically bare"; "erosion reduction"; "erosion risk".
 
-**Hoje (14/11, branch `motor-diario`):** o motor está pronto; faltam a API e a tela.
+**Hoje (14/11, front integrado à Main `ff2e22c`):** motor e tela de dias/chuva prontos; a API ainda precisa aceitar a declividade.
 
 - Cada sequência devolve `descoberto` em cada clima: dias sem cultura, dias expostos (sem palhada da cultura anterior), a chuva que cai em cada um e a lista por mês. Regra 15 do contrato.
 - Com `declividade_pct` na entrada, sai também `indice_erosao` = chuva exposta × fator S da RUSLE. Regra 16.
@@ -84,16 +84,18 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 - [x] Motor: índice de exposição à erosão, ponderado pela declividade quando ela vem na entrada.
 - [x] Decidido: fora do score.
 - [x] `docs/contrato_motor.md` (regras 15 e 16, campo `descoberto`, entrada `declividade_pct`) e fixtures do front regeneradas.
+- [x] Tela: dias expostos e chuva exposta nos cards, calendário dos primeiros 365 dias distinguindo cultura, palhada e exposição, com chuva por mês/cenário no detalhe. A referência atual recebe a mesma apresentação.
+- [x] Tela: apresentação do índice quando retornado e envio de declividade preparado para o contorno exato da demonstração, condicionado ao suporte anunciado pela API.
 
 **Falta:**
 
-- [ ] API (Gabriel): aceitar `declividade_pct` em `backend/app.py`. Hoje o modelo de entrada rejeita campo desconhecido.
-- [ ] Tela (Gabriel): mandar a declividade do talhão de demonstração (já vem em `/metadata`), mostrar os meses sem cultura e os expostos na linha do tempo de cada card, e os dias expostos e a chuva exposta nos fatos do card.
+- [ ] API (encaminhar ao Pedro): aceitar `declividade_pct` opcional entre 0 e 100 e repassar ao motor. Hoje o modelo rejeita o campo. A ponte do front aguarda `/metadata.capabilities.declividade_pct: true`; mensagem e detalhes em `frontend/docs/API.md`, Parte 2.
+- [ ] Conferir o índice real pela API após liberar a entrada e a capability. Hoje dias e chuva funcionam, mas o índice com declividade ainda não chega pela API.
 - [ ] Para talhões fora da demonstração: declividade depende de SRTM por ponto (ver Parte 14). Sem ela, o motor devolve dias e chuva, sem o índice.
 - [ ] Modo diário: chuva exposta de cada ano (hoje só no modo mensal).
 - [ ] Duração da palhada e quantidade por cultura: hoje é sim ou não, até o próximo plantio ("Em aberto", item 14 do contrato).
 
-**Feito quando:** duas sequências com cultura de cobertura e sem ela mostram números diferentes de solo descoberto e de chuva sobre solo exposto. No motor já mostram; falta a tela.
+**Feito quando:** duas sequências com cultura de cobertura e sem ela mostram números diferentes de solo descoberto e de chuva sobre solo exposto. A tela já mostra essas diferenças; o índice ponderado pela declividade ainda aguarda a API.
 
 ## Parte 3 — Lacunas e riscos por estratégia
 

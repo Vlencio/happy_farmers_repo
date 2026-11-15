@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildFieldContext, matchesDemoBoundary, modelSpreadText } from '../web/field.mjs';
+import { buildFieldContext, getAnalysisSlope, matchesDemoBoundary, modelSpreadText } from '../web/field.mjs';
 import { normalizeFarm } from '../web/geometry.mjs';
 
 const metadata = JSON.parse(readFileSync(new URL('./fixtures/metadata.json', import.meta.url)));
@@ -33,6 +33,46 @@ test('changing the outline hides all demo facts, even with forged sample name an
   assert.equal(buildFieldContext(other, metadata), null);
   assert.equal(buildFieldContext(null, metadata), null);
   assert.equal(buildFieldContext(farm, {}), null);
+});
+
+// The capability is a proposed extension; the real metadata fixture does not advertise it.
+test('analysis slope requires explicit API support and preserves a valid zero slope', () => {
+  assert.equal(getAnalysisSlope(farm, metadata), null);
+  for (const support of [false, null, undefined, 'true', 1]) {
+    assert.equal(getAnalysisSlope(farm, { ...metadata, capabilities: { declividade_pct: support } }), null);
+  }
+  const enabled = structuredClone(metadata);
+  enabled.capabilities = { declividade_pct: true };
+  assert.equal(getAnalysisSlope(farm, enabled), 4.05);
+  enabled.demo_field.terrain.decl_media_pct = 0;
+  assert.equal(getAnalysisSlope(farm, enabled), 0);
+  enabled.demo_field.terrain.decl_media_pct = 100;
+  assert.equal(getAnalysisSlope(farm, enabled), 100);
+});
+
+test('analysis slope follows only the exact demo boundary, even with enabled support', () => {
+  const enabled = { ...metadata, capabilities: { declividade_pct: true } };
+  const imported = structuredClone(farm); imported.source = 'file'; imported.name = 'Outra identificação';
+  const ring = imported.geojson.geometry.coordinates[0].slice(0, -1).reverse();
+  imported.geojson.geometry.coordinates[0] = [...ring, ring[0]];
+  assert.equal(getAnalysisSlope(imported, enabled), 4.05);
+  const modified = structuredClone(farm); modified.name = 'Talhão de demonstração'; modified.source = 'sample';
+  modified.geojson.geometry.coordinates[0][1][0] += 0.00001;
+  assert.equal(getAnalysisSlope(modified, enabled), null);
+  const nearby = structuredClone(farm);
+  nearby.geojson.geometry.coordinates[0] = nearby.geojson.geometry.coordinates[0].map(([lon, lat]) => [lon + 0.001, lat]);
+  assert.equal(getAnalysisSlope(nearby, enabled), null);
+  assert.equal(getAnalysisSlope(null, enabled), null);
+  assert.equal(getAnalysisSlope(farm, { capabilities: { declividade_pct: true } }), null);
+});
+
+test('supported demo slope must be finite and within the engine accepted range', () => {
+  for (const value of [undefined, null, '4.05', NaN, Infinity, -1, 100.01]) {
+    const enabled = structuredClone(metadata);
+    enabled.capabilities = { declividade_pct: true };
+    enabled.demo_field.terrain.decl_media_pct = value;
+    assert.throws(() => getAnalysisSlope(farm, enabled), /inválidos/);
+  }
 });
 test('invalid monthly observations are rejected instead of rendered as zero or extrapolated', () => {
   for (const change of [

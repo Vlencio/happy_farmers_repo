@@ -29,8 +29,12 @@ for (const horizonte of [1, 2]) {
     }
     assert.equal(view.recommendations.length, raw.sequencias.length ? 3 : 0);
     if (!raw.sequencias.length) empty++;
-    for (const rec of view.recommendations) {
+    for (const rec of [...view.recommendations, ...(view.current_rotation.strategy ? [view.current_rotation.strategy] : [])]) {
       assert.equal(rec.timeline.length, horizonte);
+      const exposure = raw.sequencias.find(seq => seq.id === rec.sequence_id).hoje.descoberto;
+      assert.equal(rec.exposure.months.length, 12);
+      assert.equal(rec.exposure.months.reduce((total, month) => total + month.days, 0), exposure.dias);
+      assert.equal(rec.exposure.months.reduce((total, month) => total + month.exposed_days, 0), exposure.dias_expostos);
       if (rec.month_labels.length > 12) extended++;
       for (const stage of rec.timeline) {
         assert.ok(stage.start_month >= 1 && stage.end_month <= rec.month_labels.length);

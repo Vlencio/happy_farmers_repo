@@ -28,6 +28,16 @@ export function matchesDemoBoundary(farm, reference) {
   } catch { return false; }
 }
 
+export function getAnalysisSlope(farm, metadata) {
+  // Proposed API capability: omit the field until the server explicitly accepts it.
+  if (metadata?.capabilities?.declividade_pct !== true) return null;
+  const field = metadata.demo_field;
+  if (!field || !matchesDemoBoundary(farm, field.boundary)) return null;
+  const slope = field.terrain?.decl_media_pct;
+  finite(slope, 0, 100);
+  return slope;
+}
+
 export function modelSpreadText(spread) {
   if (spread == null) return 'A faixa entre modelos ainda não foi disponibilizada pela equipe de dados.';
   if (spread.scope !== 'talhao_demo_2' || !Array.isArray(spread.models) || !spread.models.length) fail();

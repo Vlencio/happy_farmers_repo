@@ -72,6 +72,26 @@ pub struct Recommendation {
     pub timeline: Vec<Stage>,
     pub month_labels: Vec<String>,
     pub water_caption: String,
+    pub exposure: Option<Exposure>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct Exposure {
+    pub period: String,
+    pub caption: String,
+    pub note: String,
+    pub erosion_note: String,
+    pub card_facts: Vec<Fact>,
+    pub facts: Vec<Fact>,
+    pub months: Vec<ExposureMonth>,
+}
+#[derive(Clone, Debug, Deserialize)]
+pub struct ExposureMonth {
+    pub label: String,
+    pub month_days: u8,
+    pub days: u8,
+    pub exposed_days: u8,
+    pub rain: String,
+    pub exposed_rain: String,
 }
 #[derive(Clone, Debug, Deserialize)]
 pub struct FieldContext {
