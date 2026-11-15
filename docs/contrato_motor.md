@@ -151,9 +151,10 @@ As outras colunas (`especie_ecocrop`, `chuva_otima_*`, `ciclo_ecocrop_*`) não s
             "chuva_mm": 440.598,
             "etc_mm": 421.529,
             "deficit_mm": 76.17,
-            "fator_sequencia": 1.1,
-            "fator": 0.901,
-            "receita_ha": 5953.803,
+            "fator_sequencia": 1.0,
+            "dias_apos_anterior": 10,
+            "fator": 0.819,
+            "receita_ha": 5412.548,
             "solo": 0.492,
             "meses": [
               {"mes": 2, "dias": 26, "kc": 0.3, "chuva_mm": 163.048, "etc_mm": 37.429, "deficit_mm": 0.0}
@@ -224,6 +225,7 @@ Com `clima_seco`, a saída ganha três campos, com a mesma estrutura dos de hoje
 | `encaixe_calor` | 1 = sem dias acima do limiar na fase sensível; cai com a fração desses dias. Sempre 1 em cultura sem limiar |
 | `dias_calor` | Dias esperados acima do limiar da cultura dentro da fase sensível |
 | `espera_dias` | Dias que o talhão ficou sem cultura esperando o mês de plantio |
+| `dias_apos_anterior` | Dias do fim do ciclo da cultura anterior até o plantio desta (regra 10). Para a 1ª cultura, conta a partir do fim suposto da última do histórico (10 dias antes do talhão livre); `null` sem histórico |
 | `meses[]` | Balanço hídrico mês a mês da cultura. Serve para a timeline |
 | `descartadas[].motivo` | A cultura que não coube, sua posição (1 ou 2), o slot, o mês em que o talhão ficou livre e o mês de plantio dela no slot. `mes_plantio` nulo = a cultura não é plantada naquele slot; preenchido = o talhão só ficou livre depois desse mês |
 
@@ -240,7 +242,11 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 7. **Encaixe de temperatura:** 1 dentro da faixa ótima, 0 fora dos limites absolutos, linear entre os dois. Média sobre os dias do ciclo, com a temperatura média do mês.
 8. **Encaixe de chuva:** chuva do ciclo contra `chuva_min` e `chuva_max`. Cai em proporção à falta ou ao excesso.
 9. **Calor:** a fase sensível é o meio do ciclo, de 45% a 80% (florescimento e enchimento de grãos, a mesma fase do Kc médio). O motor soma os dias acima do limiar da cultura (`dias_acima_<temp_calor_c>`) que caem nessa fase. `encaixe_calor` = 1 − dias de calor / dias da fase. Exemplo: 10 dias de calor em 40 dias de fase dá 0,75.
-10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 se é não fixadora depois de fixadora de N; 1 nos outros casos.
+10. **Regras de sequência** (`fator_sequencia`): 0,85 se repete a cultura anterior; 1,10 (`BONUS_APOS_FIXADORA`) se é não fixadora plantada até 60 dias (`JANELA_BONUS_N_DIAS`) depois do fim do ciclo de um **adubo verde**; 1 nos outros casos. Os dois valores valem igual nos modos mensal e diário.
+    - **Adubo verde** = cultura com `fixa_n` e produtividade zero na tabela nos dois slots (`produtividade` e `produtividade_safrinha`): fixa N e não exporta grão. Na tabela de 15/11 só a `crotalaria` passa. Soja e feijão fixam N, mas levam quase todo o N fixado nos grãos; e a produtividade de referência da Conab para o milho safrinha já é a do milho depois da soja, então o bônus contava esse efeito duas vezes. O critério usa a produtividade, não o preço: o preço pode ser editado em `precos`; uma cultura de preço zero e produtividade acima de zero continua sem bônus.
+    - **Prazo:** dias do fim do ciclo do adubo verde (plantio + `ciclo_dias`) até o plantio da cultura seguinte, no máximo 60. A palhada de leguminosa se decompõe em semanas no Cerrado; o valor veio da revisão agronômica de 15/11, sem fonte conferida.
+    - **Cultura do histórico:** a última do histórico é a anterior da 1ª cultura (regra 14). Não há data do fim do ciclo dela: o motor supõe que acabou 10 dias (`DIAS_COLHEITA`) antes do talhão livre, como as culturas da sequência. Assim, o prazo da 1ª cultura é `espera_dias` + 10. Exemplo: crotalária no histórico e milho de outubro com o talhão livre em outubro = 10 dias, ganha o bônus; com o talhão livre em julho = 102 dias, não ganha.
+    - Até 15/11 o bônus valia depois de qualquer fixadora (soja, feijão) e sem prazo.
 11. **Receita** = preço × produtividade do slot × `fator`, onde `fator` = menor entre encaixe de temperatura, encaixe de chuva, encaixe de calor e atendimento hídrico, vezes `fator_sequencia`.
 12. **Partes do score:**
     - `agua` = 1 − déficit total / demanda total da sequência.
@@ -282,7 +288,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
 | `codigo` | Quando aparece | `dados` |
 |---|---|---|
 | `fixa_nitrogenio` | Cultura com `fixa_n` na tabela | — |
-| `bonus_apos_fixadora` | Não fixadora depois de uma fixadora (fator de sequência 1,10) | `fator_sequencia`, `slot` |
+| `bonus_apos_fixadora` | Não fixadora plantada até 60 dias depois de um adubo verde (fator de sequência 1,10, regra 10) | `fator_sequencia`, `slot`, `dias_apos_anterior` |
 | `deixa_palhada` | Cultura com `cobre_solo`: o motor conta o solo coberto até o próximo plantio | — |
 | `pouco_solo_exposto` | Menos de 60 dias sem cultura e sem palhada, no clima de hoje. É o contrário do aviso `solo_exposto` | `dias_expostos`, `chuva_exposta_mm` |
 | `estavel_no_futuro` | Receita de hoje acima de zero e queda de até 10% (ou alta) para o futuro. É o contrário do aviso `queda_no_futuro` | `queda` (negativa = alta), `receita_hoje`, `receita_futuro` |
@@ -413,7 +419,8 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 | Constante | Valor | O que é |
 |---|---|---|
 | `PENALIDADE_REPETICAO` | 0,85 | Fator ao repetir a cultura |
-| `BONUS_APOS_FIXADORA` | 1,10 | Fator depois de fixadora de N |
+| `BONUS_APOS_FIXADORA` | 1,10 | Fator depois de um adubo verde (fixa N e não exporta grão), regra 10 |
+| `JANELA_BONUS_N_DIAS` | 60 | Prazo máximo do fim do ciclo do adubo verde até o plantio seguinte para o bônus valer. Sugestão da revisão agronômica de 15/11 |
 | `PESO_SOLO` | 0,4 / 0,4 / 0,2 | Pesos de fixa N, cobre solo, diversidade |
 | `FASES_KC` | 20% / 45% / 80% | Fases do Kc no ciclo |
 | `DIAS_COLHEITA` | 10 | Dias entre o fim do ciclo e o talhão livre, igual para todas as culturas |
@@ -433,6 +440,20 @@ Não há bloco `seco` no modo diário: o ano seco já é um dos anos da série (
 Os valores de `KY` têm fonte (FAO-56, tabela 24) e não entram nesta lista. Os quatro limites `AVISO_*` só decidem quando avisar; não entram em nenhuma conta.
 
 > **Números das seções abaixo:** foram calculados em 14/11, com o solo de 100 mm e a `renda` antiga (dividida pela maior receita do conjunto). A partir de 15/11 o solo é de 60 mm e a `renda` é por ano ocupado com teto fixo: os números de água e os scores mudaram, e os rankings também (ver "O que mudou em 15/11"). Refazer.
+
+## O que mudou com o bônus só depois de adubo verde (15/11, regra 10)
+
+Histórico soja, milho, pesos iguais, tabelas de 15/11; score de hoje (rank no futuro entre parênteses).
+
+| Talhão livre em | Antes: top 5 | Agora: top 5 |
+|---|---|---|
+| Outubro | `soja>milho` 76,4 (1), `soja>sorgo` 76,3 (2), `soja>feijao` 75,2 (6), `soja>crotalaria` 74,0 (3), `soja>girassol` 71,5 (5) | `soja>sorgo` 75,7 (1), `soja>milho` 75,3 (2), `soja>feijao` 75,2 (6), `soja>crotalaria` 74,0 (3), `soja>milheto` 71,2 (4) |
+| Fevereiro | `sorgo>soja` 76,0 (1), `feijao>soja` 75,0 (7), `crotalaria>soja` 73,9 (2), `milho>soja` 71,6 (3), `feijao>milho` 71,5 (12) | `sorgo>soja` 76,0 (1), `feijao>soja` 75,0 (7), `crotalaria>soja` 73,9 (2), `milho>soja` 71,6 (3), `milheto>soja` 71,2 (4) |
+
+- Com essa entrada, nenhuma sequência fica com o bônus. Perderam: em outubro, as 12 com soja ou feijão na safra seguidos de não fixadora (`soja>milho`, `soja>sorgo`, `soja>girassol`, `soja>trigo`, `soja>milheto`, `soja>braquiaria`, `feijao>sorgo`, `feijao>milho`, `feijao>milheto`, `feijao>trigo`, `feijao>girassol`, `feijao>braquiaria`); em fevereiro, `feijao>milho`, `feijao>sorgo` e as três depois da crotalária, que acaba em junho e deixa 114 dias até o milho de outubro, 145 até o sorgo de novembro e 175 até o algodão de dezembro. Nenhuma ganhou.
+- Milheto e braquiária têm preço zero: perder o bônus não muda o score delas.
+- Outubro: `soja>sorgo` passa `soja>milho` hoje e no futuro, por 0,4 ponto (um empate). Fevereiro: `feijao>milho` cai de 5º para 9º; `crotalaria>algodao` de 9º para 11º (21º no futuro).
+- O bônus continua para quem tem crotalária no fim do histórico e planta a 1ª cultura até 50 dias depois do talhão livre.
 
 ## O que mudou em 15/11 (solo de 60 mm, renda por ano ocupado)
 

@@ -213,7 +213,9 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Motor (Pedro): preços editados zero não zeram o teto. A referência usa preços da tabela e tem fallback para teto nulo (`baf7d3b`); casos mensal/diário cobertos (`1086db6`).
 - [x] Motor (Pedro): textos brutos de avisos/benefícios alinhados para "por volta de 2060" (`1086db6`). Metadados e prompt recebem a mesma correção na integração do front.
 - [ ] Dados (Brenno/Pedro): alinhar `origem.periodos.futuro` e o aviso de fallback em `scripts/clima_ponto.py`, que ainda usam `2041-2060`. Esses campos de proveniência são repassados sem alteração pela API.
-- [ ] Motor: escalas das partes do score ("Em aberto" 20); bônus após fixadora só para crotalária e com prazo; penalidade por hospedeiro comum (soja→feijão).
+- [ ] Motor: escalas das partes do score ("Em aberto" 20); penalidade por hospedeiro comum (soja→feijão).
+- [x] Motor (branch `motor-bonus-n`): bônus após fixadora só depois de adubo verde (`fixa_n` e produtividade zero na tabela; hoje só a crotalária) e com o plantio seguinte até 60 dias depois do fim do ciclo dela (`JANELA_BONUS_N_DIAS`, provisório, sem fonte). Para a cultura do histórico, o fim do ciclo é suposto 10 dias antes do talhão livre. Regra 10 e "O que mudou com o bônus" no contrato. Com histórico soja, milho, nenhuma sequência fica com o bônus; em outubro `soja>sorgo` passa `soja>milho` por 0,4 ponto.
+- [ ] Dados/agronomia: conferir a janela de 60 dias com uma fonte (decomposição e liberação de N da palhada de crotalária no Cerrado). A crotalária de safrinha acaba em junho, na seca, quando a palhada se decompõe mais devagar: o prazo pode ser curto demais para esse caso.
 - [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
 
 ## Parte 7 — Incerteza entre os modelos climáticos
