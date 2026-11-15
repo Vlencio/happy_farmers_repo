@@ -121,7 +121,7 @@ Colunas: `mes`, `chuva_mm`, `tmin_c`, `tmax_c`, `et0_mm` (Hargreaves, mm no mês
 - `dias_acima_32`, `dias_acima_35`, `dias_acima_36`, `dias_acima_38`: a mesma contagem, uma coluna para cada limiar de calor de `temp_calor_c` em `culturas.csv`. O script lê os limiares da tabela de culturas, então rode `montar_culturas.py` antes.
   - Para uma cultura, usar a coluna do limiar dela: `dias_acima_<temp_calor_c>`. O motor lê estas colunas na regra de calor (`docs/contrato_motor.md`, regra 9).
   - Dias por ano, POWER hoje / NEX histórico / futuro: 32 °C: 111 / 134 / 208; 35 °C: 34 / 33 / 84; 36 °C: 21 / 21 / 54; 38 °C: 7 / 7 / 23.
-  - A 32 °C o POWER e o NEX histórico diferem em 20%, então o número futuro desse limiar (feijão e algodão) é menos confiável que os outros.
+  - A 32 °C o POWER e o NEX histórico diferem em 20%, então o número futuro desse limiar (feijão e trigo; o algodão passou a 35 °C em 15/11) é menos confiável que os outros.
 
 - O `et0_mm` usa as temperaturas do POWER **sem** a correção da A520. Assim, o Hargreaves bate com o Penman-Monteith do POWER (1.635 contra 1.640 mm/ano); com a correção, subiria para 1.778 mm.
 - A chuva não é corrigida: o viés do POWER contra a A520 é de cerca de −5%.

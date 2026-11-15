@@ -57,7 +57,7 @@ MANUAL = {
     "crotalaria": (100,  0.40,  0.90,  0.85,  1,     1,    None, 2,       0,     0,    0, None),  # fev: Embrapa CT 44 (2018)
     "feijao":     (90,   0.40,  1.15,  0.35,  1,     0,    11,   2,       3500,  1.17, 0.98, 32),
     "girassol":   (110,  0.35,  1.00,  0.35,  0,     0,    None, 2,       2000,  1.57, 1.57, 35),
-    "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.89, None, 32),
+    "algodao":    (170,  0.35,  1.18,  0.60,  0,     0,    12,   None,    9000,  1.89, None, 35),  # calor: Reddy et al. 1992; FAO
     # preco e prod daqui para baixo: PAM/IBGE 2025, media de MG (valor da producao / quantidade)
     "trigo":      (120,  0.30,  1.15,  0.30,  0,     1,    None, 3,       1353,  3.34, 3.34, 32),
     "arroz":      (120,  0.30,  1.20,  0.75,  0,     1,    11,   None,    1407,  4.12, None, 35),  # em casca
