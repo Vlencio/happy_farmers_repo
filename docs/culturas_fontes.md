@@ -141,7 +141,7 @@ traz a tabela de Minas Gerais, então os valores são **médias do Brasil**.
 | trigo | 1.353 | valor da produção ÷ quantidade, PAM/IBGE 2025 em MG | conferido; preço ao produtor, não cotação |
 | algodão | 9.000 | ~R$ 135/@ de pluma | memória. O CEPEA registrou em out/2025 o menor indicador em 16 anos, então este valor pode estar alto |
 
-O preço é editável na tela. Para o pitch, troque os valores de **memória** por
+O preço não é editável na tela (fora do escopo); o motor aceita `precos` na entrada. Para o pitch, troque os valores de **memória** por
 médias anuais do CEPEA (cepea.esalq.usp.br).
 
 ## Conferência com a PAM/IBGE (Minas Gerais, 2025)

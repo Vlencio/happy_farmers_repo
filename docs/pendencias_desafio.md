@@ -18,9 +18,9 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 
 | Parte | Assunto | Situação | Dono | Dado novo | Reabre escopo |
 |---|---|---|---|---|---|
-| 1 | Rotação atual como estratégia comparada | Motor feito; falta a tela | Gabriel | Não | Não |
+| 1 | Rotação atual como estratégia comparada | Motor e tela feitos (referência ao lado dos três cards); faltam a diferença em cada card e o pousio no histórico | Gabriel, Pedro | Não | Não |
 | 2 | Solo descoberto e erosão por sequência | Motor, API e tela feitos; índice real conferido na demonstração | Gabriel | Não na demonstração | Não |
-| 3 | Lacunas e riscos por estratégia | Avisos e benefícios na tela; faltam status de origem | Brenno | Não | Não |
+| 3 | Lacunas e riscos por estratégia | Feito: avisos, lacunas, benefícios e status de origem na tela | — | Não | Não |
 | 4 | Geada e chuva extrema | Motor feito (modo diário); faltam API e tela (Parte 8) | Pedro, Gabriel | Não | Não |
 | 5 | Prioridades e restrições do agricultor | Prioridades e ranking integrados na tela; restrições em aberto | Pedro, Gabriel | Não | Reaberto (15/11) |
 | 6 | Controles de cenário | Motor, API e front feitos; falta testar a tela contra a API real | Gabriel | Não | Não |
@@ -29,13 +29,13 @@ O texto do desafio usa "may" em todos os itens: nada é obrigatório. A decisão
 | 9 | Informação local de solo | Textura GLDAS sugerida por ponto, API e seletor integrados; produtor pode trocar | Brenno, Gabriel | GLDAS entregue | Não |
 | 10 | Atributos de cultura que faltam | Falta | Brenno, Pedro | Fontes a levantar | Não |
 | 11 | Umidade do solo e vegetação observadas | Falta e incompleto | Brenno, Pedro | Sim (SMAP) | Sim (SMAP) |
-| 12 | Tendência de água de longo prazo | Falta | Brenno | Talvez (GRACE) | Não |
+| 12 | Tendência de água de longo prazo | Tendência do POWER feita (`docs/tendencia_agua.md`); GRACE fica de fora | Brenno | Não | Não |
 | 13 | Comparar abordagens estatísticas ou de IA | Mensal × diário e texto do pitch feitos; falta conferir contra a PAM de vários anos | Pedro, Brenno | Sim (PAM) | Não |
 | 14 | Mapa com camadas, tempo e zonas do talhão | Falta | Gabriel, Brenno | Em parte | Não |
-| 15 | Explicações para o agricultor | Incompleto | Gabriel | Não | Não |
-| 16 | Dados de resoluções diferentes | Falta | Brenno | Não | Não |
-| 17 | Outros satélites citados pelo desafio | Falta | Time | Sim | Sim (GPM) |
-| 18 | Entrega: README, licença, acessibilidade | Incompleto | Gabriel, time | Não | Não |
+| 15 | Explicações para o agricultor | Glossário ampliado e chat no idioma da pergunta; falta anomalia de umidade | Gabriel | Não | Não |
+| 16 | Dados de resoluções diferentes | Redução de cada fonte ao talhão documentada no README | — | Não | Não |
+| 17 | Outros satélites citados pelo desafio | Decidido: SMAP, GPM, GRACE, ECOSTRESS e Landsat fora, com justificativa no README | — | Não | — |
+| 18 | Entrega: README, licença, acessibilidade | README feito; faltam licença e teste em celular e leitor de tela | Time | Não | Não |
 
 Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (dependem de decisão ou de outra área), depois 9 a 17 (dado novo ou trabalho de tela), e 18 antes da entrega.
 
@@ -60,7 +60,7 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 
 **Falta:**
 
-- [ ] Tela (Gabriel): um bloco "Sua rotação atual" ao lado dos três cards. Com `atual.viavel`, ler o item de `sequencias` pelo `id` e mostrar os mesmos números dos cards (receita de hoje e do futuro, solo, encaixe). Sem `viavel`, mostrar o motivo com o texto que já existe para as descartadas. Sem histórico, convidar a informar.
+- [x] Tela (Gabriel): um bloco "Sua rotação atual" ao lado dos três cards. Com `atual.viavel`, ler o item de `sequencias` pelo `id` e mostrar os mesmos números dos cards (receita de hoje e do futuro, solo, encaixe). Sem `viavel`, mostrar o motivo com o texto que já existe para as descartadas. Sem histórico, convidar a informar. Feito: a referência aparece ao lado dos três cards.
 - [ ] Tela: em cada card, a diferença para a rotação atual (receita, solo, encaixe).
 - [x] Decisão de 15/11: a rotação atual permanece como referência ao lado das até três melhores sequências pelo score de hoje, conforme as prioridades escolhidas.
 - [ ] Pousio e slot de cada cultura do histórico: o motor supõe uma cultura por slot, sem pular. Quem deixa a safrinha vazia não consegue informar a rotação atual ("Em aberto", item 13 do contrato).
@@ -122,8 +122,8 @@ Ordem sugerida: 1 a 4 primeiro (só motor, sem dado novo), depois 5 a 8 (depende
 **Falta:**
 
 - [x] Dados (Brenno): preencher `preco_status` e `temp_calor_c_status` em `scripts/montar_culturas.py` com o que `docs/culturas_fontes.md` marca como "memória" ou "sem fonte" (preço de feijão, girassol e algodão; limiar de girassol e trigo). Sem isso, o aviso de preço não aparece.
-- [ ] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards.
-- [ ] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`.
+- [x] Tela (Gabriel): mostrar os avisos da sequência no card e no detalhe, separando riscos de lacunas. Hoje o texto de "valide com seu agrônomo" é igual para todos os cards. Feito (ver os itens marcados acima).
+- [x] Texto: o `texto` do motor usa o nome da cultura sem acento (`feijao`). A tela tem os rótulos e pode montar a frase a partir de `codigo` e `dados`. Feito: a tela monta o texto com os rótulos, inclusive `hospedeiro_comum`.
 - [x] `fator_limitante` usa o modo mensal; no diário a água pesa mais ("Em aberto", item 18 do contrato). Motor (15/11, branch `motor-parte3`): com `diario=`, sai o aviso novo `fator_agua_diario` (risco, por cultura e clima) quando o `fator_agua` do ano mediano fica abaixo de `AVISO_FATOR` (0,8); `fator_limitante` continua o do mensal, e `clima_favoravel` não sai quando há esse aviso. Sem o modo diário nada muda (fixtures iguais); score e rank não mudam. Talhão de demonstração, outubro, histórico soja, milho: o milho safrinha de `soja>milho` (82% no mensal, sem aviso) ganha o aviso com 0,696 hoje e 0,693 no futuro; 14 avisos em 7 das 26 sequências. A API e a tela ainda não usam o modo diário (Parte 8); quando usarem, o front mostra o código novo pelo caminho de código desconhecido (texto e dados do motor), sem mudança.
 
 **Feito quando:** dois cards diferentes mostram avisos diferentes, e cada aviso aponta o dado que o gerou. Implementado no front, incluindo benefícios; status dos dados e limitação mensal continuam nas pendências acima. Contrato de apresentação e mensagem para Pedro em `frontend/docs/API.md`.
@@ -208,7 +208,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Feito em 15/11 (`8a90877`): colunas `dias_acima_NN` de 26 a 40 °C, dias quentes do futuro pela Tmax diária deslocada e chuva do futuro por razão.
+- [x] Dados (Brenno): trigo de sequeiro só acima de 800 m (Embrapa Cerrados); o talhão está a 484 m. Crotalária em fevereiro, não março (de memória: precisa de fonte). Feito em 15/11 (`8a90877`): colunas `dias_acima_NN` de 26 a 40 °C, dias quentes do futuro pela Tmax diária deslocada e chuva do futuro por razão. Crotalária em fevereiro com fonte (Embrapa Agropecuária Oeste, CT 44) e trigo descartado abaixo de 800 m (regra 21), 15/11.
 - [x] Tela (Gabriel): testes do front com os números novos; futuro chamado de "por volta de 2060"; detalhes distinguem receita da sequência e receita por ano de ocupação.
 - [x] Motor (Pedro): preços editados zero não zeram o teto. A referência usa preços da tabela e tem fallback para teto nulo (`baf7d3b`); casos mensal/diário cobertos (`1086db6`).
 - [x] Motor (Pedro): textos brutos de avisos/benefícios alinhados para "por volta de 2060" (`1086db6`). Metadados e prompt recebem a mesma correção na integração do front.
@@ -216,17 +216,17 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 - [x] Motor (Pedro, branch `motor-escalas`): escalas das partes do score ("Em aberto" 20, regra 12). A parte `agua` passa a ser o atendimento hídrico na faixa fixa [0,6; 1] (`AGUA_REF_MIN`, provisória), a mesma em hoje, futuro, ano seco e modo diário; o atendimento bruto sai em `atendimento_hidrico`. Com pesos iguais, o peso efetivo de água / solo / renda foi de 14% / 32% / 54% para 29% / 27% / 44% (outubro e fevereiro, hoje). Score e ranking mudam: em outubro `soja>milho` sai do 1º lugar (6º hoje, 5º no futuro) e `soja>feijao` vence hoje (6º no futuro); em fevereiro vence `feijao>soja` hoje (5º no futuro), e `sorgo>soja` segue em 1º no futuro. Fixtures do front regeneradas.
 - [x] Motor (branch `motor-bonus-n`): bônus após fixadora só depois de adubo verde (`fixa_n` e produtividade zero na tabela; hoje só a crotalária) e com o plantio seguinte até 60 dias depois do fim do ciclo dela (`JANELA_BONUS_N_DIAS`, provisório, sem fonte). Para a cultura do histórico, o fim do ciclo é suposto 10 dias antes do talhão livre. Regra 10 e "O que mudou com o bônus" no contrato. Com histórico soja, milho, nenhuma sequência fica com o bônus; em outubro `soja>sorgo` passa `soja>milho` por 0,4 ponto.
 - [ ] Dados/agronomia: conferir a janela de 60 dias com uma fonte (decomposição e liberação de N da palhada de crotalária no Cerrado). A crotalária de safrinha acaba em junho, na seca, quando a palhada se decompõe mais devagar: o prazo pode ser curto demais para esse caso.
-- [ ] Tela (Gabriel): textos e testes do front que citam os cards e scores antigos (`soja>milho` 1º em outubro, `sorgo>soja` 75,987 em fevereiro) e a lista de testes que falham na `motor-escalas`. O prompt do chat (`backend/chat.py`) pode citar `atendimento_hidrico` para explicar a parte `agua`.
+- [x] Tela (Gabriel): textos e testes do front que citam os cards e scores antigos (`soja>milho` 1º em outubro, `sorgo>soja` 75,987 em fevereiro) e a lista de testes que falham na `motor-escalas`. O prompt do chat (`backend/chat.py`) pode citar `atendimento_hidrico` para explicar a parte `agua`. Feito pelo Gabriel em 15/11.
 - [x] Motor (15/11, branch `motor-hospedeiro`): penalidade por hospedeiro comum de pragas e doenças (regra 10 do contrato). Tabela `HOSPEDEIRO_COMUM` em `motor/motor.py`, com fonte por par: mofo-branco entre soja, feijão, girassol e algodão (Embrapa Algodão, CT 336) e mosca-branca de soja para feijão (Embrapa Arroz e Feijão, CT 91). Fator 0,92, provisório; não soma com a repetição e multiplica o bônus após fixadora. Aviso novo `hospedeiro_comum`. `soja>feijao` segue em 3º em outubro (75,2 → 74,8); `feijao>soja` cai de 2º para 3º em fevereiro. Números em "O que mudou em 15/11 (hospedeiro comum de pragas)" no contrato.
-- [ ] Agrônomo: conferir o tamanho do efeito (0,92) e se crotalária entra no grupo do mofo-branco. Tela (Gabriel): o aviso `hospedeiro_comum` aparece pelo `texto` do motor (código desconhecido); um texto próprio é opcional.
+- [ ] Agrônomo: conferir o tamanho do efeito (0,92 e 0,75 da mosca-branca) e se crotalária entra no grupo do mofo-branco. A tela já tem apresentação própria para `hospedeiro_comum`.
 - [x] Motor (15/11, depois das revisões estatística e agronômica, branch `motor-integracao`): a parte `agua` voltou a ser o atendimento hídrico (`AGUA_REF_MIN` = 0; o piso de 0,6 multiplicava a água por 2,5 e punha `soja>feijao` em 1º); a parte `solo` não usa mais a água; mosca-branca soja→feijão com fator próprio de 0,75 (provisório); avisos de repetição e de bônus por marca, não por igualdade de número; ano mediano e ano ruim do modo diário são anos reais, escolhidos pelo score. Ranking em "O que mudou em 15/11 depois das duas revisões" no contrato: outubro `soja>milho`, `soja>sorgo`, `soja>crotalaria`; fevereiro `sorgo>soja`, `crotalaria>soja` (empate).
 - [x] Dados (Brenno, 15/11): `razao_chuva` e `dias_acima_NN` por modelo em `clima_modelos.csv`; crotalária em fevereiro (Embrapa CT 44, 2018; ensaio em MS); coluna `altitude_min_m` em `culturas.csv` (trigo 800 m). Com a crotalária em fevereiro, `soja>crotalaria` passa a 1º hoje (78,2), à frente de `soja>milho` (77,9).
 - [x] Motor (15/11, branch `motor-altitude`): `altitude_min_m` contra a entrada nova `altitude_m` (regra 21 do contrato). Sequência que cabe no calendário mas tem cultura acima da altitude do talhão vai para `descartadas`, com `altitude_min_m` e `altitude_m` no `motivo` (mais os campos de época). Sem `altitude_m`, a saída não muda. A API passa a média do SRTM do talhão de demonstração (484,41 m, `data/talhao/declividade.csv`) só com as tabelas da demonstração (sem `lon` ou `origem.hoje == "tabela_demo"`); o cliente não envia o campo. No demo, o trigo sai do ranking: outubro 25 → 21 viáveis (`soja>trigo`, 5º hoje, dá lugar a `soja>milheto`), fevereiro 35 → 30 (top 5 de hoje igual).
 - [x] Tela (Gabriel): motivo com `altitude_min_m` e `altitude_m` validado e apresentado como restrição de altitude, inclusive na referência atual e no resumo. Mantidos os motivos antigos de calendário. Teste HTTP inclui histórico soja→trigo na demonstração.
 - [ ] Motor (Pedro): ler os `dias_acima_NN` por modelo de `clima_modelos.csv` (hoje o motor desloca as colunas de hoje pelo `delta_tmax_c`, regra 20). A tolerância de chuva de `test_roda_com_os_modelos_de_data` já foi para 2,5 mm (Brenno, 15/11): com a razão de cada modelo, a média dos três fica até 2 mm de `clima_futuro`.
 - [x] Tela (Gabriel): empate técnico abaixo de 2 pontos da líder, preservando score e ordem do motor; testes atualizados para a crotalária em fevereiro, inclusive referência atual no top 3.
-- [ ] Declarar no pitch: pesos não são frações do resultado (renda ~metade com pesos iguais); água do mensal otimista (sem veranicos); faixa de 3 modelos não é intervalo; deltas de chuva não significativos; queda do feijão depende do limiar de 32 °C.
-- [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate.
+- [ ] Declarar no pitch: pesos não são frações do resultado (renda ~metade com pesos iguais); água do mensal otimista (sem veranicos); faixa de 3 modelos não é intervalo; deltas de chuva não significativos; queda do feijão depende do limiar de 32 °C. README: feito (seção Limitations); falta o slide.
+- [ ] Declarar no pitch: mudança de chuva do futuro não é significativa (0 de 36 deltas com |t| > 2); "hoje" representa por volta de 2015 (tendência do POWER); ano ruim com 19 anos é impreciso; vencedores com diferença de poucos pontos são empate. README: feito (seção Limitations); falta o slide.
 
 ## Parte 7 — Incerteza entre os modelos climáticos
 
@@ -316,7 +316,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] Sem dado novo: tendência da chuva e do balanço hídrico por ano na série do POWER de 2005 a 2024.
+- [x] Sem dado novo: tendência da chuva e do balanço hídrico por ano na série do POWER de 2005 a 2024. Feito em `docs/tendencia_agua.md`.
 - [ ] Com dado novo: armazenamento de água do GRACE para a região. A resolução é de centenas de quilômetros; serve como contexto regional, não do talhão.
 
 **Feito quando:** a tela ou o pitch mostram se a água da região está estável, subindo ou caindo.
@@ -373,7 +373,7 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] Documentar como cada dado é reduzido ao talhão (média dos pixels dentro do contorno, célula do POWER, célula de 0,25° do NEX).
+- [x] Documentar como cada dado é reduzido ao talhão (média dos pixels dentro do contorno, célula do POWER, célula de 0,25° do NEX). Feito no README (tabela Data).
 - [ ] Se a Parte 14 for feita: reamostrar NDVI e declividade para a mesma grade dentro do contorno.
 
 **Feito quando:** existe uma seção no README ou em `docs/` que explica a redução de cada fonte ao talhão.
@@ -386,8 +386,8 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] Time: decidir quais valem o tempo. GPM daria a chuva em resolução melhor que o POWER; ECOSTRESS e Landsat dariam temperatura da superfície e NDVI mais fino.
-- [ ] Para os que ficarem de fora: uma frase no README e no pitch dizendo por quê e como entrariam.
+- [x] Time: decidir quais valem o tempo. GPM daria a chuva em resolução melhor que o POWER; ECOSTRESS e Landsat dariam temperatura da superfície e NDVI mais fino. Decidido: ficam de fora nesta entrega.
+- [x] Para os que ficarem de fora: uma frase no README e no pitch dizendo por quê e como entrariam. Feito no README; o slide pode citar.
 
 **Feito quando:** cada satélite citado pelo desafio está usado ou tem a justificativa escrita.
 
@@ -404,9 +404,9 @@ Main `0ec5f06`, as correções de Pedro e os dados de Brenno (`8a90877`). O envi
 
 **Falta:**
 
-- [ ] README: caminho genérico, instalação do backend, lista de dados atualizada com o modo diário.
+- [x] README: caminho genérico, instalação do backend, lista de dados atualizada com o modo diário. Feito em 15/11.
 - [ ] Licença, se o time confirmar que o Space Apps pede (é de memória).
-- [ ] Corrigir os trechos desatualizados.
+- [x] Corrigir os trechos desatualizados. Feito: `docs/culturas_fontes.md` (preço editável) e contrato; `docs/ibge_pam.md` sem trechos a corrigir.
 - [ ] Testar com leitor de tela e num celular.
 
 **Feito quando:** alguém de fora clona o repositório e roda o projeto só com o README.
