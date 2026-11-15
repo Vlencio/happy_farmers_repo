@@ -292,7 +292,7 @@ Os três cards da tela são as três primeiras de `sequencias` (`rank_hoje` 1, 2
     - `chuva_mm` × (1 + `chuva_pct`/100), em todos os meses.
     - `tmin_c` e `tmax_c` + `temp_c`, em todos os meses.
     - `et0_mm`, se vier na tabela, × (T média + `temp_c` + 17,8) / (T média + 17,8). É o que muda no Hargreaves quando as duas temperaturas sobem igual: a amplitude e a radiação ficam as mesmas. Sem a coluna, o Hargreaves do motor já usa as temperaturas novas. +2 °C dá cerca de 5% a mais de ET0.
-    - `dias_acima_NN` (com `temp_c` acima de 0): dias acima de NN com a máxima `temp_c` mais alta = dias acima de NN − `temp_c` na tabela original. A tabela só tem alguns limiares (32, 35, 36 e 38); o motor interpola entre os dois vizinhos e, fora da faixa, estende a reta dos dois mais próximos, entre 0 e os dias do mês. Com +3 °C, o limiar 35 usa a coluna 32 exata.
+    - `dias_acima_NN` (com `temp_c` acima de 0): dias acima de NN com a máxima `temp_c` mais alta = dias acima de NN − `temp_c` na tabela original. Desde 15/11 as tabelas têm uma coluna por grau, de 26 a 40 °C: com ajuste inteiro, o motor lê a coluna exata (+3 °C no limiar 35 = `dias_acima_32`). Com ajuste fracionário, ou com tabelas que só tenham alguns limiares, o motor interpola entre os dois vizinhos e, fora da faixa, estende a reta dos dois mais próximos, entre 0 e os dias do mês.
     - Modo diário: o mesmo, dia a dia, na série de hoje; o futuro sai das tabelas já ajustadas (regra 7 do modo diário). O limiar de chuva extrema fica o da série observada, para a contagem mostrar a mudança.
     - É um "e se", não uma previsão: o mesmo ajuste em todos os meses, sem fonte para a combinação escolhida.
 
