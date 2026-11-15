@@ -818,31 +818,37 @@ fn glossary(s: &State, k: &Kit) -> El {
 }
 fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
     let weights = s.settings.prioridades;
+    let total = weights.agua as f64 + weights.solo as f64 + weights.renda as f64;
     let mut view = panel().gap(16.0).w_full()
         .child(label("Suas prioridades", 19.0, 600.0, INK).wrap().w_full().role("heading").level(2))
-        .child(paragraph("Escolha quanto cada parte deve pesar na pontuação. Zero tira seu peso da pontuação; não exclui culturas."));
+        .child(paragraph("Escolha o que você quer favorecer na comparação. Cada critério recebe um peso na nota que ordena as rotações; até três opções com as maiores notas aparecem nas sugestões."));
     for (index, name, description, selected) in [
         (
             0,
             "Água",
-            "Atendimento à necessidade de água das culturas",
+            "Favorece rotações com a necessidade de água mais bem atendida pela chuva e pela reserva do solo.",
             weights.agua,
         ),
         (
             1,
             "Solo",
-            "Cobertura, fixação de nitrogênio e diversidade",
+            "Favorece cobertura do solo, fixação de nitrogênio e diversidade de culturas.",
             weights.solo,
         ),
         (
             2,
             "Renda",
-            "Receita bruta por ano de ocupação, sem descontar custos",
+            "Favorece maior receita bruta por hectare e por ano de ocupação. Os custos não são descontados.",
             weights.renda,
         ),
     ] {
         let mut choices = row().gap(6.0).w_full();
-        for (value, title) in [(0, "nada"), (1, "pouco"), (2, "médio"), (3, "muito")] {
+        for (value, title, visible_title) in [
+            (0, "sem peso", "Sem peso"),
+            (1, "baixo", "Baixo"),
+            (2, "médio", "Médio"),
+            (3, "alto", "Alto"),
+        ] {
             let chosen = selected == value;
             choices = choices.child(
                 row()
@@ -856,7 +862,7 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
                     .fill(color(if chosen { "#355e3e" } else { "#f4f6ee" }))
                     .border(1.0, color(if chosen { "#355e3e" } else { LINE }))
                     .child(label(
-                        format!("{value} {title}"),
+                        format!("{value} {visible_title}"),
                         11.0,
                         600.0,
                         if chosen { "#ffffff" } else { INK },
@@ -884,13 +890,66 @@ fn priorities_panel(s: &State, _: &Kit, narrow: bool) -> El {
                 .child(column_width(choices, narrow, 1.4)),
         );
     }
-    if weights.agua == 0 && weights.solo == 0 && weights.renda == 0 {
-        view = view.child(paragraph(
-            "Tudo em zero: o motor usa pesos iguais para água, solo e renda.",
-        ));
+    // Preview only the relative weights; scores and rankings still come from the API.
+    let mut shares = row().gap(8.0).w_full();
+    for (name, weight) in [
+        ("Água", weights.agua),
+        ("Solo", weights.solo),
+        ("Renda", weights.renda),
+    ] {
+        let percent = if total == 0.0 {
+            100.0 / 3.0
+        } else {
+            100.0 * weight as f64 / total
+        };
+        let value = format!("{percent:.1}")
+            .trim_end_matches('0')
+            .trim_end_matches('.')
+            .replace('.', ",");
+        shares = shares.child(
+            col()
+                .w(0.0)
+                .min_w(0.0)
+                .grow(1.0)
+                .gap(4.0)
+                .role("group")
+                .label(format!("{name} · {value}%"))
+                .child(label(name, 12.0, 400.0, MUTED).wrap().w_full())
+                .child(label(format!("{value}%"), 18.0, 600.0, INK).wrap().w_full()),
+        );
     }
+    view = view
+        .child(col().gap(10.0).padding(14.0).radius(9.0).fill(color("#eaf1ef"))
+            .child(label("Pesos no cálculo", 14.0, 600.0, INK).wrap().w_full())
+            .child(shares)
+            .child(label(if total == 0.0 {
+                "Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1."
+            } else {
+                "Os pesos são relativos: 3 dá três vezes o peso de 1. A ordem das sugestões pode mudar, mas isso depende das opções disponíveis."
+            }, 12.0, 400.0, MUTED).wrap().w_full()))
+        .child(label("Sem peso retira o critério da nota principal, sem excluir culturas ou esconder riscos. Em caso de empate, os três critérios são considerados.", 12.0, 400.0, MUTED).wrap().w_full());
     if s.page != Page::Setup {
-        view = view.child(label("Mudar uma prioridade refaz a análise e reinicia o chat. Em empate de pontuação, o motor considera a média de água, solo e renda.", 12.0, 400.0, MUTED).wrap().w_full());
+        view = view.child(
+            label(
+                "Mudar uma prioridade refaz a análise e reinicia o chat.",
+                12.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
+    } else {
+        view = view.child(
+            label(
+                "Suas escolhas serão usadas ao clicar em Analisar fazenda.",
+                12.0,
+                400.0,
+                MUTED,
+            )
+            .wrap()
+            .w_full(),
+        );
     }
     view
 }

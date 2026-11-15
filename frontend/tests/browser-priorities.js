@@ -20,7 +20,7 @@ async (originalPage) => {
   const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
   const number = value => value.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
   const labels = { agua: 'Água', solo: 'Solo', renda: 'Renda' };
-  const levels = ['nada', 'pouco', 'médio', 'muito'];
+  const levels = ['sem peso', 'baixo', 'médio', 'alto'];
   const priorityName = (field, value) => new RegExp(`^${labels[field]}: prioridade ${value} \\(${levels[value]}\\)(?:, selecionada)?$`);
   const button = name => page.getByRole('button', { name, exact: true });
   const cards = () => page.getByRole('button', { name: /Abrir linha do tempo$/ });
@@ -111,6 +111,9 @@ async (originalPage) => {
   }
   async function verifyRanking(analysis, ids, name) {
     check(same(analysis.raw.sequencias.slice(0, 3).map(seq => seq.id), ids), name + ': engine returns the expected ranking');
+    const weightSummaries = await Promise.all(Object.entries(labels).map(([field, label]) =>
+      page.getByRole('group', { name: `${label} · ${number(analysis.raw.entrada.prioridades[field] * 100)}%`, exact: true }).count()));
+    check(weightSummaries.every(count => count === 1), name + ': displayed calculation weights match the normalized weights returned by the engine');
     const names = await rankedCards().allTextContents();
     check(names.length === ids.length && analysis.view.recommendations.every((rec, i) => rec.sequence_id === ids[i]
       && names[i].includes(`${i + 1}ª DE HOJE`) && names[i].includes(rec.crop)), name + ': visible cards retain engine order');
@@ -159,12 +162,19 @@ async (originalPage) => {
     check(await priorityHeading().count() === 1, 'Setup exposes the priorities panel');
     const controls = await Promise.all(Object.keys(labels).flatMap(field => levels.map((_, value) => button(priorityName(field, value)).count())));
     check(controls.every(count => count === 1), 'All twelve priority buttons have specific accessible names');
-    check(await page.getByRole('button', { name: /: prioridade 1 \(pouco\), selecionada$/ }).count() === 3,
+    check(await page.getByRole('button', { name: /: prioridade 1 \(baixo\), selecionada$/ }).count() === 3,
       'Each initial priority exposes its selected state in the accessible label');
     await click(priorityName('agua', 2));
     const setupDraft = await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
     check(analyzePosts.length === 0 && setupDraft.settings.prioridades.agua === 2,
       'Setup priority edits save the choice without submitting an analysis before the producer is ready');
+    await click(priorityName('agua', 3));
+    const exampleWeights = await Promise.all(['Água · 60%', 'Solo · 20%', 'Renda · 20%'].map(name =>
+      page.getByRole('group', { name, exact: true }).count()));
+    check(exampleWeights.every(count => count === 1) && analyzePosts.length === 0,
+      'Setup previews 3/1/1 as 60/20/20 weights without requesting an analysis');
+    await align(priorityHeading());
+    await page.screenshot({ path: 'output/playwright/priority-clarity-example-desktop.png' });
     await click(priorityName('agua', 1));
     const first = await submit();
     check(same(first.request.prioridades, { agua: 1, solo: 1, renda: 1 }), 'Legacy draft migrates to equal 1/1/1 priorities');
@@ -187,6 +197,8 @@ async (originalPage) => {
     await verifyRanking(zeros, ['soja>milho', 'soja>sorgo', 'soja>feijao'], 'All zero priorities in October');
     check(same(zeros.request.prioridades, { agua: 0, solo: 0, renda: 0 }) && same(zeros.raw.entrada.prioridades, first.raw.entrada.prioridades),
       'Zero values reach the engine, which applies equal normalized weights');
+    check((await text()).includes('Tudo em zero: usamos o mesmo peso para os três critérios, como em 1/1/1.'),
+      'All-zero choices explain the equal-weight fallback without claiming all criteria are ignored');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('happy-farmers-draft-v1')));
     check(same(saved.settings.prioridades, { agua: 0, solo: 0, renda: 0 }), 'Draft stores the producer zero choices rather than normalized engine weights');
     await page.reload(); await waitConnected();
@@ -266,9 +278,9 @@ async (originalPage) => {
     await send('Quais são as prioridades novas?'); await waitText(reply.resposta);
     check(posts.at(-1).historico.length === 0 && same(posts.at(-1).analise, chatChanged.raw),
       'SIMULATED conversation after cancellation sends the new full analysis without stale history', true);
-    const distinct = await analyze(10, 2, undefined, ['soja', 'feijao']);
+    const distinct = await analyze(10, 2, undefined, ['soja', 'girassol']);
     await openChat(); await send('Compare com a minha rotação atual.'); await waitText(reply.resposta);
-    check(same(posts.at(-1).foco, expectedFocus(distinct)) && posts.at(-1).foco.length === 4 && posts.at(-1).foco.includes('soja>feijao'),
+    check(same(posts.at(-1).foco, expectedFocus(distinct)) && posts.at(-1).foco.length === 4 && posts.at(-1).foco.includes('soja>girassol'),
       'SIMULATED distinct current rotation joins the three ranked cards in focus', true);
     check(errors.length === 0, 'No uncaught JavaScript errors');
     return { passed: checks.length, synthetic_checks: syntheticChecks, chat_requests_simulated: posts.length, checks };
