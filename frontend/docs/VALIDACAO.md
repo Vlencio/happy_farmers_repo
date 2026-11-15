@@ -1,5 +1,37 @@
 # Verificação da integração · 14/11/2026
 
+## Cursor e feedback de hover · 15/11/2026
+
+- Controles habilitados com ação usam a mão nativa do navegador, inclusive os
+  cards e as opções de seleção desenhados no canvas. Texto editável, áreas
+  estáticas, controles desabilitados e cursores do mapa mantêm sua função.
+  A correção do runtime está em `patches/rune-clickable-cursor.patch`, registrada
+  no pin e aplicada de forma idempotente; não depende de edição manual no cache.
+- Botões e controles personalizados recebem realce de cor, com entrada de
+  120 ms e saída de 160 ms no canvas. Não há escala nem deslocamento dos alvos.
+  `prefers-reduced-motion` troca o hover por mudança imediata, incluindo o HTML
+  do mapa. Um teste visual encontrou a pequena transição que o Rune preservava
+  nessa preferência; a interface agora escolhe `Curve::Instant` explicitamente.
+- **165 testes JavaScript**, build Rune/WASM + Vite, formatação Rust, sintaxe
+  do roteiro e diff check passaram. Os avisos conhecidos do Rune e do tamanho
+  do bundle continuam. Nenhuma mudança na API, no motor ou nas fixtures.
+- Regressão: `browser-ux.js` passou em **43 verificações** e
+  `browser-map-layout.js` em **28**, cobrindo análise real, teclado, reinício,
+  desenho/edição por toque e larguras de 320–1920 px, sem erros JavaScript.
+  Logs: `output/playwright/hover-ux.log` e `hover-map.log`.
+- `browser-hover.js` passou em **61 verificações**, incluindo cursores de
+  botões/seletores/opções/cards/calendário, áreas desabilitadas, texto, mapa,
+  mudança visual sem deslocamento, teclado, uma análise real e toque em 390 px.
+  O modo de movimento reduzido foi conferido por capturas na entrada e saída
+  do hover e pela ausência de transição CSS no mapa. Sem erros JavaScript,
+  chamadas de chat ou alterações no rascunho causadas pelo hover; contextos
+  isolados preservam o rascunho do usuário. Log: `output/playwright/hover-browser.log`;
+  capturas: `hover-ranked-card.png` e `hover-touch.png`. **132 verificações de
+  navegador** no total, sem contar repetições durante as correções.
+- Os testes adicionais do patch nativo Rune ficaram registrados, mas não foram
+  executados: a compilação inicial das dependências Windows foi interrompida.
+  A validação executada é do alvo web. Sem teste em celular físico, CI ou produção.
+
 ## Altura do card após reiniciar · 15/11/2026
 
 - Campo e histórico mantêm suas alturas naturais no desktop. O card vazio do
