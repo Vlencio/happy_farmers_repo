@@ -109,6 +109,18 @@ class TestChatApi(unittest.TestCase):
         self.post(pergunta="Segunda?", historico=[{"papel": "produtor", "texto": "Primeira?"}, {"papel": "assistente", "texto": "Resposta."}])
         self.assertEqual(fake.chamadas[0]["system"], fake.chamadas[1]["system"])
 
+    def test_resposta_vazia_e_erro(self):
+        app.state.chat = Chat(FakeClient(texto="  "))
+        self.assertEqual(self.post().status_code, 502)
+
+    def test_resposta_longa_cabe_no_historico(self):
+        app.state.chat = Chat(FakeClient())
+        longa = "x" * 10000
+        historico = [{"papel": "produtor", "texto": "Oi?"}, {"papel": "assistente", "texto": longa}]
+        self.assertEqual(self.post(historico=historico).status_code, 200)
+        historico[1]["texto"] = "x" * 16001
+        self.assertEqual(self.post(historico=historico).status_code, 422)
+
     def test_recusa_vira_texto_fixo(self):
         app.state.chat = Chat(FakeClient(stop_reason="refusal"))
         self.assertEqual(self.post().json()["resposta"], RESPOSTA_RECUSADA)

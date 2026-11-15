@@ -11,6 +11,7 @@ import anthropic
 MODELO_PADRAO = "claude-opus-5-5"
 BETA_FALLBACK = "server-side-fallback-2026-07-01"  # on a refusal the API retries on a fallback model
 MAX_FOCO = 6
+MAX_MENSAGEM = 16000  # characters per history message: a long answer must fit when it comes back
 RESPOSTA_RECUSADA = (
     "Não consigo responder essa pergunta por aqui. Posso explicar os cards, o calendário, "
     "os avisos e os benefícios desta análise."
@@ -93,6 +94,10 @@ def montar_contexto(analise, foco):
     return contexto
 
 
+class RespostaVazia(Exception):
+    """The model ended without any text (for example, it ran out of tokens while thinking)."""
+
+
 class Chat:
     def __init__(self, client, model=MODELO_PADRAO):
         self.client = client
@@ -128,4 +133,6 @@ class Chat:
         if response.stop_reason == "refusal":
             return {"resposta": RESPOSTA_RECUSADA, "modelo": response.model, "recusada": True}
         texto = "".join(b.text for b in response.content if b.type == "text").strip()
+        if not texto:
+            raise RespostaVazia("O modelo não devolveu texto.")
         return {"resposta": texto, "modelo": response.model, "recusada": False}

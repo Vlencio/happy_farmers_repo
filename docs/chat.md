@@ -31,7 +31,7 @@ Modelo: `claude-opus-5-5`, com esforço baixo (é uma conversa curta). `HAPPY_FA
 |---|---|
 | `analise` | Obrigatório. Precisa ter `entrada` e `sequencias` |
 | `foco` | Até 6 ids de `sequencias`: os cards e a rotação atual na tela. Vazio = as três primeiras de hoje e a atual. Id fora da análise = 422 |
-| `historico` | Até 20 mensagens, começando pelo produtor. O servidor não guarda conversa: a tela manda o histórico a cada pergunta |
+| `historico` | Até 20 mensagens de até 16.000 caracteres, começando pelo produtor. O servidor não guarda conversa: a tela manda o histórico a cada pergunta |
 | `pergunta` | 1 a 1000 caracteres |
 
 O servidor tira das sequências as séries mês a mês (`meses`) antes de mandar ao modelo; os totais, `avisos` e `beneficios` vão inteiros. Instruções e análise vão no início do prompt e ficam em cache entre as perguntas da mesma conversa.
@@ -50,7 +50,7 @@ O servidor tira das sequências as séries mês a mês (`meses`) antes de mandar
 |---|---|
 | 422 | Entrada inválida (pergunta vazia, foco desconhecido, histórico começando pelo assistente) |
 | 503 | Chat desligado, sem credencial válida, limite de uso ou falha de rede/servidor do modelo |
-| 502 | O modelo rejeitou a requisição (erro 4xx da API do Claude) |
+| 502 | O modelo rejeitou a requisição (erro 4xx da API do Claude) ou não devolveu texto |
 
 ## Dados que saem do servidor
 

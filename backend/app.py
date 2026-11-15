@@ -9,7 +9,7 @@ import anthropic
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from motor import carregar_clima_seco, carregar_dados, recomendar
-from backend.chat import MAX_FOCO, Chat
+from backend.chat import MAX_FOCO, MAX_MENSAGEM, Chat, RespostaVazia
 from backend.field_context import load_demo_field, load_model_spread
 from backend.point_climate import PointClimate
 
@@ -39,7 +39,7 @@ class EntradaMotor(BaseModel):
 class MensagemChat(BaseModel):
     model_config = ConfigDict(extra="forbid")
     papel: Literal["produtor", "assistente"]
-    texto: Annotated[str, Field(min_length=1, max_length=4000)]
+    texto: Annotated[str, Field(min_length=1, max_length=MAX_MENSAGEM)]
 
 
 class EntradaChat(BaseModel):
@@ -141,6 +141,8 @@ def chat(entrada: EntradaChat):
         return app.state.chat.responder(entrada.analise, entrada.foco, historico, entrada.pergunta)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except RespostaVazia as error:
+        raise HTTPException(status_code=502, detail="O modelo não devolveu resposta. Tente de novo.") from error
     except anthropic.RateLimitError as error:
         raise HTTPException(status_code=503, detail="O chat está muito usado agora. Tente de novo em instantes.") from error
     except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as error:
